@@ -4,11 +4,12 @@
 
 @layer base {
   :root {
-    --background: 210 50% 3%;
-    --surface: 215 30% 8%;
-    --surface-elevated: 218 28% 14%;
-    --border: 220 25% 22%;
-    
+    /* Light mode colors */
+    --background: 0 0% 98%;
+    --surface: 0 0% 100%;
+    --surface-elevated: 0 0% 100%;
+    --border: 220 13% 91%;
+
     --primary: 189 100% 55%;
     --primary-dark: 189 100% 45%;
     --primary-glow: 189 100% 55% / 0.4;
@@ -17,7 +18,19 @@
     --success: 142 76% 36%;
     --warning: 38 92% 50%;
     --danger: 0 84% 60%;
-    
+
+    --text-primary: 222 47% 11%;
+    --text-secondary: 215 14% 34%;
+    --text-tertiary: 216 12% 52%;
+  }
+
+  .dark {
+    /* Dark mode colors */
+    --background: 210 50% 3%;
+    --surface: 215 30% 8%;
+    --surface-elevated: 218 28% 14%;
+    --border: 220 25% 22%;
+
     --text-primary: 220 15% 95%;
     --text-secondary: 220 12% 70%;
     --text-tertiary: 220 10% 50%;

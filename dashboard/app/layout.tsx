@@ -21,7 +21,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <div className="flex min-h-screen bg-background-light dark:bg-background-dark">
+          <div className="flex min-h-screen bg-background">
             <Sidebar />
             <main className="flex-1 ml-20">
               <Header />

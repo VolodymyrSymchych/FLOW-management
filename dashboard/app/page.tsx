@@ -132,27 +132,6 @@ export default function DashboardPage() {
         <div className="space-y-6">
           <ProgressSection />
           <UpcomingTasks />
-
-          {/* Download Section */}
-          <div className="bg-gradient-to-br from-red-400 to-red-500 rounded-2xl p-6 text-white relative overflow-hidden">
-            <div className="relative z-10">
-              <h3 className="text-xl font-bold mb-2">Download Ohara Now!</h3>
-              <p className="text-sm opacity-90 mb-4">
-                Available on iOS and Android
-              </p>
-              <div className="flex space-x-3">
-                <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
-                  <span className="text-2xl">▶</span>
-                </div>
-                <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
-                  <span className="text-2xl"></span>
-                </div>
-              </div>
-            </div>
-            <div className="absolute bottom-0 right-0 w-32 h-32">
-              <div className="w-full h-full bg-white/10 rounded-tl-full"></div>
-            </div>
-          </div>
         </div>
       </div>
     </div>

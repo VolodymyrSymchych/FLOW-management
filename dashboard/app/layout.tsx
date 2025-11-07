@@ -19,9 +19,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body className={`${inter.className} bg-background text-text-primary`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <div className="flex min-h-screen bg-background">
+          <div className="flex min-h-screen">
             <Sidebar />
             <main className="flex-1 ml-20">
               <Header />

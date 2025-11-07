@@ -8,6 +8,7 @@
     --background: 0 0% 98%;
     --surface: 0 0% 100%;
     --surface-elevated: 0 0% 100%;
+    --card: 0 0% 100%;
     --border: 220 13% 91%;
 
     --primary: 189 100% 55%;
@@ -26,10 +27,11 @@
 
   .dark {
     /* Dark mode colors */
-    --background: 210 50% 3%;
-    --surface: 215 30% 8%;
-    --surface-elevated: 218 28% 14%;
-    --border: 220 25% 22%;
+    --background: 222 47% 6%;
+    --surface: 222 47% 9%;
+    --surface-elevated: 222 47% 12%;
+    --card: 222 47% 9%;
+    --border: 222 47% 18%;
 
     --text-primary: 220 15% 95%;
     --text-secondary: 220 12% 70%;
@@ -214,4 +216,74 @@
 ::selection {
   background: hsl(var(--primary) / 0.3);
   color: hsl(var(--text-primary));
+}
+
+/* Rich Text Editor Prose Styles */
+.prose-editor .ProseMirror {
+  outline: none;
+}
+
+.prose-editor .ProseMirror h1 {
+  font-size: 2em;
+  font-weight: bold;
+  margin-top: 0.67em;
+  margin-bottom: 0.67em;
+  color: hsl(var(--text-primary));
+}
+
+.prose-editor .ProseMirror h2 {
+  font-size: 1.5em;
+  font-weight: bold;
+  margin-top: 0.83em;
+  margin-bottom: 0.83em;
+  color: hsl(var(--text-primary));
+}
+
+.prose-editor .ProseMirror h3 {
+  font-size: 1.17em;
+  font-weight: bold;
+  margin-top: 1em;
+  margin-bottom: 1em;
+  color: hsl(var(--text-primary));
+}
+
+.prose-editor .ProseMirror p {
+  margin: 1em 0;
+  color: hsl(var(--text-primary));
+  line-height: 1.6;
+}
+
+.prose-editor .ProseMirror ul,
+.prose-editor .ProseMirror ol {
+  padding-left: 2em;
+  margin: 1em 0;
+}
+
+.prose-editor .ProseMirror li {
+  margin: 0.5em 0;
+  color: hsl(var(--text-primary));
+}
+
+.prose-editor .ProseMirror strong {
+  font-weight: bold;
+}
+
+.prose-editor .ProseMirror em {
+  font-style: italic;
+}
+
+.prose-editor .ProseMirror code {
+  background: hsl(var(--surface-elevated));
+  padding: 0.2em 0.4em;
+  border-radius: 4px;
+  font-family: monospace;
+  color: hsl(var(--text-primary));
+}
+
+.prose-editor .ProseMirror blockquote {
+  border-left: 3px solid hsl(var(--primary));
+  padding-left: 1em;
+  margin-left: 0;
+  color: hsl(var(--text-secondary));
+  font-style: italic;
 }

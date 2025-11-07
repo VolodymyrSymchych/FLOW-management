@@ -11,6 +11,8 @@ module.exports = {
         background: "hsl(var(--background))",
         surface: "hsl(var(--surface))",
         "surface-elevated": "hsl(var(--surface-elevated))",
+        card: "hsl(var(--card))",
+        "card-dark": "hsl(var(--card))",
         border: "hsl(var(--border))",
         primary: "hsl(var(--primary))",
         "primary-glow": "hsl(var(--primary-glow))",

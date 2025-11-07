@@ -44,7 +44,7 @@ export function Header() {
               <span className="text-sm text-text-primary">All Teams</span>
               <ChevronDown className="w-4 h-4 text-text-primary transition-transform duration-300 group-hover:rotate-180" />
             </button>
-            <div className="absolute top-full left-0 mt-2 w-56 glass-heavy rounded-xl border border-white/20 shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 bg-[#0F1419]/98 backdrop-blur-xl">
+            <div className="absolute top-full left-0 mt-2 w-56 rounded-xl border border-white/20 shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 bg-[#0F1419]/95 backdrop-blur-sm">
               <div className="p-2">
                 <div className="px-3 py-2 text-xs text-text-tertiary uppercase tracking-wider">Teams</div>
                 <button className="w-full text-left px-3 py-2 rounded-lg hover:bg-white/5 text-text-primary transition-all">
@@ -100,7 +100,7 @@ export function Header() {
               <ChevronDown className="w-4 h-4 text-text-secondary transition-transform duration-300 group-hover:rotate-180" />
             </button>
             
-            <div className="absolute top-full right-0 mt-2 w-64 glass-heavy rounded-xl border border-white/20 shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 bg-[#0F1419]/98 backdrop-blur-xl">
+            <div className="absolute top-full right-0 mt-2 w-64 rounded-xl border border-white/20 shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 bg-[#0F1419]/95 backdrop-blur-sm">
               <div className="p-2">
                 <div className="px-3 py-3 border-b border-white/10">
                   <div className="font-semibold text-text-primary">{user?.fullName || user?.username}</div>

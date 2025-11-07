@@ -72,7 +72,16 @@ export default function PaymentPage() {
     setLoading(planId);
 
     try {
-      const response = await fetch('/api/payments/create-payment', {
+      // Redirect to Stripe test checkout
+      const stripe = await stripePromise;
+      
+      if (!stripe) {
+        alert('Stripe failed to load');
+        setLoading(null);
+        return;
+      }
+
+      const response = await fetch('/api/payments/create-checkout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -81,14 +90,19 @@ export default function PaymentPage() {
           amount: amount * 100, // Convert to cents
           currency: 'usd',
           planId,
+          planName: plans.find(p => p.id === planId)?.name || 'Plan',
         }),
       });
 
-      const { clientSecret } = await response.json();
+      const { sessionId } = await response.json();
 
-      if (clientSecret) {
-        // Redirect to Stripe Checkout or show payment form
-        alert('Payment intent created! In production, this would redirect to Stripe Checkout.');
+      if (sessionId) {
+        // Redirect to Stripe Checkout
+        const result = await stripe.redirectToCheckout({ sessionId });
+        
+        if (result.error) {
+          alert(result.error.message);
+        }
       }
     } catch (error) {
       console.error('Payment error:', error);
@@ -142,31 +156,31 @@ export default function PaymentPage() {
                 </div>
 
                 {/* Plan Name */}
-                <h3 className="text-2xl font-bold text-text-primary mb-2">
+                <h3 className="text-3xl font-bold text-text-primary mb-3">
                   {plan.name}
                 </h3>
-                <p className="text-text-secondary text-sm mb-6">
+                <p className="text-text-secondary text-base mb-8">
                   {plan.description}
                 </p>
 
                 {/* Price */}
-                <div className="mb-8">
-                  <div className="flex items-baseline">
-                    <span className="text-5xl font-bold gradient-text">
+                <div className="mb-8 pb-6 border-b border-white/10">
+                  <div className="flex items-baseline justify-center">
+                    <span className="text-6xl font-bold gradient-text">
                       {plan.price}
                     </span>
-                    <span className="text-text-tertiary ml-2">{plan.period}</span>
+                    <span className="text-text-tertiary ml-2 text-lg">{plan.period}</span>
                   </div>
                 </div>
 
                 {/* Features */}
-                <ul className="space-y-4 mb-8">
+                <ul className="space-y-4 mb-10">
                   {plan.features.map((feature, idx) => (
                     <li key={idx} className="flex items-start gap-3">
-                      <div className="mt-1 flex-shrink-0">
+                      <div className="mt-0.5 flex-shrink-0">
                         <Check className="w-5 h-5 text-primary" />
                       </div>
-                      <span className="text-text-secondary">{feature}</span>
+                      <span className="text-text-primary text-base">{feature}</span>
                     </li>
                   ))}
                 </ul>
@@ -175,10 +189,10 @@ export default function PaymentPage() {
                 <button
                   onClick={() => handleCheckout(plan.id, priceNum)}
                   disabled={loading === plan.id}
-                  className={`w-full py-4 rounded-xl font-semibold transition-all duration-300 ${
+                  className={`w-full py-4 rounded-xl font-bold text-lg transition-all duration-300 ${
                     plan.popular
-                      ? 'glass-button'
-                      : 'glass-light hover:glass-medium'
+                      ? 'glass-button text-white shadow-[0_0_30px_rgba(128,152,249,0.4)]'
+                      : 'glass-light hover:glass-medium text-text-primary hover:scale-[1.02]'
                   } ${loading === plan.id ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   <span className="flex items-center justify-center gap-2">

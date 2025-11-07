@@ -72,7 +72,7 @@ export default function FriendsPage() {
             <p className="text-text-secondary">Manage your connections and friend requests</p>
           </div>
           <button
-            onClick={() => setShowAddFriendModal(true)}
+            onClick={() => window.location.href = '/friends/add'}
             className="glass-button px-6 py-3 rounded-xl font-semibold text-white hover:scale-105 transition-all flex items-center gap-2"
           >
             <UserPlus className="w-5 h-5" />

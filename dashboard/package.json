@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 5000 -H 0.0.0.0",
+    "dev": "next dev -p 3001",
     "build": "next build",
-    "start": "next start -p 5000 -H 0.0.0.0",
+    "start": "next start -p 3001",
     "lint": "next lint"
   },
   "dependencies": {
@@ -25,6 +25,7 @@
     "@types/bcryptjs": "^2.4.6",
     "axios": "^1.6.0",
     "bcryptjs": "^3.0.3",
+    "bufferutil": "^4.0.9",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.0",
     "date-fns": "^3.6.0",
@@ -44,6 +45,7 @@
     "resend": "^6.4.2",
     "stripe": "^19.3.0",
     "tailwind-merge": "^2.3.0",
+    "utf-8-validate": "^6.0.5",
     "ws": "^8.18.3"
   },
   "devDependencies": {

@@ -110,15 +110,15 @@ export default function ProjectsTimelinePage() {
           <p className="text-text-secondary mt-1">Track all projects in one visual timeline</p>
         </div>
         <div className="flex items-center space-x-3">
-          <button className="flex items-center space-x-2 px-4 py-2 bg-surface dark:bg-surface-elevated border border-border rounded-lg hover:bg-background dark:hover:bg-surface transition-colors">
+          <button className="flex items-center space-x-2 px-4 py-2 glass-light hover:glass-medium rounded-lg transition-all">
             <Filter className="w-4 h-4 text-text-secondary" />
             <span className="text-text-primary">Filter</span>
           </button>
-          <button className="flex items-center space-x-2 px-4 py-2 bg-surface dark:bg-surface-elevated border border-border rounded-lg hover:bg-background dark:hover:bg-surface transition-colors">
+          <button className="flex items-center space-x-2 px-4 py-2 glass-light hover:glass-medium rounded-lg transition-all">
             <Download className="w-4 h-4 text-text-secondary" />
             <span className="text-text-primary">Export</span>
           </button>
-          <button className="flex items-center space-x-2 px-4 py-2 bg-primary text-white rounded-lg hover:opacity-90 transition-colors">
+          <button className="flex items-center space-x-2 px-4 py-2 glass-button text-white rounded-lg">
             <Plus className="w-4 h-4" />
             <span>New Project</span>
           </button>
@@ -127,22 +127,22 @@ export default function ProjectsTimelinePage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-surface dark:bg-surface-elevated rounded-xl p-6 border border-border">
+        <div className="glass-medium glass-hover rounded-xl p-6">
           <div className="flex items-center justify-between mb-3">
-            <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center">
-              <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <div className="w-10 h-10 rounded-lg glass-light flex items-center justify-center">
+              <Calendar className="w-5 h-5 text-blue-400 drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
             </div>
-            <TrendingUp className="w-4 h-4 text-green-500" />
+            <TrendingUp className="w-4 h-4 text-[#00D66B]" />
           </div>
           <p className="text-sm text-text-tertiary mb-1">Total Projects</p>
           <p className="text-3xl font-bold text-text-primary">{stats.totalProjects}</p>
-          <p className="text-xs text-green-600 dark:text-green-400 mt-2">+12% from last month</p>
+          <p className="text-xs text-[#00D66B] mt-2">+12% from last month</p>
         </div>
 
-        <div className="bg-surface dark:bg-surface-elevated rounded-xl p-6 border border-border">
+        <div className="glass-medium glass-hover rounded-xl p-6">
           <div className="flex items-center justify-between mb-3">
-            <div className="w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
-              <Clock className="w-5 h-5 text-green-600 dark:text-green-400" />
+            <div className="w-10 h-10 rounded-lg glass-light flex items-center justify-center">
+              <Clock className="w-5 h-5 text-[#00D66B] drop-shadow-[0_0_8px_rgba(0,214,107,0.5)]" />
             </div>
           </div>
           <p className="text-sm text-text-tertiary mb-1">On Track</p>
@@ -150,23 +150,23 @@ export default function ProjectsTimelinePage() {
           <p className="text-xs text-text-tertiary mt-2">Projects progressing well</p>
         </div>
 
-        <div className="bg-surface dark:bg-surface-elevated rounded-xl p-6 border border-border">
+        <div className="glass-medium glass-hover rounded-xl p-6">
           <div className="flex items-center justify-between mb-3">
-            <div className="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/20 flex items-center justify-center">
-              <Users className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+            <div className="w-10 h-10 rounded-lg glass-light flex items-center justify-center">
+              <Users className="w-5 h-5 text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]" />
             </div>
           </div>
           <p className="text-sm text-text-tertiary mb-1">Avg. Progress</p>
           <p className="text-3xl font-bold text-text-primary">{stats.avgProgress}%</p>
-          <div className="mt-2 h-1.5 bg-background dark:bg-surface rounded-full overflow-hidden">
-            <div className="h-full bg-purple-500" style={{ width: `${stats.avgProgress}%` }}></div>
+          <div className="mt-2 h-1.5 glass-subtle rounded-full overflow-hidden">
+            <div className="h-full bg-gradient-to-r from-purple-500 to-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.5)]" style={{ width: `${stats.avgProgress}%` }}></div>
           </div>
         </div>
 
-        <div className="bg-surface dark:bg-surface-elevated rounded-xl p-6 border border-border">
+        <div className="glass-medium glass-hover rounded-xl p-6">
           <div className="flex items-center justify-between mb-3">
-            <div className="w-10 h-10 rounded-lg bg-orange-100 dark:bg-orange-900/20 flex items-center justify-center">
-              <DollarSign className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+            <div className="w-10 h-10 rounded-lg glass-light flex items-center justify-center">
+              <DollarSign className="w-5 h-5 text-[#FF6B4A] drop-shadow-[0_0_8px_rgba(255,107,74,0.5)]" />
             </div>
           </div>
           <p className="text-sm text-text-tertiary mb-1">Total Budget</p>
@@ -180,20 +180,20 @@ export default function ProjectsTimelinePage() {
         <div className="flex items-center space-x-2">
           <button
             onClick={() => setViewMode('timeline')}
-            className={`px-4 py-2 rounded-lg transition-colors ${
+            className={`px-4 py-2 rounded-lg transition-all ${
               viewMode === 'timeline'
-                ? 'bg-primary text-white'
-                : 'bg-surface dark:bg-surface-elevated text-text-secondary hover:text-text-primary'
+                ? 'glass-button text-white'
+                : 'glass-light text-text-secondary hover:glass-medium hover:text-text-primary'
             }`}
           >
             Timeline View
           </button>
           <button
             onClick={() => setViewMode('stats')}
-            className={`px-4 py-2 rounded-lg transition-colors ${
+            className={`px-4 py-2 rounded-lg transition-all ${
               viewMode === 'stats'
-                ? 'bg-primary text-white'
-                : 'bg-surface dark:bg-surface-elevated text-text-secondary hover:text-text-primary'
+                ? 'glass-button text-white'
+                : 'glass-light text-text-secondary hover:glass-medium hover:text-text-primary'
             }`}
           >
             Statistics
@@ -205,10 +205,10 @@ export default function ProjectsTimelinePage() {
             <button
               key={range}
               onClick={() => setTimeRange(range as any)}
-              className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+              className={`px-3 py-1.5 text-sm rounded-lg transition-all ${
                 timeRange === range
-                  ? 'bg-primary text-white'
-                  : 'text-text-secondary hover:text-text-primary'
+                  ? 'glass-button text-white'
+                  : 'glass-subtle text-text-secondary hover:glass-light hover:text-text-primary'
               }`}
             >
               {range === 'year' ? '1Y' : `${range}D`}
@@ -218,8 +218,8 @@ export default function ProjectsTimelinePage() {
       </div>
 
       {/* Timeline Chart */}
-      <div className="bg-surface dark:bg-surface-elevated rounded-xl border border-border overflow-hidden">
-        <div className="p-6 border-b border-border">
+      <div className="glass-medium rounded-xl overflow-hidden">
+        <div className="p-6 border-b border-white/10">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-text-primary">Project Timeline Overview</h3>
             <div className="flex items-center space-x-4 text-xs">
@@ -263,7 +263,7 @@ export default function ProjectsTimelinePage() {
                 </div>
 
                 <div className="flex-1 px-8">
-                  <div className="relative h-12 bg-background dark:bg-surface rounded-lg overflow-hidden">
+                  <div className="relative h-12 glass-subtle rounded-lg overflow-hidden">
                     {/* Timeline bar */}
                     <div
                       className={`absolute top-0 bottom-0 ${project.color} opacity-20 rounded-lg`}
@@ -274,22 +274,22 @@ export default function ProjectsTimelinePage() {
                     ></div>
                     {/* Progress bar */}
                     <div
-                      className={`absolute top-0 bottom-0 ${project.color} rounded-lg flex items-center justify-center`}
+                      className={`absolute top-0 bottom-0 ${project.color} rounded-lg flex items-center justify-center shadow-[0_0_15px_rgba(255,107,74,0.3)]`}
                       style={{
                         left: '10%',
                         width: `${(60 * project.progress) / 100}%`,
                       }}
                     >
-                      <span className="text-xs font-semibold text-white">
+                      <span className="text-xs font-semibold text-white drop-shadow-lg">
                         {project.progress}%
                       </span>
                     </div>
                     {/* Start/End markers */}
                     <div className="absolute inset-0 flex items-center justify-between px-2 pointer-events-none">
-                      <span className="text-xs text-text-tertiary bg-surface dark:bg-surface-elevated px-2 py-0.5 rounded">
+                      <span className="text-xs text-text-tertiary glass-light px-2 py-0.5 rounded">
                         {new Date(project.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                       </span>
-                      <span className="text-xs text-text-tertiary bg-surface dark:bg-surface-elevated px-2 py-0.5 rounded">
+                      <span className="text-xs text-text-tertiary glass-light px-2 py-0.5 rounded">
                         {new Date(project.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                       </span>
                     </div>
@@ -313,13 +313,13 @@ export default function ProjectsTimelinePage() {
       </div>
 
       {/* Project Details Table */}
-      <div className="bg-surface dark:bg-surface-elevated rounded-xl border border-border overflow-hidden">
-        <div className="p-6 border-b border-border">
+      <div className="glass-medium rounded-xl overflow-hidden">
+        <div className="p-6 border-b border-white/10">
           <h3 className="text-lg font-semibold text-text-primary">Project Details</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-background dark:bg-surface">
+            <thead className="glass-subtle">
               <tr>
                 <th className="px-6 py-4 text-left text-xs font-medium text-text-tertiary uppercase">Project Name</th>
                 <th className="px-6 py-4 text-left text-xs font-medium text-text-tertiary uppercase">Start Date</th>
@@ -329,12 +329,12 @@ export default function ProjectsTimelinePage() {
                 <th className="px-6 py-4 text-left text-xs font-medium text-text-tertiary uppercase">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
+            <tbody className="divide-y divide-white/10">
               {projects.map((project) => (
-                <tr key={project.id} className="hover:bg-background dark:hover:bg-surface transition-colors">
+                <tr key={project.id} className="hover:bg-white/5 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center space-x-3">
-                      <div className={`w-2 h-2 rounded-full ${project.color}`}></div>
+                      <div className={`w-2 h-2 rounded-full ${project.color} shadow-[0_0_8px_rgba(255,107,74,0.5)]`}></div>
                       <span className="font-medium text-text-primary">{project.name}</span>
                     </div>
                   </td>
@@ -342,8 +342,8 @@ export default function ProjectsTimelinePage() {
                   <td className="px-6 py-4 text-text-secondary">{new Date(project.endDate).toLocaleDateString()}</td>
                   <td className="px-6 py-4">
                     <div className="flex items-center space-x-2">
-                      <div className="flex-1 h-2 bg-background dark:bg-surface rounded-full overflow-hidden max-w-[100px]">
-                        <div className={`h-full ${project.color}`} style={{ width: `${project.progress}%` }}></div>
+                      <div className="flex-1 h-2 glass-subtle rounded-full overflow-hidden max-w-[100px]">
+                        <div className={`h-full ${project.color} shadow-[0_0_10px_rgba(255,107,74,0.4)]`} style={{ width: `${project.progress}%` }}></div>
                       </div>
                       <span className="text-sm text-text-primary font-medium">{project.progress}%</span>
                     </div>

@@ -106,14 +106,14 @@ export default function AttendancePage() {
             Track your working hours and time logs
           </p>
         </div>
-        <button className="flex items-center space-x-2 px-4 py-2 bg-surface dark:bg-surface-elevated border border-border rounded-lg hover:bg-background dark:hover:bg-surface transition-colors">
+        <button className="flex items-center space-x-2 px-4 py-2 glass-light hover:glass-medium rounded-lg transition-all">
           <Download className="w-5 h-5 text-text-secondary" />
           <span className="text-text-primary">Export Report</span>
         </button>
       </div>
 
       {/* Clock In/Out Section */}
-      <div className="bg-gradient-to-br from-primary/10 to-secondary/10 rounded-2xl p-8 border border-primary/20">
+      <div className="glass-medium rounded-2xl p-8 border border-[#FF6B4A]/20">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-2xl font-bold text-text-primary mb-2">
@@ -129,8 +129,8 @@ export default function AttendancePage() {
             onClick={handleClockInOut}
             className={`flex items-center space-x-3 px-8 py-4 rounded-xl text-white font-semibold text-lg transition-all hover:scale-105 ${
               isClockedIn
-                ? 'bg-red-500 hover:bg-red-600'
-                : 'bg-green-500 hover:bg-green-600'
+                ? 'bg-red-500/80 hover:bg-red-500 shadow-[0_0_20px_rgba(239,68,68,0.4)]'
+                : 'bg-[#00D66B]/80 hover:bg-[#00D66B] shadow-[0_0_20px_rgba(0,214,107,0.4)]'
             }`}
           >
             {isClockedIn ? (
@@ -150,10 +150,10 @@ export default function AttendancePage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-surface dark:bg-surface-elevated rounded-2xl p-6 border border-border">
+        <div className="glass-medium glass-hover rounded-2xl p-6">
           <div className="flex items-center space-x-3 mb-3">
-            <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center">
-              <Clock className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+            <div className="w-12 h-12 rounded-xl glass-light flex items-center justify-center">
+              <Clock className="w-6 h-6 text-blue-400 drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
             </div>
             <div>
               <p className="text-sm text-text-tertiary">Today</p>
@@ -162,10 +162,10 @@ export default function AttendancePage() {
           </div>
         </div>
 
-        <div className="bg-surface dark:bg-surface-elevated rounded-2xl p-6 border border-border">
+        <div className="glass-medium glass-hover rounded-2xl p-6">
           <div className="flex items-center space-x-3 mb-3">
-            <div className="w-12 h-12 rounded-xl bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
-              <Calendar className="w-6 h-6 text-green-600 dark:text-green-400" />
+            <div className="w-12 h-12 rounded-xl glass-light flex items-center justify-center">
+              <Calendar className="w-6 h-6 text-[#00D66B] drop-shadow-[0_0_8px_rgba(0,214,107,0.5)]" />
             </div>
             <div>
               <p className="text-sm text-text-tertiary">This Week</p>
@@ -174,10 +174,10 @@ export default function AttendancePage() {
           </div>
         </div>
 
-        <div className="bg-surface dark:bg-surface-elevated rounded-2xl p-6 border border-border">
+        <div className="glass-medium glass-hover rounded-2xl p-6">
           <div className="flex items-center space-x-3 mb-3">
-            <div className="w-12 h-12 rounded-xl bg-purple-100 dark:bg-purple-900/20 flex items-center justify-center">
-              <Calendar className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+            <div className="w-12 h-12 rounded-xl glass-light flex items-center justify-center">
+              <Calendar className="w-6 h-6 text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]" />
             </div>
             <div>
               <p className="text-sm text-text-tertiary">This Month</p>
@@ -191,30 +191,30 @@ export default function AttendancePage() {
       <div className="flex items-center space-x-2">
         <button
           onClick={() => setView('daily')}
-          className={`px-4 py-2 rounded-lg transition-colors ${
+          className={`px-4 py-2 rounded-lg transition-all ${
             view === 'daily'
-              ? 'bg-primary text-white'
-              : 'bg-surface dark:bg-surface-elevated text-text-secondary hover:text-text-primary'
+              ? 'glass-button text-white'
+              : 'glass-light text-text-secondary hover:glass-medium hover:text-text-primary'
           }`}
         >
           Daily
         </button>
         <button
           onClick={() => setView('weekly')}
-          className={`px-4 py-2 rounded-lg transition-colors ${
+          className={`px-4 py-2 rounded-lg transition-all ${
             view === 'weekly'
-              ? 'bg-primary text-white'
-              : 'bg-surface dark:bg-surface-elevated text-text-secondary hover:text-text-primary'
+              ? 'glass-button text-white'
+              : 'glass-light text-text-secondary hover:glass-medium hover:text-text-primary'
           }`}
         >
           Weekly
         </button>
         <button
           onClick={() => setView('monthly')}
-          className={`px-4 py-2 rounded-lg transition-colors ${
+          className={`px-4 py-2 rounded-lg transition-all ${
             view === 'monthly'
-              ? 'bg-primary text-white'
-              : 'bg-surface dark:bg-surface-elevated text-text-secondary hover:text-text-primary'
+              ? 'glass-button text-white'
+              : 'glass-light text-text-secondary hover:glass-medium hover:text-text-primary'
           }`}
         >
           Monthly
@@ -222,13 +222,13 @@ export default function AttendancePage() {
       </div>
 
       {/* Time Entries */}
-      <div className="bg-surface dark:bg-surface-elevated rounded-2xl border border-border overflow-hidden">
-        <div className="p-6 border-b border-border">
+      <div className="glass-medium rounded-2xl overflow-hidden">
+        <div className="p-6 border-b border-white/10">
           <h3 className="text-lg font-semibold text-text-primary">Time Entries</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-background dark:bg-surface">
+            <thead className="glass-subtle">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-text-tertiary uppercase tracking-wider">
                   User
@@ -250,9 +250,9 @@ export default function AttendancePage() {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
+            <tbody className="divide-y divide-white/10">
               {timeEntries.map((entry) => (
-                <tr key={entry.id} className="hover:bg-background dark:hover:bg-surface transition-colors">
+                <tr key={entry.id} className="hover:bg-white/5 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-semibold text-sm">
                       {entry.user}

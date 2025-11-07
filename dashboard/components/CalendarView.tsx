@@ -55,30 +55,30 @@ export function CalendarView() {
   };
 
   return (
-    <div className="bg-white dark:bg-card-dark rounded-2xl p-6 border border-gray-100 dark:border-gray-800">
+    <div className="glass-medium rounded-2xl p-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-4">
-          <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
-            NOV <span className="text-gray-400">2020</span>
+          <h3 className="text-lg font-bold text-text-primary">
+            NOV <span className="text-text-tertiary">2020</span>
           </h3>
           <div className="flex items-center space-x-2">
-            <button className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
-              <ChevronLeft className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+            <button className="p-1 glass-subtle hover:glass-light rounded transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] hover:scale-110 active:scale-95">
+              <ChevronLeft className="w-4 h-4 text-text-tertiary transition-transform duration-300 hover:-translate-x-0.5" />
             </button>
-            <button className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
-              <ChevronRight className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+            <button className="p-1 glass-subtle hover:glass-light rounded transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] hover:scale-110 active:scale-95">
+              <ChevronRight className="w-4 h-4 text-text-tertiary transition-transform duration-300 hover:translate-x-0.5" />
             </button>
           </div>
         </div>
         <div className="flex items-center space-x-2">
-          <span className="text-sm text-gray-600 dark:text-gray-400">Show:</span>
-          <select className="text-sm bg-white dark:bg-gray-800 border-0 text-gray-900 dark:text-gray-100 focus:outline-none rounded px-2 py-1">
+          <span className="text-sm text-text-secondary">Show:</span>
+          <select className="text-sm glass-input border-0 text-text-primary focus:outline-none rounded px-2 py-1">
             <option>1 Week</option>
             <option>2 Weeks</option>
             <option>1 Month</option>
           </select>
-          <ChevronLeft className="w-4 h-4 text-gray-400 rotate-90" />
+          <ChevronLeft className="w-4 h-4 text-text-tertiary rotate-90" />
         </div>
       </div>
 
@@ -86,36 +86,13 @@ export function CalendarView() {
       <div className="grid grid-cols-7 gap-4">
         {weekDays.map((day, idx) => (
           <div key={day} className="text-center">
-            <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">{weekDates[idx]}</div>
-            <div className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">{day}</div>
+            <div className="text-xs text-text-tertiary mb-2">{weekDates[idx]}</div>
+            <div className="text-sm font-semibold text-text-primary mb-3">{day}</div>
             <div className="space-y-2 min-h-[200px]">
-              {/* Vertical axis label for first column */}
-              {idx === 0 && (
-                <div className="absolute left-6 top-32 flex flex-col items-center justify-center h-40">
-                  <span className="text-xs text-gray-400 writing-mode-vertical-rl transform rotate-180">
-                    Planning
-                  </span>
-                </div>
-              )}
-              {idx === 0 && (
-                <div className="absolute left-6 top-80 flex flex-col items-center justify-center h-20">
-                  <span className="text-xs text-gray-400 writing-mode-vertical-rl transform rotate-180">
-                    In Progress
-                  </span>
-                </div>
-              )}
-              {idx === 0 && (
-                <div className="absolute left-6 top-[26rem] flex flex-col items-center justify-center h-16">
-                  <span className="text-xs text-gray-400 writing-mode-vertical-rl transform rotate-180">
-                    Done
-                  </span>
-                </div>
-              )}
-
               {events[weekDates[idx]]?.map((event, eventIdx) => (
                 <div
                   key={eventIdx}
-                  className={`p-2 rounded-lg text-xs ${event.color}`}
+                  className={`p-2 rounded-lg text-xs glass-light glass-hover transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${event.color}`}
                 >
                   <div className="font-medium mb-1">{event.title}</div>
                   {event.team && (
@@ -126,7 +103,7 @@ export function CalendarView() {
                       {event.members.map((member, idx) => (
                         <div
                           key={idx}
-                          className="w-5 h-5 rounded-full bg-blue-500 border-2 border-white dark:border-card-dark flex items-center justify-center text-white text-[10px] font-semibold"
+                          className="w-5 h-5 rounded-full bg-[#8098F9] border-2 border-white/20 flex items-center justify-center text-white text-[10px] font-semibold shadow-[0_0_10px_rgba(128,152,249,0.3)] transition-transform duration-300 hover:scale-125 hover:z-10"
                         >
                           {member}
                         </div>

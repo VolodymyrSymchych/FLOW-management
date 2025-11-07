@@ -31,12 +31,12 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="fixed left-0 top-0 z-40 h-screen w-20 bg-gray-900 dark:bg-surface-elevated border-r border-transparent dark:border-border">
+    <aside className="fixed left-0 top-0 z-40 h-screen w-20 glass-medium border-r border-white/10">
       <div className="flex h-full flex-col items-center py-8 space-y-8">
         {/* Logo */}
-        <div className="flex items-center justify-center w-12 h-12 rounded-full bg-white/10 dark:bg-primary/10">
-          <div className="w-8 h-8 rounded-full border-2 border-white/60 dark:border-primary/60 flex items-center justify-center">
-            <div className="w-3 h-3 rounded-full bg-white/60 dark:bg-primary/60"></div>
+        <div className="flex items-center justify-center w-12 h-12 rounded-full glass-light">
+          <div className="w-8 h-8 rounded-full border-2 border-[#8098F9] flex items-center justify-center">
+            <div className="w-3 h-3 rounded-full bg-[#8098F9] shadow-[0_0_10px_rgba(128,152,249,0.6)]"></div>
           </div>
         </div>
 
@@ -49,10 +49,10 @@ export function Sidebar() {
                 key={item.name}
                 href={item.href}
                 className={cn(
-                  'flex items-center justify-center w-12 h-12 rounded-xl transition-colors',
+                  'flex items-center justify-center w-12 h-12 rounded-xl transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
                   isActive
-                    ? 'bg-white/20 text-white'
-                    : 'text-white/60 hover:bg-white/10 hover:text-white'
+                    ? 'glass-light text-white border border-[#8098F9]/40 shadow-[0_0_20px_rgba(128,152,249,0.5)] scale-105'
+                    : 'text-white/60 hover:glass-subtle hover:text-white hover:border hover:border-white/10 hover:scale-105 active:scale-95'
                 )}
                 title={item.name}
               >

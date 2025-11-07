@@ -85,14 +85,14 @@ export default function DashboardPage() {
         {/* Left Column - Projects and Calendar */}
         <div className="lg:col-span-2 space-y-6">
           {/* Recent Projects */}
-          <div className="bg-white dark:bg-card-dark rounded-2xl p-6 border border-gray-100 dark:border-gray-800">
+          <div className="glass-medium rounded-2xl p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+              <h3 className="text-lg font-bold text-text-primary">
                 Recent Projects
               </h3>
               <button
                 onClick={() => router.push('/projects')}
-                className="text-sm text-primary-500 hover:text-primary-600"
+                className="text-sm text-[#8098F9] hover:text-[#a0b0fc] transition-colors"
               >
                 View All
               </button>
@@ -110,13 +110,13 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div className="text-center py-12">
-                <FolderKanban className="w-12 h-12 text-gray-300 dark:text-gray-700 mx-auto mb-3" />
-                <p className="text-gray-500 dark:text-gray-400">
+                <FolderKanban className="w-12 h-12 text-text-tertiary mx-auto mb-3" />
+                <p className="text-text-secondary">
                   No projects yet. Start by analyzing your first project!
                 </p>
                 <button
                   onClick={() => router.push('/projects/new')}
-                  className="mt-4 px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
+                  className="mt-4 px-4 py-2 glass-button text-white rounded-lg"
                 >
                   New Analysis
                 </button>

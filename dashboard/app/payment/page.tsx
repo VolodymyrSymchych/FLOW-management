@@ -72,13 +72,18 @@ export default function PaymentPage() {
     setLoading(planId);
 
     try {
+      console.log('Starting checkout for:', planId, amount);
+      
       const stripe = await stripePromise;
       
       if (!stripe) {
+        console.error('Stripe.js failed to load');
         alert('Stripe failed to load. Please refresh the page.');
         setLoading(null);
         return;
       }
+
+      console.log('Stripe loaded, creating checkout session...');
 
       const response = await fetch('/api/payments/create-checkout', {
         method: 'POST',
@@ -93,25 +98,35 @@ export default function PaymentPage() {
         }),
       });
 
+      console.log('Response status:', response.status);
       const data = await response.json();
+      console.log('Response data:', data);
 
-      if (data.error) {
-        alert(data.error);
+      if (!response.ok || data.error) {
+        console.error('API error:', data.error);
+        alert(data.error || 'Failed to create checkout session');
         setLoading(null);
         return;
       }
 
       if (data.sessionId) {
+        console.log('Redirecting to checkout with session:', data.sessionId);
         const result = await stripe.redirectToCheckout({ sessionId: data.sessionId });
         
         if (result.error) {
+          console.error('Stripe redirect error:', result.error);
           alert(result.error.message);
           setLoading(null);
         }
+        // If redirect succeeds, user will be navigated away
+      } else {
+        console.error('No sessionId in response');
+        alert('No checkout session created');
+        setLoading(null);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Payment error:', error);
-      alert('Payment failed. Please try again.');
+      alert(`Payment failed: ${error.message || 'Please try again'}`);
       setLoading(null);
     }
   };

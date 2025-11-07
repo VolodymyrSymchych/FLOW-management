@@ -1,13 +1,15 @@
-import { eq, and, or } from 'drizzle-orm';
+import { eq, and, or, desc } from 'drizzle-orm';
 import { db } from './db';
 import {
   users,
   projects,
   teams,
   teamMembers,
+  teamProjects,
   friendships,
   payments,
   emailVerifications,
+  notifications,
   type User,
   type InsertUser,
   type Project,
@@ -22,9 +24,12 @@ import {
   type InsertPayment,
   type EmailVerification,
   type InsertEmailVerification,
+  type Notification,
+  type InsertNotification,
 } from '../shared/schema';
 
 export class DatabaseStorage {
+  // Users
   async getUser(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
@@ -54,33 +59,7 @@ export class DatabaseStorage {
     return user;
   }
 
-  async createProject(projectData: InsertProject): Promise<Project> {
-    const [project] = await db.insert(projects).values(projectData).returning();
-    return project;
-  }
-
-  async getProject(id: number): Promise<Project | undefined> {
-    const [project] = await db.select().from(projects).where(eq(projects.id, id));
-    return project;
-  }
-
-  async getUserProjects(userId: number): Promise<Project[]> {
-    return await db.select().from(projects).where(eq(projects.userId, userId));
-  }
-
-  async updateProject(id: number, projectData: Partial<InsertProject>): Promise<Project | undefined> {
-    const [project] = await db
-      .update(projects)
-      .set({ ...projectData, updatedAt: new Date() })
-      .where(eq(projects.id, id))
-      .returning();
-    return project;
-  }
-
-  async deleteProject(id: number): Promise<void> {
-    await db.delete(projects).where(eq(projects.id, id));
-  }
-
+  // Teams
   async createTeam(teamData: InsertTeam): Promise<Team> {
     const [team] = await db.insert(teams).values(teamData).returning();
     return team;
@@ -123,6 +102,7 @@ export class DatabaseStorage {
     return await db.select().from(teamMembers).where(eq(teamMembers.teamId, teamId));
   }
 
+  // Friendships
   async sendFriendRequest(senderId: number, receiverId: number): Promise<Friendship> {
     const [friendship] = await db
       .insert(friendships)
@@ -167,6 +147,7 @@ export class DatabaseStorage {
       .where(and(eq(friendships.receiverId, userId), eq(friendships.status, 'pending')));
   }
 
+  // Payments
   async createPayment(paymentData: InsertPayment): Promise<Payment> {
     const [payment] = await db.insert(payments).values(paymentData).returning();
     return payment;
@@ -186,6 +167,7 @@ export class DatabaseStorage {
     return payment;
   }
 
+  // Email Verification
   async createEmailVerification(verificationData: InsertEmailVerification): Promise<EmailVerification> {
     const [verification] = await db
       .insert(emailVerifications)
@@ -212,6 +194,85 @@ export class DatabaseStorage {
       .update(users)
       .set({ emailVerified: true, updatedAt: new Date() })
       .where(eq(users.id, userId));
+  }
+
+  // Notifications
+  async getNotifications(userId: number) {
+    return await db
+      .select()
+      .from(notifications)
+      .where(eq(notifications.userId, userId))
+      .orderBy(desc(notifications.createdAt))
+      .limit(50);
+  }
+
+  async markNotificationAsRead(notificationId: number, userId: number) {
+    await db
+      .update(notifications)
+      .set({ read: true })
+      .where(and(
+        eq(notifications.id, notificationId),
+        eq(notifications.userId, userId)
+      ));
+  }
+
+  async createNotification(data: InsertNotification) {
+    const [notification] = await db
+      .insert(notifications)
+      .values(data)
+      .returning();
+    return notification;
+  }
+
+  // Projects
+  async getUserProjects(userId: number) {
+    const ownedProjects = await db
+      .select()
+      .from(projects)
+      .where(eq(projects.userId, userId));
+    return ownedProjects;
+  }
+
+  async getProject(projectId: number) {
+    const [project] = await db
+      .select()
+      .from(projects)
+      .where(eq(projects.id, projectId));
+    return project;
+  }
+
+  async createProject(data: InsertProject) {
+    const [project] = await db
+      .insert(projects)
+      .values(data)
+      .returning();
+    return project;
+  }
+
+  async updateProject(projectId: number, data: Partial<InsertProject>) {
+    const [project] = await db
+      .update(projects)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(projects.id, projectId))
+      .returning();
+    return project;
+  }
+
+  async deleteProject(projectId: number) {
+    await db
+      .delete(projects)
+      .where(eq(projects.id, projectId));
+  }
+
+  async userHasProjectAccess(userId: number, projectId: number): Promise<boolean> {
+    const [ownedProject] = await db
+      .select()
+      .from(projects)
+      .where(and(
+        eq(projects.id, projectId),
+        eq(projects.userId, userId)
+      ));
+    return !!ownedProject;
   }
 }
 

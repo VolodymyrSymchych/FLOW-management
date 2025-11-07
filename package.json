@@ -16,10 +16,12 @@
     "@types/bcryptjs": "^2.4.6",
     "@types/ws": "^8.18.1",
     "bcryptjs": "^3.0.3",
-    "drizzle-kit": "^0.31.6",
     "drizzle-orm": "^0.44.7",
     "jose": "^6.1.0",
     "nanoid": "^5.1.6",
     "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.31.6"
   }
 }

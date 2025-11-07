@@ -3,13 +3,21 @@ import Stripe from 'stripe';
 import { getSession } from '@/lib/auth';
 import { storage } from '../../../../../server/storage';
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('Missing STRIPE_SECRET_KEY');
-}
+let _stripe: Stripe | null = null;
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2025-10-29.clover',
-});
+function getStripe(): Stripe {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    throw new Error('Missing STRIPE_SECRET_KEY');
+  }
+
+  if (!_stripe) {
+    _stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2025-10-29.clover',
+    });
+  }
+
+  return _stripe;
+}
 
 export async function POST(request: Request) {
   try {
@@ -27,6 +35,7 @@ export async function POST(request: Request) {
       );
     }
 
+    const stripe = getStripe();
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(amount * 100),
       currency: currency || 'usd',

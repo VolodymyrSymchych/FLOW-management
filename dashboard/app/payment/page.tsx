@@ -21,11 +21,11 @@ const plans = [
       '1 team member',
       'Basic templates',
     ],
-    color: 'from-blue-500 to-cyan-500',
+    color: 'from-cyan-500 to-blue-500',
     popular: false,
   },
   {
-    id: 'pro',
+    id: 'professional',
     name: 'Professional',
     price: '$79',
     period: '/month',
@@ -72,7 +72,14 @@ export default function PaymentPage() {
     setLoading(planId);
 
     try {
-      // Redirect to Stripe test checkout
+      // For demo purposes, simulate success
+      // In production, this would call Stripe API
+      setTimeout(() => {
+        alert('Demo mode: Payment would be processed here. Add your Stripe keys to enable real payments.');
+        setLoading(null);
+      }, 1000);
+      
+      /* Uncomment this when Stripe keys are configured:
       const stripe = await stripePromise;
       
       if (!stripe) {
@@ -87,33 +94,38 @@ export default function PaymentPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          amount: amount * 100, // Convert to cents
+          amount: amount * 100,
           currency: 'usd',
           planId,
           planName: plans.find(p => p.id === planId)?.name || 'Plan',
         }),
       });
 
-      const { sessionId } = await response.json();
+      const { sessionId, error } = await response.json();
+
+      if (error) {
+        alert(error);
+        setLoading(null);
+        return;
+      }
 
       if (sessionId) {
-        // Redirect to Stripe Checkout
         const result = await stripe.redirectToCheckout({ sessionId });
         
         if (result.error) {
           alert(result.error.message);
         }
       }
+      */
     } catch (error) {
       console.error('Payment error:', error);
       alert('Payment failed. Please try again.');
-    } finally {
       setLoading(null);
     }
   };
 
   return (
-    <div className="min-h-screen bg-background px-4 py-12">
+    <div className="min-h-screen bg-background px-4 py-16">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-16">
@@ -125,8 +137,17 @@ export default function PaymentPage() {
           </p>
         </div>
 
+        {/* Popular Badge */}
+        {plans.find(p => p.popular) && (
+          <div className="text-center mb-4">
+            <span className="inline-block px-6 py-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full text-white text-sm font-semibold shadow-lg">
+              Most Popular
+            </span>
+          </div>
+        )}
+
         {/* Pricing Cards */}
-        <div className="grid md:grid-cols-3 gap-8 mb-12">
+        <div className="grid md:grid-cols-3 gap-6 items-end">
           {plans.map((plan) => {
             const Icon = plan.icon;
             const priceNum = parseInt(plan.price.replace('$', ''));
@@ -134,20 +155,12 @@ export default function PaymentPage() {
             return (
               <div
                 key={plan.id}
-                className={`relative glass-medium rounded-3xl p-8 border ${
+                className={`relative bg-[#2a2d35] rounded-3xl p-8 border transition-all duration-300 hover:scale-[1.02] flex flex-col ${
                   plan.popular
-                    ? 'border-primary/50 glass-hover'
+                    ? 'border-purple-500/50 shadow-[0_0_40px_rgba(168,85,247,0.3)]'
                     : 'border-white/10'
-                } transition-all duration-500 hover:scale-105`}
+                }`}
               >
-                {plan.popular && (
-                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                    <span className="px-4 py-1 bg-gradient-to-r from-primary to-secondary rounded-full text-white text-sm font-semibold shadow-lg">
-                      Most Popular
-                    </span>
-                  </div>
-                )}
-
                 {/* Icon */}
                 <div
                   className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${plan.color} flex items-center justify-center mb-6 shadow-2xl`}
@@ -156,49 +169,47 @@ export default function PaymentPage() {
                 </div>
 
                 {/* Plan Name */}
-                <h3 className="text-3xl font-bold text-text-primary mb-3">
+                <h3 className="text-3xl font-bold text-white mb-2">
                   {plan.name}
                 </h3>
-                <p className="text-text-secondary text-base mb-8">
+                <p className="text-gray-400 text-sm mb-6">
                   {plan.description}
                 </p>
 
                 {/* Price */}
-                <div className="mb-8 pb-6 border-b border-white/10">
-                  <div className="flex items-baseline justify-center">
-                    <span className="text-6xl font-bold gradient-text">
+                <div className="mb-8">
+                  <div className="flex items-baseline">
+                    <span className="text-5xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
                       {plan.price}
                     </span>
-                    <span className="text-text-tertiary ml-2 text-lg">{plan.period}</span>
+                    <span className="text-gray-400 ml-2 text-lg">{plan.period}</span>
                   </div>
                 </div>
 
                 {/* Features */}
-                <ul className="space-y-4 mb-10">
+                <ul className="space-y-4 mb-8 flex-grow">
                   {plan.features.map((feature, idx) => (
                     <li key={idx} className="flex items-start gap-3">
                       <div className="mt-0.5 flex-shrink-0">
-                        <Check className="w-5 h-5 text-primary" />
+                        <Check className="w-5 h-5 text-purple-400" />
                       </div>
-                      <span className="text-text-primary text-base">{feature}</span>
+                      <span className="text-gray-300 text-base">{feature}</span>
                     </li>
                   ))}
                 </ul>
 
-                {/* CTA Button */}
+                {/* CTA Button - Always at bottom */}
                 <button
                   onClick={() => handleCheckout(plan.id, priceNum)}
                   disabled={loading === plan.id}
-                  className={`w-full py-4 rounded-xl font-bold text-lg transition-all duration-300 ${
+                  className={`w-full py-4 rounded-xl font-bold text-base transition-all duration-300 flex items-center justify-center gap-2 mt-auto ${
                     plan.popular
-                      ? 'glass-button text-white shadow-[0_0_30px_rgba(128,152,249,0.4)]'
-                      : 'glass-light hover:glass-medium text-text-primary hover:scale-[1.02]'
+                      ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-[0_0_30px_rgba(168,85,247,0.4)] hover:shadow-[0_0_40px_rgba(168,85,247,0.6)]'
+                      : 'bg-[#3a3d45] text-white hover:bg-[#4a4d55]'
                   } ${loading === plan.id ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                  <span className="flex items-center justify-center gap-2">
-                    <CreditCard className="w-5 h-5" />
-                    {loading === plan.id ? 'Processing...' : 'Get Started'}
-                  </span>
+                  <CreditCard className="w-5 h-5" />
+                  {loading === plan.id ? 'Processing...' : 'Get Started'}
                 </button>
               </div>
             );
@@ -206,35 +217,12 @@ export default function PaymentPage() {
         </div>
 
         {/* FAQ or Additional Info */}
-        <div className="glass-medium rounded-3xl p-8 border border-white/10 text-center">
-          <h3 className="text-2xl font-bold text-text-primary mb-4">
-            All plans include
-          </h3>
-          <div className="grid md:grid-cols-4 gap-6 text-text-secondary">
-            <div>
-              <div className="text-3xl mb-2">🔒</div>
-              <div className="font-semibold text-text-primary mb-1">Secure</div>
-              <div className="text-sm">256-bit SSL encryption</div>
-            </div>
-            <div>
-              <div className="text-3xl mb-2">⚡</div>
-              <div className="font-semibold text-text-primary mb-1">Fast</div>
-              <div className="text-sm">Instant analysis results</div>
-            </div>
-            <div>
-              <div className="text-3xl mb-2">🤖</div>
-              <div className="font-semibold text-text-primary mb-1">AI-Powered</div>
-              <div className="text-sm">Claude 4 Sonnet</div>
-            </div>
-            <div>
-              <div className="text-3xl mb-2">💯</div>
-              <div className="font-semibold text-text-primary mb-1">Guarantee</div>
-              <div className="text-sm">30-day money back</div>
-            </div>
-          </div>
+        <div className="mt-16 text-center">
+          <p className="text-text-secondary">
+            Need a custom plan? <a href="/contact" className="text-primary hover:underline">Contact us</a> for enterprise solutions.
+          </p>
         </div>
       </div>
     </div>
   );
 }
-

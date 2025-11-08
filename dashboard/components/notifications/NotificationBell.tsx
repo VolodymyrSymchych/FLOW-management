@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Bell, X } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { createPortal } from 'react-dom';
 
 interface Notification {
   id: number;
@@ -17,6 +18,14 @@ interface Notification {
 export function NotificationBell() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, right: 0 });
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     fetchNotifications();
@@ -24,6 +33,36 @@ export function NotificationBell() {
     const interval = setInterval(fetchNotifications, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  // Update dropdown position when shown
+  useEffect(() => {
+    if (showNotifications && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + 8,
+        right: window.innerWidth - rect.right
+      });
+    }
+  }, [showNotifications]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        buttonRef.current &&
+        dropdownRef.current &&
+        !buttonRef.current.contains(event.target as Node) &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowNotifications(false);
+      }
+    };
+
+    if (showNotifications) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showNotifications]);
 
   const fetchNotifications = async () => {
     try {
@@ -73,6 +112,7 @@ export function NotificationBell() {
   return (
     <div className="relative">
       <button
+        ref={buttonRef}
         onClick={() => setShowNotifications(!showNotifications)}
         className="relative p-2 rounded-lg glass-subtle hover:glass-light transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] hover:scale-110 active:scale-95"
       >
@@ -84,13 +124,20 @@ export function NotificationBell() {
         )}
       </button>
 
-      {showNotifications && (
+      {showNotifications && mounted && createPortal(
         <>
           <div
-            className="fixed inset-0 z-40"
+            className="fixed inset-0 z-[9998]"
             onClick={() => setShowNotifications(false)}
           />
-          <div className="absolute right-0 mt-2 w-96 max-h-[600px] rounded-2xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.4)] z-50 overflow-hidden bg-[#0a0d14]/80 backdrop-blur-xl backdrop-saturate-150 animate-fadeIn">
+          <div
+            ref={dropdownRef}
+            className="fixed w-96 max-h-[600px] rounded-2xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.4)] z-[10000] overflow-hidden bg-[#0a0d14]/80 backdrop-blur-xl backdrop-saturate-150 animate-fadeIn"
+            style={{
+              top: `${dropdownPosition.top}px`,
+              right: `${dropdownPosition.right}px`
+            }}
+          >
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-white/10 bg-white/5">
               <h3 className="font-semibold text-text-primary">Notifications</h3>
@@ -171,7 +218,8 @@ export function NotificationBell() {
               </div>
             )}
           </div>
-        </>
+        </>,
+        document.body
       )}
     </div>
   );

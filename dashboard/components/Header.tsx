@@ -4,6 +4,7 @@ import { Search, ChevronDown } from 'lucide-react';
 import { NotificationBell } from './notifications/NotificationBell';
 import { useEffect, useState, memo, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { createPortal } from 'react-dom';
 
 interface User {
   id: number;
@@ -18,10 +19,17 @@ export const Header = memo(function Header() {
   const [user, setUser] = useState<User | null>(null);
   const [showTeamsDropdown, setShowTeamsDropdown] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const teamsButtonRef = useRef<HTMLButtonElement>(null);
   const teamsDropdownRef = useRef<HTMLDivElement>(null);
   const userButtonRef = useRef<HTMLButtonElement>(null);
   const userDropdownRef = useRef<HTMLDivElement>(null);
+  const [teamsDropdownPosition, setTeamsDropdownPosition] = useState({ top: 0, left: 0 });
+  const [userDropdownPosition, setUserDropdownPosition] = useState({ top: 0, right: 0 });
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     // Fetch user from session
@@ -35,20 +43,41 @@ export const Header = memo(function Header() {
       .catch(err => console.error('Failed to fetch user:', err));
   }, []);
 
+  // Update dropdown positions when shown
+  useEffect(() => {
+    if (showTeamsDropdown && teamsButtonRef.current) {
+      const rect = teamsButtonRef.current.getBoundingClientRect();
+      setTeamsDropdownPosition({
+        top: rect.bottom + 8,
+        left: rect.left
+      });
+    }
+  }, [showTeamsDropdown]);
+
+  useEffect(() => {
+    if (showUserDropdown && userButtonRef.current) {
+      const rect = userButtonRef.current.getBoundingClientRect();
+      setUserDropdownPosition({
+        top: rect.bottom + 8,
+        right: window.innerWidth - rect.right
+      });
+    }
+  }, [showUserDropdown]);
+
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
-        teamsButtonRef.current && 
-        teamsDropdownRef.current && 
+        teamsButtonRef.current &&
+        teamsDropdownRef.current &&
         !teamsButtonRef.current.contains(event.target as Node) &&
         !teamsDropdownRef.current.contains(event.target as Node)
       ) {
         setShowTeamsDropdown(false);
       }
       if (
-        userButtonRef.current && 
-        userDropdownRef.current && 
+        userButtonRef.current &&
+        userDropdownRef.current &&
         !userButtonRef.current.contains(event.target as Node) &&
         !userDropdownRef.current.contains(event.target as Node)
       ) {
@@ -89,7 +118,7 @@ export const Header = memo(function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-[9999] glass-medium border-b border-white/10 isolate">
+    <header className="sticky top-0 z-40 glass-medium border-b border-white/10">
       <div className="flex items-center justify-between px-8 py-4">
         {/* Left section */}
         <div className="flex items-center space-x-8">
@@ -108,55 +137,59 @@ export const Header = memo(function Header() {
               />
             </button>
 
-            {showTeamsDropdown && (
+            {showTeamsDropdown && mounted && createPortal(
               <>
                 <div
                   className="fixed inset-0 z-[9998]"
                   onClick={() => setShowTeamsDropdown(false)}
                 />
-                <div 
+                <div
                   ref={teamsDropdownRef}
-                  className="absolute top-full left-0 mt-2 w-56 rounded-xl border border-white/20 shadow-2xl z-[10000] bg-[#0F1419]/95 backdrop-blur-xl overflow-hidden"
-                  style={{ isolation: 'isolate' }}
+                  className="fixed w-56 rounded-xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.4)] z-[10000] bg-[#0a0d14]/80 backdrop-blur-xl backdrop-saturate-150 overflow-hidden animate-fadeIn"
+                  style={{
+                    top: `${teamsDropdownPosition.top}px`,
+                    left: `${teamsDropdownPosition.left}px`
+                  }}
                 >
                   <div className="p-2">
                     <div className="px-3 py-2 text-xs text-text-tertiary uppercase tracking-wider font-medium">
                       Teams
                     </div>
-                    <button 
+                    <button
                       onClick={() => {
                         setShowTeamsDropdown(false);
                         router.push('/projects');
                       }}
-                      className="w-full text-left px-3 py-2 rounded-lg hover:bg-white/10 text-text-primary transition-colors duration-200"
+                      className="w-full text-left px-3 py-2 rounded-lg hover:bg-white/10 hover:backdrop-blur-sm text-text-primary transition-all duration-200"
                     >
                       <div className="font-medium text-sm">All Teams</div>
                       <div className="text-xs text-text-tertiary">View all projects</div>
                     </button>
-                    <button 
+                    <button
                       onClick={() => setShowTeamsDropdown(false)}
-                      className="w-full text-left px-3 py-2 rounded-lg hover:bg-white/10 text-text-primary transition-colors duration-200"
+                      className="w-full text-left px-3 py-2 rounded-lg hover:bg-white/10 hover:backdrop-blur-sm text-text-primary transition-all duration-200"
                     >
                       <div className="font-medium text-sm">Development</div>
                       <div className="text-xs text-text-tertiary">5 members</div>
                     </button>
-                    <button 
+                    <button
                       onClick={() => setShowTeamsDropdown(false)}
-                      className="w-full text-left px-3 py-2 rounded-lg hover:bg-white/10 text-text-primary transition-colors duration-200"
+                      className="w-full text-left px-3 py-2 rounded-lg hover:bg-white/10 hover:backdrop-blur-sm text-text-primary transition-all duration-200"
                     >
                       <div className="font-medium text-sm">Design</div>
                       <div className="text-xs text-text-tertiary">3 members</div>
                     </button>
-                    <button 
+                    <button
                       onClick={() => setShowTeamsDropdown(false)}
-                      className="w-full text-left px-3 py-2 rounded-lg hover:bg-white/10 text-text-primary transition-colors duration-200"
+                      className="w-full text-left px-3 py-2 rounded-lg hover:bg-white/10 hover:backdrop-blur-sm text-text-primary transition-all duration-200"
                     >
                       <div className="font-medium text-sm">Marketing</div>
                       <div className="text-xs text-text-tertiary">2 members</div>
                     </button>
                   </div>
                 </div>
-              </>
+              </>,
+              document.body
             )}
           </div>
         </div>
@@ -164,8 +197,10 @@ export const Header = memo(function Header() {
         {/* Right section */}
         <div className="flex items-center space-x-4">
           {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-text-tertiary pointer-events-none" />
+          <div className="relative flex items-center">
+            <div className="absolute left-3 flex items-center h-full pointer-events-none">
+              <Search className="w-4 h-4 text-text-tertiary" />
+            </div>
             <input
               type="text"
               placeholder="Search"
@@ -201,16 +236,19 @@ export const Header = memo(function Header() {
               />
             </button>
 
-            {showUserDropdown && (
+            {showUserDropdown && mounted && createPortal(
               <>
                 <div
                   className="fixed inset-0 z-[9998]"
                   onClick={() => setShowUserDropdown(false)}
                 />
-                <div 
+                <div
                   ref={userDropdownRef}
-                  className="absolute top-full right-0 mt-2 w-64 rounded-xl border border-white/20 shadow-2xl z-[10000] bg-[#0F1419]/95 backdrop-blur-xl overflow-hidden"
-                  style={{ isolation: 'isolate' }}
+                  className="fixed w-64 rounded-xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.4)] z-[10000] bg-[#0a0d14]/80 backdrop-blur-xl backdrop-saturate-150 overflow-hidden animate-fadeIn"
+                  style={{
+                    top: `${userDropdownPosition.top}px`,
+                    right: `${userDropdownPosition.right}px`
+                  }}
                 >
                   <div className="p-2">
                     {/* User Info */}
@@ -227,7 +265,7 @@ export const Header = memo(function Header() {
                         setShowUserDropdown(false);
                         router.push('/settings');
                       }}
-                      className="w-full text-left px-3 py-2 rounded-lg hover:bg-white/10 text-text-primary transition-colors duration-200 mt-2"
+                      className="w-full text-left px-3 py-2 rounded-lg hover:bg-white/10 hover:backdrop-blur-sm text-text-primary transition-all duration-200 mt-2"
                     >
                       ⚙️ Settings
                     </button>
@@ -236,7 +274,7 @@ export const Header = memo(function Header() {
                         setShowUserDropdown(false);
                         router.push('/friends');
                       }}
-                      className="w-full text-left px-3 py-2 rounded-lg hover:bg-white/10 text-text-primary transition-colors duration-200"
+                      className="w-full text-left px-3 py-2 rounded-lg hover:bg-white/10 hover:backdrop-blur-sm text-text-primary transition-all duration-200"
                     >
                       👥 Friends
                     </button>
@@ -245,7 +283,7 @@ export const Header = memo(function Header() {
                         setShowUserDropdown(false);
                         router.push('/payment');
                       }}
-                      className="w-full text-left px-3 py-2 rounded-lg hover:bg-white/10 text-text-primary transition-colors duration-200"
+                      className="w-full text-left px-3 py-2 rounded-lg hover:bg-white/10 hover:backdrop-blur-sm text-text-primary transition-all duration-200"
                     >
                       💳 Billing
                     </button>
@@ -257,14 +295,15 @@ export const Header = memo(function Header() {
                           setShowUserDropdown(false);
                           handleSignOut();
                         }}
-                        className="w-full text-left px-3 py-2 rounded-lg hover:bg-red-500/20 text-red-400 transition-colors duration-200"
+                        className="w-full text-left px-3 py-2 rounded-lg hover:bg-red-500/20 hover:backdrop-blur-sm text-red-400 transition-all duration-200"
                       >
                         🚪 Sign Out
                       </button>
                     </div>
                   </div>
                 </div>
-              </>
+              </>,
+              document.body
             )}
           </div>
         </div>

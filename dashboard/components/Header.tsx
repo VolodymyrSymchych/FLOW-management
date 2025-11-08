@@ -37,10 +37,7 @@ export function Header() {
       <div className="flex items-center justify-between px-8 py-4">
         {/* Left section */}
         <div className="flex items-center space-x-8">
-          <Logo variant="compact" showText={false} />
-          <h1 className="text-2xl font-bold text-[#8098F9]">
-            Overview
-          </h1>
+          <Logo variant="compact" showText={true} />
           <div className="relative group">
             <button className="flex items-center space-x-2 glass-light px-3 py-1.5 rounded-lg hover:glass-medium transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] hover:scale-105 active:scale-95">
               <span className="text-sm text-text-primary">All Teams</span>

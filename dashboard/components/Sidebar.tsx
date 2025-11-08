@@ -49,16 +49,12 @@ export function Sidebar() {
       <div className="flex h-full flex-col py-6">
         {/* Logo Section */}
         <div className={cn('px-4 mb-8 transition-all duration-300', isExpanded ? 'px-6' : 'px-4')}>
-          <div className={cn('flex items-center', isExpanded ? 'justify-between' : 'justify-center')}>
-            {isExpanded ? (
-              <Logo variant="default" showText={true} />
-            ) : (
-              <Logo variant="icon" showText={false} />
-            )}
+          <div className={cn('flex items-center gap-3', isExpanded ? 'justify-between' : 'justify-center')}>
+            <Logo variant={isExpanded ? "default" : "icon"} showText={false} />
             <button
               onClick={toggleSidebar}
               className={cn(
-                'p-2 rounded-lg glass-light hover:glass-medium transition-all duration-300 hover:scale-110 active:scale-95',
+                'p-2 rounded-lg glass-light hover:glass-medium transition-all duration-300 hover:scale-110 active:scale-95 flex-shrink-0',
                 !isExpanded && 'mx-auto'
               )}
               title={isExpanded ? 'Collapse sidebar' : 'Expand sidebar'}

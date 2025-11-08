@@ -2,6 +2,7 @@
 
 import { Search, ChevronDown } from 'lucide-react';
 import { NotificationBell } from './notifications/NotificationBell';
+import { Logo } from './Logo';
 import { useEffect, useState } from 'react';
 
 interface User {
@@ -36,6 +37,7 @@ export function Header() {
       <div className="flex items-center justify-between px-8 py-4">
         {/* Left section */}
         <div className="flex items-center space-x-8">
+          <Logo variant="compact" showText={false} />
           <h1 className="text-2xl font-bold text-[#8098F9]">
             Overview
           </h1>

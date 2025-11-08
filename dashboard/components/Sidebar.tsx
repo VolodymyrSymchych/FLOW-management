@@ -35,10 +35,8 @@ export function Sidebar() {
     <aside className="fixed left-0 top-0 z-40 h-screen w-20 glass-medium border-r border-white/10">
       <div className="flex h-full flex-col items-center py-8 space-y-8">
         {/* Logo */}
-        <div className="flex items-center justify-center w-12 h-12 rounded-full glass-light">
-          <div className="w-8 h-8 rounded-full border-2 border-[#8098F9] flex items-center justify-center">
-            <div className="w-3 h-3 rounded-full bg-[#8098F9] shadow-[0_0_10px_rgba(128,152,249,0.6)]"></div>
-          </div>
+        <div className="p-2">
+          <Logo variant="icon" showText={false} />
         </div>
 
         {/* Navigation */}

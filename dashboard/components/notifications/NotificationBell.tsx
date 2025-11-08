@@ -1,9 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Bell, Check, X } from 'lucide-react';
+import { Bell, X } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import Link from 'next/link';
 
 interface Notification {
   id: number;
@@ -18,7 +17,6 @@ interface Notification {
 export function NotificationBell() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     fetchNotifications();

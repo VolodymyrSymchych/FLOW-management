@@ -54,7 +54,7 @@ export default function SignInPage() {
           {/* Logo/Title */}
           <div className="text-center mb-8">
             <div className="flex justify-center mb-6">
-              <Logo variant="default" showText={true} />
+              <Logo variant="default" showText={false} />
             </div>
             <h1 className="text-4xl font-bold gradient-text mb-2">Welcome Back</h1>
             <p className="text-text-secondary">Sign in to your account to continue</p>

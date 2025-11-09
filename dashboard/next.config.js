@@ -13,10 +13,15 @@ const nextConfig = {
       };
     }
     
-    // Handle AWS SDK modules
+    // Fix for AWS SDK util-endpoints module resolution
     config.resolve.alias = {
       ...config.resolve.alias,
     };
+    
+    // Ignore missing optional dependencies
+    config.ignoreWarnings = [
+      { module: /node_modules\/@aws-sdk\/util-endpoints/ },
+    ];
     
     return config;
   },

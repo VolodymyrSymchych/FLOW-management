@@ -3,7 +3,7 @@ const nextConfig = {
   reactStrictMode: true,
   // Transpile AWS SDK packages
   transpilePackages: ['@aws-sdk', '@aws-crypto'],
-  webpack: (config, { isServer }) => {
+  webpack: (config, { isServer, dir }) => {
     if (!isServer) {
       // Exclude AWS SDK from client-side bundle
       config.resolve.fallback = {
@@ -16,10 +16,11 @@ const nextConfig = {
     }
 
     // Add parent node_modules to resolution paths for monorepo
+    // Use webpack's context instead of __dirname for Edge Runtime compatibility
     const path = require('path');
     config.resolve.modules = [
-      path.resolve(__dirname, 'node_modules'),
-      path.resolve(__dirname, '../node_modules'),
+      path.join(dir, 'node_modules'),
+      path.join(dir, '../node_modules'),
       'node_modules',
     ];
 

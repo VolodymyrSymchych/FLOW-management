@@ -20,8 +20,10 @@ const nextConfig = {
     
     return config;
   },
-  // Exclude AWS SDK from client-side bundle
-  serverExternalPackages: ['@aws-sdk/client-s3', '@aws-sdk/s3-request-presigner'],
+  // Use experimental option for Next.js 14.2.0
+  experimental: {
+    serverComponentsExternalPackages: ['@aws-sdk/client-s3', '@aws-sdk/s3-request-presigner'],
+  },
 };
 
 module.exports = nextConfig;

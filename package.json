@@ -14,6 +14,9 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.927.0",
     "@aws-sdk/s3-request-presigner": "^3.927.0",
+    "@aws-crypto/crc32": "^5.2.0",
+    "@aws-crypto/crc32c": "^5.2.0",
+    "@aws-crypto/util": "^5.2.0",
     "@neondatabase/serverless": "^1.0.2",
     "@types/bcryptjs": "^2.4.6",
     "@types/ws": "^8.18.1",

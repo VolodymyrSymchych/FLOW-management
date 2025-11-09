@@ -13,19 +13,19 @@ interface Invoice {
   id: number;
   invoiceNumber: string;
   clientName: string | null;
-  clientEmail?: string | null;
-  clientAddress?: string | null;
+  clientEmail: string | null;
+  clientAddress: string | null;
   amount: number;
-  currency?: string;
-  taxRate?: number;
+  currency: string;
+  taxRate: number;
   totalAmount: number;
   status: string;
   issueDate: string;
-  dueDate: string | Date | null;
+  dueDate: string | null;
   paidDate: string | null;
-  description?: string | null;
-  items?: string | null;
-  notes?: string | null;
+  description: string | null;
+  items: string | null;
+  notes: string | null;
   projectId?: number;
 }
 
@@ -34,7 +34,7 @@ interface Expense {
   category: string;
   description: string;
   amount: number;
-  currency?: string;
+  currency: string;
   expenseDate: string;
   receiptUrl?: string | null;
   notes?: string | null;
@@ -107,6 +107,16 @@ export function InvoicesAndCashFlow({ projectId }: InvoicesAndCashFlowProps) {
   const handleEditExpense = (expense: Expense) => {
     setEditingExpense(expense);
     setShowExpenseForm(true);
+  };
+
+  const handleSendEmail = async (invoice: Invoice, action: 'send' | 'remind') => {
+    try {
+      const response = await axios.post(`/api/invoices/${invoice.id}/send-email`, { action });
+      alert(response.data.message || 'Email sent successfully');
+    } catch (error: any) {
+      console.error('Failed to send email:', error);
+      alert(error.response?.data?.error || 'Failed to send email');
+    }
   };
 
   const handleGeneratePublicLink = async (invoice: Invoice) => {
@@ -332,7 +342,7 @@ export function InvoicesAndCashFlow({ projectId }: InvoicesAndCashFlowProps) {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-sm text-text-secondary">
-                        {invoice.dueDate ? formatDate(invoice.dueDate instanceof Date ? invoice.dueDate : invoice.dueDate) : '-'}
+                        {invoice.dueDate ? formatDate(invoice.dueDate) : '-'}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center space-x-2">

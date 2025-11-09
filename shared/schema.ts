@@ -315,7 +315,7 @@ export const reportsRelations = relations(reports, ({ one }) => ({
   }),
 }));
 
-export const fileAttachments = pgTable('file_attachments', {
+export const fileAttachments: any = pgTable('file_attachments', {
   id: serial('id').primaryKey(),
   projectId: integer('project_id').references(() => projects.id, { onDelete: 'cascade' }),
   taskId: integer('task_id').references(() => tasks.id, { onDelete: 'cascade' }),

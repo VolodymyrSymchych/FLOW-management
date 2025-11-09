@@ -664,7 +664,7 @@ export class DatabaseStorage {
     }
 
     // Get paid invoices (income) in date range
-    const invoices = await db
+    const paidInvoices = await db
       .select()
       .from(invoices)
       .where(
@@ -677,7 +677,7 @@ export class DatabaseStorage {
       );
 
     // Get expenses in date range
-    const expenses = await db
+    const expenseRecords = await db
       .select()
       .from(expenses)
       .where(
@@ -691,7 +691,7 @@ export class DatabaseStorage {
     // Group by date
     const cashFlowMap = new Map<string, { income: number; expenses: number }>();
 
-    invoices.forEach(invoice => {
+    paidInvoices.forEach(invoice => {
       if (!invoice.paidDate) return;
       const dateStr = new Date(invoice.paidDate).toISOString().split('T')[0];
       const existing = cashFlowMap.get(dateStr) || { income: 0, expenses: 0 };
@@ -701,7 +701,7 @@ export class DatabaseStorage {
       });
     });
 
-    expenses.forEach(expense => {
+    expenseRecords.forEach(expense => {
       const dateStr = new Date(expense.expenseDate).toISOString().split('T')[0];
       const existing = cashFlowMap.get(dateStr) || { income: 0, expenses: 0 };
       cashFlowMap.set(dateStr, {
@@ -790,7 +790,7 @@ export class DatabaseStorage {
     }
 
     // Get paid invoices grouped by project
-    const invoices = await db
+    const paidInvoices = await db
       .select()
       .from(invoices)
       .where(
@@ -803,7 +803,7 @@ export class DatabaseStorage {
       );
 
     // Get expenses grouped by category
-    const expenses = await db
+    const projectExpenses = await db
       .select()
       .from(expenses)
       .where(
@@ -816,7 +816,7 @@ export class DatabaseStorage {
 
     // Group income by project name (as category)
     const incomeByCategory = new Map<string, number>();
-    for (const invoice of invoices) {
+    for (const invoice of paidInvoices) {
       if (invoice.projectId) {
         const project = userProjects.find(p => p.id === invoice.projectId);
         const category = project?.name || 'Other';
@@ -827,7 +827,7 @@ export class DatabaseStorage {
 
     // Group expenses by category
     const expensesByCategory = new Map<string, number>();
-    expenses.forEach(expense => {
+    projectExpenses.forEach(expense => {
       const category = expense.category || 'other';
       const existing = expensesByCategory.get(category) || 0;
       expensesByCategory.set(category, existing + (expense.amount || 0));
@@ -835,8 +835,8 @@ export class DatabaseStorage {
 
     // Combine all categories
     const allCategories = new Set([
-      ...incomeByCategory.keys(),
-      ...expensesByCategory.keys(),
+      ...Array.from(incomeByCategory.keys()),
+      ...Array.from(expensesByCategory.keys()),
     ]);
 
     const result = Array.from(allCategories).map(category => ({
@@ -920,8 +920,8 @@ export class DatabaseStorage {
 
   // File Attachments
   async createFileAttachment(fileData: InsertFileAttachment): Promise<FileAttachment> {
-    const [file] = await db.insert(fileAttachments).values(fileData).returning();
-    return file;
+    const result = await db.insert(fileAttachments).values(fileData).returning();
+    return (result as FileAttachment[])[0];
   }
 
   async getFileAttachments(projectId?: number, taskId?: number): Promise<FileAttachment[]> {

@@ -86,13 +86,13 @@ export const InvoiceDueDateReminder = ({
 }: DueDateReminderProps) => (
   <Html>
     <Head />
-    <Preview>Invoice #{invoiceNumber} due in {daysUntilDue} days</Preview>
+    <Preview>Invoice #{invoiceNumber} due in {String(daysUntilDue)} days</Preview>
     <Body style={main}>
       <Container style={container}>
         <Heading style={h1}>Invoice Due Date Reminder</Heading>
         <Text style={text}>Dear {clientName},</Text>
         <Text style={text}>
-          This is a friendly reminder that invoice #{invoiceNumber} for ${amount} is due in {daysUntilDue} day{daysUntilDue > 1 ? 's' : ''}.
+          This is a friendly reminder that invoice #{invoiceNumber} for ${amount} is due in {String(daysUntilDue)} day{daysUntilDue > 1 ? 's' : ''}.
         </Text>
         <Text style={text}>
           The due date is {dueDate}. Please ensure payment is arranged before this date.

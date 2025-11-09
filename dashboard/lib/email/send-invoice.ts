@@ -89,8 +89,6 @@ export async function sendInvoiceEmail(
       console.error('Failed to send invoice email:', error);
       throw new Error('Failed to send invoice email');
     }
-
-    return data;
   } catch (error) {
     console.error('Error sending invoice email:', error);
     throw error;
@@ -130,8 +128,6 @@ export async function sendOverdueReminder(invoice: Invoice): Promise<void> {
       console.error('Failed to send overdue reminder:', error);
       throw new Error('Failed to send overdue reminder');
     }
-
-    return data;
   } catch (error) {
     console.error('Error sending overdue reminder:', error);
     throw error;
@@ -171,8 +167,6 @@ export async function sendDueDateReminder(invoice: Invoice): Promise<void> {
       console.error('Failed to send due date reminder:', error);
       throw new Error('Failed to send due date reminder');
     }
-
-    return data;
   } catch (error) {
     console.error('Error sending due date reminder:', error);
     throw error;
@@ -210,8 +204,6 @@ export async function sendStatusChangeEmail(
       console.error('Failed to send status change email:', error);
       throw new Error('Failed to send status change email');
     }
-
-    return data;
   } catch (error) {
     console.error('Error sending status change email:', error);
     throw error;

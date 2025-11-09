@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npm install && cd dashboard && npm install && npm run build",
+  "buildCommand": "bash build.sh",
   "installCommand": "npm install",
   "framework": null
 }

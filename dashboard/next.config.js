@@ -23,6 +23,13 @@ const nextConfig = {
       'node_modules',
     ];
 
+    // Suppress warnings for deprecated Tailwind CSS line-clamp plugin
+    // (line-clamp is now built into Tailwind CSS v3.3+)
+    config.ignoreWarnings = [
+      { module: /node_modules\/@tailwindcss\/line-clamp/ },
+      /Can't resolve '@tailwindcss\/line-clamp'/,
+    ];
+
     return config;
   },
   // Use experimental option for Next.js 14.2.0

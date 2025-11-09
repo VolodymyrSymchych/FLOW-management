@@ -13,6 +13,7 @@ import {
   FileText,
   ChevronLeft,
   ChevronRight,
+  Receipt,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -24,7 +25,8 @@ import { memo, useCallback } from 'react';
 const navigation = [
   { name: 'Overview', href: '/', icon: LayoutDashboard },
   { name: 'Projects', href: '/projects', icon: FolderKanban },
-  { name: 'Timeline', href: '/projects-timeline', icon: Calendar },
+  { name: 'Invoices', href: '/invoices', icon: Receipt },
+  { name: 'Timeline', href: '/timeline', icon: Calendar },
   { name: 'Tasks', href: '/tasks', icon: CheckSquare },
   { name: 'Attendance', href: '/attendance', icon: Clock },
   { name: 'Reports', href: '/reports', icon: FileText },

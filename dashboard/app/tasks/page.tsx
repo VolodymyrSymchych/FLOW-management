@@ -1,9 +1,28 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Plus, Filter, Search, Calendar, User } from 'lucide-react';
+import { Plus, Calendar, Edit } from 'lucide-react';
 import axios from 'axios';
 import { Task } from '@/lib/tasks-api';
+import {
+  DndContext,
+  DragOverlay,
+  closestCorners,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+  useDroppable,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { EditTaskModal } from '@/components/EditTaskModal';
 
 interface Project {
   id: number;
@@ -15,6 +34,8 @@ export default function TasksPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNewTaskForm, setShowNewTaskForm] = useState(false);
+  const [editingTask, setEditingTask] = useState<any | null>(null);
+  const [activeId, setActiveId] = useState<number | null>(null);
   const [newTask, setNewTask] = useState({
     title: '',
     description: '',
@@ -24,6 +45,13 @@ export default function TasksPage() {
     priority: 'medium' as 'low' | 'medium' | 'high',
     status: 'todo' as 'todo' | 'in_progress' | 'done'
   });
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   useEffect(() => {
     loadProjects();
@@ -54,8 +82,13 @@ export default function TasksPage() {
     e.preventDefault();
     try {
       const taskData = {
-        ...newTask,
-        project_id: newTask.project_id ? parseInt(newTask.project_id as string) : undefined,
+        title: newTask.title,
+        description: newTask.description || null,
+        project_id: newTask.project_id && newTask.project_id !== '' ? parseInt(newTask.project_id as string) : null,
+        assignee: newTask.assignee || null,
+        due_date: newTask.due_date || null,
+        priority: newTask.priority,
+        status: newTask.status,
       };
       await axios.post('/api/tasks', taskData);
       setNewTask({
@@ -69,9 +102,10 @@ export default function TasksPage() {
       });
       setShowNewTaskForm(false);
       loadTasks();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to create task:', error);
-      alert('Failed to create task. Please try again.');
+      const errorMessage = error.response?.data?.error || error.message || 'Failed to create task. Please try again.';
+      alert(errorMessage);
     }
   };
 
@@ -81,6 +115,50 @@ export default function TasksPage() {
       loadTasks();
     } catch (error) {
       console.error('Failed to update task:', error);
+    }
+  };
+
+  const handleDragStart = (event: any) => {
+    setActiveId(event.active.id);
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveId(null);
+
+    if (!over) return;
+
+    const activeId = active.id as number;
+    const overId = over.id;
+
+    // Find the task being dragged
+    const activeTask = tasks.find(t => t.id === activeId);
+    if (!activeTask) return;
+
+    // Determine the new status based on the drop zone
+    let newStatus: 'todo' | 'in_progress' | 'done' = 'todo';
+    
+    // Check if dropped on a column
+    if (overId === 'todo' || overId === 'in_progress' || overId === 'done') {
+      newStatus = overId as 'todo' | 'in_progress' | 'done';
+    } else {
+      // If dropped on another task, use that task's status
+      const overTask = tasks.find(t => t.id === parseInt(String(overId)));
+      if (overTask) {
+        const status = overTask.status;
+        if (status === 'todo' || status === 'Todo') newStatus = 'todo';
+        else if (status === 'in_progress' || status === 'In Progress') newStatus = 'in_progress';
+        else if (status === 'done' || status === 'Done') newStatus = 'done';
+      }
+    }
+
+    // Only update if status changed
+    const currentStatus = activeTask.status === 'todo' || activeTask.status === 'Todo' ? 'todo' :
+                         activeTask.status === 'in_progress' || activeTask.status === 'In Progress' ? 'in_progress' :
+                         'done';
+    
+    if (currentStatus !== newStatus) {
+      await updateTaskStatus(activeId, newStatus);
     }
   };
 
@@ -229,85 +307,118 @@ export default function TasksPage() {
       )}
 
       {/* Kanban Board */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* To Do Column */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-text-primary flex items-center space-x-2">
-              <div className="w-3 h-3 rounded-full bg-gray-400"></div>
-              <span>To Do</span>
-              <span className="text-text-tertiary text-sm">({todoTasks.length})</span>
-            </h3>
-          </div>
-          <div className="space-y-3">
-            {todoTasks.map((task) => (
-              <TaskCard
-                key={task.id}
-                task={task}
-                onStatusChange={updateTaskStatus}
-                getPriorityColor={getPriorityColor}
-              />
-            ))}
-            {todoTasks.length === 0 && (
-              <div className="text-center py-8 text-text-tertiary">
-                No tasks
-              </div>
-            )}
-          </div>
-        </div>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCorners}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* To Do Column */}
+          <KanbanColumn
+            id="todo"
+            title="To Do"
+            tasks={todoTasks}
+            color="bg-gray-400"
+            onStatusChange={updateTaskStatus}
+            getPriorityColor={getPriorityColor}
+            onEdit={(task) => setEditingTask(task)}
+          />
 
-        {/* In Progress Column */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-text-primary flex items-center space-x-2">
-              <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-              <span>In Progress</span>
-              <span className="text-text-tertiary text-sm">({inProgressTasks.length})</span>
-            </h3>
-          </div>
-          <div className="space-y-3">
-            {inProgressTasks.map((task) => (
-              <TaskCard
-                key={task.id}
-                task={task}
-                onStatusChange={updateTaskStatus}
-                getPriorityColor={getPriorityColor}
-              />
-            ))}
-            {inProgressTasks.length === 0 && (
-              <div className="text-center py-8 text-text-tertiary">
-                No tasks
-              </div>
-            )}
-          </div>
-        </div>
+          {/* In Progress Column */}
+          <KanbanColumn
+            id="in_progress"
+            title="In Progress"
+            tasks={inProgressTasks}
+            color="bg-blue-500"
+            onStatusChange={updateTaskStatus}
+            getPriorityColor={getPriorityColor}
+            onEdit={(task) => setEditingTask(task)}
+          />
 
-        {/* Done Column */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-text-primary flex items-center space-x-2">
-              <div className="w-3 h-3 rounded-full bg-green-500"></div>
-              <span>Done</span>
-              <span className="text-text-tertiary text-sm">({doneTasks.length})</span>
-            </h3>
-          </div>
-          <div className="space-y-3">
-            {doneTasks.map((task) => (
-              <TaskCard
-                key={task.id}
-                task={task}
-                onStatusChange={updateTaskStatus}
-                getPriorityColor={getPriorityColor}
-              />
-            ))}
-            {doneTasks.length === 0 && (
-              <div className="text-center py-8 text-text-tertiary">
-                No tasks
-              </div>
-            )}
-          </div>
+          {/* Done Column */}
+          <KanbanColumn
+            id="done"
+            title="Done"
+            tasks={doneTasks}
+            color="bg-green-500"
+            onStatusChange={updateTaskStatus}
+            getPriorityColor={getPriorityColor}
+            onEdit={(task) => setEditingTask(task)}
+          />
         </div>
+        <DragOverlay>
+          {activeId ? (
+            <div className="glass-medium rounded-xl p-4 border border-white/10 opacity-90 rotate-2">
+              <div className="font-semibold text-text-primary">
+                {tasks.find(t => t.id === activeId)?.title}
+              </div>
+            </div>
+          ) : null}
+        </DragOverlay>
+      </DndContext>
+
+      {/* Edit Task Modal */}
+      <EditTaskModal
+        task={editingTask}
+        isOpen={!!editingTask}
+        onClose={() => setEditingTask(null)}
+        onSave={() => {
+          loadTasks();
+          setEditingTask(null);
+        }}
+      />
+    </div>
+  );
+}
+
+interface KanbanColumnProps {
+  id: string;
+  title: string;
+  tasks: any[];
+  color: string;
+  onStatusChange: (taskId: number, status: 'todo' | 'in_progress' | 'done') => void;
+  getPriorityColor: (priority: string) => string;
+  onEdit: (task: any) => void;
+}
+
+function KanbanColumn({ id, title, tasks, color, onStatusChange, getPriorityColor, onEdit }: KanbanColumnProps) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: id,
+  });
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-text-primary flex items-center space-x-2">
+          <div className={`w-3 h-3 rounded-full ${color}`}></div>
+          <span>{title}</span>
+          <span className="text-text-tertiary text-sm">({tasks.length})</span>
+        </h3>
       </div>
+      <SortableContext items={tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
+        <div
+          ref={setNodeRef}
+          className={`space-y-3 min-h-[200px] rounded-lg p-2 transition-colors ${
+            isOver ? 'bg-primary/10 border-2 border-primary border-dashed' : ''
+          }`}
+        >
+          {tasks.map((task) => (
+            <SortableTaskCard
+              key={task.id}
+              task={task}
+              onStatusChange={onStatusChange}
+              getPriorityColor={getPriorityColor}
+              onEdit={onEdit}
+            />
+          ))}
+          {tasks.length === 0 && (
+            <div className="text-center py-8 text-text-tertiary">
+              No tasks
+            </div>
+          )}
+        </div>
+      </SortableContext>
     </div>
   );
 }
@@ -316,26 +427,70 @@ interface TaskCardProps {
   task: any;
   onStatusChange: (taskId: number, status: 'todo' | 'in_progress' | 'done') => void;
   getPriorityColor: (priority: string) => string;
+  onEdit: (task: any) => void;
 }
 
-function TaskCard({ task, onStatusChange, getPriorityColor }: TaskCardProps) {
+function SortableTaskCard({ task, onStatusChange, getPriorityColor, onEdit }: TaskCardProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: task.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
   return (
-    <div className="glass-medium rounded-xl p-4 border border-white/10 hover:glass-light transition-all duration-200 hover:scale-[1.02]">
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      className="glass-medium rounded-xl p-4 border border-white/10 hover:glass-light transition-all duration-200 hover:scale-[1.02]"
+    >
       <div className="space-y-3">
-        <div className="flex items-start justify-between">
-          <h4 className="font-semibold text-text-primary">{task.title}</h4>
-          <span className={`text-xs px-2 py-1 rounded-full ${getPriorityColor(task.priority || 'medium')}`}>
-            {task.priority || 'medium'}
-          </span>
+        <div className="flex items-start justify-between gap-2">
+          {/* Draggable area - title and content */}
+          <div 
+            {...listeners}
+            className="flex-1 min-w-0 cursor-grab active:cursor-grabbing"
+          >
+            <h4 className="font-semibold text-text-primary break-words">{task.title}</h4>
+          </div>
+          {/* Non-draggable area - edit button and priority */}
+          <div className="flex items-center gap-2 flex-shrink-0 pointer-events-auto">
+            <button
+              onClick={() => onEdit(task)}
+              className="p-1.5 hover:bg-white/10 rounded transition-colors flex-shrink-0 cursor-pointer"
+              title="Edit task"
+            >
+              <Edit className="w-4 h-4 text-text-secondary hover:text-primary" />
+            </button>
+            <span className={`text-xs px-2 py-1 rounded-full flex-shrink-0 ${getPriorityColor(task.priority || 'medium')}`}>
+              {task.priority || 'medium'}
+            </span>
+          </div>
         </div>
 
+        {/* Draggable area - description */}
         {task.description && (
-          <p className="text-sm text-text-secondary line-clamp-2">
-            {task.description}
-          </p>
+          <div {...listeners} className="cursor-grab active:cursor-grabbing">
+            <p className="text-sm text-text-secondary line-clamp-2">
+              {task.description}
+            </p>
+          </div>
         )}
 
-        <div className="flex items-center justify-between text-sm">
+        {/* Draggable area - metadata */}
+        <div 
+          {...listeners}
+          className="flex items-center justify-between text-sm cursor-grab active:cursor-grabbing"
+        >
           {(task.dueDate || task.due_date) && (
             <div className="flex items-center space-x-2 text-text-tertiary">
               <Calendar className="w-4 h-4" />
@@ -351,12 +506,12 @@ function TaskCard({ task, onStatusChange, getPriorityColor }: TaskCardProps) {
           )}
         </div>
 
-        {/* Status change buttons */}
-        <div className="flex gap-2 pt-2 border-t border-white/10">
+        {/* Non-draggable area - status buttons */}
+        <div className="flex gap-2 pt-2 border-t border-white/10 pointer-events-auto">
           {task.status !== 'todo' && (
             <button
               onClick={() => onStatusChange(task.id, 'todo')}
-              className="flex-1 px-3 py-2 text-xs font-semibold rounded-lg glass-light text-text-primary hover:glass-medium transition-all hover:scale-105"
+              className="flex-1 px-3 py-2 text-xs font-semibold rounded-lg glass-light text-text-primary hover:glass-medium transition-all hover:scale-105 cursor-pointer"
             >
               📋 To Do
             </button>
@@ -364,7 +519,7 @@ function TaskCard({ task, onStatusChange, getPriorityColor }: TaskCardProps) {
           {task.status !== 'in_progress' && (
             <button
               onClick={() => onStatusChange(task.id, 'in_progress')}
-              className="flex-1 px-3 py-2 text-xs font-semibold rounded-lg bg-blue-500/20 text-blue-300 border border-blue-500/30 hover:bg-blue-500/30 transition-all hover:scale-105"
+              className="flex-1 px-3 py-2 text-xs font-semibold rounded-lg bg-blue-500/20 text-blue-300 border border-blue-500/30 hover:bg-blue-500/30 transition-all hover:scale-105 cursor-pointer"
             >
               ⚡ In Progress
             </button>
@@ -372,7 +527,7 @@ function TaskCard({ task, onStatusChange, getPriorityColor }: TaskCardProps) {
           {task.status !== 'done' && (
             <button
               onClick={() => onStatusChange(task.id, 'done')}
-              className="flex-1 px-3 py-2 text-xs font-semibold rounded-lg bg-green-500/20 text-green-300 border border-green-500/30 hover:bg-green-500/30 transition-all hover:scale-105"
+              className="flex-1 px-3 py-2 text-xs font-semibold rounded-lg bg-green-500/20 text-green-300 border border-green-500/30 hover:bg-green-500/30 transition-all hover:scale-105 cursor-pointer"
             >
               ✓ Done
             </button>

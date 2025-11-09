@@ -1,54 +1,81 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, FileText, Download, Edit, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import axios from 'axios';
+import { generateReportPDF } from '@/lib/report-pdf';
 
 interface Report {
   id: number;
   title: string;
-  type: 'project_status' | 'analysis' | 'custom';
-  created_by: string;
-  created_at: string;
-  updated_at: string;
-  project?: string;
+  content: string;
+  type: 'project_status' | 'analysis' | 'financial_summary' | 'custom';
+  status: 'draft' | 'published' | 'archived';
+  projectId: number | null;
+  userId: number;
+  createdAt: string;
+  updatedAt: string;
+  project?: {
+    id: number;
+    name: string;
+  };
+  user?: {
+    id: number;
+    username: string;
+  };
 }
 
 export default function ReportsPage() {
   const router = useRouter();
-  const [reports, setReports] = useState<Report[]>([
-    {
-      id: 1,
-      title: 'Mobile Banking App - Project Status Report',
-      type: 'project_status',
-      created_by: 'AR',
-      created_at: '2024-11-06T10:00:00Z',
-      updated_at: '2024-11-07T14:30:00Z',
-      project: 'Mobile Banking App'
-    },
-    {
-      id: 2,
-      title: 'Q4 2024 Analysis Report',
-      type: 'analysis',
-      created_by: 'JD',
-      created_at: '2024-11-05T09:00:00Z',
-      updated_at: '2024-11-05T16:00:00Z',
-    },
-    {
-      id: 3,
-      title: 'E-commerce Platform Technical Documentation',
-      type: 'custom',
-      created_by: 'SK',
-      created_at: '2024-11-03T11:00:00Z',
-      updated_at: '2024-11-06T10:00:00Z',
-      project: 'E-commerce Platform'
-    },
-  ]);
+  const [reports, setReports] = useState<Report[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadReports();
+  }, []);
+
+  const loadReports = async () => {
+    try {
+      const response = await axios.get('/api/reports');
+      setReports(response.data.reports || []);
+    } catch (error) {
+      console.error('Failed to load reports:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (reportId: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm('Are you sure you want to delete this report?')) {
+      return;
+    }
+
+    try {
+      await axios.delete(`/api/reports/${reportId}`);
+      loadReports();
+    } catch (error) {
+      console.error('Failed to delete report:', error);
+      alert('Failed to delete report. Please try again.');
+    }
+  };
+
+  const handleExportPDF = async (report: Report, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await generateReportPDF(report);
+    } catch (error) {
+      console.error('Failed to export PDF:', error);
+      alert('Failed to export PDF. Please try again.');
+    }
+  };
 
   const getTypeLabel = (type: string) => {
     switch (type) {
       case 'project_status': return 'Project Status';
       case 'analysis': return 'Analysis';
+      case 'financial_summary': return 'Financial Summary';
       case 'custom': return 'Custom';
       default: return type;
     }
@@ -58,7 +85,8 @@ export default function ReportsPage() {
     switch (type) {
       case 'project_status': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400';
       case 'analysis': return 'bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400';
-      case 'custom': return 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400';
+      case 'financial_summary': return 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400';
+      case 'custom': return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400';
       default: return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400';
     }
   };
@@ -72,6 +100,14 @@ export default function ReportsPage() {
       minute: '2-digit'
     });
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -115,18 +151,18 @@ export default function ReportsPage() {
 
             {report.project && (
               <p className="text-sm text-text-tertiary mb-3">
-                📁 {report.project}
+                📁 {report.project.name}
               </p>
             )}
 
             <div className="flex items-center justify-between text-sm text-text-tertiary pt-4 border-t border-white/10">
               <div className="flex items-center space-x-2">
                 <div className="w-6 h-6 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-xs font-semibold">
-                  {report.created_by}
+                  {report.user?.username?.substring(0, 2).toUpperCase() || 'U'}
                 </div>
-                <span>{report.created_by}</span>
+                <span>{report.user?.username || 'Unknown'}</span>
               </div>
-              <span>{formatDate(report.updated_at)}</span>
+              <span>{formatDate(report.updatedAt)}</span>
             </div>
 
             <div className="flex items-center space-x-2 mt-4 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -141,14 +177,17 @@ export default function ReportsPage() {
                 <span>Edit</span>
               </button>
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  // Export to PDF
-                }}
+                onClick={(e) => handleExportPDF(report, e)}
                 className="flex-1 flex items-center justify-center space-x-1 px-3 py-2 bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/40 transition-colors text-sm"
               >
                 <Download className="w-4 h-4" />
                 <span>PDF</span>
+              </button>
+              <button
+                onClick={(e) => handleDelete(report.id, e)}
+                className="p-2 bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/40 transition-colors"
+              >
+                <Trash2 className="w-4 h-4" />
               </button>
             </div>
           </div>

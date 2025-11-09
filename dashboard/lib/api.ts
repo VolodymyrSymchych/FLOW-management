@@ -33,6 +33,16 @@ export interface Stats {
   total_projects: number;
   completion_rate: number;
   projects_completed: number;
+  trends?: {
+    projects_in_progress?: {
+      value: number;
+      isPositive: boolean;
+    };
+    total_projects?: {
+      value: number;
+      isPositive: boolean;
+    };
+  };
 }
 
 export const api = {

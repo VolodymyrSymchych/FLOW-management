@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Calendar, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
+import { GanttChartView } from '@/components/GanttChartView';
 
 interface TimelineEvent {
   id: number;
@@ -106,7 +107,7 @@ export default function TimelinePage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -118,20 +119,20 @@ export default function TimelinePage() {
         <div className="flex items-center space-x-2">
           <button
             onClick={() => setView('gantt')}
-            className={`px-4 py-2 rounded-lg transition-colors ${
+            className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
               view === 'gantt'
-                ? 'bg-primary text-white'
-                : 'bg-surface dark:bg-surface-elevated text-text-secondary hover:text-text-primary'
+                ? 'bg-primary text-white shadow-[0_0_15px_rgba(128,152,249,0.5)]'
+                : 'glass-light text-text-secondary hover:glass-medium hover:text-text-primary'
             }`}
           >
             Gantt Chart
           </button>
           <button
             onClick={() => setView('activity')}
-            className={`px-4 py-2 rounded-lg transition-colors ${
+            className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
               view === 'activity'
-                ? 'bg-primary text-white'
-                : 'bg-surface dark:bg-surface-elevated text-text-secondary hover:text-text-primary'
+                ? 'bg-primary text-white shadow-[0_0_15px_rgba(128,152,249,0.5)]'
+                : 'glass-light text-text-secondary hover:glass-medium hover:text-text-primary'
             }`}
           >
             Activity Log
@@ -140,74 +141,15 @@ export default function TimelinePage() {
       </div>
 
       {view === 'gantt' ? (
-        /* Gantt Chart View */
-        <div className="bg-surface dark:bg-surface-elevated rounded-2xl p-6 border border-border">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-4">
-              <button className="p-2 hover:bg-background dark:hover:bg-surface rounded-lg transition-colors">
-                <ChevronLeft className="w-5 h-5 text-text-secondary" />
-              </button>
-              <h3 className="text-lg font-semibold text-text-primary">
-                {currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
-              </h3>
-              <button className="p-2 hover:bg-background dark:hover:bg-surface rounded-lg transition-colors">
-                <ChevronRight className="w-5 h-5 text-text-secondary" />
-              </button>
-            </div>
-            <div className="flex items-center space-x-4 text-sm text-text-tertiary">
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 rounded bg-blue-500"></div>
-                <span>In Progress</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 rounded bg-green-500"></div>
-                <span>Completed</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 rounded bg-gray-400"></div>
-                <span>Planned</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            {events.map((event) => (
-              <div key={event.id} className="flex items-center space-x-4">
-                <div className="w-64 flex-shrink-0">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-xl">{getTypeIcon(event.type)}</span>
-                    <div>
-                      <h4 className="font-medium text-text-primary text-sm">{event.title}</h4>
-                      <p className="text-xs text-text-tertiary">{event.assignee}</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex-1 relative h-12 bg-background dark:bg-surface rounded-lg overflow-hidden">
-                  <div
-                    className={`absolute top-1 bottom-1 ${getStatusColor(event.status)} rounded opacity-80 hover:opacity-100 transition-opacity cursor-pointer`}
-                    style={{
-                      left: '10%',
-                      width: event.end_date ? '40%' : '3px',
-                    }}
-                    title={`${event.start_date}${event.end_date ? ` - ${event.end_date}` : ''}`}
-                  >
-                    <div className="px-2 py-1 text-xs text-white font-medium truncate">
-                      {event.type === 'milestone' ? '◆' : ''}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <GanttChartView />
       ) : (
         /* Activity Log View */
-        <div className="bg-surface dark:bg-surface-elevated rounded-2xl p-6 border border-border">
+        <div className="glass-medium rounded-2xl p-6 border border-white/10">
           <h3 className="text-lg font-semibold text-text-primary mb-6">Recent Activity</h3>
           <div className="space-y-4">
             {activityEvents.map((event) => (
-              <div key={event.id} className="flex items-start space-x-4 p-4 rounded-lg hover:bg-background dark:hover:bg-surface transition-colors">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-semibold flex-shrink-0">
+              <div key={event.id} className="flex items-start space-x-4 p-4 rounded-lg glass-light hover:glass-medium transition-all duration-200">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-semibold flex-shrink-0 shadow-[0_0_15px_rgba(128,152,249,0.4)]">
                   {event.user}
                 </div>
                 <div className="flex-1">

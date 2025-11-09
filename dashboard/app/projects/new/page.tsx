@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Upload, FileText, Loader2, Users, DollarSign, Calendar, UserPlus, Building2 } from 'lucide-react';
+import { Upload, FileText, Loader2, Users, DollarSign, Calendar, UserPlus, Building2, Sparkles } from 'lucide-react';
 import axios from 'axios';
+import { ProjectTemplateSelector } from '@/components/ProjectTemplateSelector';
 
 interface Team {
   id: number;
@@ -44,6 +45,7 @@ export default function NewProjectPage() {
     document: '',
   });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [showTemplateSelector, setShowTemplateSelector] = useState(false);
 
   useEffect(() => {
     loadUser();
@@ -145,12 +147,48 @@ export default function NewProjectPage() {
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold gradient-text">Create New Project</h1>
-        <p className="text-text-secondary mt-1">
-          Set up a new project with team assignment and budget tracking
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold gradient-text">Create New Project</h1>
+          <p className="text-text-secondary mt-1">
+            Set up a new project with team assignment and budget tracking
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowTemplateSelector(true)}
+          className="flex items-center space-x-2 px-4 py-2 bg-primary text-white rounded-lg hover:opacity-90 transition-colors"
+        >
+          <Sparkles className="w-4 h-4" />
+          <span>Use Template</span>
+        </button>
       </div>
+
+      {showTemplateSelector && (
+        <ProjectTemplateSelector
+          onSelectTemplate={async (template) => {
+            try {
+              const templateData = JSON.parse(template.templateData);
+              // Pre-fill form with template data
+              setFormData({
+                name: formData.name || template.name,
+                type: templateData.type || formData.type,
+                industry: templateData.industry || formData.industry,
+                teamSize: templateData.teamSize || formData.teamSize,
+                timeline: templateData.timeline || formData.timeline,
+                budget: templateData.budget ? (templateData.budget / 100).toString() : formData.budget,
+                startDate: formData.startDate,
+                endDate: formData.endDate,
+                document: formData.document,
+              });
+              setShowTemplateSelector(false);
+            } catch (error) {
+              console.error('Failed to load template:', error);
+            }
+          }}
+          onCancel={() => setShowTemplateSelector(false)}
+        />
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Project Information */}

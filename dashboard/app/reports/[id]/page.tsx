@@ -1,87 +1,125 @@
 'use client';
 
-import { useState } from 'react';
-import { ArrowLeft, Save, Download, FileText } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ArrowLeft, Save, Download } from 'lucide-react';
 import { useRouter, useParams } from 'next/navigation';
 import { RichTextEditor } from '@/components/RichTextEditor';
-import jsPDF from 'jspdf';
+import axios from 'axios';
+import { generateReportPDF } from '@/lib/report-pdf';
+
+interface Project {
+  id: number;
+  name: string;
+}
 
 export default function ReportEditorPage() {
   const router = useRouter();
   const params = useParams();
   const isNew = params.id === 'new';
 
-  const [title, setTitle] = useState(
-    isNew ? '' : 'Mobile Banking App - Project Status Report'
-  );
-  const [content, setContent] = useState(
-    isNew
-      ? '<h1>New Report</h1><p>Start writing your report here...</p>'
-      : `<h1>Mobile Banking App - Project Status Report</h1>
-<h2>Executive Summary</h2>
-<p>The Mobile Banking App project is progressing according to schedule. Key milestones have been achieved in Q4 2024.</p>
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('<h1>New Report</h1><p>Start writing your report here...</p>');
+  const [reportType, setReportType] = useState<'project_status' | 'analysis' | 'financial_summary' | 'custom'>('custom');
+  const [projectId, setProjectId] = useState<string>('');
+  const [status, setStatus] = useState<'draft' | 'published' | 'archived'>('draft');
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [loadingData, setLoadingData] = useState(!isNew);
 
-<h2>Project Overview</h2>
-<ul>
-  <li><strong>Start Date:</strong> November 1, 2024</li>
-  <li><strong>Expected Completion:</strong> December 31, 2024</li>
-  <li><strong>Team Size:</strong> 6 members</li>
-  <li><strong>Budget Status:</strong> On track</li>
-</ul>
+  useEffect(() => {
+    loadProjects();
+    if (!isNew) {
+      loadReport();
+    }
+  }, [params.id]);
 
-<h2>Key Accomplishments</h2>
-<ol>
-  <li>Completed UI/UX design phase</li>
-  <li>Implemented core authentication system</li>
-  <li>Integrated payment gateway APIs</li>
-  <li>Completed security audit</li>
-</ol>
-
-<h2>Current Status</h2>
-<p>The project is currently in the development phase with 65% completion. All major features are implemented and undergoing testing.</p>
-
-<h2>Challenges & Risks</h2>
-<p>Minor delays in third-party API integration have been identified. Mitigation strategies are in place.</p>
-
-<h2>Next Steps</h2>
-<ul>
-  <li>Complete integration testing by Dec 10</li>
-  <li>User acceptance testing Dec 11-15</li>
-  <li>Beta release Dec 15</li>
-  <li>Final release Dec 31</li>
-</ul>`
-  );
-  const [reportType, setReportType] = useState<'project_status' | 'analysis' | 'custom'>(
-    'project_status'
-  );
-
-  const handleSave = () => {
-    // In real app, save to backend
-    alert('Report saved successfully!');
-    router.push('/reports');
+  const loadProjects = async () => {
+    try {
+      const response = await axios.get('/api/projects');
+      setProjects(response.data.projects || []);
+    } catch (error) {
+      console.error('Failed to load projects:', error);
+    }
   };
 
-  const exportToPDF = () => {
-    const doc = new jsPDF();
-
-    // Add title
-    doc.setFontSize(20);
-    doc.text(title, 20, 20);
-
-    // Convert HTML content to text (simplified)
-    const textContent = content
-      .replace(/<h1[^>]*>(.*?)<\/h1>/gi, '\n\n$1\n\n')
-      .replace(/<h2[^>]*>(.*?)<\/h2>/gi, '\n\n$1\n')
-      .replace(/<p[^>]*>(.*?)<\/p>/gi, '$1\n')
-      .replace(/<li[^>]*>(.*?)<\/li>/gi, '• $1\n')
-      .replace(/<[^>]+>/g, '');
-
-    doc.setFontSize(12);
-    const lines = doc.splitTextToSize(textContent, 170);
-    doc.text(lines, 20, 40);
-
-    doc.save(`${title.replace(/\s+/g, '_')}.pdf`);
+  const loadReport = async () => {
+    try {
+      setLoadingData(true);
+      const response = await axios.get(`/api/reports/${params.id}`);
+      const report = response.data.report;
+      setTitle(report.title || '');
+      setContent(report.content || '<h1>New Report</h1><p>Start writing your report here...</p>');
+      setReportType(report.type || 'custom');
+      setProjectId(report.projectId?.toString() || '');
+      setStatus(report.status || 'draft');
+    } catch (error) {
+      console.error('Failed to load report:', error);
+      alert('Failed to load report. Please try again.');
+      router.push('/reports');
+    } finally {
+      setLoadingData(false);
+    }
   };
+
+  const handleSave = async () => {
+    if (!title.trim()) {
+      alert('Please enter a title for the report');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const reportData = {
+        title,
+        content,
+        type: reportType,
+        project_id: projectId ? parseInt(projectId) : null,
+        status,
+      };
+
+      if (isNew) {
+        await axios.post('/api/reports', reportData);
+      } else {
+        await axios.put(`/api/reports/${params.id}`, reportData);
+      }
+      
+      router.push('/reports');
+    } catch (error: any) {
+      console.error('Failed to save report:', error);
+      alert(`Failed to save report: ${error.response?.data?.error || error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const exportToPDF = async () => {
+    try {
+      const reportData = {
+        id: isNew ? 0 : parseInt(params.id as string),
+        title,
+        content,
+        type: reportType,
+        status,
+        projectId: projectId ? parseInt(projectId) : null,
+        userId: 0,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        project: projectId ? projects.find(p => p.id === parseInt(projectId)) : undefined,
+      };
+      await generateReportPDF(reportData as any);
+    } catch (error) {
+      console.error('Failed to export PDF:', error);
+      alert('Failed to export PDF. Please try again.');
+    }
+  };
+
+  if (loadingData) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
@@ -104,10 +142,11 @@ export default function ReportEditorPage() {
           </button>
           <button
             onClick={handleSave}
-            className="flex items-center space-x-2 px-4 py-2 glass-button text-white rounded-lg"
+            disabled={loading}
+            className="flex items-center space-x-2 px-4 py-2 glass-button text-white rounded-lg disabled:opacity-50"
           >
             <Save className="w-5 h-5" />
-            <span>Save Report</span>
+            <span>{loading ? 'Saving...' : 'Save Report'}</span>
           </button>
         </div>
       </div>
@@ -127,7 +166,7 @@ export default function ReportEditorPage() {
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-text-primary mb-2">
               Report Type
@@ -139,6 +178,7 @@ export default function ReportEditorPage() {
             >
               <option value="project_status">Project Status</option>
               <option value="analysis">Analysis Report</option>
+              <option value="financial_summary">Financial Summary</option>
               <option value="custom">Custom Report</option>
             </select>
           </div>
@@ -146,11 +186,32 @@ export default function ReportEditorPage() {
             <label className="block text-sm font-medium text-text-primary mb-2">
               Related Project (Optional)
             </label>
-            <input
-              type="text"
-              placeholder="Enter project name..."
+            <select
+              value={projectId}
+              onChange={(e) => setProjectId(e.target.value)}
               className="w-full px-4 py-3 rounded-lg glass-input text-text-primary"
-            />
+            >
+              <option value="">No Project</option>
+              {projects.map((project) => (
+                <option key={project.id} value={project.id}>
+                  {project.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-text-primary mb-2">
+              Status
+            </label>
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value as any)}
+              className="w-full px-4 py-3 rounded-lg glass-input text-text-primary"
+            >
+              <option value="draft">Draft</option>
+              <option value="published">Published</option>
+              <option value="archived">Archived</option>
+            </select>
           </div>
         </div>
       </div>
@@ -171,9 +232,10 @@ export default function ReportEditorPage() {
         </button>
         <button
           onClick={handleSave}
-          className="px-6 py-3 glass-button text-white rounded-lg font-medium"
+          disabled={loading}
+          className="px-6 py-3 glass-button text-white rounded-lg font-medium disabled:opacity-50"
         >
-          Save Report
+          {loading ? 'Saving...' : 'Save Report'}
         </button>
       </div>
     </div>

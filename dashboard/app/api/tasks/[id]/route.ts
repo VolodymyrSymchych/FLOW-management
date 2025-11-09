@@ -47,8 +47,14 @@ export async function PUT(
     if (data.description !== undefined) updateData.description = data.description;
     if (data.priority) updateData.priority = data.priority;
     if (data.assignee !== undefined) updateData.assignee = data.assignee;
-    if (data.due_date) updateData.dueDate = new Date(data.due_date);
+    if (data.start_date !== undefined) updateData.startDate = data.start_date ? new Date(data.start_date) : null;
+    if (data.due_date !== undefined) updateData.dueDate = data.due_date ? new Date(data.due_date) : null;
+    if (data.end_date !== undefined) updateData.endDate = data.end_date ? new Date(data.end_date) : null;
     if (data.project_id !== undefined) updateData.projectId = data.project_id;
+    if (data.depends_on !== undefined) {
+      updateData.dependsOn = data.depends_on ? JSON.stringify(data.depends_on) : null;
+    }
+    if (data.progress !== undefined) updateData.progress = data.progress;
 
     const task = await storage.updateTask(id, updateData);
 

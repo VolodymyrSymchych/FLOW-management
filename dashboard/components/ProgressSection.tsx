@@ -1,39 +1,118 @@
-import { Edit3, Camera, Zap } from 'lucide-react';
+'use client';
+
+import { useEffect, useState } from 'react';
+import { CheckCircle2, Circle, Clock, Timer } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import axios from 'axios';
+
+interface Task {
+  id: number;
+  status: string;
+}
+
+interface TimeEntry {
+  clockIn: string;
+  clockOut: string | null;
+  duration: number | null;
+}
 
 interface ProgressItem {
   icon: React.ElementType;
   name: string;
-  level: string;
+  value: string;
   progress: number;
   color: string;
 }
 
-const progressItems: ProgressItem[] = [
-  {
-    icon: Edit3,
-    name: 'UI/UX Design',
-    level: 'Advanced',
-    progress: 85,
-    color: 'bg-blue-500'
-  },
-  {
-    icon: Camera,
-    name: 'Photography',
-    level: 'Intermediate',
-    progress: 60,
-    color: 'bg-blue-500'
-  },
-  {
-    icon: Zap,
-    name: 'Animation',
-    level: 'Advance',
-    progress: 75,
-    color: 'bg-blue-500'
-  }
-];
-
 export function ProgressSection() {
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      const [tasksResponse, attendanceResponse] = await Promise.all([
+        axios.get('/api/tasks'),
+        axios.get('/api/attendance')
+      ]);
+      
+      setTasks(tasksResponse.data.tasks || []);
+      setTimeEntries(attendanceResponse.data.entries || []);
+    } catch (error) {
+      console.error('Failed to load progress data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Calculate task statistics
+  const totalTasks = tasks.length;
+  const doneTasks = tasks.filter(t => t.status === 'done' || t.status === 'Done').length;
+  const inProgressTasks = tasks.filter(t => t.status === 'in_progress' || t.status === 'In Progress').length;
+  const todoTasks = tasks.filter(t => t.status === 'todo' || t.status === 'To Do').length;
+  
+  const completionProgress = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
+  const inProgressPercent = totalTasks > 0 ? Math.round((inProgressTasks / totalTasks) * 100) : 0;
+  const todoPercent = totalTasks > 0 ? Math.round((todoTasks / totalTasks) * 100) : 0;
+
+  // Calculate time statistics
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const todayEntries = timeEntries.filter(entry => {
+    const clockIn = new Date(entry.clockIn);
+    return clockIn >= today && entry.duration;
+  });
+  
+  const thisWeekEntries = timeEntries.filter(entry => {
+    const clockIn = new Date(entry.clockIn);
+    const weekStart = new Date(today);
+    weekStart.setDate(today.getDate() - today.getDay()); // Start of week (Sunday)
+    return clockIn >= weekStart && entry.duration;
+  });
+
+  const hoursToday = todayEntries.reduce((sum, entry) => sum + (entry.duration || 0), 0) / 60;
+  const hoursThisWeek = thisWeekEntries.reduce((sum, entry) => sum + (entry.duration || 0), 0) / 60;
+
+  const progressItems: ProgressItem[] = [
+    {
+      icon: CheckCircle2,
+      name: 'Completed Tasks',
+      value: `${doneTasks}/${totalTasks}`,
+      progress: completionProgress,
+      color: 'bg-green-500'
+    },
+    {
+      icon: Clock,
+      name: 'In Progress',
+      value: `${inProgressTasks} tasks`,
+      progress: inProgressPercent,
+      color: 'bg-blue-500'
+    },
+    {
+      icon: Timer,
+      name: 'Time Today',
+      value: `${hoursToday.toFixed(1)}h`,
+      progress: Math.min((hoursToday / 8) * 100, 100), // Assuming 8h workday
+      color: 'bg-purple-500'
+    }
+  ];
+
+  if (loading) {
+    return (
+      <div className="glass-medium rounded-2xl p-6">
+        <h3 className="text-lg font-bold text-text-primary mb-4">Progress</h3>
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#8098F9]"></div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="glass-medium rounded-2xl p-6">
       <h3 className="text-lg font-bold text-text-primary mb-4">
@@ -50,19 +129,34 @@ export function ProgressSection() {
                 <span className="text-sm font-semibold text-text-primary">
                   {item.name}
                 </span>
-                <span className="text-xs text-text-tertiary">
-                  {item.level}
+                <span className="text-xs text-text-tertiary font-medium">
+                  {item.value}
                 </span>
               </div>
               <div className="h-2 glass-subtle rounded-full overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-[#8098F9] shadow-[0_0_10px_rgba(128,152,249,0.5)]"
+                  className={cn(
+                    'h-full rounded-full shadow-[0_0_10px_rgba(128,152,249,0.5)] transition-all duration-300',
+                    item.color
+                  )}
                   style={{ width: `${item.progress}%` }}
                 ></div>
               </div>
             </div>
           </div>
         ))}
+        
+        {/* Additional stats */}
+        <div className="pt-2 border-t border-white/10">
+          <div className="flex items-center justify-between text-xs text-text-tertiary">
+            <span>This Week</span>
+            <span className="font-medium text-text-secondary">{hoursThisWeek.toFixed(1)}h</span>
+          </div>
+          <div className="flex items-center justify-between text-xs text-text-tertiary mt-1">
+            <span>To Do</span>
+            <span className="font-medium text-text-secondary">{todoTasks} tasks</span>
+          </div>
+        </div>
       </div>
     </div>
   );

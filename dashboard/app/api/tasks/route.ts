@@ -14,10 +14,14 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const projectId = searchParams.get('project_id');
 
+    console.log('Fetching tasks for userId:', session.userId, 'projectId:', projectId);
+
     const tasks = await storage.getTasks(
       session.userId,
       projectId ? parseInt(projectId) : undefined
     );
+    
+    console.log('Found tasks:', tasks.length);
     
     return NextResponse.json({ tasks });
   } catch (error: any) {
@@ -34,26 +38,50 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await request.json();
-    const { title, description, project_id, assignee, due_date, status, priority } = data;
+    console.log('Creating task with data:', { ...data, userId: session.userId });
+    
+    const { title, description, project_id, assignee, due_date, start_date, end_date, status, priority, depends_on, progress } = data;
 
-    if (!title) {
+    if (!title || title.trim() === '') {
       return NextResponse.json({ error: 'Task title is required' }, { status: 400 });
     }
 
-    const task = await storage.createTask({
-      title,
-      description: description || null,
-      projectId: project_id || null,
+    // Validate project_id if provided
+    let projectId: number | null = null;
+    if (project_id !== undefined && project_id !== null && project_id !== '') {
+      const parsedProjectId = parseInt(project_id);
+      if (isNaN(parsedProjectId)) {
+        return NextResponse.json({ error: 'Invalid project ID' }, { status: 400 });
+      }
+      projectId = parsedProjectId;
+    }
+
+    const taskData = {
+      title: title.trim(),
+      description: description ? description.trim() : null,
+      projectId,
       userId: session.userId,
-      assignee: assignee || null,
+      assignee: assignee ? assignee.trim() : null,
+      startDate: start_date ? new Date(start_date) : null,
       dueDate: due_date ? new Date(due_date) : null,
+      endDate: end_date ? new Date(end_date) : null,
       status: status || 'todo',
       priority: priority || 'medium',
-    });
+      dependsOn: depends_on ? JSON.stringify(depends_on) : null,
+      progress: progress || 0,
+    };
 
+    console.log('Task data to insert:', taskData);
+
+    const task = await storage.createTask(taskData);
+
+    console.log('Task created successfully:', task.id);
     return NextResponse.json({ task }, { status: 201 });
   } catch (error: any) {
     console.error('Error creating task:', error);
-    return NextResponse.json({ error: 'Failed to create task' }, { status: 500 });
+    console.error('Error stack:', error.stack);
+    // Return more detailed error message
+    const errorMessage = error.message || error.detail || error.code || 'Failed to create task';
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

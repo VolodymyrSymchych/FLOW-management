@@ -16,6 +16,10 @@ import {
   Share2,
   RefreshCw,
 } from 'lucide-react';
+import { ProjectBudgetTracking } from '@/components/ProjectBudgetTracking';
+import { InvoicesAndCashFlow } from '@/components/InvoicesAndCashFlow';
+import { FileUploader } from '@/components/FileUploader';
+import { FileList } from '@/components/FileList';
 import { api } from '@/lib/api';
 import { cn, getRiskColor, formatDate } from '@/lib/utils';
 
@@ -44,7 +48,8 @@ export default function ProjectDetailPage() {
   const router = useRouter();
   const [project, setProject] = useState<ProjectDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'report'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'report' | 'finance' | 'files'>('overview');
+  const [filesRefreshKey, setFilesRefreshKey] = useState(0);
 
   useEffect(() => {
     loadProject();
@@ -177,6 +182,28 @@ export default function ProjectDetailPage() {
             Overview
           </button>
           <button
+            onClick={() => setActiveTab('finance')}
+            className={cn(
+              'flex-1 px-6 py-4 font-semibold transition-all duration-200',
+              activeTab === 'finance'
+                ? 'text-primary bg-primary/5 border-b-2 border-primary'
+                : 'text-text-secondary hover:text-text-primary hover:bg-white/5'
+            )}
+          >
+            Invoices & Cash Flow
+          </button>
+          <button
+            onClick={() => setActiveTab('files')}
+            className={cn(
+              'flex-1 px-6 py-4 font-semibold transition-all duration-200',
+              activeTab === 'files'
+                ? 'text-primary bg-primary/5 border-b-2 border-primary'
+                : 'text-text-secondary hover:text-text-primary hover:bg-white/5'
+            )}
+          >
+            Files
+          </button>
+          <button
             onClick={() => setActiveTab('report')}
             className={cn(
               'flex-1 px-6 py-4 font-semibold transition-all duration-200',
@@ -278,6 +305,14 @@ export default function ProjectDetailPage() {
 
               {/* Sidebar */}
               <div className="space-y-6">
+                {/* Budget Tracking */}
+                <ProjectBudgetTracking 
+                  projectId={project.project.id}
+                  projectBudget={(project.project as any).budget}
+                  projectStartDate={(project.project as any).start_date}
+                  projectEndDate={(project.project as any).end_date}
+                />
+
                 {/* Project Details */}
                 <div className="glass-light rounded-xl p-6 border border-white/10">
                   <h3 className="text-lg font-bold text-text-primary mb-5 flex items-center space-x-2">
@@ -358,6 +393,26 @@ export default function ProjectDetailPage() {
                     </button>
                   </div>
                 </div>
+              </div>
+            </div>
+          ) : activeTab === 'finance' ? (
+            <InvoicesAndCashFlow projectId={project.project.id} />
+          ) : activeTab === 'files' ? (
+            <div className="space-y-6">
+              <div className="glass-light rounded-xl p-6 border border-white/10">
+                <h3 className="text-lg font-bold text-text-primary mb-4">Upload Files</h3>
+                <FileUploader
+                  projectId={project.project.id}
+                  onUploadSuccess={() => setFilesRefreshKey(prev => prev + 1)}
+                />
+              </div>
+              <div className="glass-light rounded-xl p-6 border border-white/10">
+                <h3 className="text-lg font-bold text-text-primary mb-4">Project Files</h3>
+                <FileList
+                  key={filesRefreshKey}
+                  projectId={project.project.id}
+                  onDelete={() => setFilesRefreshKey(prev => prev + 1)}
+                />
               </div>
             </div>
           ) : (

@@ -1,58 +1,181 @@
 'use client';
 
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useState } from 'react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+import { cn } from '@/lib/utils';
+import { useDroppable } from '@dnd-kit/core';
 
-interface CalendarEvent {
+interface Task {
+  id: number;
   title: string;
-  team?: string;
-  members?: string[];
-  color: string;
+  dueDate?: string | null;
+  due_date?: string | null;
+  startDate?: string | null;
+  start_date?: string | null;
+  endDate?: string | null;
+  end_date?: string | null;
+  assignee?: string | null;
+  priority?: string;
+  status?: string;
 }
 
 interface CalendarDay {
-  date: number;
-  events: CalendarEvent[];
+  date: Date;
+  dayOfMonth: number;
+  isCurrentMonth: boolean;
+  isToday: boolean;
+  tasks: Task[];
 }
 
-export function CalendarView() {
+interface CalendarViewProps {
+  refreshKey?: number;
+}
+
+export function CalendarView({ refreshKey = 0 }: CalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState<'week' | 'month'>('week');
+  const [viewMode, setViewMode] = useState<'1week' | '2weeks' | '1month'>('1week');
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const weekDays = ['Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun', 'Mon'];
-  const weekDates = [7, 8, 9, 10, 11, 12, 13];
+  useEffect(() => {
+    loadTasks();
+  }, []);
 
-  const events: Record<number, CalendarEvent[]> = {
-    8: [
-      {
-        title: '2021 Strategy for Bundle',
-        team: 'Business Team',
-        members: ['JD', 'SK', 'MR'],
-        color: 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-      }
-    ],
-    9: [
-      {
-        title: 'Product roadmap consideration',
-        team: 'Product Team',
-        members: ['AR'],
-        color: 'bg-red-400 text-white'
-      },
-      {
-        title: 'Product Review for Bundle',
-        team: 'Business Team',
-        members: ['JD', 'MR'],
-        color: 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-      }
-    ],
-    12: [
-      {
-        title: 'Test for 2.3.1',
-        team: 'Product',
-        color: 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-      }
-    ]
+  useEffect(() => {
+    // Reload tasks when view changes to ensure fresh data
+    loadTasks();
+  }, [viewMode]);
+
+  useEffect(() => {
+    // Reload tasks when refreshKey changes (after drag-and-drop)
+    if (refreshKey > 0) {
+      loadTasks();
+    }
+  }, [refreshKey]);
+
+  const loadTasks = async () => {
+    try {
+      const response = await axios.get('/api/tasks');
+      setTasks(response.data.tasks || []);
+    } catch (error) {
+      console.error('Failed to load tasks:', error);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const getDaysInView = (): CalendarDay[] => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    let startDate: Date;
+    let endDate: Date;
+
+    if (viewMode === '1week') {
+      // Start from Monday of current week
+      const dayOfWeek = currentDate.getDay();
+      const monday = new Date(currentDate);
+      monday.setDate(currentDate.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+      monday.setHours(0, 0, 0, 0);
+      startDate = monday;
+      endDate = new Date(monday);
+      endDate.setDate(monday.getDate() + 6);
+    } else if (viewMode === '2weeks') {
+      const dayOfWeek = currentDate.getDay();
+      const monday = new Date(currentDate);
+      monday.setDate(currentDate.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+      monday.setHours(0, 0, 0, 0);
+      startDate = monday;
+      endDate = new Date(monday);
+      endDate.setDate(monday.getDate() + 13);
+    } else {
+      // 1 month - start from Monday of the week containing the 1st
+      const firstDay = new Date(year, month, 1);
+      const dayOfWeek = firstDay.getDay();
+      const monday = new Date(firstDay);
+      monday.setDate(firstDay.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+      monday.setHours(0, 0, 0, 0);
+      
+      const lastDay = new Date(year, month + 1, 0);
+      const lastDayOfWeek = lastDay.getDay();
+      const sunday = new Date(lastDay);
+      sunday.setDate(lastDay.getDate() + (lastDayOfWeek === 0 ? 0 : 7 - lastDayOfWeek));
+      sunday.setHours(0, 0, 0, 0);
+      
+      startDate = monday;
+      endDate = sunday;
+    }
+
+    const days: CalendarDay[] = [];
+    const current = new Date(startDate);
+
+    while (current <= endDate) {
+      const dateStr = current.toISOString().split('T')[0];
+      const dayTasks = tasks.filter(task => {
+        const taskStartDate = task.startDate || task.start_date;
+        const taskDueDate = task.dueDate || task.due_date;
+        const taskEndDate = task.endDate || task.end_date;
+        
+        // If task has start_date and end_date, check if current date is within range
+        if (taskStartDate && taskEndDate) {
+          const startStr = new Date(taskStartDate).toISOString().split('T')[0];
+          const endStr = new Date(taskEndDate).toISOString().split('T')[0];
+          return dateStr >= startStr && dateStr <= endStr;
+        }
+        
+        // If task has only due_date, check if it matches
+        if (taskDueDate) {
+          const taskDateStr = new Date(taskDueDate).toISOString().split('T')[0];
+          return taskDateStr === dateStr;
+        }
+        
+        return false;
+      });
+
+      days.push({
+        date: new Date(current),
+        dayOfMonth: current.getDate(),
+        isCurrentMonth: current.getMonth() === month,
+        isToday: current.getTime() === today.getTime(),
+        tasks: dayTasks,
+      });
+
+      current.setDate(current.getDate() + 1);
+    }
+
+    return days;
+  };
+
+  const navigateDate = (direction: 'prev' | 'next') => {
+    const newDate = new Date(currentDate);
+    if (viewMode === '1week') {
+      newDate.setDate(currentDate.getDate() + (direction === 'next' ? 7 : -7));
+    } else if (viewMode === '2weeks') {
+      newDate.setDate(currentDate.getDate() + (direction === 'next' ? 14 : -14));
+    } else {
+      newDate.setMonth(currentDate.getMonth() + (direction === 'next' ? 1 : -1));
+    }
+    setCurrentDate(newDate);
+  };
+
+  const formatMonthYear = () => {
+    return currentDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }).toUpperCase();
+  };
+
+  const getDayName = (date: Date) => {
+    return date.toLocaleDateString('en-US', { weekday: 'short' });
+  };
+
+  const handleDateClick = (date: Date) => {
+    setSelectedDate(date);
+  };
+
+  const days = getDaysInView();
+  const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
   return (
     <div className="glass-medium rounded-2xl p-6">
@@ -60,61 +183,167 @@ export function CalendarView() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-4">
           <h3 className="text-lg font-bold text-text-primary">
-            NOV <span className="text-text-tertiary">2020</span>
+            {formatMonthYear()}
           </h3>
           <div className="flex items-center space-x-2">
-            <button className="p-1 glass-subtle hover:glass-light rounded transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] hover:scale-110 active:scale-95">
+            <button
+              onClick={() => navigateDate('prev')}
+              className="p-1 glass-subtle hover:glass-light rounded transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] hover:scale-110 active:scale-95"
+            >
               <ChevronLeft className="w-4 h-4 text-text-tertiary transition-transform duration-200 hover:-translate-x-0.5" />
             </button>
-            <button className="p-1 glass-subtle hover:glass-light rounded transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] hover:scale-110 active:scale-95">
+            <button
+              onClick={() => navigateDate('next')}
+              className="p-1 glass-subtle hover:glass-light rounded transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] hover:scale-110 active:scale-95"
+            >
               <ChevronRight className="w-4 h-4 text-text-tertiary transition-transform duration-200 hover:translate-x-0.5" />
+            </button>
+            <button
+              onClick={() => setCurrentDate(new Date())}
+              className="px-3 py-1 text-xs glass-subtle hover:glass-light rounded transition-all duration-200 text-text-secondary hover:text-text-primary"
+            >
+              Today
             </button>
           </div>
         </div>
         <div className="flex items-center space-x-2">
           <span className="text-sm text-text-secondary">Show:</span>
-          <select className="text-sm glass-input border-0 text-text-primary focus:outline-none rounded px-2 py-1">
-            <option>1 Week</option>
-            <option>2 Weeks</option>
-            <option>1 Month</option>
+          <select
+            value={viewMode}
+            onChange={(e) => setViewMode(e.target.value as '1week' | '2weeks' | '1month')}
+            className="text-sm glass-input border-0 text-text-primary focus:outline-none rounded px-2 py-1 cursor-pointer"
+          >
+            <option value="1week">1 Week</option>
+            <option value="2weeks">2 Weeks</option>
+            <option value="1month">1 Month</option>
           </select>
-          <ChevronLeft className="w-4 h-4 text-text-tertiary rotate-90" />
         </div>
       </div>
 
       {/* Calendar Grid */}
-      <div className="grid grid-cols-7 gap-4">
-        {weekDays.map((day, idx) => (
-          <div key={day} className="text-center">
-            <div className="text-xs text-text-tertiary mb-2">{weekDates[idx]}</div>
-            <div className="text-sm font-semibold text-text-primary mb-3">{day}</div>
-            <div className="space-y-2 min-h-[200px]">
-              {events[weekDates[idx]]?.map((event, eventIdx) => (
-                <div
-                  key={eventIdx}
-                  className={`p-2 rounded-lg text-xs glass-light glass-hover transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] ${event.color}`}
-                >
-                  <div className="font-medium mb-1">{event.title}</div>
-                  {event.team && (
-                    <div className="text-xs opacity-75">{event.team}</div>
-                  )}
-                  {event.members && (
-                    <div className="flex items-center -space-x-1 mt-2">
-                      {event.members.map((member, idx) => (
-                        <div
-                          key={idx}
-                          className="w-5 h-5 rounded-full bg-[#8098F9] border-2 border-white/20 flex items-center justify-center text-white text-[10px] font-semibold shadow-[0_0_10px_rgba(128,152,249,0.3)] transition-transform duration-200 hover:scale-125 hover:z-10"
-                        >
-                          {member}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
+      <div className="grid grid-cols-7 gap-2">
+        {/* Day headers */}
+        {weekDays.map((day) => (
+          <div key={day} className="text-center text-xs font-semibold text-text-tertiary pb-2">
+            {day}
           </div>
         ))}
+
+        {/* Calendar days */}
+        {days.map((day, idx) => {
+          const isSelected = selectedDate ? day.date.getTime() === selectedDate.getTime() : false;
+          const dateId = `date-${day.date.toISOString().split('T')[0]}`;
+          
+          return (
+            <DroppableDay
+              key={idx}
+              dateId={dateId}
+              day={day}
+              isSelected={isSelected}
+              onDateClick={handleDateClick}
+            />
+          );
+        })}
+      </div>
+
+      {/* Selected date info */}
+      {selectedDate && (
+        <div className="mt-4 pt-4 border-t border-white/10">
+          <div className="flex items-center space-x-2 text-sm text-text-secondary">
+            <CalendarIcon className="w-4 h-4" />
+            <span>
+              Selected: {selectedDate.toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+              })}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {loading && (
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#8098F9]"></div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface DroppableDayProps {
+  dateId: string;
+  day: CalendarDay;
+  isSelected: boolean;
+  onDateClick: (date: Date) => void;
+}
+
+function DroppableDay({ dateId, day, isSelected, onDateClick }: DroppableDayProps) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: dateId,
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      onClick={() => onDateClick(day.date)}
+      className={cn(
+        'min-h-[120px] p-2 rounded-lg border-2 transition-all cursor-pointer',
+        day.isToday
+          ? 'border-[#8098F9] bg-[#8098F9]/10'
+          : isSelected
+          ? 'border-[#8098F9]/50 bg-[#8098F9]/5'
+          : isOver
+          ? 'border-green-500/50 bg-green-500/10 border-dashed'
+          : 'border-transparent hover:border-white/10 hover:bg-white/5',
+        !day.isCurrentMonth && 'opacity-40'
+      )}
+    >
+      <div
+        className={cn(
+          'text-xs mb-2 font-semibold',
+          day.isToday
+            ? 'text-[#8098F9]'
+            : day.isCurrentMonth
+            ? 'text-text-primary'
+            : 'text-text-tertiary'
+        )}
+      >
+        {day.dayOfMonth}
+      </div>
+      <div className="space-y-1">
+        {day.tasks.slice(0, 3).map((task) => {
+          const priorityColor =
+            task.priority === 'high'
+              ? 'bg-red-500/20 text-red-300 border-red-500/30'
+              : task.priority === 'low'
+              ? 'bg-blue-500/20 text-blue-300 border-blue-500/30'
+              : 'bg-gray-500/20 text-gray-300 border-gray-500/30';
+
+          return (
+            <div
+              key={task.id}
+              className={cn(
+                'p-1.5 rounded text-xs border glass-light truncate',
+                priorityColor
+              )}
+              title={task.title}
+            >
+              <div className="font-medium truncate">{task.title}</div>
+              {task.assignee && (
+                <div className="text-[10px] opacity-75 mt-0.5">
+                  {task.assignee}
+                </div>
+              )}
+            </div>
+          );
+        })}
+        {day.tasks.length > 3 && (
+          <div className="text-[10px] text-text-tertiary text-center pt-1">
+            +{day.tasks.length - 3} more
+          </div>
+        )}
       </div>
     </div>
   );

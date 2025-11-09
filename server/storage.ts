@@ -1,4 +1,4 @@
-import { eq, and, or, desc, isNull } from 'drizzle-orm';
+import { eq, and, or, desc, isNull, gte, lte, sql, isNotNull, inArray } from 'drizzle-orm';
 import { db } from './db';
 import {
   users,
@@ -12,6 +12,14 @@ import {
   notifications,
   tasks,
   timeEntries,
+  invoices,
+  expenses,
+  reports,
+  fileAttachments,
+  projectTemplates,
+  recurringInvoices,
+  invoiceComments,
+  invoicePayments,
   type User,
   type InsertUser,
   type Project,
@@ -32,6 +40,22 @@ import {
   type InsertTask,
   type TimeEntry,
   type InsertTimeEntry,
+  type Invoice,
+  type InsertInvoice,
+  type Expense,
+  type InsertExpense,
+  type Report,
+  type InsertReport,
+  type FileAttachment,
+  type InsertFileAttachment,
+  type ProjectTemplate,
+  type InsertProjectTemplate,
+  type RecurringInvoice,
+  type InsertRecurringInvoice,
+  type InvoiceComment,
+  type InsertInvoiceComment,
+  type InvoicePayment,
+  type InsertInvoicePayment,
 } from '../shared/schema';
 
 export class DatabaseStorage {
@@ -283,25 +307,59 @@ export class DatabaseStorage {
 
   // Tasks
   async getTasks(userId?: number, projectId?: number): Promise<Task[]> {
-    if (userId && projectId) {
-      return await db
-        .select()
-        .from(tasks)
-        .where(and(eq(tasks.projectId, projectId), eq(tasks.userId, userId)))
-        .orderBy(desc(tasks.createdAt));
-    } else if (projectId) {
+    // If projectId is provided, show all tasks for that project (user must have access)
+    if (projectId) {
+      // Verify user has access to the project
+      if (userId) {
+        const hasAccess = await this.userHasProjectAccess(userId, projectId);
+        if (!hasAccess) {
+          return []; // User doesn't have access to this project
+        }
+      }
+      // Return all tasks for the project
       return await db
         .select()
         .from(tasks)
         .where(eq(tasks.projectId, projectId))
         .orderBy(desc(tasks.createdAt));
-    } else if (userId) {
-      return await db
-        .select()
-        .from(tasks)
-        .where(eq(tasks.userId, userId))
-        .orderBy(desc(tasks.createdAt));
-    } else {
+    } 
+    // If only userId is provided, show all tasks:
+    // 1. Tasks created by the user (userId matches)
+    // 2. Tasks from projects owned by the user
+    else if (userId) {
+      // Get all project IDs owned by the user
+      const userProjects = await db
+        .select({ id: projects.id })
+        .from(projects)
+        .where(eq(projects.userId, userId));
+      
+      const projectIds = userProjects.map(p => p.id);
+      
+      // Return tasks where:
+      // - userId matches OR
+      // - projectId is in user's projects
+      if (projectIds.length > 0) {
+        return await db
+          .select()
+          .from(tasks)
+          .where(
+            or(
+              eq(tasks.userId, userId),
+              inArray(tasks.projectId, projectIds)
+            )
+          )
+          .orderBy(desc(tasks.createdAt));
+      } else {
+        // No projects, return only tasks created by user
+        return await db
+          .select()
+          .from(tasks)
+          .where(eq(tasks.userId, userId))
+          .orderBy(desc(tasks.createdAt));
+      }
+    } 
+    // If neither is provided, return all tasks (shouldn't happen in normal flow)
+    else {
       return await db
         .select()
         .from(tasks)
@@ -390,6 +448,660 @@ export class DatabaseStorage {
       .orderBy(desc(timeEntries.createdAt))
       .limit(1);
     return entries[0];
+  }
+
+  // Invoices
+  async getInvoices(projectId?: number): Promise<Invoice[]> {
+    if (projectId) {
+      return await db
+        .select()
+        .from(invoices)
+        .where(eq(invoices.projectId, projectId))
+        .orderBy(desc(invoices.createdAt));
+    }
+    return await db
+      .select()
+      .from(invoices)
+      .orderBy(desc(invoices.createdAt));
+  }
+
+  async getInvoice(invoiceId: number): Promise<Invoice | undefined> {
+    const [invoice] = await db.select().from(invoices).where(eq(invoices.id, invoiceId));
+    return invoice;
+  }
+
+  async createInvoice(data: InsertInvoice): Promise<Invoice> {
+    const [invoice] = await db.insert(invoices).values(data).returning();
+    return invoice;
+  }
+
+  async updateInvoice(invoiceId: number, data: Partial<InsertInvoice>): Promise<Invoice | undefined> {
+    const [invoice] = await db
+      .update(invoices)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(invoices.id, invoiceId))
+      .returning();
+    return invoice;
+  }
+
+  async deleteInvoice(invoiceId: number): Promise<void> {
+    await db.delete(invoices).where(eq(invoices.id, invoiceId));
+  }
+
+  // Expenses
+  async getExpenses(projectId?: number): Promise<Expense[]> {
+    if (projectId) {
+      return await db
+        .select()
+        .from(expenses)
+        .where(eq(expenses.projectId, projectId))
+        .orderBy(desc(expenses.expenseDate));
+    }
+    return await db
+      .select()
+      .from(expenses)
+      .orderBy(desc(expenses.expenseDate));
+  }
+
+  async getExpense(expenseId: number): Promise<Expense | undefined> {
+    const [expense] = await db.select().from(expenses).where(eq(expenses.id, expenseId));
+    return expense;
+  }
+
+  async createExpense(data: InsertExpense): Promise<Expense> {
+    const [expense] = await db.insert(expenses).values(data).returning();
+    return expense;
+  }
+
+  async updateExpense(expenseId: number, data: Partial<InsertExpense>): Promise<Expense | undefined> {
+    const [expense] = await db
+      .update(expenses)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(expenses.id, expenseId))
+      .returning();
+    return expense;
+  }
+
+  async deleteExpense(expenseId: number): Promise<void> {
+    await db.delete(expenses).where(eq(expenses.id, expenseId));
+  }
+
+  // Reports
+  async getReports(userId?: number, projectId?: number): Promise<Report[]> {
+    const conditions = [];
+    if (userId) {
+      conditions.push(eq(reports.userId, userId));
+    }
+    if (projectId) {
+      conditions.push(eq(reports.projectId, projectId));
+    }
+    
+    if (conditions.length > 0) {
+      return await db
+        .select()
+        .from(reports)
+        .where(and(...conditions))
+        .orderBy(desc(reports.updatedAt));
+    }
+    
+    return await db.select().from(reports).orderBy(desc(reports.updatedAt));
+  }
+
+  async getReport(reportId: number): Promise<Report | undefined> {
+    const [report] = await db.select().from(reports).where(eq(reports.id, reportId));
+    return report;
+  }
+
+  async createReport(data: InsertReport): Promise<Report> {
+    const [report] = await db.insert(reports).values(data).returning();
+    return report;
+  }
+
+  async updateReport(reportId: number, data: Partial<InsertReport>): Promise<Report | undefined> {
+    const [report] = await db
+      .update(reports)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(reports.id, reportId))
+      .returning();
+    return report;
+  }
+
+  async deleteReport(reportId: number): Promise<void> {
+    await db.delete(reports).where(eq(reports.id, reportId));
+  }
+
+  // Budget Metrics
+  async getBudgetMetrics(userId: number): Promise<{
+    totalBudget: number;
+    totalSpent: number;
+    utilizationPercentage: number;
+    remainingBudget: number;
+    forecastSpending: number;
+    projectsAtRisk: number;
+  }> {
+    // Get all user projects with budgets
+    const userProjects = await db
+      .select()
+      .from(projects)
+      .where(eq(projects.userId, userId));
+
+    // Calculate total budget (in cents)
+    const totalBudget = userProjects.reduce((sum, project) => {
+      return sum + (project.budget || 0);
+    }, 0);
+
+    // Get all expenses for user's projects
+    const projectIds = userProjects.map(p => p.id);
+    let totalSpent = 0;
+    let projectsAtRisk = 0;
+
+    if (projectIds.length > 0) {
+      const allExpenses = await db
+        .select()
+        .from(expenses)
+        .where(
+          or(...projectIds.map(id => eq(expenses.projectId, id)))
+        );
+
+      // Calculate total spent (in cents)
+      totalSpent = allExpenses.reduce((sum, expense) => {
+        return sum + (expense.amount || 0);
+      }, 0);
+
+      // Calculate spending per project and identify at-risk projects
+      for (const project of userProjects) {
+        if (!project.budget) continue;
+        
+        const projectExpenses = allExpenses.filter(e => e.projectId === project.id);
+        const projectSpent = projectExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+        const projectUtilization = (projectSpent / project.budget) * 100;
+
+        if (projectUtilization >= 80) {
+          projectsAtRisk++;
+        }
+      }
+    }
+
+    // Calculate metrics
+    const utilizationPercentage = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
+    const remainingBudget = Math.max(0, totalBudget - totalSpent);
+
+    // Calculate forecast spending based on average daily spending rate
+    // Assuming 30-day month for forecast
+    const daysSinceOldestProject = userProjects.length > 0 
+      ? Math.max(1, Math.floor((Date.now() - new Date(userProjects[0].createdAt).getTime()) / (1000 * 60 * 60 * 24)))
+      : 30;
+    const averageDailySpending = daysSinceOldestProject > 0 ? totalSpent / daysSinceOldestProject : 0;
+    const forecastSpending = averageDailySpending * 30; // 30-day forecast
+
+    return {
+      totalBudget,
+      totalSpent,
+      utilizationPercentage,
+      remainingBudget,
+      forecastSpending,
+      projectsAtRisk,
+    };
+  }
+
+  // Cash Flow Analytics
+  async getCashFlowData(userId: number, startDate: Date, endDate: Date): Promise<{
+    date: string;
+    income: number;
+    expenses: number;
+    netCashFlow: number;
+  }[]> {
+    // Get all user's projects
+    const userProjects = await db
+      .select()
+      .from(projects)
+      .where(eq(projects.userId, userId));
+    
+    const projectIds = userProjects.map(p => p.id);
+    
+    if (projectIds.length === 0) {
+      return [];
+    }
+
+    // Get paid invoices (income) in date range
+    const invoices = await db
+      .select()
+      .from(invoices)
+      .where(
+        and(
+          or(...projectIds.map(id => eq(invoices.projectId, id))),
+          eq(invoices.status, 'paid'),
+          gte(invoices.paidDate, startDate),
+          lte(invoices.paidDate, endDate)
+        )
+      );
+
+    // Get expenses in date range
+    const expenses = await db
+      .select()
+      .from(expenses)
+      .where(
+        and(
+          or(...projectIds.map(id => eq(expenses.projectId, id))),
+          gte(expenses.expenseDate, startDate),
+          lte(expenses.expenseDate, endDate)
+        )
+      );
+
+    // Group by date
+    const cashFlowMap = new Map<string, { income: number; expenses: number }>();
+
+    invoices.forEach(invoice => {
+      if (!invoice.paidDate) return;
+      const dateStr = new Date(invoice.paidDate).toISOString().split('T')[0];
+      const existing = cashFlowMap.get(dateStr) || { income: 0, expenses: 0 };
+      cashFlowMap.set(dateStr, {
+        ...existing,
+        income: existing.income + (invoice.totalAmount || 0),
+      });
+    });
+
+    expenses.forEach(expense => {
+      const dateStr = new Date(expense.expenseDate).toISOString().split('T')[0];
+      const existing = cashFlowMap.get(dateStr) || { income: 0, expenses: 0 };
+      cashFlowMap.set(dateStr, {
+        ...existing,
+        expenses: existing.expenses + (expense.amount || 0),
+      });
+    });
+
+    // Convert to array and sort by date
+    const result = Array.from(cashFlowMap.entries())
+      .map(([date, data]) => ({
+        date,
+        income: data.income,
+        expenses: data.expenses,
+        netCashFlow: data.income - data.expenses,
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    return result;
+  }
+
+  async getCashFlowForecast(userId: number): Promise<{
+    date: string;
+    forecastedIncome: number;
+  }[]> {
+    // Get all user's projects
+    const userProjects = await db
+      .select()
+      .from(projects)
+      .where(eq(projects.userId, userId));
+    
+    const projectIds = userProjects.map(p => p.id);
+    
+    if (projectIds.length === 0) {
+      return [];
+    }
+
+    // Get pending invoices (sent but not paid)
+    const pendingInvoices = await db
+      .select()
+      .from(invoices)
+      .where(
+        and(
+          or(...projectIds.map(id => eq(invoices.projectId, id))),
+          eq(invoices.status, 'sent'),
+          isNotNull(invoices.dueDate)
+        )
+      );
+
+    // Group by due date
+    const forecastMap = new Map<string, number>();
+
+    pendingInvoices.forEach(invoice => {
+      if (!invoice.dueDate) return;
+      const dateStr = new Date(invoice.dueDate).toISOString().split('T')[0];
+      const existing = forecastMap.get(dateStr) || 0;
+      forecastMap.set(dateStr, existing + (invoice.totalAmount || 0));
+    });
+
+    // Convert to array and sort by date
+    const result = Array.from(forecastMap.entries())
+      .map(([date, forecastedIncome]) => ({
+        date,
+        forecastedIncome,
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    return result;
+  }
+
+  async getCashFlowByCategory(userId: number, startDate: Date, endDate: Date): Promise<{
+    category: string;
+    income: number;
+    expenses: number;
+  }[]> {
+    // Get all user's projects
+    const userProjects = await db
+      .select()
+      .from(projects)
+      .where(eq(projects.userId, userId));
+    
+    const projectIds = userProjects.map(p => p.id);
+    
+    if (projectIds.length === 0) {
+      return [];
+    }
+
+    // Get paid invoices grouped by project
+    const invoices = await db
+      .select()
+      .from(invoices)
+      .where(
+        and(
+          or(...projectIds.map(id => eq(invoices.projectId, id))),
+          eq(invoices.status, 'paid'),
+          gte(invoices.paidDate, startDate),
+          lte(invoices.paidDate, endDate)
+        )
+      );
+
+    // Get expenses grouped by category
+    const expenses = await db
+      .select()
+      .from(expenses)
+      .where(
+        and(
+          or(...projectIds.map(id => eq(expenses.projectId, id))),
+          gte(expenses.expenseDate, startDate),
+          lte(expenses.expenseDate, endDate)
+        )
+      );
+
+    // Group income by project name (as category)
+    const incomeByCategory = new Map<string, number>();
+    for (const invoice of invoices) {
+      if (invoice.projectId) {
+        const project = userProjects.find(p => p.id === invoice.projectId);
+        const category = project?.name || 'Other';
+        const existing = incomeByCategory.get(category) || 0;
+        incomeByCategory.set(category, existing + (invoice.totalAmount || 0));
+      }
+    }
+
+    // Group expenses by category
+    const expensesByCategory = new Map<string, number>();
+    expenses.forEach(expense => {
+      const category = expense.category || 'other';
+      const existing = expensesByCategory.get(category) || 0;
+      expensesByCategory.set(category, existing + (expense.amount || 0));
+    });
+
+    // Combine all categories
+    const allCategories = new Set([
+      ...incomeByCategory.keys(),
+      ...expensesByCategory.keys(),
+    ]);
+
+    const result = Array.from(allCategories).map(category => ({
+      category,
+      income: incomeByCategory.get(category) || 0,
+      expenses: expensesByCategory.get(category) || 0,
+    }));
+
+    return result;
+  }
+
+  async getCashFlowComparison(
+    userId: number,
+    period: 'week' | 'month' | 'year',
+    compareTo: 'previous' | 'same_last_year'
+  ): Promise<{
+    current: { income: number; expenses: number; netCashFlow: number };
+    previous: { income: number; expenses: number; netCashFlow: number };
+  }> {
+    const now = new Date();
+    let currentStart: Date;
+    let currentEnd: Date = new Date(now);
+    let previousStart: Date;
+    let previousEnd: Date;
+
+    if (period === 'week') {
+      const dayOfWeek = now.getDay();
+      const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+      currentStart = new Date(now);
+      currentStart.setDate(now.getDate() - daysFromMonday);
+      currentStart.setHours(0, 0, 0, 0);
+      
+      previousStart = new Date(currentStart);
+      previousStart.setDate(previousStart.getDate() - 7);
+      previousEnd = new Date(currentStart);
+      previousEnd.setDate(previousEnd.getDate() - 1);
+      previousEnd.setHours(23, 59, 59, 999);
+    } else if (period === 'month') {
+      currentStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      currentEnd = new Date(now);
+      
+      previousStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      previousEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+      previousEnd.setHours(23, 59, 59, 999);
+    } else {
+      // year
+      currentStart = new Date(now.getFullYear(), 0, 1);
+      currentEnd = new Date(now);
+      
+      if (compareTo === 'previous') {
+        previousStart = new Date(now.getFullYear() - 1, 0, 1);
+        previousEnd = new Date(now.getFullYear() - 1, 11, 31);
+        previousEnd.setHours(23, 59, 59, 999);
+      } else {
+        previousStart = new Date(now.getFullYear() - 1, now.getMonth(), 1);
+        previousEnd = new Date(now.getFullYear() - 1, now.getMonth() + 1, 0);
+        previousEnd.setHours(23, 59, 59, 999);
+      }
+    }
+
+    currentStart.setHours(0, 0, 0, 0);
+
+    // Get current period data
+    const currentData = await this.getCashFlowData(userId, currentStart, currentEnd);
+    const current = {
+      income: currentData.reduce((sum, d) => sum + d.income, 0),
+      expenses: currentData.reduce((sum, d) => sum + d.expenses, 0),
+      netCashFlow: currentData.reduce((sum, d) => sum + d.netCashFlow, 0),
+    };
+
+    // Get previous period data
+    const previousData = await this.getCashFlowData(userId, previousStart, previousEnd);
+    const previous = {
+      income: previousData.reduce((sum, d) => sum + d.income, 0),
+      expenses: previousData.reduce((sum, d) => sum + d.expenses, 0),
+      netCashFlow: previousData.reduce((sum, d) => sum + d.netCashFlow, 0),
+    };
+
+    return { current, previous };
+  }
+
+  // File Attachments
+  async createFileAttachment(fileData: InsertFileAttachment): Promise<FileAttachment> {
+    const [file] = await db.insert(fileAttachments).values(fileData).returning();
+    return file;
+  }
+
+  async getFileAttachments(projectId?: number, taskId?: number): Promise<FileAttachment[]> {
+    const conditions = [];
+    if (projectId) {
+      conditions.push(eq(fileAttachments.projectId, projectId));
+    }
+    if (taskId) {
+      conditions.push(eq(fileAttachments.taskId, taskId));
+    }
+    if (conditions.length === 0) {
+      return [];
+    }
+    return await db
+      .select()
+      .from(fileAttachments)
+      .where(and(...conditions))
+      .orderBy(desc(fileAttachments.createdAt));
+  }
+
+  async getFileAttachment(id: number): Promise<FileAttachment | undefined> {
+    const [file] = await db.select().from(fileAttachments).where(eq(fileAttachments.id, id));
+    return file;
+  }
+
+  async deleteFileAttachment(id: number): Promise<void> {
+    await db.delete(fileAttachments).where(eq(fileAttachments.id, id));
+  }
+
+  async getFileVersions(parentFileId: number): Promise<FileAttachment[]> {
+    return await db
+      .select()
+      .from(fileAttachments)
+      .where(eq(fileAttachments.parentFileId, parentFileId))
+      .orderBy(desc(fileAttachments.version));
+  }
+
+  // Project Templates
+  async getProjectTemplates(category?: string): Promise<ProjectTemplate[]> {
+    if (category) {
+      return await db
+        .select()
+        .from(projectTemplates)
+        .where(eq(projectTemplates.category, category))
+        .orderBy(desc(projectTemplates.usageCount));
+    }
+    return await db
+      .select()
+      .from(projectTemplates)
+      .orderBy(desc(projectTemplates.usageCount));
+  }
+
+  async getProjectTemplate(id: number): Promise<ProjectTemplate | undefined> {
+    const [template] = await db.select().from(projectTemplates).where(eq(projectTemplates.id, id));
+    return template;
+  }
+
+  async createProjectTemplate(templateData: InsertProjectTemplate): Promise<ProjectTemplate> {
+    const [template] = await db.insert(projectTemplates).values(templateData).returning();
+    return template;
+  }
+
+  async incrementTemplateUsage(id: number): Promise<void> {
+    await db
+      .update(projectTemplates)
+      .set({
+        usageCount: sql`${projectTemplates.usageCount} + 1`,
+        updatedAt: new Date(),
+      })
+      .where(eq(projectTemplates.id, id));
+  }
+
+  // Recurring Invoices
+  async createRecurringInvoice(recurringData: InsertRecurringInvoice): Promise<RecurringInvoice> {
+    const [recurring] = await db.insert(recurringInvoices).values(recurringData).returning();
+    return recurring;
+  }
+
+  async getRecurringInvoices(projectId?: number): Promise<RecurringInvoice[]> {
+    if (projectId) {
+      return await db
+        .select()
+        .from(recurringInvoices)
+        .where(eq(recurringInvoices.projectId, projectId))
+        .orderBy(desc(recurringInvoices.createdAt));
+    }
+    return await db
+      .select()
+      .from(recurringInvoices)
+      .orderBy(desc(recurringInvoices.createdAt));
+  }
+
+  async getRecurringInvoice(id: number): Promise<RecurringInvoice | undefined> {
+    const [recurring] = await db.select().from(recurringInvoices).where(eq(recurringInvoices.id, id));
+    return recurring;
+  }
+
+  async updateRecurringInvoice(id: number, updateData: Partial<InsertRecurringInvoice>): Promise<RecurringInvoice | undefined> {
+    const [recurring] = await db
+      .update(recurringInvoices)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(eq(recurringInvoices.id, id))
+      .returning();
+    return recurring;
+  }
+
+  async getRecurringInvoicesDueForGeneration(): Promise<RecurringInvoice[]> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    return await db
+      .select()
+      .from(recurringInvoices)
+      .where(
+        and(
+          eq(recurringInvoices.isActive, true),
+          lte(recurringInvoices.nextGenerationDate, today),
+          or(
+            isNull(recurringInvoices.endDate),
+            gte(recurringInvoices.endDate, today)
+          )
+        )
+      );
+  }
+
+  // Invoice Comments
+  async createInvoiceComment(commentData: any): Promise<any> {
+    const [comment] = await db.insert(invoiceComments).values(commentData).returning();
+    return comment;
+  }
+
+  async getInvoiceComments(invoiceId: number, includeInternal: boolean = false): Promise<any[]> {
+    if (includeInternal) {
+      return await db
+        .select()
+        .from(invoiceComments)
+        .where(eq(invoiceComments.invoiceId, invoiceId))
+        .orderBy(desc(invoiceComments.createdAt));
+    }
+    return await db
+      .select()
+      .from(invoiceComments)
+      .where(
+        and(
+          eq(invoiceComments.invoiceId, invoiceId),
+          eq(invoiceComments.isInternal, false)
+        )
+      )
+      .orderBy(desc(invoiceComments.createdAt));
+  }
+
+  // Invoice Payments
+  async createInvoicePayment(paymentData: any): Promise<any> {
+    const [payment] = await db.insert(invoicePayments).values(paymentData).returning();
+    return payment;
+  }
+
+  async getInvoicePayments(invoiceId: number): Promise<any[]> {
+    return await db
+      .select()
+      .from(invoicePayments)
+      .where(eq(invoicePayments.invoiceId, invoiceId))
+      .orderBy(desc(invoicePayments.createdAt));
+  }
+
+  async updateInvoicePayment(id: number, updateData: any): Promise<any> {
+    const [payment] = await db
+      .update(invoicePayments)
+      .set(updateData)
+      .where(eq(invoicePayments.id, id))
+      .returning();
+    return payment;
+  }
+
+  async getInvoiceByPublicToken(token: string): Promise<Invoice | undefined> {
+    const [invoice] = await db
+      .select()
+      .from(invoices)
+      .where(eq(invoices.publicToken, token));
+    return invoice;
   }
 }
 

@@ -26,6 +26,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   emailVerifications: many(emailVerifications),
   tasks: many(tasks),
   timeEntries: many(timeEntries),
+  reports: many(reports),
 }));
 
 export const projects = pgTable('projects', {
@@ -48,14 +49,6 @@ export const projects = pgTable('projects', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
-export const projectsRelations = relations(projects, ({ one, many }) => ({
-  owner: one(users, {
-    fields: [projects.userId],
-    references: [users.id],
-  }),
-  teamProjects: many(teamProjects),
-  tasks: many(tasks),
-}));
 
 export const teams = pgTable('teams', {
   id: serial('id').primaryKey(),
@@ -201,24 +194,17 @@ export const tasks = pgTable('tasks', {
   title: varchar('title', { length: 255 }).notNull(),
   description: text('description'),
   assignee: varchar('assignee', { length: 100 }),
+  startDate: timestamp('start_date'),
   dueDate: timestamp('due_date'),
+  endDate: timestamp('end_date'),
   status: varchar('status', { length: 50 }).default('todo').notNull(),
   priority: varchar('priority', { length: 50 }).default('medium').notNull(),
+  dependsOn: text('depends_on'), // JSON array of task IDs
+  progress: integer('progress').default(0).notNull(), // 0-100 percentage
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
-export const tasksRelations = relations(tasks, ({ one, many }) => ({
-  project: one(projects, {
-    fields: [tasks.projectId],
-    references: [projects.id],
-  }),
-  user: one(users, {
-    fields: [tasks.userId],
-    references: [users.id],
-  }),
-  timeEntries: many(timeEntries),
-}));
 
 export const timeEntries = pgTable('time_entries', {
   id: serial('id').primaryKey(),
@@ -248,6 +234,229 @@ export const timeEntriesRelations = relations(timeEntries, ({ one }) => ({
   }),
 }));
 
+export const invoices = pgTable('invoices', {
+  id: serial('id').primaryKey(),
+  projectId: integer('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
+  invoiceNumber: varchar('invoice_number', { length: 100 }).notNull().unique(),
+  clientName: varchar('client_name', { length: 255 }),
+  clientEmail: varchar('client_email', { length: 255 }),
+  clientAddress: text('client_address'),
+  amount: integer('amount').notNull(), // in cents
+  currency: varchar('currency', { length: 3 }).default('usd').notNull(),
+  taxRate: integer('tax_rate').default(0), // percentage (e.g., 20 for 20%)
+  taxAmount: integer('tax_amount').default(0), // in cents
+  totalAmount: integer('total_amount').notNull(), // in cents (amount + tax)
+  status: varchar('status', { length: 50 }).default('draft').notNull(), // draft, sent, paid, overdue, cancelled
+  issueDate: timestamp('issue_date').notNull(),
+  dueDate: timestamp('due_date'),
+  paidDate: timestamp('paid_date'),
+  description: text('description'),
+  items: text('items'), // JSON string of invoice items
+  notes: text('notes'),
+  publicToken: varchar('public_token', { length: 255 }).unique(),
+  tokenExpiresAt: timestamp('token_expires_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const invoicesRelations = relations(invoices, ({ one }) => ({
+  project: one(projects, {
+    fields: [invoices.projectId],
+    references: [projects.id],
+  }),
+}));
+
+export const expenses = pgTable('expenses', {
+  id: serial('id').primaryKey(),
+  projectId: integer('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'set null' }),
+  category: varchar('category', { length: 100 }).notNull(), // e.g., 'materials', 'labor', 'software', 'travel', 'other'
+  description: text('description').notNull(),
+  amount: integer('amount').notNull(), // in cents
+  currency: varchar('currency', { length: 3 }).default('usd').notNull(),
+  expenseDate: timestamp('expense_date').notNull(),
+  receiptUrl: text('receipt_url'),
+  notes: text('notes'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const expensesRelations = relations(expenses, ({ one }) => ({
+  project: one(projects, {
+    fields: [expenses.projectId],
+    references: [projects.id],
+  }),
+  user: one(users, {
+    fields: [expenses.userId],
+    references: [users.id],
+  }),
+}));
+
+export const reports = pgTable('reports', {
+  id: serial('id').primaryKey(),
+  projectId: integer('project_id').references(() => projects.id, { onDelete: 'cascade' }),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  title: varchar('title', { length: 255 }).notNull(),
+  content: text('content').notNull(), // Rich text HTML content
+  type: varchar('type', { length: 50 }).default('custom').notNull(), // 'project_status', 'analysis', 'financial_summary', 'custom'
+  status: varchar('status', { length: 50 }).default('draft').notNull(), // 'draft', 'published', 'archived'
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const reportsRelations = relations(reports, ({ one }) => ({
+  project: one(projects, {
+    fields: [reports.projectId],
+    references: [projects.id],
+  }),
+  user: one(users, {
+    fields: [reports.userId],
+    references: [users.id],
+  }),
+}));
+
+export const fileAttachments = pgTable('file_attachments', {
+  id: serial('id').primaryKey(),
+  projectId: integer('project_id').references(() => projects.id, { onDelete: 'cascade' }),
+  taskId: integer('task_id').references(() => tasks.id, { onDelete: 'cascade' }),
+  fileName: varchar('file_name', { length: 255 }).notNull(),
+  fileType: varchar('file_type', { length: 100 }).notNull(),
+  fileSize: integer('file_size').notNull(), // in bytes
+  r2Key: text('r2_key').notNull(), // S3/R2 object key
+  uploadedBy: integer('uploaded_by').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  version: integer('version').default(1).notNull(),
+  parentFileId: integer('parent_file_id').references(() => fileAttachments.id, { onDelete: 'set null' }),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const fileAttachmentsRelations = relations(fileAttachments, ({ one }) => ({
+  project: one(projects, {
+    fields: [fileAttachments.projectId],
+    references: [projects.id],
+  }),
+  task: one(tasks, {
+    fields: [fileAttachments.taskId],
+    references: [tasks.id],
+  }),
+  uploadedByUser: one(users, {
+    fields: [fileAttachments.uploadedBy],
+    references: [users.id],
+  }),
+  parentFile: one(fileAttachments, {
+    fields: [fileAttachments.parentFileId],
+    references: [fileAttachments.id],
+    relationName: 'parent',
+  }),
+}));
+
+export const projectTemplates = pgTable('project_templates', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 255 }).notNull(),
+  description: text('description'),
+  category: varchar('category', { length: 100 }).notNull(), // web_app, mobile_app, ecommerce, etc.
+  templateData: text('template_data').notNull(), // JSON string with pre-filled project fields, tasks, budget, timeline
+  isPublic: boolean('is_public').default(true).notNull(),
+  createdBy: integer('created_by').references(() => users.id, { onDelete: 'set null' }),
+  usageCount: integer('usage_count').default(0).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const projectTemplatesRelations = relations(projectTemplates, ({ one }) => ({
+  creator: one(users, {
+    fields: [projectTemplates.createdBy],
+    references: [users.id],
+  }),
+}));
+
+export const recurringInvoices = pgTable('recurring_invoices', {
+  id: serial('id').primaryKey(),
+  projectId: integer('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
+  baseInvoiceId: integer('base_invoice_id').references(() => invoices.id, { onDelete: 'set null' }),
+  frequency: varchar('frequency', { length: 50 }).notNull(), // weekly, bi-weekly, monthly, quarterly, yearly, custom
+  customIntervalDays: integer('custom_interval_days'), // for custom frequency
+  nextGenerationDate: timestamp('next_generation_date').notNull(),
+  lastGeneratedDate: timestamp('last_generated_date'),
+  isActive: boolean('is_active').default(true).notNull(),
+  endDate: timestamp('end_date'), // optional end date
+  autoSendEmail: boolean('auto_send_email').default(true).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const recurringInvoicesRelations = relations(recurringInvoices, ({ one }) => ({
+  project: one(projects, {
+    fields: [recurringInvoices.projectId],
+    references: [projects.id],
+  }),
+  baseInvoice: one(invoices, {
+    fields: [recurringInvoices.baseInvoiceId],
+    references: [invoices.id],
+  }),
+}));
+
+export const invoiceComments = pgTable('invoice_comments', {
+  id: serial('id').primaryKey(),
+  invoiceId: integer('invoice_id').notNull().references(() => invoices.id, { onDelete: 'cascade' }),
+  authorName: varchar('author_name', { length: 255 }).notNull(),
+  authorEmail: varchar('author_email', { length: 255 }).notNull(),
+  comment: text('comment').notNull(),
+  isInternal: boolean('is_internal').default(false).notNull(), // visible only to project owner
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const invoiceCommentsRelations = relations(invoiceComments, ({ one }) => ({
+  invoice: one(invoices, {
+    fields: [invoiceComments.invoiceId],
+    references: [invoices.id],
+  }),
+}));
+
+export const invoicePayments = pgTable('invoice_payments', {
+  id: serial('id').primaryKey(),
+  invoiceId: integer('invoice_id').notNull().references(() => invoices.id, { onDelete: 'cascade' }),
+  stripePaymentIntentId: varchar('stripe_payment_intent_id', { length: 255 }),
+  amount: integer('amount').notNull(), // in cents
+  currency: varchar('currency', { length: 3 }).default('usd').notNull(),
+  status: varchar('status', { length: 50 }).default('pending').notNull(), // pending, succeeded, failed
+  paidAt: timestamp('paid_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const invoicePaymentsRelations = relations(invoicePayments, ({ one }) => ({
+  invoice: one(invoices, {
+    fields: [invoicePayments.invoiceId],
+    references: [invoices.id],
+  }),
+}));
+
+export const projectsRelations = relations(projects, ({ one, many }) => ({
+  owner: one(users, {
+    fields: [projects.userId],
+    references: [users.id],
+  }),
+  teamProjects: many(teamProjects),
+  tasks: many(tasks),
+  invoices: many(invoices),
+  expenses: many(expenses),
+  reports: many(reports),
+  fileAttachments: many(fileAttachments),
+}));
+
+export const tasksRelations = relations(tasks, ({ one, many }) => ({
+  project: one(projects, {
+    fields: [tasks.projectId],
+    references: [projects.id],
+  }),
+  user: one(users, {
+    fields: [tasks.userId],
+    references: [users.id],
+  }),
+  timeEntries: many(timeEntries),
+  fileAttachments: many(fileAttachments),
+}));
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 export type Project = typeof projects.$inferSelect;
@@ -268,3 +477,19 @@ export type Task = typeof tasks.$inferSelect;
 export type InsertTask = typeof tasks.$inferInsert;
 export type TimeEntry = typeof timeEntries.$inferSelect;
 export type InsertTimeEntry = typeof timeEntries.$inferInsert;
+export type Invoice = typeof invoices.$inferSelect;
+export type InsertInvoice = typeof invoices.$inferInsert;
+export type Expense = typeof expenses.$inferSelect;
+export type InsertExpense = typeof expenses.$inferInsert;
+export type Report = typeof reports.$inferSelect;
+export type InsertReport = typeof reports.$inferInsert;
+export type FileAttachment = typeof fileAttachments.$inferSelect;
+export type InsertFileAttachment = typeof fileAttachments.$inferInsert;
+export type ProjectTemplate = typeof projectTemplates.$inferSelect;
+export type InsertProjectTemplate = typeof projectTemplates.$inferInsert;
+export type RecurringInvoice = typeof recurringInvoices.$inferSelect;
+export type InsertRecurringInvoice = typeof recurringInvoices.$inferInsert;
+export type InvoiceComment = typeof invoiceComments.$inferSelect;
+export type InsertInvoiceComment = typeof invoiceComments.$inferInsert;
+export type InvoicePayment = typeof invoicePayments.$inferSelect;
+export type InsertInvoicePayment = typeof invoicePayments.$inferInsert;

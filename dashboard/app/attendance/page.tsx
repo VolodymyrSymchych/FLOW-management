@@ -48,7 +48,7 @@ export default function AttendancePage() {
   const loadTimeEntries = async () => {
     try {
       const response = await axios.get('/api/attendance');
-      setTimeEntries(response.data.timeEntries || []);
+      setTimeEntries(response.data.entries || []);
     } catch (error) {
       console.error('Failed to load time entries:', error);
     } finally {
@@ -59,7 +59,7 @@ export default function AttendancePage() {
   const checkActiveSession = async () => {
     try {
       const response = await axios.get('/api/attendance');
-      const entries = response.data.timeEntries || [];
+      const entries = response.data.entries || [];
       const activeEntry = entries.find((e: TimeEntry) => !e.clockOut);
       if (activeEntry) {
         setIsClockedIn(true);

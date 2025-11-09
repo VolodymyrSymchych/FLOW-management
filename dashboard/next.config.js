@@ -1,6 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Transpile AWS SDK packages
+  transpilePackages: ['@aws-sdk', '@aws-crypto'],
   webpack: (config, { isServer }) => {
     if (!isServer) {
       // Exclude AWS SDK from client-side bundle

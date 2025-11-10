@@ -115,7 +115,7 @@ export function GanttChartView({ projectId }: GanttChartViewProps) {
       clearTimeout(timer);
       observer.disconnect();
     };
-  }, [ganttTasks, viewMode]);
+  }, [tasks, viewMode]);
 
   const loadTasks = async () => {
     try {

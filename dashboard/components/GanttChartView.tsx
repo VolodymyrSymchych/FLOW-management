@@ -290,8 +290,8 @@ export function GanttChartView({ projectId }: GanttChartViewProps) {
       </div>
       
       {/* Gantt Chart Container */}
-      <div className="glass-medium rounded-2xl p-6 border border-white/10 w-full" style={{ width: '100%', maxWidth: '100%', overflow: 'hidden' }}>
-        <div ref={containerRef} className="gantt-container w-full custom-scrollbar" style={{ minWidth: '100%', minHeight: '400px', height: 'auto' }}></div>
+      <div className="glass-medium rounded-2xl p-6 border border-white/10 w-full overflow-hidden">
+        <div ref={containerRef} className="gantt-container w-full custom-scrollbar" style={{ minHeight: '400px' }}></div>
       </div>
 
       {/* Legend */}
@@ -322,9 +322,7 @@ export function GanttChartView({ projectId }: GanttChartViewProps) {
         .gantt-container {
           background: transparent !important;
           width: 100% !important;
-          min-width: 100% !important;
           min-height: 400px !important;
-          height: auto !important;
           display: block !important;
           line-height: 14.5px !important;
           position: relative !important;
@@ -334,30 +332,31 @@ export function GanttChartView({ projectId }: GanttChartViewProps) {
           border-radius: 8px !important;
         }
         
-        /* Ensure SVG is visible */
+        /* Ensure SVG is visible and properly sized */
         .gantt-container svg.gantt {
           display: block !important;
           visibility: visible !important;
           opacity: 1 !important;
-          width: auto !important;
-          min-width: 100% !important;
+          width: 100% !important;
           height: auto !important;
+          min-height: 400px !important;
         }
 
-        /* Frappe Gantt SVG */
+        /* Frappe Gantt SVG - allow it to be wider than container */
         .gantt-container svg {
-          width: auto !important;
-          min-width: 100% !important;
+          display: block !important;
           background: transparent !important;
           font-family: inherit !important;
-          display: block !important;
           overflow: visible !important;
         }
         
-        /* Grid header container */
+        /* Ensure grid header scrolls with content */
         .gantt-container .grid-header {
-          overflow-x: auto !important;
-          overflow-y: visible !important;
+          position: sticky !important;
+          top: 0 !important;
+          z-index: 10 !important;
+          background-color: rgba(255, 255, 255, 0.05) !important;
+          backdrop-filter: blur(4px) !important;
         }
 
         /* Grid background */

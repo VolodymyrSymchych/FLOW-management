@@ -208,7 +208,7 @@ export function GanttChartView({ projectId }: GanttChartViewProps) {
   }
 
   return (
-    <div className="space-y-6 w-full min-w-full max-w-full">
+    <div className="space-y-6 w-full">
       {/* Controls */}
       <div className="glass-medium rounded-2xl p-4 border border-white/10 w-full">
         <div className="flex items-center justify-between">
@@ -252,8 +252,8 @@ export function GanttChartView({ projectId }: GanttChartViewProps) {
       </div>
       
       {/* Gantt Chart Container */}
-      <div className="glass-medium rounded-2xl p-6 border border-white/10 w-full max-w-full overflow-hidden">
-        <div ref={containerRef} className="w-full overflow-x-auto overflow-y-visible custom-scrollbar" style={{ maxWidth: '100%' }}>
+      <div className="glass-medium rounded-2xl p-6 border border-white/10 w-full overflow-hidden" style={{ width: '100%', maxWidth: '100%' }}>
+        <div ref={containerRef} className="w-full overflow-x-auto overflow-y-visible custom-scrollbar" style={{ width: '100%' }}>
         <style jsx global>{`
           /* Main container - prevent page scroll */
           .gantt-container {
@@ -264,6 +264,8 @@ export function GanttChartView({ projectId }: GanttChartViewProps) {
             display: block !important;
             box-sizing: border-box !important;
             overflow-x: visible !important;
+            margin: 0 !important;
+            padding: 0 !important;
           }
           
           /* Prevent horizontal scroll on page */
@@ -277,6 +279,8 @@ export function GanttChartView({ projectId }: GanttChartViewProps) {
             min-width: 100% !important;
             max-width: 100% !important;
             display: flex !important;
+            margin: 0 !important;
+            padding: 0 !important;
           }
           
           /* Root Gantt element */
@@ -589,10 +593,12 @@ export function GanttChartView({ projectId }: GanttChartViewProps) {
             display: block !important;
             width: 100% !important;
             min-width: 100% !important;
-            max-width: none !important;
+            max-width: 100% !important;
             visibility: visible !important;
             opacity: 1 !important;
-            flex: 1 !important;
+            flex: 1 1 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
           }
 
           /* Make SVG inside chart take full width */
@@ -616,15 +622,22 @@ export function GanttChartView({ projectId }: GanttChartViewProps) {
           
           /* Chart container - allow horizontal scroll */
           div[class*="_CZjuD"] {
-            min-width: max-content !important;
-            width: auto !important;
-            flex: 1 1 auto !important;
+            min-width: 100% !important;
+            width: 100% !important;
+            flex: 1 1 100% !important;
             overflow-x: auto !important;
+            display: block !important;
           }
           
-          /* SVG should expand based on content */
+          /* SVG should expand based on content but start from full width */
           div[class*="_CZjuD"] svg {
-            width: auto !important;
+            width: 100% !important;
+            min-width: 100% !important;
+            display: block !important;
+          }
+          
+          /* Ensure SVG expands beyond container if needed */
+          div[class*="_CZjuD"] svg[width] {
             min-width: max-content !important;
           }
 
@@ -636,13 +649,20 @@ export function GanttChartView({ projectId }: GanttChartViewProps) {
           /* Make sure the inner scrollable area can expand */
           .gantt-container .gantt-table-wrapper,
           .gantt-container .gantt-table {
-            width: auto !important;
-            min-width: max-content !important;
+            width: 100% !important;
+            min-width: 100% !important;
             max-width: none !important;
           }
           
-          /* Calculate column width based on screen size */
+          /* SVG container - start at full width, expand if needed */
           .gantt-container svg {
+            width: 100% !important;
+            min-width: 100% !important;
+            display: block !important;
+          }
+          
+          /* If SVG has explicit width attribute, allow it to expand */
+          .gantt-container svg[width] {
             min-width: max-content !important;
           }
         `}</style>

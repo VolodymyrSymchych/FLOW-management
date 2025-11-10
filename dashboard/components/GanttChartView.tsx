@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { Gantt } from 'frappe-gantt';
+import 'frappe-gantt/dist/frappe-gantt.css';
 import axios from 'axios';
 import { Calendar } from 'lucide-react';
 
@@ -160,19 +161,40 @@ export function GanttChartView({ projectId }: GanttChartViewProps) {
   const formatDates = () => {
     if (!containerRef.current) return;
 
-    const dateTexts = containerRef.current.querySelectorAll('.gantt .lower-text, .gantt .upper-text');
-    dateTexts.forEach((textEl) => {
+    // Format lower text (day numbers)
+    const lowerTexts = containerRef.current.querySelectorAll('svg .lower-text');
+    lowerTexts.forEach((textEl) => {
       const text = textEl.textContent || '';
       if (!text || text.includes('.')) return;
 
-      // Try to parse date formats
-      const dateMatch = text.match(/(\d{1,2})/);
-      if (dateMatch) {
-        const day = parseInt(dateMatch[1]);
-        // Get month from parent context or use current month
-        const month = new Date().getMonth() + 1;
+      // Try to parse day number
+      const dayMatch = text.match(/^(\d{1,2})$/);
+      if (dayMatch) {
+        const day = parseInt(dayMatch[1]);
+        // Get month from the date context - try to find it from the SVG structure
+        // For now, use a simple approach: get month from current view
+        const now = new Date();
+        const month = now.getMonth() + 1;
         const formatted = `${day.toString().padStart(2, '0')}.${month.toString().padStart(2, '0')}`;
         textEl.textContent = formatted;
+      }
+    });
+
+    // Format upper text (month names) - keep them short
+    const upperTexts = containerRef.current.querySelectorAll('svg .upper-text');
+    upperTexts.forEach((textEl) => {
+      const text = textEl.textContent || '';
+      if (text && text.length > 3) {
+        // Shorten month names if needed
+        const monthMap: { [key: string]: string } = {
+          'January': 'JAN', 'February': 'FEB', 'March': 'MAR', 'April': 'APR',
+          'May': 'MAY', 'June': 'JUN', 'July': 'JUL', 'August': 'AUG',
+          'September': 'SEP', 'October': 'OCT', 'November': 'NOV', 'December': 'DEC'
+        };
+        const shortened = monthMap[text] || text.substring(0, 3).toUpperCase();
+        if (shortened !== text) {
+          textEl.textContent = shortened;
+        }
       }
     });
   };

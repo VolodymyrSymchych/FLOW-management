@@ -55,6 +55,7 @@ export async function POST(request: NextRequest) {
     const results = [];
     for (const migration of migrations) {
       try {
+        // @ts-ignore - drizzle-orm version mismatch between root and dashboard
         await db.execute(sql.raw(migration));
         results.push({ success: true, statement: migration.substring(0, 50) });
       } catch (error: any) {

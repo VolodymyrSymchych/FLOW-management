@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { storage } from '../../../../server/storage';
 import { getSession } from '@/lib/auth';
+import { cached } from '@/lib/redis';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,8 +12,12 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get all projects for the user
-    const allProjects = await storage.getUserProjects(session.userId);
+    // Use cached stats with 5 minute TTL
+    const stats = await cached(
+      `stats:user:${session.userId}`,
+      async () => {
+        // Get all projects for the user
+        const allProjects = await storage.getUserProjects(session.userId);
     
     // Current month stats
     const now = new Date();
@@ -61,22 +66,27 @@ export async function GET() {
       lastMonthProjects.length
     );
 
-    return NextResponse.json({
-      projects_in_progress: in_progress,
-      total_projects: total_projects,
-      completion_rate: completion_rate,
-      projects_completed: completed,
-      trends: {
-        projects_in_progress: {
-          value: Math.abs(projectsInProgressTrend),
-          isPositive: projectsInProgressTrend >= 0,
-        },
-        total_projects: {
-          value: Math.abs(totalProjectsTrend),
-          isPositive: totalProjectsTrend >= 0,
-        },
+        return {
+          projects_in_progress: in_progress,
+          total_projects: total_projects,
+          completion_rate: completion_rate,
+          projects_completed: completed,
+          trends: {
+            projects_in_progress: {
+              value: Math.abs(projectsInProgressTrend),
+              isPositive: projectsInProgressTrend >= 0,
+            },
+            total_projects: {
+              value: Math.abs(totalProjectsTrend),
+              isPositive: totalProjectsTrend >= 0,
+            },
+          },
+        };
       },
-    });
+      { ttl: 300 } // Cache for 5 minutes
+    );
+
+    return NextResponse.json(stats);
   } catch (error: any) {
     console.error('Error fetching stats:', error);
     return NextResponse.json(

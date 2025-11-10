@@ -1,10 +1,27 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { storage } from '../../../../../server/storage';
 import { createSession } from '@/lib/auth';
+import { withRateLimit } from '@/lib/rate-limit';
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
+    // Rate limit: 5 login attempts per 5 minutes per IP
+    const rateLimitResult = await withRateLimit(request, {
+      limit: 5,
+      window: 300, // 5 minutes
+      identifier: (req) => {
+        const ip = req.headers.get('x-forwarded-for') ||
+                   req.headers.get('x-real-ip') ||
+                   'anonymous';
+        return `login:${ip}`;
+      },
+    });
+
+    if (!rateLimitResult.success) {
+      return rateLimitResult.response!;
+    }
+
     const { emailOrUsername, password } = await request.json();
 
     if (!emailOrUsername || !password) {

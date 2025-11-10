@@ -6,6 +6,45 @@ const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'your-secret-key-change-in-production'
 );
 
+// Simple Redis cache for Edge Runtime (using fetch API)
+async function getCachedSession(token: string): Promise<string | null> {
+  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
+    return null;
+  }
+
+  try {
+    const response = await fetch(`${process.env.UPSTASH_REDIS_REST_URL}/get/session:${token}`, {
+      headers: {
+        Authorization: `Bearer ${process.env.UPSTASH_REDIS_REST_TOKEN}`,
+      },
+      cache: 'no-store',
+    });
+
+    if (!response.ok) return null;
+    const data = await response.json();
+    return data.result;
+  } catch (error) {
+    return null;
+  }
+}
+
+async function cacheSession(token: string, userId: string, ttl: number = 3600): Promise<void> {
+  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
+    return;
+  }
+
+  try {
+    await fetch(`${process.env.UPSTASH_REDIS_REST_URL}/set/session:${token}/${userId}/ex/${ttl}`, {
+      headers: {
+        Authorization: `Bearer ${process.env.UPSTASH_REDIS_REST_TOKEN}`,
+      },
+      cache: 'no-store',
+    });
+  } catch (error) {
+    console.error('Cache session error:', error);
+  }
+}
+
 // Routes that require authentication
 const protectedRoutes = [
   '/',
@@ -46,10 +85,26 @@ export async function middleware(request: NextRequest) {
 
     // Verify authentication
     let isAuthenticated = false;
+    let userId: string | null = null;
+
     if (token) {
       try {
-        await jwtVerify(token, JWT_SECRET);
-        isAuthenticated = true;
+        // Try to get from cache first
+        const cachedUserId = await getCachedSession(token);
+
+        if (cachedUserId) {
+          // Cache hit - skip JWT verification
+          isAuthenticated = true;
+          userId = cachedUserId;
+        } else {
+          // Cache miss - verify JWT
+          const { payload } = await jwtVerify(token, JWT_SECRET);
+          isAuthenticated = true;
+          userId = payload.userId as string;
+
+          // Cache the session for future requests (1 hour TTL)
+          await cacheSession(token, userId, 3600);
+        }
       } catch (error) {
         // Token is invalid or expired
         isAuthenticated = false;

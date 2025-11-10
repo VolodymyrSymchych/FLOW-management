@@ -237,11 +237,19 @@ export function GanttChartView({ projectId }: GanttChartViewProps) {
           font-size: 12px !important;
         }
         
+        /* Inner gantt-container div created by Frappe Gantt */
+        .gantt-container > .gantt-container {
+          width: auto !important;
+          min-width: 100% !important;
+          overflow: visible !important;
+        }
+        
         .gantt-container svg.gantt {
           display: block !important;
           visibility: visible !important;
           opacity: 1 !important;
-          width: 100% !important;
+          width: auto !important;
+          min-width: 100% !important;
           height: auto !important;
           min-height: 400px !important;
         }
@@ -251,6 +259,8 @@ export function GanttChartView({ projectId }: GanttChartViewProps) {
           background: transparent !important;
           font-family: inherit !important;
           overflow: visible !important;
+          width: auto !important;
+          min-width: 100% !important;
         }
         
         .gantt-container .grid-header {
@@ -260,6 +270,8 @@ export function GanttChartView({ projectId }: GanttChartViewProps) {
           background-color: rgba(255, 255, 255, 0.05) !important;
           backdrop-filter: blur(4px) !important;
           border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+          width: auto !important;
+          min-width: 100% !important;
         }
 
         .gantt-container svg .grid-background {

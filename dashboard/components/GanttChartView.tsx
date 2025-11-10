@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Gantt, Task, ViewMode } from 'gantt-task-react';
 import 'gantt-task-react/dist/index.css';
 import axios from 'axios';
@@ -26,10 +26,96 @@ export function GanttChartView({ projectId }: GanttChartViewProps) {
   const [tasks, setTasks] = useState<TaskData[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.Month);
+  const [containerWidth, setContainerWidth] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadTasks();
   }, [projectId]);
+
+  useEffect(() => {
+    const updateWidth = () => {
+      if (containerRef.current) {
+        setContainerWidth(containerRef.current.offsetWidth);
+      }
+    };
+
+    updateWidth();
+    window.addEventListener('resize', updateWidth);
+    return () => window.removeEventListener('resize', updateWidth);
+  }, []);
+
+  // Format dates to DD.MM format after Gantt renders
+  useEffect(() => {
+    const formatDates = () => {
+      // Find all calendar text elements (dates) - but not month names
+      const calendarTexts = document.querySelectorAll('g.calendar text:not(g.calendarTop text)');
+      const monthMap: { [key: string]: number } = {
+        'january': 1, 'february': 2, 'march': 3, 'april': 4,
+        'may': 5, 'june': 6, 'july': 7, 'august': 8,
+        'september': 9, 'october': 10, 'november': 11, 'december': 12
+      };
+      
+      // Get current month from calendarTop
+      let currentMonth = new Date().getMonth() + 1;
+      const calendarTop = document.querySelector('g.calendarTop text');
+      if (calendarTop) {
+        const monthText = (calendarTop.textContent || '').toLowerCase();
+        for (const [monthName, monthNum] of Object.entries(monthMap)) {
+          if (monthText.includes(monthName)) {
+            currentMonth = monthNum;
+            break;
+          }
+        }
+      }
+      
+      calendarTexts.forEach((textEl) => {
+        const text = textEl.textContent || '';
+        // Skip if already formatted or empty
+        if (!text || text.includes('.')) return;
+        
+        // Parse formats like "Mon, 25" or "25"
+        const dateMatch = text.match(/(\w+),\s*(\d+)/);
+        if (dateMatch) {
+          const day = parseInt(dateMatch[2]);
+          // Format as DD.MM
+          const formatted = `${day.toString().padStart(2, '0')}.${currentMonth.toString().padStart(2, '0')}`;
+          textEl.textContent = formatted;
+        } else {
+          const dayMatch = text.match(/^(\d+)$/);
+          if (dayMatch) {
+            const day = parseInt(dayMatch[1]);
+            // Format as DD.MM
+            const formatted = `${day.toString().padStart(2, '0')}.${currentMonth.toString().padStart(2, '0')}`;
+            textEl.textContent = formatted;
+          }
+        }
+      });
+    };
+
+    // Use MutationObserver to catch when Gantt updates
+    const observer = new MutationObserver(() => {
+      formatDates();
+    });
+
+    // Observe changes in the Gantt container
+    const ganttContainer = document.querySelector('.gantt-container');
+    if (ganttContainer) {
+      observer.observe(ganttContainer, {
+        childList: true,
+        subtree: true,
+        characterData: true
+      });
+    }
+
+    // Also run immediately after a delay
+    const timer = setTimeout(formatDates, 200);
+    
+    return () => {
+      clearTimeout(timer);
+      observer.disconnect();
+    };
+  }, [ganttTasks, viewMode]);
 
   const loadTasks = async () => {
     try {
@@ -122,9 +208,9 @@ export function GanttChartView({ projectId }: GanttChartViewProps) {
   }
 
   return (
-    <div className="space-y-6 w-full">
+    <div className="space-y-6 w-full min-w-full max-w-full">
       {/* Controls */}
-      <div className="glass-medium rounded-2xl p-4 border border-white/10">
+      <div className="glass-medium rounded-2xl p-4 border border-white/10 w-full">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Calendar className="w-5 h-5 text-text-secondary" />
@@ -166,22 +252,31 @@ export function GanttChartView({ projectId }: GanttChartViewProps) {
       </div>
       
       {/* Gantt Chart Container */}
-      <div className="glass-medium rounded-2xl p-6 border border-white/10 w-full max-w-full">
-        <div className="w-full overflow-x-auto custom-scrollbar min-w-full">
+      <div className="glass-medium rounded-2xl p-6 border border-white/10 w-full max-w-full overflow-hidden">
+        <div ref={containerRef} className="w-full overflow-x-auto overflow-y-visible custom-scrollbar" style={{ maxWidth: '100%' }}>
         <style jsx global>{`
-          /* Main container */
+          /* Main container - prevent page scroll */
           .gantt-container {
             background: transparent !important;
             width: 100% !important;
             min-width: 100% !important;
             max-width: 100% !important;
+            display: block !important;
+            box-sizing: border-box !important;
+            overflow-x: visible !important;
           }
           
-          /* Gantt wrapper */
+          /* Prevent horizontal scroll on page */
+          body {
+            overflow-x: hidden !important;
+          }
+
+          /* Gantt wrapper - allow horizontal scroll only inside */
           .gantt-container > div {
             width: 100% !important;
             min-width: 100% !important;
             max-width: 100% !important;
+            display: flex !important;
           }
           
           /* Root Gantt element */
@@ -195,18 +290,28 @@ export function GanttChartView({ projectId }: GanttChartViewProps) {
             fill: rgba(255, 255, 255, 0.05) !important;
             stroke: rgba(255, 255, 255, 0.1) !important;
             stroke-width: 1px !important;
+            height: 24px !important;
           }
           
-          /* Calendar text (dates) */
+          /* Calendar text (dates) - format as DD.MM */
           g.calendar text {
             fill: rgba(255, 255, 255, 0.8) !important;
             font-family: inherit !important;
+            font-size: 10px !important;
+            font-weight: 500 !important;
           }
           
-          /* Calendar top (month name) */
+          /* Format date text to show only day.month */
+          g.calendar text:not([class*="calendarTop"]) {
+            font-size: 10px !important;
+          }
+
+          /* Calendar top (month name) - shorter format */
           g.calendarTop text {
             fill: rgba(255, 255, 255, 0.9) !important;
             font-weight: 600 !important;
+            font-size: 11px !important;
+            text-transform: uppercase !important;
           }
           
           g.calendarTop line {
@@ -263,6 +368,7 @@ export function GanttChartView({ projectId }: GanttChartViewProps) {
           g.bar text {
             fill: rgba(255, 255, 255, 0.95) !important;
             font-weight: 500 !important;
+            font-size: 12px !important;
             text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
           }
           
@@ -313,38 +419,50 @@ export function GanttChartView({ projectId }: GanttChartViewProps) {
             background: rgba(255, 255, 255, 0.05) !important;
             backdrop-filter: blur(4px) !important;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+            height: 28px !important;
+            min-height: 28px !important;
           }
           .gantt-calendar-header-cell {
             color: rgba(255, 255, 255, 0.8) !important;
             border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
+            padding: 4px 6px !important;
+            font-size: 11px !important;
           }
           .gantt-calendar-top {
             background: rgba(255, 255, 255, 0.03) !important;
             backdrop-filter: blur(2px) !important;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+            height: 24px !important;
+            min-height: 24px !important;
           }
           .gantt-calendar-top-cell {
             color: rgba(255, 255, 255, 0.7) !important;
             border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
+            padding: 3px 6px !important;
+            font-size: 11px !important;
           }
           .gantt-calendar-bottom {
             background: transparent !important;
+            height: 24px !important;
+            min-height: 24px !important;
           }
           .gantt-calendar-bottom-cell {
             color: rgba(255, 255, 255, 0.8) !important;
             border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
+            padding: 3px 4px !important;
+            font-size: 10px !important;
           }
           .gantt-task-bar {
-            border-radius: 6px !important;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1) inset !important;
+            border-radius: 4px !important;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1) inset !important;
             transition: all 0.2s ease !important;
           }
           .gantt-task-bar:hover {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.2) inset !important;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.2) inset !important;
             transform: translateY(-1px) !important;
           }
           .gantt-task-bar-progress {
-            border-radius: 6px !important;
+            border-radius: 4px !important;
             opacity: 0.9 !important;
           }
           
@@ -369,23 +487,25 @@ export function GanttChartView({ projectId }: GanttChartViewProps) {
             background: rgba(128, 152, 249, 0.5);
           }
           
-          /* SVG container improvements - make responsive */
+          /* SVG container improvements - allow horizontal expansion */
           .gantt-container svg {
             filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
-            width: 100% !important;
+            width: auto !important;
             min-width: 100% !important;
-            max-width: 100% !important;
+            max-width: none !important;
             height: auto !important;
             display: block !important;
             visibility: visible !important;
             opacity: 1 !important;
+            box-sizing: border-box !important;
           }
-          
+
           /* Make SVG viewBox responsive */
           .gantt-container svg[viewBox] {
-            width: 100% !important;
+            width: auto !important;
+            min-width: 100% !important;
             height: auto !important;
-            preserveAspectRatio: xMidYMid meet !important;
+            preserveAspectRatio: none !important;
             display: block !important;
             visibility: visible !important;
           }
@@ -469,16 +589,24 @@ export function GanttChartView({ projectId }: GanttChartViewProps) {
             display: block !important;
             width: 100% !important;
             min-width: 100% !important;
-            max-width: 100% !important;
+            max-width: none !important;
             visibility: visible !important;
             opacity: 1 !important;
+            flex: 1 !important;
           }
-          
+
           /* Make SVG inside chart take full width */
           div[class*="_CZjuD"] svg {
-            width: 100% !important;
+            width: auto !important;
             min-width: 100% !important;
-            max-width: 100% !important;
+            max-width: none !important;
+          }
+
+          /* Remove width restrictions - allow natural expansion */
+          .gantt-container svg,
+          .gantt-container > div,
+          div[class*="_CZjuD"] {
+            overflow: visible !important;
           }
           
           .gantt-container .gantt-calendar {
@@ -486,36 +614,62 @@ export function GanttChartView({ projectId }: GanttChartViewProps) {
             margin-left: 0 !important;
           }
           
-          /* Ensure the main Gantt wrapper uses flexbox */
-          .gantt-container > div {
-            display: flex !important;
-            width: 100% !important;
-            min-width: 100% !important;
+          /* Chart container - allow horizontal scroll */
+          div[class*="_CZjuD"] {
+            min-width: max-content !important;
+            width: auto !important;
+            flex: 1 1 auto !important;
+            overflow-x: auto !important;
           }
           
-          /* Force Gantt to use full container width */
-          .gantt-container {
-            display: block !important;
-            position: relative !important;
+          /* SVG should expand based on content */
+          div[class*="_CZjuD"] svg {
+            width: auto !important;
+            min-width: max-content !important;
           }
-          
-          /* Make sure the inner scrollable area expands */
+
+          /* Make wrapper divs responsive */
+          .gantt-container > div > div {
+            box-sizing: border-box !important;
+          }
+
+          /* Make sure the inner scrollable area can expand */
           .gantt-container .gantt-table-wrapper,
           .gantt-container .gantt-table {
-            width: 100% !important;
-            min-width: 100% !important;
+            width: auto !important;
+            min-width: max-content !important;
+            max-width: none !important;
+          }
+          
+          /* Calculate column width based on screen size */
+          .gantt-container svg {
+            min-width: max-content !important;
           }
         `}</style>
         <Gantt
+          key={`gantt-${viewMode}`}
           tasks={ganttTasks}
           viewMode={viewMode}
           onDateChange={handleTaskChange}
           onProgressChange={handleTaskChange}
           locale="en"
           listCellWidth="0"
-          columnWidth={viewMode === ViewMode.Day ? 50 : viewMode === ViewMode.Week ? 80 : 120}
-          rowHeight={50}
-          ganttHeight={Math.min(400, ganttTasks.length * 50 + 100)}
+          columnWidth={
+            containerWidth > 0
+              ? viewMode === ViewMode.Day
+                ? Math.max(40, Math.floor(containerWidth / 30))
+                : viewMode === ViewMode.Week
+                ? Math.max(60, Math.floor(containerWidth / 20))
+                : Math.max(80, Math.floor(containerWidth / 15))
+              : viewMode === ViewMode.Day
+              ? 50
+              : viewMode === ViewMode.Week
+              ? 80
+              : 120
+          }
+          rowHeight={36}
+          headerHeight={50}
+          ganttHeight={Math.min(600, ganttTasks.length * 36 + 80)}
         />
         </div>
       </div>

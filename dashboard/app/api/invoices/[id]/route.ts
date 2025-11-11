@@ -49,28 +49,37 @@ export async function PUT(
     }
     
     const updateData: any = {};
+    
+    // Handle project_id
+    if (data.project_id !== undefined) {
+      updateData.projectId = data.project_id ? parseInt(data.project_id) : null;
+    }
+    
     if (data.invoice_number) updateData.invoiceNumber = data.invoice_number;
     if (data.client_name !== undefined) updateData.clientName = data.client_name;
     if (data.client_email !== undefined) updateData.clientEmail = data.client_email;
     if (data.client_address !== undefined) updateData.clientAddress = data.client_address;
+    
+    // Handle amount and tax calculations
     if (data.amount !== undefined) {
       const amount = Math.round(data.amount * 100);
       updateData.amount = amount;
-      // Recalculate tax and total
+      // Recalculate tax and total using current tax rate
       const taxRate = data.tax_rate !== undefined ? data.tax_rate : oldInvoice.taxRate || 0;
       const taxAmount = Math.round((amount * taxRate) / 100);
       updateData.taxAmount = taxAmount;
       updateData.totalAmount = amount + taxAmount;
     }
+    
     if (data.tax_rate !== undefined) {
       updateData.taxRate = data.tax_rate;
-      const invoice = await storage.getInvoice(id);
-      if (invoice) {
-        const taxAmount = Math.round((invoice.amount * data.tax_rate) / 100);
-        updateData.taxAmount = taxAmount;
-        updateData.totalAmount = invoice.amount + taxAmount;
-      }
+      // Recalculate tax and total if amount exists
+      const currentAmount = updateData.amount !== undefined ? updateData.amount : oldInvoice.amount;
+      const taxAmount = Math.round((currentAmount * data.tax_rate) / 100);
+      updateData.taxAmount = taxAmount;
+      updateData.totalAmount = currentAmount + taxAmount;
     }
+    
     if (data.currency) updateData.currency = data.currency;
     if (data.status) updateData.status = data.status;
     if (data.issue_date) updateData.issueDate = new Date(data.issue_date);
@@ -126,7 +135,15 @@ export async function PUT(
     return NextResponse.json({ invoice });
   } catch (error: any) {
     console.error('Error updating invoice:', error);
-    return NextResponse.json({ error: 'Failed to update invoice' }, { status: 500 });
+    const errorMessage = error?.message || error?.detail || error?.toString() || 'Failed to update invoice';
+    return NextResponse.json(
+      { 
+        error: 'Failed to update invoice',
+        message: errorMessage,
+        details: error?.code || null
+      }, 
+      { status: 500 }
+    );
   }
 }
 

@@ -349,7 +349,7 @@ export function GanttProvider({
         firstDate,
       }}
     >
-      <div className={`flex h-full ${className}`}>{children}</div>
+      <div className={`flex h-full min-h-0 ${className}`}>{children}</div>
     </GanttContext.Provider>
   );
 }

@@ -14,7 +14,7 @@ export function GanttSidebar({ children, className }: GanttSidebarProps) {
   const { onAddItem } = useGantt();
 
   return (
-    <div className={cn('w-64 flex-shrink-0 backdrop-blur-xl bg-black/[0.30] border-r border-white/[0.15] overflow-y-auto flex flex-col', className)}>
+    <div className={cn('w-64 flex-shrink-0 backdrop-blur-xl bg-black/[0.30] border-r border-white/[0.15] overflow-y-auto flex flex-col min-h-0', className)}>
       {onAddItem && (
         <div className="p-4 pb-3 border-b border-white/[0.12]">
           <button

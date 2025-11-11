@@ -291,6 +291,6 @@ interface GanttFeatureListGroupProps {
 }
 
 export function GanttFeatureListGroup({ children, className }: GanttFeatureListGroupProps) {
-  return <div className={cn('space-y-0', className)}>{children}</div>;
+  return <div className={cn('space-y-0 inline-block min-w-full', className)}>{children}</div>;
 }
 

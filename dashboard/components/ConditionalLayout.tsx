@@ -17,12 +17,15 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
   const authPages = ['/sign-in', '/sign-up', '/verify', '/forgot-password'];
   const isAuthPage = authPages.includes(pathname);
 
+  // Public invoice pages should not have sidebar and header
+  const isPublicInvoicePage = pathname?.startsWith('/invoices/public/');
+
   // Pages that need full screen with scroll
   const fullScreenPages = ['/timeline'];
   const isFullScreenPage = fullScreenPages.includes(pathname);
 
-  if (isAuthPage) {
-    // Render without sidebar and header for auth pages
+  if (isAuthPage || isPublicInvoicePage) {
+    // Render without sidebar and header for auth pages and public invoice pages
     return <>{children}</>;
   }
 

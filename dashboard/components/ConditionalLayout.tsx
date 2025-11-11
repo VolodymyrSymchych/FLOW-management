@@ -17,9 +17,30 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
   const authPages = ['/sign-in', '/sign-up', '/verify', '/forgot-password'];
   const isAuthPage = authPages.includes(pathname);
 
+  // Pages that need full screen with scroll
+  const fullScreenPages = ['/timeline'];
+  const isFullScreenPage = fullScreenPages.includes(pathname);
+
   if (isAuthPage) {
     // Render without sidebar and header for auth pages
     return <>{children}</>;
+  }
+
+  if (isFullScreenPage) {
+    // Render with sidebar and header but without padding/overflow constraints for full screen pages
+    return (
+      <SidebarProvider>
+        <div className="flex h-screen relative overflow-hidden">
+          <Sidebar />
+          <MainContent>
+            <Header />
+            <div className="h-full overflow-hidden">
+              {children}
+            </div>
+          </MainContent>
+        </div>
+      </SidebarProvider>
+    );
   }
 
   // Render with sidebar and header for all other pages

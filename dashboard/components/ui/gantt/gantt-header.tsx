@@ -3,7 +3,7 @@
 import React, { useMemo } from 'react';
 import { useGantt } from './gantt-provider';
 import { useScrollSync } from './gantt-timeline';
-import { format, isToday, isWeekend, getWeek, getQuarter } from 'date-fns';
+import { format, isToday, isWeekend, getWeek, getQuarter, startOfWeek, endOfWeek } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 // Memoized date cell components for better performance
@@ -182,26 +182,91 @@ const YearCell = React.memo(({ year, pixelsPerYear }: { year: Date; pixelsPerYea
 YearCell.displayName = 'YearCell';
 
 export function GanttHeader() {
-  const { days, weeks, months, quarters, years, pixelsPerDay, pixelsPerWeek, pixelsPerMonth, pixelsPerQuarter, pixelsPerYear, viewMode } = useGantt();
+  const { days, weeks, months, quarters, years, pixelsPerDay, pixelsPerWeek, pixelsPerMonth, pixelsPerQuarter, pixelsPerYear, viewMode, firstDate } = useGantt();
   const { headerScrollRef } = useScrollSync();
+
+  // Filter date arrays to start from firstDate (actual visible date, not buffer)
+  // This ensures header shows actual dates that match the rows
+  const filteredDates = useMemo(() => {
+    const findStartIndex = (dateArray: Date[]): number => {
+      if (!firstDate || dateArray.length === 0) return 0;
+      
+      switch (viewMode) {
+        case 'days':
+          return dateArray.findIndex(d => d.getTime() === firstDate.getTime());
+        case 'weeks': {
+          return dateArray.findIndex(d => {
+            const weekStart = startOfWeek(d);
+            const weekEnd = endOfWeek(d);
+            return firstDate >= weekStart && firstDate <= weekEnd;
+          });
+        }
+        case 'months': {
+          const firstYear = firstDate.getFullYear();
+          const firstMonth = firstDate.getMonth();
+          return dateArray.findIndex(d => d.getFullYear() === firstYear && d.getMonth() === firstMonth);
+        }
+        case 'quarters': {
+          const firstYear = firstDate.getFullYear();
+          const firstQuarterMonth = Math.floor(firstDate.getMonth() / 3) * 3;
+          return dateArray.findIndex(d => {
+            const dYear = d.getFullYear();
+            const dMonth = d.getMonth();
+            return dYear === firstYear && Math.floor(dMonth / 3) * 3 === firstQuarterMonth;
+          });
+        }
+        case 'years': {
+          const firstYear = firstDate.getFullYear();
+          return dateArray.findIndex(d => d.getFullYear() === firstYear);
+        }
+        default:
+          return 0;
+      }
+    };
+
+    const startIndex = (() => {
+      switch (viewMode) {
+        case 'days':
+          return findStartIndex(days);
+        case 'weeks':
+          return findStartIndex(weeks);
+        case 'months':
+          return findStartIndex(months);
+        case 'quarters':
+          return findStartIndex(quarters);
+        case 'years':
+          return findStartIndex(years);
+        default:
+          return 0;
+      }
+    })();
+
+    return {
+      filteredDays: startIndex >= 0 ? days.slice(startIndex) : days,
+      filteredWeeks: startIndex >= 0 ? weeks.slice(startIndex) : weeks,
+      filteredMonths: startIndex >= 0 ? months.slice(startIndex) : months,
+      filteredQuarters: startIndex >= 0 ? quarters.slice(startIndex) : quarters,
+      filteredYears: startIndex >= 0 ? years.slice(startIndex) : years,
+    };
+  }, [days, weeks, months, quarters, years, firstDate, viewMode]);
 
   // Calculate total width to match feature rows exactly
   const totalWidth = useMemo(() => {
     switch (viewMode) {
       case 'days':
-        return days.length * pixelsPerDay;
+        return filteredDates.filteredDays.length * pixelsPerDay;
       case 'weeks':
-        return weeks.length * pixelsPerWeek;
+        return filteredDates.filteredWeeks.length * pixelsPerWeek;
       case 'months':
-        return months.length * pixelsPerMonth;
+        return filteredDates.filteredMonths.length * pixelsPerMonth;
       case 'quarters':
-        return quarters.length * pixelsPerQuarter;
+        return filteredDates.filteredQuarters.length * pixelsPerQuarter;
       case 'years':
-        return years.length * pixelsPerYear;
+        return filteredDates.filteredYears.length * pixelsPerYear;
       default:
-        return days.length * pixelsPerDay;
+        return filteredDates.filteredDays.length * pixelsPerDay;
     }
-  }, [viewMode, days, weeks, months, quarters, years, pixelsPerDay, pixelsPerWeek, pixelsPerMonth, pixelsPerQuarter, pixelsPerYear]);
+  }, [viewMode, filteredDates, pixelsPerDay, pixelsPerWeek, pixelsPerMonth, pixelsPerQuarter, pixelsPerYear]);
 
   return (
     <div
@@ -213,23 +278,23 @@ export function GanttHeader() {
       }}
     >
       <div className="flex h-16" style={{ width: `${totalWidth}px`, minWidth: `${totalWidth}px` }}>
-        {viewMode === 'days' && days.map((day) => (
+        {viewMode === 'days' && filteredDates.filteredDays.map((day) => (
           <DayCell key={day.toISOString()} day={day} pixelsPerDay={pixelsPerDay} />
         ))}
 
-        {viewMode === 'weeks' && weeks.map((week) => (
+        {viewMode === 'weeks' && filteredDates.filteredWeeks.map((week) => (
           <WeekCell key={week.toISOString()} week={week} pixelsPerWeek={pixelsPerWeek} />
         ))}
 
-        {viewMode === 'months' && months.map((month) => (
+        {viewMode === 'months' && filteredDates.filteredMonths.map((month) => (
           <MonthCell key={month.toISOString()} month={month} pixelsPerMonth={pixelsPerMonth} />
         ))}
 
-        {viewMode === 'quarters' && quarters.map((quarter) => (
+        {viewMode === 'quarters' && filteredDates.filteredQuarters.map((quarter) => (
           <QuarterCell key={quarter.toISOString()} quarter={quarter} pixelsPerQuarter={pixelsPerQuarter} />
         ))}
 
-        {viewMode === 'years' && years.map((year) => (
+        {viewMode === 'years' && filteredDates.filteredYears.map((year) => (
           <YearCell key={year.toISOString()} year={year} pixelsPerYear={pixelsPerYear} />
         ))}
       </div>

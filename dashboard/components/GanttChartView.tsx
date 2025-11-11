@@ -247,7 +247,7 @@ export function GanttChartView({ projectId, readOnly = false }: GanttChartViewPr
   }
 
   return (
-    <div className="w-full h-full flex flex-col min-h-0">
+    <div className="w-full h-full flex flex-col min-h-0 max-h-full">
       {/* View Controls */}
       <div className="mb-4 flex items-center justify-end gap-2 flex-shrink-0">
         <div className="flex items-center gap-1 glass-medium rounded-xl p-1 border border-white/10">
@@ -305,7 +305,7 @@ export function GanttChartView({ projectId, readOnly = false }: GanttChartViewPr
       </div>
 
       {/* Gantt Chart */}
-      <div className="glass-medium rounded-2xl border border-white/10 w-full flex-1 flex flex-col min-h-0">
+      <div className="glass-medium rounded-2xl border border-white/10 w-full flex-1 flex flex-col min-h-0 max-h-full overflow-hidden">
         <div className="h-full min-h-0 flex flex-col overflow-hidden">
           <GanttProvider
             features={features}

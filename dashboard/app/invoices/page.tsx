@@ -237,7 +237,14 @@ export default function InvoicesPage() {
             <tbody className="divide-y divide-white/10">
               {filteredInvoices.map((invoice) => (
                 <tr key={invoice.id} className="hover:bg-white/5 transition-colors">
-                  <td className="px-6 py-4 text-sm font-semibold text-text-primary">{invoice.invoiceNumber}</td>
+                  <td className="px-6 py-4 text-sm font-semibold text-text-primary">
+                    <Link
+                      href={`/invoices/${invoice.id}`}
+                      className="text-primary hover:underline"
+                    >
+                      {invoice.invoiceNumber}
+                    </Link>
+                  </td>
                   <td className="px-6 py-4">
                     <Link
                       href={`/projects/${invoice.projectId}`}

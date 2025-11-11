@@ -30,7 +30,7 @@ export function GanttTimeline({ children, className }: GanttTimelineProps) {
 
   return (
     <ScrollSyncContext.Provider value={{ headerScrollRef, contentScrollRef }}>
-      <div className={cn('flex-1 flex flex-col bg-transparent overflow-hidden', className)}>
+      <div className={cn('flex-1 flex flex-col bg-transparent overflow-hidden min-w-0', className)}>
         {children}
       </div>
     </ScrollSyncContext.Provider>

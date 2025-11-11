@@ -55,8 +55,8 @@ export function GanttFeatureList({ children, className }: GanttFeatureListProps)
 
   // Scroll to current date on initial load and when view mode changes
   useEffect(() => {
-    // Reset scroll flag when view mode changes
-    const currentViewModeKey = `${viewMode}-${firstDate?.getTime()}`;
+    // Reset scroll flag when view mode changes (use only viewMode, not firstDate)
+    const currentViewModeKey = viewMode;
     const shouldScroll = hasScrolledRef.current !== currentViewModeKey;
     
     if (shouldScroll) {
@@ -205,8 +205,8 @@ export function GanttFeatureList({ children, className }: GanttFeatureListProps)
               contentEl.scrollTo({ left: finalScrollPosition, behavior: scrollBehavior });
               headerEl.scrollTo({ left: finalScrollPosition, behavior: scrollBehavior });
               
-              // Mark as scrolled for this view mode
-              hasScrolledRef.current = currentViewModeKey;
+              // Mark as scrolled for this view mode (use only viewMode)
+              hasScrolledRef.current = viewMode;
               setIsScrollingToDate(false);
             }
           });

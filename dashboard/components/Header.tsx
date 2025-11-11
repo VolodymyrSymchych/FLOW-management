@@ -219,7 +219,7 @@ export const Header = memo(function Header() {
                   />
                   <div
                     ref={teamsDropdownRef}
-                    className="fixed w-56 rounded-xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.4)] z-[10000] bg-[#0a0d14]/80 backdrop-blur-xl backdrop-saturate-150 overflow-hidden animate-fadeIn"
+                    className="fixed w-56 rounded-xl border border-white/10  z-[10000] glass-heavy overflow-hidden animate-fadeIn"
                     style={{
                       top: `${teamsDropdownPosition.top}px`,
                       left: `${teamsDropdownPosition.left}px`
@@ -322,7 +322,7 @@ export const Header = memo(function Header() {
               onClick={() => setShowUserDropdown(!showUserDropdown)}
               className="flex items-center space-x-3 hover:opacity-80 transition-opacity duration-200"
             >
-              <div className="w-10 h-10 rounded-full bg-[#8098F9] flex items-center justify-center text-white font-semibold shadow-[0_0_20px_rgba(128,152,249,0.5)] flex-shrink-0">
+              <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-semibold  flex-shrink-0">
                 {initials}
               </div>
               {user && (
@@ -348,7 +348,7 @@ export const Header = memo(function Header() {
                 />
                 <div
                   ref={userDropdownRef}
-                  className="fixed w-64 rounded-xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.4)] z-[10000] bg-[#0a0d14]/80 backdrop-blur-xl backdrop-saturate-150 overflow-hidden animate-fadeIn"
+                  className="fixed w-64 rounded-xl border border-white/10  z-[10000] glass-heavy overflow-hidden animate-fadeIn"
                   style={{
                     top: `${userDropdownPosition.top}px`,
                     right: `${userDropdownPosition.right}px`
@@ -399,7 +399,7 @@ export const Header = memo(function Header() {
                           setShowUserDropdown(false);
                           handleSignOut();
                         }}
-                        className="w-full text-left px-3 py-2 rounded-lg hover:bg-red-500/20 hover:backdrop-blur-sm text-red-400 transition-all duration-200"
+                        className="w-full text-left px-3 py-2 rounded-lg hover:bg-danger/20 hover:backdrop-blur-sm text-danger transition-all duration-200"
                       >
                         🚪 Sign Out
                       </button>
@@ -423,7 +423,7 @@ export const Header = memo(function Header() {
           />
           <div className="fixed inset-0 z-[10002] flex items-center justify-center p-4">
             <div
-              className="w-full max-w-md glass-medium rounded-2xl border border-white/10 shadow-2xl p-6 animate-fadeIn"
+              className="w-full max-w-md glass-medium rounded-2xl border border-white/10  p-6 animate-fadeIn"
               onClick={(e) => e.stopPropagation()}
             >
               <h2 className="text-2xl font-bold gradient-text mb-4">Create New Team</h2>

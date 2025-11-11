@@ -30,6 +30,7 @@
     "ws": "^8.18.3"
   },
   "devDependencies": {
-    "drizzle-kit": "^0.31.6"
+    "drizzle-kit": "^0.31.6",
+    "shadcn": "^3.5.0"
   }
 }

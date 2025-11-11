@@ -192,8 +192,8 @@ export default function AttendancePage() {
               disabled={!isClockedIn && !selectedTaskId}
               className={`flex items-center space-x-3 px-8 py-4 rounded-xl text-white font-semibold text-lg transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed ${
                 isClockedIn
-                  ? 'bg-red-500/80 hover:bg-red-500 shadow-[0_0_20px_rgba(239,68,68,0.4)]'
-                  : 'bg-[#00D66B]/80 hover:bg-[#00D66B] shadow-[0_0_20px_rgba(0,214,107,0.4)]'
+                  ? 'bg-red-500/80 hover:bg-red-500 '
+                  : 'bg-[#00D66B]/80 hover:bg-[#00D66B] '
               }`}
             >
               {isClockedIn ? (
@@ -217,7 +217,7 @@ export default function AttendancePage() {
         <div className="glass-medium glass-hover rounded-2xl p-6">
           <div className="flex items-center space-x-3 mb-3">
             <div className="w-12 h-12 rounded-xl glass-light flex items-center justify-center">
-              <Clock className="w-6 h-6 text-blue-400 drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+              <Clock className="w-6 h-6 text-blue-400" />
             </div>
             <div>
               <p className="text-sm text-text-tertiary">Today</p>
@@ -229,7 +229,7 @@ export default function AttendancePage() {
         <div className="glass-medium glass-hover rounded-2xl p-6">
           <div className="flex items-center space-x-3 mb-3">
             <div className="w-12 h-12 rounded-xl glass-light flex items-center justify-center">
-              <Calendar className="w-6 h-6 text-[#00D66B] drop-shadow-[0_0_8px_rgba(0,214,107,0.5)]" />
+              <Calendar className="w-6 h-6 text-[#00D66B]" />
             </div>
             <div>
               <p className="text-sm text-text-tertiary">This Week</p>
@@ -241,7 +241,7 @@ export default function AttendancePage() {
         <div className="glass-medium glass-hover rounded-2xl p-6">
           <div className="flex items-center space-x-3 mb-3">
             <div className="w-12 h-12 rounded-xl glass-light flex items-center justify-center">
-              <Calendar className="w-6 h-6 text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]" />
+              <Calendar className="w-6 h-6 text-purple-400" />
             </div>
             <div>
               <p className="text-sm text-text-tertiary">This Month</p>

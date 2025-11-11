@@ -265,7 +265,7 @@ export function CalendarView({ refreshKey = 0 }: CalendarViewProps) {
 
       {loading && (
         <div className="flex items-center justify-center py-8">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#8098F9]"></div>
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
         </div>
       )}
     </div>
@@ -291,11 +291,11 @@ function DroppableDay({ dateId, day, isSelected, onDateClick }: DroppableDayProp
       className={cn(
         'min-h-[120px] p-2 rounded-lg border-2 transition-all cursor-pointer',
         day.isToday
-          ? 'border-[#8098F9] bg-[#8098F9]/10'
+          ? 'border-primary bg-primary/10'
           : isSelected
-          ? 'border-[#8098F9]/50 bg-[#8098F9]/5'
+          ? 'border-primary/50 bg-primary/5'
           : isOver
-          ? 'border-green-500/50 bg-green-500/10 border-dashed'
+          ? 'border-success/50 bg-success/10 border-dashed'
           : 'border-transparent hover:border-white/10 hover:bg-white/5',
         !day.isCurrentMonth && 'opacity-40'
       )}
@@ -304,7 +304,7 @@ function DroppableDay({ dateId, day, isSelected, onDateClick }: DroppableDayProp
         className={cn(
           'text-xs mb-2 font-semibold',
           day.isToday
-            ? 'text-[#8098F9]'
+            ? 'text-primary'
             : day.isCurrentMonth
             ? 'text-text-primary'
             : 'text-text-tertiary'
@@ -316,10 +316,10 @@ function DroppableDay({ dateId, day, isSelected, onDateClick }: DroppableDayProp
         {day.tasks.slice(0, 3).map((task) => {
           const priorityColor =
             task.priority === 'high'
-              ? 'bg-red-500/20 text-red-300 border-red-500/30'
+              ? 'bg-danger/20 text-danger/80 border-danger/30'
               : task.priority === 'low'
-              ? 'bg-blue-500/20 text-blue-300 border-blue-500/30'
-              : 'bg-gray-500/20 text-gray-300 border-gray-500/30';
+              ? 'bg-primary/20 text-primary/80 border-primary/30'
+              : 'bg-surface-elevated/50 text-text-tertiary border-white/10';
 
           return (
             <div

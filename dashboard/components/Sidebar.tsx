@@ -9,7 +9,7 @@ import {
   CreditCard,
   CheckSquare,
   Clock,
-  Calendar,
+  BarChart3,
   FileText,
   ChevronLeft,
   ChevronRight,
@@ -26,7 +26,7 @@ const navigation = [
   { name: 'Overview', href: '/', icon: LayoutDashboard },
   { name: 'Projects', href: '/projects', icon: FolderKanban },
   { name: 'Invoices', href: '/invoices', icon: Receipt },
-  { name: 'Timeline', href: '/timeline', icon: Calendar },
+  { name: 'Gantt Chart', href: '/timeline', icon: BarChart3 },
   { name: 'Tasks', href: '/tasks', icon: CheckSquare },
   { name: 'Attendance', href: '/attendance', icon: Clock },
   { name: 'Reports', href: '/reports', icon: FileText },
@@ -81,22 +81,36 @@ export const Sidebar = memo(function Sidebar() {
         <nav className="flex-1 space-y-2 px-3">
           {navigation.map((item) => {
             const isActive = pathname === item.href;
+            const isGantt = item.name === 'Gantt Chart';
+
             return (
               <Link
                 key={item.name}
                 href={item.href}
                 className={cn(
-                  'flex items-center rounded-xl duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] group',
+                  'flex items-center rounded-xl duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] group relative overflow-hidden',
                   isExpanded ? 'px-4 py-3 gap-3' : 'justify-center w-14 h-14 mx-auto',
-                  isActive
-                    ? 'glass-light text-white border border-[#8098F9]/40 shadow-[0_0_20px_rgba(128,152,249,0.5)] scale-105'
+                  isGantt && isActive
+                    ? 'glass-medium text-white border-2 border-primary/60 scale-105'
+                    : isActive
+                    ? 'glass-light text-white border border-primary/40 scale-105'
+                    : isGantt
+                    ? 'text-white/70 hover:glass-light hover:text-white hover:scale-105 active:scale-95 hover:border hover:border-primary/30'
                     : 'text-white/60 hover:glass-subtle hover:text-white hover:scale-105 active:scale-95'
                 )}
                 title={!isExpanded ? item.name : undefined}
               >
-                <item.icon className={cn('flex-shrink-0', isExpanded ? 'w-5 h-5' : 'w-6 h-6')} />
+                <item.icon className={cn(
+                  'flex-shrink-0 relative z-10 transition-all duration-200',
+                  isExpanded ? 'w-5 h-5' : 'w-6 h-6'
+                )} />
                 {isExpanded && (
-                  <span className="font-medium text-sm whitespace-nowrap">{item.name}</span>
+                  <span className={cn(
+                    'font-medium text-sm whitespace-nowrap relative z-10',
+                    isGantt && isActive && 'font-semibold'
+                  )}>
+                    {item.name}
+                  </span>
                 )}
               </Link>
             );

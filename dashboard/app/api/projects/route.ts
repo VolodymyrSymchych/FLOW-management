@@ -1,6 +1,8 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { storage } from '../../../../server/storage';
+import { cached, invalidateUserCache } from '@/lib/redis';
+import { withRateLimit } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,8 +13,13 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userProjects = await storage.getUserProjects(session.userId);
-    
+    // Cache projects list for 5 minutes
+    const userProjects = await cached(
+      `projects:user:${session.userId}`,
+      async () => await storage.getUserProjects(session.userId),
+      { ttl: 300 }
+    );
+
     return NextResponse.json({
       projects: userProjects,
       total: userProjects.length
@@ -26,11 +33,22 @@ export async function GET() {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
+    // Rate limit: 10 projects per 10 minutes per user
     const session = await getSession();
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const rateLimitResult = await withRateLimit(request, {
+      limit: 10,
+      window: 600, // 10 minutes
+      identifier: () => `create-project:${session.userId}`,
+    });
+
+    if (!rateLimitResult.success) {
+      return rateLimitResult.response!;
     }
 
     const data = await request.json();
@@ -56,6 +74,9 @@ export async function POST(request: Request) {
       document: document || null,
       analysisData: analysisData ? JSON.stringify(analysisData) : null,
     });
+
+    // Invalidate user caches after creating project
+    await invalidateUserCache(session.userId);
 
     return NextResponse.json({ project }, { status: 201 });
   } catch (error: any) {

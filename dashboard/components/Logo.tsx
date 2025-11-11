@@ -33,7 +33,7 @@ export function Logo({ variant = 'default', showText = true, className = '' }: L
           alt="Project Scope Analyzer Logo"
           width={logoSize}
           height={logoSize}
-          className="object-contain drop-shadow-lg group-hover:drop-shadow-xl transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]"
+          className="object-contain transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]"
           priority
         />
       </motion.div>

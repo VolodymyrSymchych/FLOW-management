@@ -222,7 +222,7 @@ export default function DashboardPage() {
       </div>
       <DragOverlay>
         {activeTask ? (
-          <div className="glass-medium rounded-xl p-3 border border-white/20 shadow-lg rotate-2 bg-[#8098F9]/10 backdrop-blur-xl">
+          <div className="glass-medium rounded-xl p-3 border border-white/20  rotate-2 bg-[#8098F9]/10 backdrop-blur-xl">
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 rounded-lg glass-light flex items-center justify-center">
                 <MessageSquare className="w-4 h-4 text-[#8098F9]" />

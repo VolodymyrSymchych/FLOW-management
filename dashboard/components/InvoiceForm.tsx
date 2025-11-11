@@ -233,7 +233,7 @@ export function InvoiceForm({ isOpen, onClose, onSave, projectId, invoice }: Inv
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="glass-medium rounded-2xl p-5 border border-white/10 w-full max-w-5xl max-h-[95vh] my-auto flex flex-col shadow-2xl">
+      <div className="glass-medium rounded-2xl p-5 border border-white/10 w-full max-w-5xl max-h-[95vh] my-auto flex flex-col ">
         <div className="flex items-center justify-between mb-4 flex-shrink-0">
           <h2 className="text-xl font-bold text-text-primary">
             {invoice ? 'Edit Invoice' : 'Create New Invoice'}

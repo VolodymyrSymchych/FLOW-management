@@ -133,7 +133,7 @@ export default function ProjectsTimelinePage() {
         <div className="glass-medium glass-hover rounded-xl p-6">
           <div className="flex items-center justify-between mb-3">
             <div className="w-10 h-10 rounded-lg glass-light flex items-center justify-center">
-              <Calendar className="w-5 h-5 text-blue-400 drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+              <Calendar className="w-5 h-5 text-blue-400" />
             </div>
             <TrendingUp className="w-4 h-4 text-[#00D66B]" />
           </div>
@@ -144,7 +144,7 @@ export default function ProjectsTimelinePage() {
         <div className="glass-medium glass-hover rounded-xl p-6">
           <div className="flex items-center justify-between mb-3">
             <div className="w-10 h-10 rounded-lg glass-light flex items-center justify-center">
-              <Clock className="w-5 h-5 text-[#00D66B] drop-shadow-[0_0_8px_rgba(0,214,107,0.5)]" />
+              <Clock className="w-5 h-5 text-[#00D66B]" />
             </div>
           </div>
           <p className="text-sm text-text-tertiary mb-1">On Track</p>
@@ -155,20 +155,20 @@ export default function ProjectsTimelinePage() {
         <div className="glass-medium glass-hover rounded-xl p-6">
           <div className="flex items-center justify-between mb-3">
             <div className="w-10 h-10 rounded-lg glass-light flex items-center justify-center">
-              <Users className="w-5 h-5 text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]" />
+              <Users className="w-5 h-5 text-purple-400" />
             </div>
           </div>
           <p className="text-sm text-text-tertiary mb-1">Avg. Progress</p>
           <p className="text-3xl font-bold text-text-primary">{stats.avgProgress}%</p>
           <div className="mt-2 h-1.5 glass-subtle rounded-full overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-purple-500 to-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.5)]" style={{ width: `${stats.avgProgress}%` }}></div>
+            <div className="h-full bg-gradient-to-r from-purple-500 to-purple-400 " style={{ width: `${stats.avgProgress}%` }}></div>
           </div>
         </div>
 
         <div className="glass-medium glass-hover rounded-xl p-6">
           <div className="flex items-center justify-between mb-3">
             <div className="w-10 h-10 rounded-lg glass-light flex items-center justify-center">
-              <DollarSign className="w-5 h-5 text-[#FF6B4A] drop-shadow-[0_0_8px_rgba(255,107,74,0.5)]" />
+              <DollarSign className="w-5 h-5 text-[#FF6B4A]" />
             </div>
           </div>
           <p className="text-sm text-text-tertiary mb-1">Total Budget</p>
@@ -296,13 +296,13 @@ export default function ProjectsTimelinePage() {
                           }}
                         ></div>
                         <div
-                          className={`absolute top-0 bottom-0 ${color} rounded-lg flex items-center justify-center shadow-[0_0_15px_rgba(255,107,74,0.3)]`}
+                          className={`absolute top-0 bottom-0 ${color} rounded-lg flex items-center justify-center `}
                           style={{
                             left: '10%',
                             width: `${(60 * progress) / 100}%`,
                           }}
                         >
-                          <span className="text-xs font-semibold text-white drop-shadow-lg">
+                          <span className="text-xs font-semibold text-white">
                             {progress}%
                           </span>
                         </div>
@@ -362,7 +362,7 @@ export default function ProjectsTimelinePage() {
                   <tr key={project.id} className="hover:bg-white/5 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-3">
-                        <div className={`w-2 h-2 rounded-full ${color} shadow-[0_0_8px_rgba(255,107,74,0.5)]`}></div>
+                        <div className={`w-2 h-2 rounded-full ${color} `}></div>
                         <span className="font-medium text-text-primary">{project.name}</span>
                       </div>
                     </td>
@@ -371,7 +371,7 @@ export default function ProjectsTimelinePage() {
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-2">
                         <div className="flex-1 h-2 glass-subtle rounded-full overflow-hidden max-w-[100px]">
-                          <div className={`h-full ${color} shadow-[0_0_10px_rgba(255,107,74,0.4)]`} style={{ width: `${progress}%` }}></div>
+                          <div className={`h-full ${color} `} style={{ width: `${progress}%` }}></div>
                         </div>
                         <span className="text-sm text-text-primary font-medium">{progress}%</span>
                       </div>

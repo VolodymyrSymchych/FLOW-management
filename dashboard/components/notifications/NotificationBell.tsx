@@ -118,7 +118,7 @@ export function NotificationBell() {
       >
         <Bell className="w-5 h-5 text-text-secondary transition-transform duration-200 hover:rotate-12" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 w-5 h-5 bg-danger rounded-full flex items-center justify-center text-white text-xs font-bold shadow-lg animate-pulse">
+          <span className="absolute -top-1 -right-1 w-5 h-5 bg-danger rounded-full flex items-center justify-center text-white text-xs font-bold  animate-pulse">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
@@ -132,7 +132,7 @@ export function NotificationBell() {
           />
           <div
             ref={dropdownRef}
-            className="fixed w-96 max-h-[600px] rounded-2xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.4)] z-[10000] overflow-hidden bg-[#0a0d14]/80 backdrop-blur-xl backdrop-saturate-150 animate-fadeIn"
+            className="fixed w-96 max-h-[600px] rounded-2xl border border-white/10  z-[10000] overflow-hidden bg-[#0a0d14]/80 backdrop-blur-xl backdrop-saturate-150 animate-fadeIn"
             style={{
               top: `${dropdownPosition.top}px`,
               right: `${dropdownPosition.right}px`

@@ -123,7 +123,7 @@ export default function ProfilePage() {
         <div className="glass-medium rounded-3xl p-8 border border-white/10">
           <div className="flex items-start gap-6">
             {/* Avatar */}
-            <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-[#8098F9] to-[#A78BFA] flex items-center justify-center text-white text-3xl font-bold shadow-[0_0_40px_rgba(128,152,249,0.6)]">
+            <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-[#8098F9] to-[#A78BFA] flex items-center justify-center text-white text-3xl font-bold ">
               {initials}
             </div>
 

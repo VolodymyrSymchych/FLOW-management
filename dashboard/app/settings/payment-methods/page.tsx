@@ -95,7 +95,7 @@ export default function PaymentMethodsPage() {
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#8098F9] to-[#A78BFA] flex items-center justify-center text-3xl shadow-[0_0_20px_rgba(128,152,249,0.5)]">
+                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#8098F9] to-[#A78BFA] flex items-center justify-center text-3xl ">
                     {getCardIcon(method.brand)}
                   </div>
                   <div>

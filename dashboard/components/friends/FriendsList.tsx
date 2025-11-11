@@ -56,7 +56,7 @@ export function FriendsList({ friends, onRefresh }: FriendsListProps) {
         >
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-semibold text-lg shadow-lg">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-semibold text-lg ">
                 {friend.fullName?.charAt(0) || friend.username.charAt(0).toUpperCase()}
               </div>
               <div>
@@ -79,7 +79,7 @@ export function FriendsList({ friends, onRefresh }: FriendsListProps) {
                     className="fixed inset-0 z-10"
                     onClick={() => setShowMenu(null)}
                   />
-                  <div className="absolute right-0 mt-2 w-48 glass-strong rounded-xl border border-border shadow-xl z-20 overflow-hidden">
+                  <div className="absolute right-0 mt-2 w-48 glass-strong rounded-xl border border-border  z-20 overflow-hidden">
                     <button
                       onClick={() => {
                         alert('Message feature coming soon');

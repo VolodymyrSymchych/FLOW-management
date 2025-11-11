@@ -23,7 +23,7 @@ export function ThemeToggle() {
       aria-label="Toggle theme"
     >
       {theme === 'dark' ? (
-        <Sun className="w-5 h-5 text-[#FFD700] drop-shadow-[0_0_8px_rgba(255,215,0,0.5)] transition-transform duration-300 hover:rotate-180" />
+        <Sun className="w-5 h-5 text-[#FFD700] transition-transform duration-300 hover:rotate-180" />
       ) : (
         <Moon className="w-5 h-5 text-text-secondary transition-transform duration-300 hover:-rotate-12" />
       )}

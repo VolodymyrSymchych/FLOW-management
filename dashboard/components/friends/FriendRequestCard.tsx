@@ -28,7 +28,7 @@ export function FriendRequestCard({
     <div className="glass-light rounded-xl p-6 border border-border hover:border-primary/30 transition-all">
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-4 flex-1">
-          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-semibold text-2xl shadow-lg">
+          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-semibold text-2xl ">
             {request.sender.fullName?.charAt(0) || request.sender.username.charAt(0).toUpperCase()}
           </div>
 

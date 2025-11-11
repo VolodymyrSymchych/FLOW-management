@@ -19,7 +19,7 @@ export function ProjectCard({ id, name, team, status, risk_level, score, onClick
     >
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-lg bg-[#8098F9]/80 flex items-center justify-center shadow-[0_0_15px_rgba(128,152,249,0.4)]">
+          <div className="w-10 h-10 rounded-lg bg-primary/80 flex items-center justify-center">
             <span className="text-white font-semibold text-sm">
               {name.substring(0, 2).toUpperCase()}
             </span>
@@ -43,7 +43,7 @@ export function ProjectCard({ id, name, team, status, risk_level, score, onClick
           {team.slice(0, 5).map((member, idx) => (
             <div
               key={idx}
-              className="w-8 h-8 rounded-full border-2 border-white/20 bg-[#8098F9] flex items-center justify-center text-white text-xs font-semibold shadow-[0_0_10px_rgba(128,152,249,0.3)]"
+              className="w-8 h-8 rounded-full border-2 border-white/20 bg-primary flex items-center justify-center text-white text-xs font-semibold"
             >
               {member}
             </div>
@@ -65,8 +65,8 @@ export function ProjectCard({ id, name, team, status, risk_level, score, onClick
           <div className="h-2 glass-subtle rounded-full overflow-hidden">
             <div
               className={cn(
-                'h-full rounded-full shadow-[0_0_10px] transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
-                score >= 80 ? 'bg-[#00D66B]' : score >= 60 ? 'bg-[#8098F9]' : 'bg-yellow-500'
+                'h-full rounded-full  transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
+                score >= 80 ? 'bg-success' : score >= 60 ? 'bg-primary' : 'bg-warning'
               )}
               style={{ width: `${score}%` }}
             ></div>

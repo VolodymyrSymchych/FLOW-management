@@ -84,21 +84,21 @@ export function ProgressSection() {
       name: 'Completed Tasks',
       value: `${doneTasks}/${totalTasks}`,
       progress: completionProgress,
-      color: 'bg-green-500'
+      color: 'bg-success'
     },
     {
       icon: Clock,
       name: 'In Progress',
       value: `${inProgressTasks} tasks`,
       progress: inProgressPercent,
-      color: 'bg-blue-500'
+      color: 'bg-primary'
     },
     {
       icon: Timer,
       name: 'Time Today',
       value: `${hoursToday.toFixed(1)}h`,
       progress: Math.min((hoursToday / 8) * 100, 100), // Assuming 8h workday
-      color: 'bg-purple-500'
+      color: 'bg-secondary'
     }
   ];
 
@@ -107,7 +107,7 @@ export function ProgressSection() {
       <div className="glass-medium rounded-2xl p-6">
         <h3 className="text-lg font-bold text-text-primary mb-4">Progress</h3>
         <div className="flex items-center justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#8098F9]"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
       </div>
     );
@@ -121,8 +121,8 @@ export function ProgressSection() {
       <div className="space-y-4">
         {progressItems.map((item, idx) => (
           <div key={idx} className="flex items-center space-x-4">
-            <div className="w-10 h-10 rounded-xl glass-light flex items-center justify-center shadow-[0_0_15px_rgba(128,152,249,0.4)]">
-              <item.icon className="w-5 h-5 text-[#8098F9]" />
+            <div className="w-10 h-10 rounded-xl glass-light flex items-center justify-center ">
+              <item.icon className="w-5 h-5 text-primary" />
             </div>
             <div className="flex-1">
               <div className="flex items-center justify-between mb-1">
@@ -136,7 +136,7 @@ export function ProgressSection() {
               <div className="h-2 glass-subtle rounded-full overflow-hidden">
                 <div
                   className={cn(
-                    'h-full rounded-full shadow-[0_0_10px_rgba(128,152,249,0.5)] transition-all duration-300',
+                    'h-full rounded-full  transition-all duration-300',
                     item.color
                   )}
                   style={{ width: `${item.progress}%` }}

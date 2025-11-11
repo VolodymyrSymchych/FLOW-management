@@ -30,11 +30,11 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
     // Render with sidebar and header but without padding/overflow constraints for full screen pages
     return (
       <SidebarProvider>
-        <div className="flex h-screen relative overflow-hidden">
+        <div className="flex h-screen relative overflow-hidden w-full max-w-full">
           <Sidebar />
           <MainContent>
             <Header />
-            <div className="h-full overflow-hidden">
+            <div className="h-full overflow-hidden w-full max-w-full min-w-0">
               {children}
             </div>
           </MainContent>

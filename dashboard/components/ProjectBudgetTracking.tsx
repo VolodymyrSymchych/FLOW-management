@@ -78,15 +78,15 @@ export function ProjectBudgetTracking({
   };
 
   const getUtilizationColor = () => {
-    if (metrics.utilizationPercentage >= 100) return 'text-red-400 bg-red-500/20 border-red-500/30';
-    if (metrics.utilizationPercentage >= 80) return 'text-yellow-400 bg-yellow-500/20 border-yellow-500/30';
-    return 'text-green-400 bg-green-500/20 border-green-500/30';
+    if (metrics.utilizationPercentage >= 100) return 'text-danger bg-danger/20 border-danger/30';
+    if (metrics.utilizationPercentage >= 80) return 'text-warning bg-warning/20 border-warning/30';
+    return 'text-success bg-success/20 border-success/30';
   };
 
   const getProgressBarColor = () => {
-    if (metrics.utilizationPercentage >= 100) return 'bg-red-500';
-    if (metrics.utilizationPercentage >= 80) return 'bg-yellow-500';
-    return 'bg-green-500';
+    if (metrics.utilizationPercentage >= 100) return 'bg-danger';
+    if (metrics.utilizationPercentage >= 80) return 'bg-warning';
+    return 'bg-success';
   };
 
   return (
@@ -127,7 +127,7 @@ export function ProjectBudgetTracking({
           </div>
           <div className="h-3 glass-subtle rounded-full overflow-hidden">
             <div
-              className={`h-full rounded-full shadow-[0_0_10px] transition-all duration-500 ${getProgressBarColor()}`}
+              className={`h-full rounded-full  transition-all duration-500 ${getProgressBarColor()}`}
               style={{ width: `${Math.min(metrics.utilizationPercentage, 100)}%` }}
             ></div>
           </div>
@@ -144,7 +144,7 @@ export function ProjectBudgetTracking({
           <div>
             <p className="text-xs text-text-tertiary mb-1">30-Day Forecast</p>
             <p className="text-lg font-semibold text-text-primary flex items-center space-x-1">
-              <TrendingDown className="w-4 h-4 text-yellow-500" />
+              <TrendingDown className="w-4 h-4 text-warning" />
               <span>{formatCurrency(metrics.forecastSpending)}</span>
             </p>
           </div>

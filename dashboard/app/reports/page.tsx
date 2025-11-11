@@ -138,7 +138,7 @@ export default function ReportsPage() {
           >
             <div className="flex items-start justify-between mb-4">
               <div className="w-12 h-12 rounded-xl glass-light flex items-center justify-center">
-                <FileText className="w-6 h-6 text-[#FF6B4A] drop-shadow-[0_0_8px_rgba(255,107,74,0.5)]" />
+                <FileText className="w-6 h-6 text-[#FF6B4A] drop-" />
               </div>
               <span className={`text-xs px-2 py-1 rounded-full ${getTypeColor(report.type)}`}>
                 {getTypeLabel(report.type)}

@@ -182,15 +182,15 @@ export function InvoicesAndCashFlow({ projectId }: InvoicesAndCashFlowProps) {
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'paid':
-        return 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400';
+        return 'bg-success/20 text-success border border-success/30';
       case 'sent':
-        return 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400';
+        return 'bg-primary/20 text-primary border border-primary/30';
       case 'overdue':
-        return 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400';
+        return 'bg-danger/20 text-danger border border-danger/30';
       case 'draft':
-        return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400';
+        return 'bg-surface-elevated text-text-tertiary border border-white/10';
       default:
-        return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400';
+        return 'bg-surface-elevated text-text-tertiary border border-white/10';
     }
   };
 
@@ -263,9 +263,9 @@ export function InvoicesAndCashFlow({ projectId }: InvoicesAndCashFlowProps) {
             <div className="glass-medium rounded-xl p-6 border border-white/10">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-medium text-text-tertiary">Total Income</h3>
-                <TrendingUp className="w-5 h-5 text-green-400" />
+                <TrendingUp className="w-5 h-5 text-success" />
               </div>
-              <p className="text-3xl font-bold text-green-400">{formatCurrency(totalIncome)}</p>
+              <p className="text-3xl font-bold text-success">{formatCurrency(totalIncome)}</p>
               <p className="text-xs text-text-tertiary mt-2">
                 {invoices.filter(inv => inv.status === 'paid').length} paid invoices
               </p>
@@ -274,9 +274,9 @@ export function InvoicesAndCashFlow({ projectId }: InvoicesAndCashFlowProps) {
             <div className="glass-medium rounded-xl p-6 border border-white/10">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-medium text-text-tertiary">Total Expenses</h3>
-                <TrendingDown className="w-5 h-5 text-red-400" />
+                <TrendingDown className="w-5 h-5 text-danger" />
               </div>
-              <p className="text-3xl font-bold text-red-400">{formatCurrency(totalExpenses)}</p>
+              <p className="text-3xl font-bold text-danger">{formatCurrency(totalExpenses)}</p>
               <p className="text-xs text-text-tertiary mt-2">
                 {expenses.length} expense entries
               </p>

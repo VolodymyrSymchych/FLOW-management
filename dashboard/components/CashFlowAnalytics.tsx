@@ -32,7 +32,7 @@ interface CashFlowAnalyticsProps {
   projectId?: number;
 }
 
-const COLORS = ['#00e5ff', '#ff6b4a', '#ffa500', '#00D66B', '#8098F9', '#ff4757'];
+const COLORS = ['hsl(var(--primary))', 'hsl(var(--danger))', 'hsl(var(--warning))', 'hsl(var(--success))', 'hsl(var(--primary))', 'hsl(var(--danger))'];
 
 export function CashFlowAnalytics({ projectId }: CashFlowAnalyticsProps) {
   const [period, setPeriod] = useState<'week' | 'month' | 'year'>('month');
@@ -180,8 +180,8 @@ export function CashFlowAnalytics({ projectId }: CashFlowAnalyticsProps) {
               {comparisonData.previous.income > 0 && (
                 <span className={`text-sm flex items-center space-x-1 ${
                   comparisonData.current.income >= comparisonData.previous.income 
-                    ? 'text-green-400' 
-                    : 'text-red-400'
+                    ? 'text-success' 
+                    : 'text-danger'
                 }`}>
                   {comparisonData.current.income >= comparisonData.previous.income ? (
                     <TrendingUp className="w-4 h-4" />
@@ -209,8 +209,8 @@ export function CashFlowAnalytics({ projectId }: CashFlowAnalyticsProps) {
               {comparisonData.previous.expenses > 0 && (
                 <span className={`text-sm flex items-center space-x-1 ${
                   comparisonData.current.expenses <= comparisonData.previous.expenses 
-                    ? 'text-green-400' 
-                    : 'text-red-400'
+                    ? 'text-success' 
+                    : 'text-danger'
                 }`}>
                   {comparisonData.current.expenses <= comparisonData.previous.expenses ? (
                     <TrendingDown className="w-4 h-4" />
@@ -233,15 +233,15 @@ export function CashFlowAnalytics({ projectId }: CashFlowAnalyticsProps) {
             <p className="text-sm text-text-tertiary mb-2">Net Cash Flow</p>
             <div className="flex items-center space-x-2">
               <p className={`text-2xl font-bold ${
-                comparisonData.current.netCashFlow >= 0 ? 'text-green-400' : 'text-red-400'
+                comparisonData.current.netCashFlow >= 0 ? 'text-success' : 'text-danger'
               }`}>
                 {formatCurrency(comparisonData.current.netCashFlow)}
               </p>
               {comparisonData.previous.netCashFlow !== 0 && (
                 <span className={`text-sm flex items-center space-x-1 ${
                   comparisonData.current.netCashFlow >= comparisonData.previous.netCashFlow 
-                    ? 'text-green-400' 
-                    : 'text-red-400'
+                    ? 'text-success' 
+                    : 'text-danger'
                 }`}>
                   {comparisonData.current.netCashFlow >= comparisonData.previous.netCashFlow ? (
                     <TrendingUp className="w-4 h-4" />
@@ -284,7 +284,7 @@ export function CashFlowAnalytics({ projectId }: CashFlowAnalyticsProps) {
             <Line 
               type="monotone" 
               dataKey="income" 
-              stroke="#00e5ff" 
+              stroke="hsl(var(--primary))" 
               strokeWidth={2}
               name="Income"
               dot={{ r: 4 }}
@@ -292,7 +292,7 @@ export function CashFlowAnalytics({ projectId }: CashFlowAnalyticsProps) {
             <Line 
               type="monotone" 
               dataKey="expenses" 
-              stroke="#ff6b4a" 
+              stroke="hsl(var(--danger))" 
               strokeWidth={2}
               name="Expenses"
               dot={{ r: 4 }}
@@ -300,7 +300,7 @@ export function CashFlowAnalytics({ projectId }: CashFlowAnalyticsProps) {
             <Line 
               type="monotone" 
               dataKey="netCashFlow" 
-              stroke="#00D66B" 
+              stroke="hsl(var(--success))" 
               strokeWidth={2}
               name="Net Cash Flow"
               dot={{ r: 4 }}
@@ -327,8 +327,8 @@ export function CashFlowAnalytics({ projectId }: CashFlowAnalyticsProps) {
             />
             <Tooltip content={<CustomTooltip />} />
             <Legend />
-            <Bar dataKey="income" fill="#00e5ff" name="Income" />
-            <Bar dataKey="expenses" fill="#ff6b4a" name="Expenses" />
+            <Bar dataKey="income" fill="hsl(var(--primary))" name="Income" />
+            <Bar dataKey="expenses" fill="hsl(var(--danger))" name="Expenses" />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -355,8 +355,8 @@ export function CashFlowAnalytics({ projectId }: CashFlowAnalyticsProps) {
               <Area 
                 type="monotone" 
                 dataKey="forecastedIncome" 
-                stroke="#ffa500" 
-                fill="#ffa500"
+                stroke="hsl(var(--warning))" 
+                fill="hsl(var(--warning))"
                 fillOpacity={0.3}
                 name="Forecasted Income"
               />

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { storage } from '../../../../server/storage';
+import { cached, invalidateUserCache } from '@/lib/redis';
+import { withRateLimit } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,13 +18,22 @@ export async function GET(request: NextRequest) {
 
     console.log('Fetching tasks for userId:', session.userId, 'projectId:', projectId);
 
-    const tasks = await storage.getTasks(
-      session.userId,
-      projectId ? parseInt(projectId) : undefined
+    // Cache tasks for 3 minutes (tasks change more frequently than projects)
+    const cacheKey = projectId
+      ? `tasks:user:${session.userId}:project:${projectId}`
+      : `tasks:user:${session.userId}`;
+
+    const tasks = await cached(
+      cacheKey,
+      async () => await storage.getTasks(
+        session.userId,
+        projectId ? parseInt(projectId) : undefined
+      ),
+      { ttl: 180 } // 3 minutes
     );
-    
+
     console.log('Found tasks:', tasks.length);
-    
+
     return NextResponse.json({ tasks });
   } catch (error: any) {
     console.error('Error fetching tasks:', error);
@@ -32,14 +43,25 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit: 20 tasks per 10 minutes per user
     const session = await getSession();
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const rateLimitResult = await withRateLimit(request, {
+      limit: 20,
+      window: 600, // 10 minutes
+      identifier: () => `create-task:${session.userId}`,
+    });
+
+    if (!rateLimitResult.success) {
+      return rateLimitResult.response!;
+    }
+
     const data = await request.json();
     console.log('Creating task with data:', { ...data, userId: session.userId });
-    
+
     const { title, description, project_id, assignee, due_date, start_date, end_date, status, priority, depends_on, progress } = data;
 
     if (!title || title.trim() === '') {
@@ -74,6 +96,9 @@ export async function POST(request: NextRequest) {
     console.log('Task data to insert:', taskData);
 
     const task = await storage.createTask(taskData);
+
+    // Invalidate user caches after creating task
+    await invalidateUserCache(session.userId);
 
     console.log('Task created successfully:', task.id);
     return NextResponse.json({ task }, { status: 201 });

@@ -184,7 +184,7 @@ function TeamPageContent() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="glass-medium rounded-2xl p-6">
               <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 rounded-xl glass-light flex items-center justify-center shadow-[0_0_15px_rgba(128,152,249,0.4)]">
+                <div className="w-12 h-12 rounded-xl glass-light flex items-center justify-center ">
                   <Users className="w-6 h-6 text-[#8098F9]" />
                 </div>
                 <div>
@@ -196,7 +196,7 @@ function TeamPageContent() {
 
             <div className="glass-medium rounded-2xl p-6">
               <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 rounded-xl glass-light flex items-center justify-center shadow-[0_0_15px_rgba(0,214,107,0.4)]">
+                <div className="w-12 h-12 rounded-xl glass-light flex items-center justify-center ">
                   <Clock className="w-6 h-6 text-[#00D66B]" />
                 </div>
                 <div>
@@ -210,7 +210,7 @@ function TeamPageContent() {
 
             <div className="glass-medium rounded-2xl p-6">
               <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 rounded-xl glass-light flex items-center justify-center shadow-[0_0_15px_rgba(168,85,247,0.4)]">
+                <div className="w-12 h-12 rounded-xl glass-light flex items-center justify-center ">
                   <Calendar className="w-6 h-6 text-purple-400" />
                 </div>
                 <div>
@@ -245,7 +245,7 @@ function TeamPageContent() {
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center space-x-3">
                         <div className="relative">
-                          <div className="w-14 h-14 rounded-full bg-[#8098F9] flex items-center justify-center text-white font-semibold text-lg shadow-[0_0_20px_rgba(128,152,249,0.5)]">
+                          <div className="w-14 h-14 rounded-full bg-[#8098F9] flex items-center justify-center text-white font-semibold text-lg ">
                             {initials}
                           </div>
                         </div>

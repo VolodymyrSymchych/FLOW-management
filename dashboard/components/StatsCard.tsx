@@ -18,7 +18,7 @@ export function StatsCard({ title, value, icon: Icon, iconBgColor, trend }: Stat
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm text-text-tertiary mb-2 flex items-center space-x-2">
-            <span className={cn('w-2 h-2 rounded-full shadow-[0_0_8px]', iconBgColor)}></span>
+            <span className={cn('w-2 h-2 rounded-full ', iconBgColor)}></span>
             <span>{title}</span>
           </p>
           <h3 className="text-4xl font-bold text-text-primary">
@@ -27,19 +27,19 @@ export function StatsCard({ title, value, icon: Icon, iconBgColor, trend }: Stat
           {trend && (
             <p className={cn(
               'text-sm mt-2',
-              trend.isPositive ? 'text-[#00D66B]' : 'text-red-400'
+              trend.isPositive ? 'text-success' : 'text-danger'
             )}>
               {trend.isPositive ? '+' : ''}{trend.value}% from last month
             </p>
           )}
         </div>
-        <div className={cn('p-3 rounded-xl glass-light shadow-[0_0_15px]', iconBgColor)}>
+        <div className={cn('p-3 rounded-xl glass-light ', iconBgColor)}>
           <Icon className="w-6 h-6 text-white" />
         </div>
       </div>
       <div className="mt-4 h-1.5 glass-subtle rounded-full overflow-hidden">
         <div
-          className={cn('h-full rounded-full shadow-[0_0_10px]', iconBgColor)}
+          className={cn('h-full rounded-full ', iconBgColor)}
           style={{ width: typeof value === 'number' ? `${value}%` : '60%' }}
         ></div>
       </div>

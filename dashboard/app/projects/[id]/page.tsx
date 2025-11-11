@@ -159,7 +159,7 @@ export default function ProjectDetailPage() {
 
           <button
             onClick={downloadReport}
-            className="flex items-center space-x-2 px-5 py-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(128,152,249,0.3)] hover:shadow-[0_0_30px_rgba(128,152,249,0.5)]"
+            className="flex items-center space-x-2 px-5 py-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] hover:scale-105 active:scale-95  hover:"
           >
             <Download className="w-4 h-4" />
             <span className="font-medium">Download Report</span>

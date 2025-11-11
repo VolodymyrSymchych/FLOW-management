@@ -213,3 +213,25 @@ export async function invalidateSession(token: string): Promise<void> {
     console.error('Session invalidation error:', error);
   }
 }
+
+/**
+ * Invalidate all user-related caches
+ */
+export async function invalidateUserCache(userId: number): Promise<void> {
+  const redis = getRedisClient();
+  if (!redis) return;
+
+  try {
+    const patterns = [
+      `projects:user:${userId}`,
+      `tasks:user:${userId}*`,
+      `stats:user:${userId}`,
+    ];
+
+    for (const pattern of patterns) {
+      await invalidateCache(pattern);
+    }
+  } catch (error) {
+    console.error('User cache invalidation error:', error);
+  }
+}

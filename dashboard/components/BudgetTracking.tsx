@@ -58,9 +58,9 @@ export function BudgetTracking() {
   };
 
   const getUtilizationColor = () => {
-    if (metrics.utilizationPercentage >= 100) return 'bg-red-500';
-    if (metrics.utilizationPercentage >= 80) return 'bg-yellow-500';
-    return 'bg-green-500';
+    if (metrics.utilizationPercentage >= 100) return 'bg-danger';
+    if (metrics.utilizationPercentage >= 80) return 'bg-warning';
+    return 'bg-success';
   };
 
   const getUtilizationIcon = () => {
@@ -76,7 +76,7 @@ export function BudgetTracking() {
       <div className="flex items-start justify-between mb-4">
         <div>
           <p className="text-sm text-text-tertiary mb-2 flex items-center space-x-2">
-            <span className="w-2 h-2 rounded-full shadow-[0_0_8px] bg-purple-500"></span>
+            <span className="w-2 h-2 rounded-full  bg-secondary"></span>
             <span>Budget vs Actual</span>
           </p>
           <h3 className="text-2xl font-bold text-text-primary">
@@ -86,7 +86,7 @@ export function BudgetTracking() {
             {metrics.utilizationPercentage.toFixed(1)}% utilized
           </p>
         </div>
-        <div className={`p-3 rounded-xl glass-light shadow-[0_0_15px] ${getUtilizationColor()}`}>
+        <div className={`p-3 rounded-xl glass-light  ${getUtilizationColor()}`}>
           <UtilizationIcon className="w-6 h-6 text-white" />
         </div>
       </div>
@@ -94,7 +94,7 @@ export function BudgetTracking() {
       {/* Progress Bar */}
       <div className="mt-4 h-2 glass-subtle rounded-full overflow-hidden">
         <div
-          className={`h-full rounded-full shadow-[0_0_10px] transition-all duration-500 ${getUtilizationColor()}`}
+          className={`h-full rounded-full  transition-all duration-500 ${getUtilizationColor()}`}
           style={{ width: `${Math.min(metrics.utilizationPercentage, 100)}%` }}
         ></div>
       </div>
@@ -110,7 +110,7 @@ export function BudgetTracking() {
         <div>
           <p className="text-xs text-text-tertiary mb-1">Forecast</p>
           <p className="text-lg font-semibold text-text-primary flex items-center space-x-1">
-            <TrendingDown className="w-4 h-4 text-yellow-500" />
+            <TrendingDown className="w-4 h-4 text-warning" />
             <span>{formatCurrency(metrics.forecastSpending)}</span>
           </p>
         </div>
@@ -120,14 +120,14 @@ export function BudgetTracking() {
       {metrics.utilizationPercentage >= 80 && (
         <div className={`mt-4 p-3 rounded-lg ${
           metrics.utilizationPercentage >= 100 
-            ? 'bg-red-500/20 border border-red-500/30' 
-            : 'bg-yellow-500/20 border border-yellow-500/30'
+            ? 'bg-danger/20 border border-danger/30' 
+            : 'bg-warning/20 border border-warning/30'
         }`}>
           <p className="text-sm flex items-center space-x-2">
             <AlertTriangle className={`w-4 h-4 ${
-              metrics.utilizationPercentage >= 100 ? 'text-red-400' : 'text-yellow-400'
+              metrics.utilizationPercentage >= 100 ? 'text-danger' : 'text-warning'
             }`} />
-            <span className={metrics.utilizationPercentage >= 100 ? 'text-red-400' : 'text-yellow-400'}>
+            <span className={metrics.utilizationPercentage >= 100 ? 'text-danger' : 'text-warning'}>
               {metrics.utilizationPercentage >= 100 
                 ? 'Budget exceeded! Review expenses immediately.'
                 : 'Approaching budget limit. Monitor spending closely.'}
@@ -137,8 +137,8 @@ export function BudgetTracking() {
       )}
 
       {metrics.projectsAtRisk > 0 && (
-        <div className="mt-2 p-2 rounded-lg bg-orange-500/20 border border-orange-500/30">
-          <p className="text-xs text-orange-400">
+        <div className="mt-2 p-2 rounded-lg bg-warning/20 border border-warning/30">
+          <p className="text-xs text-warning">
             {metrics.projectsAtRisk} project{metrics.projectsAtRisk > 1 ? 's' : ''} at risk
           </p>
         </div>

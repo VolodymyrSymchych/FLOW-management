@@ -182,11 +182,11 @@ export function UpcomingTasks() {
 
   const getTaskColor = (index: number) => {
     const colors = [
-      'glass-light text-[#8098F9]',
-      'glass-light text-purple-400',
-      'glass-light text-blue-400',
-      'glass-light text-green-400',
-      'glass-light text-orange-400',
+      'glass-light text-primary',
+      'glass-light text-secondary',
+      'glass-light text-primary',
+      'glass-light text-success',
+      'glass-light text-warning',
     ];
     return colors[index % colors.length];
   };
@@ -217,7 +217,7 @@ export function UpcomingTasks() {
           </h3>
           {activeTimeEntry && (
             <div className="flex items-center space-x-2 text-xs text-text-tertiary">
-              <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+              <div className="w-2 h-2 rounded-full bg-success animate-pulse"></div>
               <span>Tracking time</span>
             </div>
           )}
@@ -256,8 +256,8 @@ export function UpcomingTasks() {
           )}
         </div>
         {activeTimeEntry && !runningTask && (
-          <div className="mt-4 p-3 rounded-lg glass-subtle border border-yellow-500/30">
-            <p className="text-xs text-yellow-400">
+          <div className="mt-4 p-3 rounded-lg glass-subtle border border-warning/30">
+            <p className="text-xs text-warning">
               ⚠️ Time tracking is active but the task is not in the list
             </p>
           </div>
@@ -340,7 +340,7 @@ function DraggableTask({
       style={style}
       className={`flex items-center space-x-3 p-3 rounded-xl transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] group ${
         isRunning 
-          ? 'glass-light border border-green-500/30 shadow-[0_0_15px_rgba(34,197,94,0.3)]' 
+          ? 'glass-light border border-success/30 ' 
           : 'glass-hover'
       } ${isDragging ? 'z-50 opacity-50' : 'cursor-grab active:cursor-grabbing'}`}
     >
@@ -356,8 +356,8 @@ function DraggableTask({
           }
         }}
       >
-        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(128,152,249,0.3)] transition-transform duration-200 hover:scale-110 flex-shrink-0 ${
-          isRunning ? 'bg-green-500/20 text-green-400' : color
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center  transition-transform duration-200 hover:scale-110 flex-shrink-0 ${
+          isRunning ? 'bg-success/20 text-success' : color
         }`}>
           {isRunning ? (
             <Clock className="w-5 h-5 animate-pulse" />
@@ -371,7 +371,7 @@ function DraggableTask({
               {task.title}
             </h4>
             {isRunning && (
-              <span className="ml-2 text-xs font-mono font-bold text-green-400 flex-shrink-0">
+              <span className="ml-2 text-xs font-mono font-bold text-success flex-shrink-0">
                 {elapsedTime}
               </span>
             )}
@@ -393,7 +393,7 @@ function DraggableTask({
                   e.stopPropagation();
                   e.preventDefault();
                 }}
-                className="flex items-center space-x-1 px-2 py-1 text-xs bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors flex-shrink-0 pointer-events-auto"
+                className="flex items-center space-x-1 px-2 py-1 text-xs bg-danger/20 text-danger rounded-lg hover:bg-danger/30 transition-colors flex-shrink-0 pointer-events-auto"
               >
                 <Square className="w-3 h-3" />
                 <span>Stop</span>
@@ -417,7 +417,7 @@ function DraggableTask({
                   e.stopPropagation();
                   e.preventDefault();
                 }}
-                className="opacity-0 group-hover:opacity-100 flex items-center space-x-1 px-2 py-1 text-xs bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-all flex-shrink-0 pointer-events-auto"
+                className="opacity-0 group-hover:opacity-100 flex items-center space-x-1 px-2 py-1 text-xs bg-success/20 text-success rounded-lg hover:bg-success/30 transition-all flex-shrink-0 pointer-events-auto"
                 title="Start time tracking"
               >
                 <Play className="w-3 h-3" />

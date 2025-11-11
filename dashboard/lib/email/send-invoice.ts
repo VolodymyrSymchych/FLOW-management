@@ -9,7 +9,11 @@ import { generateInvoicePDF } from '@/lib/invoice-pdf';
 let resendClient: Resend | null = null;
 function getResendClient() {
   if (!resendClient) {
-    resendClient = new Resend(process.env.RESEND_API_KEY);
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      throw new Error('RESEND_API_KEY is not configured. Please add it to your environment variables.');
+    }
+    resendClient = new Resend(apiKey);
   }
   return resendClient;
 }
@@ -94,11 +98,17 @@ export async function sendInvoiceEmail(
 
     if (error) {
       console.error('Failed to send invoice email:', error);
-      throw new Error('Failed to send invoice email');
+      // Provide more detailed error message
+      const errorMessage = error.message || JSON.stringify(error) || 'Unknown error';
+      throw new Error(`Failed to send invoice email: ${errorMessage}`);
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error sending invoice email:', error);
-    throw error;
+    // Preserve original error message if available
+    if (error?.message) {
+      throw error;
+    }
+    throw new Error(`Failed to send invoice email: ${error?.toString() || 'Unknown error'}`);
   }
 }
 
@@ -133,11 +143,15 @@ export async function sendOverdueReminder(invoice: Invoice): Promise<void> {
 
     if (error) {
       console.error('Failed to send overdue reminder:', error);
-      throw new Error('Failed to send overdue reminder');
+      const errorMessage = error.message || JSON.stringify(error) || 'Unknown error';
+      throw new Error(`Failed to send overdue reminder: ${errorMessage}`);
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error sending overdue reminder:', error);
-    throw error;
+    if (error?.message) {
+      throw error;
+    }
+    throw new Error(`Failed to send overdue reminder: ${error?.toString() || 'Unknown error'}`);
   }
 }
 
@@ -172,11 +186,15 @@ export async function sendDueDateReminder(invoice: Invoice): Promise<void> {
 
     if (error) {
       console.error('Failed to send due date reminder:', error);
-      throw new Error('Failed to send due date reminder');
+      const errorMessage = error.message || JSON.stringify(error) || 'Unknown error';
+      throw new Error(`Failed to send due date reminder: ${errorMessage}`);
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error sending due date reminder:', error);
-    throw error;
+    if (error?.message) {
+      throw error;
+    }
+    throw new Error(`Failed to send due date reminder: ${error?.toString() || 'Unknown error'}`);
   }
 }
 
@@ -209,11 +227,15 @@ export async function sendStatusChangeEmail(
 
     if (error) {
       console.error('Failed to send status change email:', error);
-      throw new Error('Failed to send status change email');
+      const errorMessage = error.message || JSON.stringify(error) || 'Unknown error';
+      throw new Error(`Failed to send status change email: ${errorMessage}`);
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error sending status change email:', error);
-    throw error;
+    if (error?.message) {
+      throw error;
+    }
+    throw new Error(`Failed to send status change email: ${error?.toString() || 'Unknown error'}`);
   }
 }
 

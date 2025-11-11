@@ -5,7 +5,11 @@ import { VerificationEmail } from './templates/verification-email';
 let resendClient: Resend | null = null;
 function getResendClient() {
   if (!resendClient) {
-    resendClient = new Resend(process.env.RESEND_API_KEY);
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      throw new Error('RESEND_API_KEY is not configured. Please add it to your environment variables.');
+    }
+    resendClient = new Resend(apiKey);
   }
   return resendClient;
 }
@@ -28,13 +32,17 @@ export async function sendVerificationEmail(
 
     if (error) {
       console.error('Failed to send verification email:', error);
-      throw new Error('Failed to send verification email');
+      const errorMessage = error.message || JSON.stringify(error) || 'Unknown error';
+      throw new Error(`Failed to send verification email: ${errorMessage}`);
     }
 
     return data;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error sending verification email:', error);
-    throw error;
+    if (error?.message) {
+      throw error;
+    }
+    throw new Error(`Failed to send verification email: ${error?.toString() || 'Unknown error'}`);
   }
 }
 
@@ -80,13 +88,17 @@ export async function sendPasswordResetEmail(
 
     if (error) {
       console.error('Failed to send password reset email:', error);
-      throw new Error('Failed to send password reset email');
+      const errorMessage = error.message || JSON.stringify(error) || 'Unknown error';
+      throw new Error(`Failed to send password reset email: ${errorMessage}`);
     }
 
     return data;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error sending password reset email:', error);
-    throw error;
+    if (error?.message) {
+      throw error;
+    }
+    throw new Error(`Failed to send password reset email: ${error?.toString() || 'Unknown error'}`);
   }
 }
 

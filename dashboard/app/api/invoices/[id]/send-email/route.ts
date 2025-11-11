@@ -75,14 +75,26 @@ export async function POST(
       });
     } catch (emailError: any) {
       console.error('Failed to send email:', emailError);
+      const errorMessage = emailError?.message || emailError?.toString() || 'Unknown error';
       return NextResponse.json(
-        { error: 'Failed to send email', message: emailError.message },
+        { 
+          error: 'Failed to send email', 
+          message: errorMessage,
+          details: emailError?.response?.data || emailError?.cause || null
+        },
         { status: 500 }
       );
     }
   } catch (error: any) {
     console.error('Error sending invoice email:', error);
-    return NextResponse.json({ error: 'Failed to send email' }, { status: 500 });
+    const errorMessage = error?.message || error?.toString() || 'Unknown error';
+    return NextResponse.json(
+      { 
+        error: 'Failed to send email', 
+        message: errorMessage 
+      }, 
+      { status: 500 }
+    );
   }
 }
 

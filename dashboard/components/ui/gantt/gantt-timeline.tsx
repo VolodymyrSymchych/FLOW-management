@@ -248,10 +248,11 @@ export function GanttFeatureList({ children, className }: GanttFeatureListProps)
           const scrollLeft = contentEl.scrollLeft;
           const scrollWidth = contentEl.scrollWidth;
           const clientWidth = contentEl.clientWidth;
-          const threshold = clientWidth * 0.2;
+          const threshold = 10;
           
           setShowLeftButton(scrollLeft < threshold);
-          setShowRightButton(scrollWidth - scrollLeft - clientWidth < threshold);
+          const distanceFromRight = scrollWidth - scrollLeft - clientWidth;
+          setShowRightButton(distanceFromRight <= threshold);
         }
       }, 300);
     };
@@ -371,6 +372,20 @@ export function GanttFeatureList({ children, className }: GanttFeatureListProps)
       }
     };
 
+    const updateButtonVisibility = () => {
+      const scrollLeft = contentEl.scrollLeft;
+      const scrollWidth = contentEl.scrollWidth;
+      const clientWidth = contentEl.clientWidth;
+      const threshold = 10; // Show button when within 10px of edge (smaller threshold for better UX)
+      
+      // Left button: show when near left edge
+      setShowLeftButton(scrollLeft < threshold);
+      
+      // Right button: show when near right edge (always visible at end of scroll)
+      const distanceFromRight = scrollWidth - scrollLeft - clientWidth;
+      setShowRightButton(distanceFromRight <= threshold);
+    };
+
     const handleContentScroll = () => {
       if (isSyncing) return; // Prevent infinite loop
       
@@ -382,13 +397,7 @@ export function GanttFeatureList({ children, className }: GanttFeatureListProps)
           isSyncing = false;
           
           // Update extension button visibility based on scroll position
-          const scrollLeft = contentEl.scrollLeft;
-          const scrollWidth = contentEl.scrollWidth;
-          const clientWidth = contentEl.clientWidth;
-          const threshold = clientWidth * 0.2; // Show button when within 20% of edge
-          
-          setShowLeftButton(scrollLeft < threshold);
-          setShowRightButton(scrollWidth - scrollLeft - clientWidth < threshold);
+          updateButtonVisibility();
           
           ticking = false;
         });
@@ -396,6 +405,9 @@ export function GanttFeatureList({ children, className }: GanttFeatureListProps)
         ticking = true;
       }
     };
+
+    // Initial button visibility check
+    updateButtonVisibility();
 
     // Use passive listener for better performance
     contentEl.addEventListener('scroll', handleContentScroll, { passive: true });

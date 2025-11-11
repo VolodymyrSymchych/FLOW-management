@@ -1,4 +1,5 @@
 import { Resend } from 'resend';
+import { render } from '@react-email/render';
 import { VerificationEmail } from './templates/verification-email';
 
 // Lazy initialization to avoid errors during build time
@@ -23,11 +24,14 @@ export async function sendVerificationEmail(
   const verificationUrl = `${baseUrl}/verify?token=${token}`;
 
   try {
+    // Render React component to HTML for better compatibility
+    const emailHtml = await render(VerificationEmail({ username, verificationUrl }));
+
     const { data, error } = await getResendClient().emails.send({
       from: process.env.EMAIL_FROM || 'Project Scope Analyzer <onboarding@resend.dev>',
       to: [email],
       subject: 'Verify your email address',
-      react: VerificationEmail({ username, verificationUrl }),
+      html: emailHtml,
     });
 
     if (error) {

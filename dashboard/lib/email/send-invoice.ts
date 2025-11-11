@@ -1,4 +1,5 @@
 import { Resend } from 'resend';
+import { render } from '@react-email/render';
 import { InvoiceSentEmail } from './templates/invoice-sent-email';
 import { InvoiceOverdueReminder } from './templates/invoice-overdue-email';
 import { InvoiceDueDateReminder } from './templates/invoice-due-date-email';
@@ -83,17 +84,22 @@ export async function sendInvoiceEmail(
     : `${baseUrl}/invoices/${invoice.id}`;
 
   try {
-    const { data, error } = await getResendClient().emails.send({
-      from: process.env.EMAIL_FROM || 'Project Scope Analyzer <onboarding@resend.dev>',
-      to: [email],
-      subject: `Invoice #${invoice.invoiceNumber} - ${formatCurrency(invoice.totalAmount, invoice.currency)}`,
-      react: InvoiceSentEmail({
+    // Render React component to HTML for better compatibility
+    const emailHtml = await render(
+      InvoiceSentEmail({
         invoiceNumber: invoice.invoiceNumber,
         clientName: invoice.clientName || 'Valued Client',
         amount: formatCurrency(invoice.totalAmount, invoice.currency),
         dueDate: formatDate(invoice.dueDate),
         invoiceUrl: publicUrl,
-      }),
+      })
+    );
+
+    const { data, error } = await getResendClient().emails.send({
+      from: process.env.EMAIL_FROM || 'Project Scope Analyzer <onboarding@resend.dev>',
+      to: [email],
+      subject: `Invoice #${invoice.invoiceNumber} - ${formatCurrency(invoice.totalAmount, invoice.currency)}`,
+      html: emailHtml,
     });
 
     if (error) {
@@ -127,18 +133,23 @@ export async function sendOverdueReminder(invoice: Invoice): Promise<void> {
   const invoiceUrl = `${baseUrl}/invoices/${invoice.id}`;
 
   try {
-    const { data, error } = await getResendClient().emails.send({
-      from: process.env.EMAIL_FROM || 'Project Scope Analyzer <onboarding@resend.dev>',
-      to: [email],
-      subject: `Overdue Invoice #${invoice.invoiceNumber} - Action Required`,
-      react: InvoiceOverdueReminder({
+    // Render React component to HTML for better compatibility
+    const emailHtml = await render(
+      InvoiceOverdueReminder({
         invoiceNumber: invoice.invoiceNumber,
         clientName: invoice.clientName || 'Valued Client',
         amount: formatCurrency(invoice.totalAmount, invoice.currency),
         dueDate: formatDate(invoice.dueDate),
         daysOverdue,
         invoiceUrl,
-      }),
+      })
+    );
+
+    const { data, error } = await getResendClient().emails.send({
+      from: process.env.EMAIL_FROM || 'Project Scope Analyzer <onboarding@resend.dev>',
+      to: [email],
+      subject: `Overdue Invoice #${invoice.invoiceNumber} - Action Required`,
+      html: emailHtml,
     });
 
     if (error) {
@@ -170,18 +181,23 @@ export async function sendDueDateReminder(invoice: Invoice): Promise<void> {
   const invoiceUrl = `${baseUrl}/invoices/${invoice.id}`;
 
   try {
-    const { data, error } = await getResendClient().emails.send({
-      from: process.env.EMAIL_FROM || 'Project Scope Analyzer <onboarding@resend.dev>',
-      to: [email],
-      subject: `Invoice #${invoice.invoiceNumber} due in 3 days`,
-      react: InvoiceDueDateReminder({
+    // Render React component to HTML for better compatibility
+    const emailHtml = await render(
+      InvoiceDueDateReminder({
         invoiceNumber: invoice.invoiceNumber,
         clientName: invoice.clientName || 'Valued Client',
         amount: formatCurrency(invoice.totalAmount, invoice.currency),
         dueDate: formatDate(invoice.dueDate),
         daysUntilDue: 3,
         invoiceUrl,
-      }),
+      })
+    );
+
+    const { data, error } = await getResendClient().emails.send({
+      from: process.env.EMAIL_FROM || 'Project Scope Analyzer <onboarding@resend.dev>',
+      to: [email],
+      subject: `Invoice #${invoice.invoiceNumber} due in 3 days`,
+      html: emailHtml,
     });
 
     if (error) {
@@ -211,18 +227,23 @@ export async function sendStatusChangeEmail(
   const invoiceUrl = `${baseUrl}/invoices/${invoice.id}`;
 
   try {
-    const { data, error } = await getResendClient().emails.send({
-      from: process.env.EMAIL_FROM || 'Project Scope Analyzer <onboarding@resend.dev>',
-      to: [email],
-      subject: `Invoice #${invoice.invoiceNumber} status updated to ${invoice.status}`,
-      react: InvoiceStatusChangeEmail({
+    // Render React component to HTML for better compatibility
+    const emailHtml = await render(
+      InvoiceStatusChangeEmail({
         invoiceNumber: invoice.invoiceNumber,
         clientName: invoice.clientName || 'Valued Client',
         amount: formatCurrency(invoice.totalAmount, invoice.currency),
         oldStatus,
         newStatus: invoice.status,
         invoiceUrl,
-      }),
+      })
+    );
+
+    const { data, error } = await getResendClient().emails.send({
+      from: process.env.EMAIL_FROM || 'Project Scope Analyzer <onboarding@resend.dev>',
+      to: [email],
+      subject: `Invoice #${invoice.invoiceNumber} status updated to ${invoice.status}`,
+      html: emailHtml,
     });
 
     if (error) {

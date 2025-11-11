@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { storage } from '@/server/storage';
-import { redis } from '@/lib/redis';
-import { rateLimit } from '@/lib/rate-limit';
+import { rateLimit, invalidateCache, cached } from '@/lib/redis';
 
 // GET /api/tasks/[id]/subtasks - Get all subtasks for a task
 export async function GET(
@@ -11,7 +10,7 @@ export async function GET(
 ) {
   try {
     const session = await getSession();
-    if (!session?.user?.id) {
+    if (!session?.userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -21,22 +20,18 @@ export async function GET(
     }
 
     // Verify user has access to the task
-    const canManage = await storage.userCanManageTask(session.user.id, taskId);
+    const canManage = await storage.userCanManageTask(session.userId, taskId);
     if (!canManage) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     // Try to get from cache first
     const cacheKey = `subtasks:${taskId}`;
-    const cached = await redis.get(cacheKey);
-    if (cached) {
-      return NextResponse.json({ subtasks: JSON.parse(cached) });
-    }
-
-    const subtasks = await storage.getSubtasks(taskId);
-
-    // Cache for 3 minutes
-    await redis.set(cacheKey, JSON.stringify(subtasks), { ex: 180 });
+    const subtasks = await cached(
+      cacheKey,
+      () => storage.getSubtasks(taskId),
+      { ttl: 180 }
+    );
 
     return NextResponse.json({ subtasks });
   } catch (error) {
@@ -52,13 +47,13 @@ export async function POST(
 ) {
   try {
     const session = await getSession();
-    if (!session?.user?.id) {
+    if (!session?.userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Rate limit: 20 subtasks per 10 minutes
     const rateLimitResult = await rateLimit(
-      `create-subtask:${session.user.id}`,
+      `create-subtask:${session.userId}`,
       20,
       600000
     );
@@ -81,7 +76,7 @@ export async function POST(
     }
 
     // Check if user is assignee of parent task
-    const isAssignee = await storage.userIsTaskAssignee(session.user.id, taskId);
+    const isAssignee = await storage.userIsTaskAssignee(session.userId, taskId);
     if (!isAssignee) {
       return NextResponse.json(
         { error: 'Only task assignee can create subtasks' },
@@ -107,7 +102,7 @@ export async function POST(
 
     const subtaskData = {
       projectId: parentTask.projectId,
-      userId: session.user.id,
+      userId: session.userId,
       title,
       description: description || null,
       assignee: assignee || null,
@@ -121,10 +116,10 @@ export async function POST(
     const subtask = await storage.createSubtask(taskId, subtaskData);
 
     // Invalidate cache
-    await redis.del(`subtasks:${taskId}`);
-    await redis.del(`task:${taskId}:with-subtasks`);
+    await invalidateCache(`subtasks:${taskId}`);
+    await invalidateCache(`task:${taskId}:with-subtasks`);
     if (parentTask.projectId) {
-      await redis.del(`tasks:user:${session.user.id}:project:${parentTask.projectId}`);
+      await invalidateCache(`tasks:user:${session.userId}:project:${parentTask.projectId}`);
     }
 
     return NextResponse.json({ subtask }, { status: 201 });

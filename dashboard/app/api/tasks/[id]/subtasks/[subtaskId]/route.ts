@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { storage } from '@/server/storage';
-import { redis } from '@/lib/redis';
+import { invalidateCache } from '@/lib/redis';
 
 // PUT /api/tasks/[id]/subtasks/[subtaskId] - Update a subtask
 export async function PUT(
@@ -10,7 +10,7 @@ export async function PUT(
 ) {
   try {
     const session = await getSession();
-    if (!session?.user?.id) {
+    if (!session?.userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -28,7 +28,7 @@ export async function PUT(
     }
 
     // Verify user has access
-    const canManage = await storage.userCanManageTask(session.user.id, subtaskId);
+    const canManage = await storage.userCanManageTask(session.userId, subtaskId);
     if (!canManage) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
@@ -65,11 +65,11 @@ export async function PUT(
     }
 
     // Invalidate cache
-    await redis.del(`subtasks:${parentId}`);
-    await redis.del(`task:${parentId}:with-subtasks`);
-    await redis.del(`task:${subtaskId}`);
+    await invalidateCache(`subtasks:${parentId}`);
+    await invalidateCache(`task:${parentId}:with-subtasks`);
+    await invalidateCache(`task:${subtaskId}`);
     if (subtask.projectId) {
-      await redis.del(`tasks:user:${session.user.id}:project:${subtask.projectId}`);
+      await invalidateCache(`tasks:user:${session.userId}:project:${subtask.projectId}`);
     }
 
     return NextResponse.json({ subtask: updated });
@@ -86,7 +86,7 @@ export async function DELETE(
 ) {
   try {
     const session = await getSession();
-    if (!session?.user?.id) {
+    if (!session?.userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -104,7 +104,7 @@ export async function DELETE(
     }
 
     // Verify user has access
-    const canManage = await storage.userCanManageTask(session.user.id, subtaskId);
+    const canManage = await storage.userCanManageTask(session.userId, subtaskId);
     if (!canManage) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
@@ -115,11 +115,11 @@ export async function DELETE(
     await storage.updateParentDateRange(parentId);
 
     // Invalidate cache
-    await redis.del(`subtasks:${parentId}`);
-    await redis.del(`task:${parentId}:with-subtasks`);
-    await redis.del(`task:${subtaskId}`);
+    await invalidateCache(`subtasks:${parentId}`);
+    await invalidateCache(`task:${parentId}:with-subtasks`);
+    await invalidateCache(`task:${subtaskId}`);
     if (subtask.projectId) {
-      await redis.del(`tasks:user:${session.user.id}:project:${subtask.projectId}`);
+      await invalidateCache(`tasks:user:${session.userId}:project:${subtask.projectId}`);
     }
 
     return NextResponse.json({ success: true });

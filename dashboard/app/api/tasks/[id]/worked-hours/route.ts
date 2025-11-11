@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { storage } from '@/server/storage';
-import { redis } from '@/lib/redis';
+import { cached } from '@/lib/redis';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,58 +32,56 @@ export async function GET(
 
     // Try cache first (1 minute TTL for recent data)
     const cacheKey = `task:${taskId}:worked-hours`;
-    const cached = await redis.get(cacheKey);
-    if (cached) {
-      return NextResponse.json(JSON.parse(cached));
-    }
+    const result = await cached(
+      cacheKey,
+      async () => {
+        // Get time entries for this task
+        const timeEntries = await storage.getTimeEntries(undefined, taskId);
 
-    // Get time entries for this task
-    const timeEntries = await storage.getTimeEntries(undefined, taskId);
+        // Calculate total worked hours
+        let totalMinutes = 0;
+        const entries = timeEntries.map((entry) => {
+          let minutes = 0;
 
-    // Calculate total worked hours
-    let totalMinutes = 0;
-    const entries = timeEntries.map((entry) => {
-      let minutes = 0;
+          if (entry.duration) {
+            // Use stored duration if available
+            minutes = entry.duration;
+          } else if (entry.clockIn && entry.clockOut) {
+            // Calculate from clock in/out times
+            const clockIn = new Date(entry.clockIn);
+            const clockOut = new Date(entry.clockOut);
+            minutes = Math.round((clockOut.getTime() - clockIn.getTime()) / (1000 * 60));
+          } else if (entry.clockIn && !entry.clockOut) {
+            // Currently clocked in - calculate up to now
+            const clockIn = new Date(entry.clockIn);
+            const now = new Date();
+            minutes = Math.round((now.getTime() - clockIn.getTime()) / (1000 * 60));
+          }
 
-      if (entry.duration) {
-        // Use stored duration if available
-        minutes = entry.duration;
-      } else if (entry.clockIn && entry.clockOut) {
-        // Calculate from clock in/out times
-        const clockIn = new Date(entry.clockIn);
-        const clockOut = new Date(entry.clockOut);
-        minutes = Math.round((clockOut.getTime() - clockIn.getTime()) / (1000 * 60));
-      } else if (entry.clockIn && !entry.clockOut) {
-        // Currently clocked in - calculate up to now
-        const clockIn = new Date(entry.clockIn);
-        const now = new Date();
-        minutes = Math.round((now.getTime() - clockIn.getTime()) / (1000 * 60));
-      }
+          totalMinutes += minutes;
 
-      totalMinutes += minutes;
+          return {
+            id: entry.id,
+            userId: entry.userId,
+            clockIn: entry.clockIn,
+            clockOut: entry.clockOut,
+            duration: minutes,
+            notes: entry.notes,
+          };
+        });
 
-      return {
-        id: entry.id,
-        userId: entry.userId,
-        clockIn: entry.clockIn,
-        clockOut: entry.clockOut,
-        duration: minutes,
-        notes: entry.notes,
-      };
-    });
+        const totalHours = Math.round((totalMinutes / 60) * 10) / 10; // Round to 1 decimal place
 
-    const totalHours = Math.round((totalMinutes / 60) * 10) / 10; // Round to 1 decimal place
-
-    const result = {
-      taskId,
-      totalHours,
-      totalMinutes,
-      entryCount: entries.length,
-      entries,
-    };
-
-    // Cache for 1 minute
-    await redis.set(cacheKey, JSON.stringify(result), { ex: 60 });
+        return {
+          taskId,
+          totalHours,
+          totalMinutes,
+          entryCount: entries.length,
+          entries,
+        };
+      },
+      { ttl: 60 }
+    );
 
     return NextResponse.json(result);
   } catch (error: any) {

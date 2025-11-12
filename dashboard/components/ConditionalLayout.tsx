@@ -37,7 +37,7 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
           <Sidebar />
           <MainContent>
             <Header />
-            <div className="h-full overflow-hidden w-full max-w-full min-w-0">
+            <div className="h-full overflow-y-auto w-full max-w-full min-w-0">
               {children}
             </div>
           </MainContent>
@@ -53,7 +53,7 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
         <Sidebar />
         <MainContent>
           <Header />
-          <div className="p-8 h-full flex flex-col overflow-hidden min-h-0">
+          <div className="p-8 h-full flex flex-col overflow-y-auto min-h-0">
             {children}
           </div>
         </MainContent>

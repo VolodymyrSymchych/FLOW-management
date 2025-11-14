@@ -82,6 +82,63 @@ export async function GET(
   }
 }
 
+export async function PUT(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getSession();
+    if (!session?.userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const projectId = parseInt(params.id);
+    if (isNaN(projectId)) {
+      return NextResponse.json({ error: 'Invalid project ID' }, { status: 400 });
+    }
+
+    // Verify project exists and user has access
+    const project = await storage.getProject(projectId);
+    if (!project) {
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+    }
+
+    const hasAccess = await storage.userHasProjectAccess(session.userId, projectId);
+    if (!hasAccess) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const body = await request.json();
+    const { name, type, industry, team_size, timeline, status, budget, start_date, end_date, team_id } = body;
+
+    // Update project
+    const updatedProject = await storage.updateProject(projectId, {
+      name,
+      type,
+      industry,
+      teamSize: team_size,
+      timeline,
+      status,
+      budget: budget ? parseInt(budget) : undefined,
+      startDate: start_date ? new Date(start_date) : undefined,
+      endDate: end_date ? new Date(end_date) : undefined,
+      teamId: team_id ? parseInt(team_id) : undefined,
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: 'Project updated successfully',
+      project: updatedProject
+    });
+  } catch (error: any) {
+    console.error('Error updating project:', error);
+    return NextResponse.json(
+      { error: error.message || 'Failed to update project' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function DELETE(
   request: Request,
   { params }: { params: { id: string } }

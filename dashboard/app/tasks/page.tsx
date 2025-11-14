@@ -268,8 +268,8 @@ export default function TasksPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-text-primary">Tasks</h1>
-          <p className="text-xs text-text-secondary mt-0.5">
+          <h1 className="text-xl font-bold text-text-primary">Tasks</h1>
+          <p className="text-sm text-text-secondary mt-0.5">
             Manage and track your tasks
           </p>
         </div>
@@ -300,8 +300,8 @@ export default function TasksPage() {
 
         {/* New Task Form */}
         {showNewTaskForm && (
-          <div className="glass-medium rounded-xl p-4 border border-white/10">
-            <form onSubmit={createTask} className="space-y-3">
+          <div className="glass-medium rounded-xl p-5 border border-white/10">
+            <form onSubmit={createTask} className="space-y-4">
               <div>
                 <label className="block text-xs font-medium text-text-primary mb-1.5">
                   Title *
@@ -410,8 +410,8 @@ export default function TasksPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-text-primary">Tasks</h1>
-          <p className="text-xs text-text-secondary mt-0.5">
+          <h1 className="text-xl font-bold text-text-primary">Tasks</h1>
+          <p className="text-sm text-text-secondary mt-0.5">
             Manage and track your tasks
           </p>
         </div>
@@ -436,8 +436,8 @@ export default function TasksPage() {
 
       {/* New Task Form */}
       {showNewTaskForm && (
-        <div className="glass-medium rounded-xl p-4 border border-white/10">
-          <form onSubmit={createTask} className="space-y-3">
+        <div className="glass-medium rounded-xl p-5 border border-white/10">
+          <form onSubmit={createTask} className="space-y-4">
             <div>
               <label className="block text-xs font-medium text-text-primary mb-1.5">
                 Title *
@@ -635,8 +635,8 @@ function KanbanColumn({ id, title, tasks, color, onStatusChange, getPriorityColo
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-text-primary flex items-center space-x-1.5">
-          <div className={`w-2 h-2 rounded-full ${color}`}></div>
+        <h3 className="text-sm font-semibold text-text-primary flex items-center space-x-2">
+          <div className={`w-2.5 h-2.5 rounded-full ${color}`}></div>
           <span>{title}</span>
           <span className="text-text-tertiary text-xs">({tasks.length})</span>
         </h3>
@@ -644,7 +644,7 @@ function KanbanColumn({ id, title, tasks, color, onStatusChange, getPriorityColo
       <SortableContext items={tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
         <div
           ref={setNodeRef}
-          className={`space-y-2 min-h-[150px] rounded-lg p-2 transition-colors ${
+          className={`space-y-3 min-h-[150px] rounded-lg p-3 transition-colors ${
             isOver ? 'bg-primary/10 border-2 border-primary border-dashed' : ''
           }`}
         >
@@ -698,10 +698,10 @@ function SortableTaskCard({ task, onStatusChange, getPriorityColor, onEdit, onDe
       ref={setNodeRef}
       style={style}
       {...attributes}
-      className="glass-medium rounded-lg p-3 border border-white/10 hover:glass-light transition-all duration-200 hover:scale-[1.01]"
+      className="glass-medium rounded-xl p-4 border border-white/10 hover:glass-light transition-all duration-200 hover:scale-[1.01]"
     >
-      <div className="space-y-2">
-        <div className="flex items-start justify-between gap-1.5">
+      <div className="space-y-2.5">
+        <div className="flex items-start justify-between gap-2">
           {/* Draggable area - title and content */}
           <div
             {...listeners}
@@ -710,22 +710,22 @@ function SortableTaskCard({ task, onStatusChange, getPriorityColor, onEdit, onDe
             <h4 className="font-semibold text-sm text-text-primary break-words">{task.title}</h4>
           </div>
           {/* Non-draggable area - edit button, delete button and priority */}
-          <div className="flex items-center gap-1 flex-shrink-0 pointer-events-auto">
+          <div className="flex items-center gap-1.5 flex-shrink-0 pointer-events-auto">
             <button
               onClick={() => onEdit(task)}
-              className="p-1 hover:bg-white/10 rounded transition-colors flex-shrink-0 cursor-pointer"
+              className="p-1.5 hover:bg-white/10 rounded transition-colors flex-shrink-0 cursor-pointer"
               title="Edit task"
             >
               <Edit className="w-3.5 h-3.5 text-text-secondary hover:text-primary" />
             </button>
             <button
               onClick={() => onDelete(task.id)}
-              className="p-1 hover:bg-white/10 rounded transition-colors flex-shrink-0 cursor-pointer"
+              className="p-1.5 hover:bg-white/10 rounded transition-colors flex-shrink-0 cursor-pointer"
               title="Delete task"
             >
               <Trash2 className="w-3.5 h-3.5 text-red-400 hover:text-red-300" />
             </button>
-            <span className={`text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0 ${getPriorityColor(task.priority || 'medium')}`}>
+            <span className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${getPriorityColor(task.priority || 'medium')}`}>
               {task.priority || 'medium'}
             </span>
           </div>
@@ -746,14 +746,14 @@ function SortableTaskCard({ task, onStatusChange, getPriorityColor, onEdit, onDe
           className="flex items-center justify-between text-xs cursor-grab active:cursor-grabbing"
         >
           {(task.dueDate || task.due_date) && (
-            <div className="flex items-center space-x-1 text-text-tertiary">
-              <Calendar className="w-3 h-3" />
-              <span className="text-[10px]">{new Date((task.dueDate || task.due_date) as string).toLocaleDateString()}</span>
+            <div className="flex items-center space-x-1.5 text-text-tertiary">
+              <Calendar className="w-3.5 h-3.5" />
+              <span className="text-xs">{new Date((task.dueDate || task.due_date) as string).toLocaleDateString()}</span>
             </div>
           )}
           {task.assignee && (
             <div className="flex items-center space-x-1">
-              <div className="w-5 h-5 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-[10px] font-semibold">
+              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-xs font-semibold">
                 {task.assignee}
               </div>
             </div>
@@ -761,11 +761,11 @@ function SortableTaskCard({ task, onStatusChange, getPriorityColor, onEdit, onDe
         </div>
 
         {/* Non-draggable area - status buttons */}
-        <div className="flex gap-1.5 pt-1.5 border-t border-white/10 pointer-events-auto">
+        <div className="flex gap-2 pt-2 border-t border-white/10 pointer-events-auto">
           {task.status !== 'todo' && (
             <button
               onClick={() => onStatusChange(task.id, 'todo')}
-              className="flex-1 px-2 py-1 text-[10px] font-semibold rounded glass-light text-text-primary hover:glass-medium transition-all hover:scale-105 cursor-pointer"
+              className="flex-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg glass-light text-text-primary hover:glass-medium transition-all hover:scale-105 cursor-pointer"
             >
               📋 To Do
             </button>
@@ -773,7 +773,7 @@ function SortableTaskCard({ task, onStatusChange, getPriorityColor, onEdit, onDe
           {task.status !== 'in_progress' && (
             <button
               onClick={() => onStatusChange(task.id, 'in_progress')}
-              className="flex-1 px-2 py-1 text-[10px] font-semibold rounded bg-blue-500/20 text-blue-300 border border-blue-500/30 hover:bg-blue-500/30 transition-all hover:scale-105 cursor-pointer"
+              className="flex-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-blue-500/20 text-blue-300 border border-blue-500/30 hover:bg-blue-500/30 transition-all hover:scale-105 cursor-pointer"
             >
               ⚡ Progress
             </button>
@@ -781,7 +781,7 @@ function SortableTaskCard({ task, onStatusChange, getPriorityColor, onEdit, onDe
           {task.status !== 'done' && (
             <button
               onClick={() => onStatusChange(task.id, 'done')}
-              className="flex-1 px-2 py-1 text-[10px] font-semibold rounded bg-green-500/20 text-green-300 border border-green-500/30 hover:bg-green-500/30 transition-all hover:scale-105 cursor-pointer"
+              className="flex-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-green-500/20 text-green-300 border border-green-500/30 hover:bg-green-500/30 transition-all hover:scale-105 cursor-pointer"
             >
               ✓ Done
             </button>

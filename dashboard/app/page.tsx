@@ -781,9 +781,9 @@ export default function DashboardPage() {
       modifiers={[widgetGridSnapModifier]}
     >
       <div className="space-y-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="space-y-1">
-            <h1 className="text-2xl font-bold text-text-primary">Dashboard overview</h1>
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="space-y-0.5">
+            <h1 className="text-xl font-bold text-text-primary">Dashboard overview</h1>
             <p className="text-sm text-text-tertiary">
               Tailor the workspace by choosing which widgets appear on your home view.
             </p>

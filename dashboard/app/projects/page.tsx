@@ -100,10 +100,10 @@ export default function ProjectsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold gradient-text">
+          <h1 className="text-xl font-bold gradient-text">
             All Projects
           </h1>
-          <p className="text-xs text-text-secondary mt-0.5">
+          <p className="text-sm text-text-secondary mt-0.5">
             Manage and analyze your project scope documents
           </p>
         </div>

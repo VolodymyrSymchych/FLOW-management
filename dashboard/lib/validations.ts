@@ -13,6 +13,35 @@ export const idParamSchema = z.object({
   id: z.string().regex(/^\d+$/, 'ID must be a positive integer'),
 });
 
+// ============================================
+// AUTH SCHEMAS
+// ============================================
+
+export const passwordSchema = z
+  .string()
+  .min(8, 'Password must be at least 8 characters long')
+  .max(100, 'Password must not exceed 100 characters')
+  .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+  .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+  .regex(/[0-9]/, 'Password must contain at least one number')
+  .regex(/[^a-zA-Z0-9]/, 'Password must contain at least one special character');
+
+export const signupSchema = z.object({
+  email: z.string().email('Invalid email address').max(255),
+  username: z
+    .string()
+    .min(3, 'Username must be at least 3 characters')
+    .max(50, 'Username must not exceed 50 characters')
+    .regex(/^[a-zA-Z0-9_-]+$/, 'Username can only contain letters, numbers, hyphens and underscores'),
+  password: passwordSchema,
+  name: z.string().min(1, 'Name is required').max(255).optional(),
+});
+
+export const loginSchema = z.object({
+  email: z.string().email('Invalid email address').max(255),
+  password: z.string().min(1, 'Password is required'),
+});
+
 export const paginationSchema = z.object({
   page: z.string().optional().transform((val) => (val ? parseInt(val) : 1)),
   limit: z.string().optional().transform((val) => (val ? parseInt(val) : 20)),
@@ -37,6 +66,7 @@ export const createProjectSchema = z.object({
   status: z.string().max(50).optional(),
   document: z.string().optional(),
   analysisData: z.any().optional(), // JSON data
+  teamId: z.number().int('Team ID must be an integer').positive('Team ID must be positive').optional(),
 });
 
 export const updateProjectSchema = createProjectSchema.partial();

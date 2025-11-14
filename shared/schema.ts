@@ -27,6 +27,11 @@ export const usersRelations = relations(users, ({ many }) => ({
   tasks: many(tasks),
   timeEntries: many(timeEntries),
   reports: many(reports),
+  sentMessages: many(chatMessages, { relationName: 'sender' }),
+  receivedMessages: many(chatMessages, { relationName: 'receiver' }),
+  chatMemberships: many(chatMembers),
+  comments: many(comments),
+  messageReactions: many(messageReactions),
 }));
 
 export const projects = pgTable('projects', {
@@ -67,6 +72,7 @@ export const teamsRelations = relations(teams, ({ one, many }) => ({
   }),
   members: many(teamMembers),
   projects: many(teamProjects),
+  chats: many(chats),
 }));
 
 export const teamMembers = pgTable('team_members', {
@@ -447,6 +453,7 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
   expenses: many(expenses),
   reports: many(reports),
   fileAttachments: many(fileAttachments),
+  chats: many(chats),
 }));
 
 export const tasksRelations = relations(tasks, ({ one, many }) => ({
@@ -468,6 +475,166 @@ export const tasksRelations = relations(tasks, ({ one, many }) => ({
   }),
   timeEntries: many(timeEntries),
   fileAttachments: many(fileAttachments),
+  comments: many(comments),
+}));
+
+// Chat tables
+export const chats = pgTable('chats', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 255 }), // For group chats
+  type: varchar('type', { length: 50 }).default('direct').notNull(), // 'direct', 'group', 'project', 'team'
+  projectId: integer('project_id').references(() => projects.id, { onDelete: 'cascade' }),
+  teamId: integer('team_id').references(() => teams.id, { onDelete: 'cascade' }),
+  createdBy: integer('created_by').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const chatsRelations = relations(chats, ({ one, many }) => ({
+  project: one(projects, {
+    fields: [chats.projectId],
+    references: [projects.id],
+  }),
+  team: one(teams, {
+    fields: [chats.teamId],
+    references: [teams.id],
+  }),
+  creator: one(users, {
+    fields: [chats.createdBy],
+    references: [users.id],
+  }),
+  members: many(chatMembers),
+  messages: many(chatMessages),
+}));
+
+export const chatMembers = pgTable('chat_members', {
+  id: serial('id').primaryKey(),
+  chatId: integer('chat_id').notNull().references(() => chats.id, { onDelete: 'cascade' }),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  role: varchar('role', { length: 50 }).default('member').notNull(), // 'admin', 'member'
+  lastReadAt: timestamp('last_read_at'),
+  joinedAt: timestamp('joined_at').defaultNow().notNull(),
+}, (table) => ({
+  uniqueChatUser: unique().on(table.chatId, table.userId),
+}));
+
+export const chatMembersRelations = relations(chatMembers, ({ one }) => ({
+  chat: one(chats, {
+    fields: [chatMembers.chatId],
+    references: [chats.id],
+  }),
+  user: one(users, {
+    fields: [chatMembers.userId],
+    references: [users.id],
+  }),
+}));
+
+export const chatMessages = pgTable('chat_messages', {
+  id: serial('id').primaryKey(),
+  chatId: integer('chat_id').notNull().references(() => chats.id, { onDelete: 'cascade' }),
+  senderId: integer('sender_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  content: text('content').notNull(),
+  messageType: varchar('message_type', { length: 50 }).default('text').notNull(), // 'text', 'file', 'system'
+  replyToId: integer('reply_to_id').references(() => chatMessages.id, { onDelete: 'set null' }),
+  readAt: timestamp('read_at'), // When message was read (for read receipts)
+  editedAt: timestamp('edited_at'),
+  deletedAt: timestamp('deleted_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const chatMessagesRelations = relations(chatMessages, ({ one, many }) => ({
+  chat: one(chats, {
+    fields: [chatMessages.chatId],
+    references: [chats.id],
+  }),
+  sender: one(users, {
+    fields: [chatMessages.senderId],
+    references: [users.id],
+    relationName: 'sender',
+  }),
+  replyTo: one(chatMessages, {
+    fields: [chatMessages.replyToId],
+    references: [chatMessages.id],
+    relationName: 'replies',
+  }),
+  replies: many(chatMessages, {
+    relationName: 'replies',
+  }),
+  reactions: many(messageReactions),
+  attachments: many(chatMessageAttachments),
+}));
+
+export const chatMessageAttachments = pgTable('chat_message_attachments', {
+  id: serial('id').primaryKey(),
+  messageId: integer('message_id').notNull().references(() => chatMessages.id, { onDelete: 'cascade' }),
+  fileAttachmentId: integer('file_attachment_id').notNull().references(() => fileAttachments.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const chatMessageAttachmentsRelations = relations(chatMessageAttachments, ({ one }) => ({
+  message: one(chatMessages, {
+    fields: [chatMessageAttachments.messageId],
+    references: [chatMessages.id],
+  }),
+  fileAttachment: one(fileAttachments, {
+    fields: [chatMessageAttachments.fileAttachmentId],
+    references: [fileAttachments.id],
+  }),
+}));
+
+export const messageReactions = pgTable('message_reactions', {
+  id: serial('id').primaryKey(),
+  messageId: integer('message_id').notNull().references(() => chatMessages.id, { onDelete: 'cascade' }),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  emoji: varchar('emoji', { length: 10 }).notNull(), // e.g., '👍', '❤️', '😂'
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  uniqueMessageUserEmoji: unique().on(table.messageId, table.userId, table.emoji),
+}));
+
+export const messageReactionsRelations = relations(messageReactions, ({ one }) => ({
+  message: one(chatMessages, {
+    fields: [messageReactions.messageId],
+    references: [chatMessages.id],
+  }),
+  user: one(users, {
+    fields: [messageReactions.userId],
+    references: [users.id],
+  }),
+}));
+
+// Comments tables
+export const comments = pgTable('comments', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  entityType: varchar('entity_type', { length: 50 }).notNull(), // 'task', 'project'
+  entityId: integer('entity_id').notNull(),
+  content: text('content').notNull(),
+  parentId: integer('parent_id').references(() => comments.id, { onDelete: 'cascade' }), // For nested comments
+  mentions: text('mentions'), // JSON array of user IDs
+  status: varchar('status', { length: 50 }).default('active').notNull(), // 'active', 'resolved'
+  resolvedAt: timestamp('resolved_at'),
+  resolvedBy: integer('resolved_by').references(() => users.id, { onDelete: 'set null' }),
+  editedAt: timestamp('edited_at'),
+  deletedAt: timestamp('deleted_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const commentsRelations = relations(comments, ({ one, many }) => ({
+  user: one(users, {
+    fields: [comments.userId],
+    references: [users.id],
+  }),
+  parent: one(comments, {
+    fields: [comments.parentId],
+    references: [comments.id],
+    relationName: 'replies',
+  }),
+  replies: many(comments, {
+    relationName: 'replies',
+  }),
 }));
 
 export type User = typeof users.$inferSelect;
@@ -506,3 +673,15 @@ export type InvoiceComment = typeof invoiceComments.$inferSelect;
 export type InsertInvoiceComment = typeof invoiceComments.$inferInsert;
 export type InvoicePayment = typeof invoicePayments.$inferSelect;
 export type InsertInvoicePayment = typeof invoicePayments.$inferInsert;
+export type Chat = typeof chats.$inferSelect;
+export type InsertChat = typeof chats.$inferInsert;
+export type ChatMember = typeof chatMembers.$inferSelect;
+export type InsertChatMember = typeof chatMembers.$inferInsert;
+export type ChatMessage = typeof chatMessages.$inferSelect;
+export type InsertChatMessage = typeof chatMessages.$inferInsert;
+export type ChatMessageAttachment = typeof chatMessageAttachments.$inferSelect;
+export type InsertChatMessageAttachment = typeof chatMessageAttachments.$inferInsert;
+export type MessageReaction = typeof messageReactions.$inferSelect;
+export type InsertMessageReaction = typeof messageReactions.$inferInsert;
+export type Comment = typeof comments.$inferSelect;
+export type InsertComment = typeof comments.$inferInsert;

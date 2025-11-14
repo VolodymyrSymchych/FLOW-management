@@ -14,17 +14,35 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const userIdParam = searchParams.get('user_id');
     const taskIdParam = searchParams.get('task_id');
-    
-    // If user_id is provided, use it (for team view)
-    // Otherwise use session user id
-    const targetUserId = userIdParam ? parseInt(userIdParam) : session.userId;
-    
-    // Allow viewing other users' data if they're in the same team
-    // For now, allow viewing any user's data (can be restricted later with team checks)
-    
-    const taskId = taskIdParam ? parseInt(taskIdParam) : undefined;
-    const timeEntries = await storage.getTimeEntries(targetUserId, taskId);
-    
+    const teamId = searchParams.get('team_id');
+
+    let timeEntries;
+
+    if (teamId && teamId !== 'all') {
+      // Filter by team - attendance for all team members
+      const teamIdNum = parseInt(teamId);
+
+      // Verify user is a member of the team
+      const teamMembers = await storage.getTeamMembers(teamIdNum);
+      const isMember = teamMembers.some(tm => tm.userId === session.userId);
+
+      if (!isMember) {
+        return NextResponse.json({ error: 'Not a team member' }, { status: 403 });
+      }
+
+      timeEntries = await storage.getTimeEntriesByTeam(teamIdNum);
+    } else {
+      // If user_id is provided, use it (for team view)
+      // Otherwise use session user id
+      const targetUserId = userIdParam ? parseInt(userIdParam) : session.userId;
+
+      // Allow viewing other users' data if they're in the same team
+      // For now, allow viewing any user's data (can be restricted later with team checks)
+
+      const taskId = taskIdParam ? parseInt(taskIdParam) : undefined;
+      timeEntries = await storage.getTimeEntries(targetUserId, taskId);
+    }
+
     return NextResponse.json({ entries: timeEntries });
   } catch (error: any) {
     console.error('Error fetching time entries:', error);

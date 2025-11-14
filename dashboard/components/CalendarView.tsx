@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { cn } from '@/lib/utils';
 import { useDroppable } from '@dnd-kit/core';
+import { useTeam } from '@/contexts/TeamContext';
 
 interface Task {
   id: number;
@@ -33,6 +34,7 @@ interface CalendarViewProps {
 }
 
 export function CalendarView({ refreshKey = 0 }: CalendarViewProps) {
+  const { selectedTeam, isLoading: teamsLoading } = useTeam();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'1week' | '2weeks' | '1month'>('1week');
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -40,24 +42,43 @@ export function CalendarView({ refreshKey = 0 }: CalendarViewProps) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadTasks();
-  }, []);
+    // Wait for teams to load before loading tasks
+    if (!teamsLoading) {
+      loadTasks();
+    }
+  }, [teamsLoading]);
 
   useEffect(() => {
     // Reload tasks when view changes to ensure fresh data
-    loadTasks();
-  }, [viewMode]);
+    if (!teamsLoading) {
+      loadTasks();
+    }
+  }, [viewMode, teamsLoading]);
 
   useEffect(() => {
     // Reload tasks when refreshKey changes (after drag-and-drop)
-    if (refreshKey > 0) {
+    if (refreshKey > 0 && !teamsLoading) {
       loadTasks();
     }
-  }, [refreshKey]);
+  }, [refreshKey, teamsLoading]);
 
   const loadTasks = async () => {
+    // Don't load if teams are still loading
+    if (teamsLoading) {
+      return;
+    }
+    
+    setLoading(true);
     try {
-      const response = await axios.get('/api/tasks');
+      // Build query params for team filtering
+      const teamId = selectedTeam.type === 'single' && selectedTeam.teamId 
+        ? selectedTeam.teamId 
+        : 'all';
+      const url = teamId !== 'all' 
+        ? `/api/tasks?team_id=${teamId}`
+        : '/api/tasks';
+      
+      const response = await axios.get(url);
       setTasks(response.data.tasks || []);
     } catch (error) {
       console.error('Failed to load tasks:', error);
@@ -177,6 +198,18 @@ export function CalendarView({ refreshKey = 0 }: CalendarViewProps) {
   const days = getDaysInView();
   const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
+  // Show loading state while teams are loading or tasks are loading
+  if (teamsLoading || loading) {
+    return (
+      <div className="glass-medium rounded-2xl p-6">
+        <h3 className="text-lg font-bold text-text-primary mb-4">Calendar</h3>
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="glass-medium rounded-2xl p-6">
       {/* Header */}
@@ -263,11 +296,6 @@ export function CalendarView({ refreshKey = 0 }: CalendarViewProps) {
         </div>
       )}
 
-      {loading && (
-        <div className="flex items-center justify-center py-8">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-        </div>
-      )}
     </div>
   );
 }

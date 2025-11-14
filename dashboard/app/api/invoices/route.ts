@@ -15,11 +15,42 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const projectId = searchParams.get('project_id');
-    
-    const invoices = await storage.getInvoices(
-      projectId ? parseInt(projectId) : undefined
-    );
-    
+    const teamId = searchParams.get('team_id');
+
+    let invoices;
+
+    if (teamId && teamId !== 'all') {
+      // Filter by team
+      const teamIdNum = parseInt(teamId);
+
+      // Verify user is a member of the team
+      const teamMembers = await storage.getTeamMembers(teamIdNum);
+      const isMember = teamMembers.some(tm => tm.userId === session.userId);
+
+      if (!isMember) {
+        return NextResponse.json({ error: 'Not a team member' }, { status: 403 });
+      }
+
+      invoices = await storage.getInvoicesByTeam(teamIdNum);
+    } else if (projectId) {
+      // Filter by project
+      invoices = await storage.getInvoices(parseInt(projectId));
+    } else {
+      // All invoices for user (through their projects)
+      const userProjects = await storage.getUserProjects(session.userId);
+      const projectIds = userProjects.map(p => p.id);
+
+      if (projectIds.length === 0) {
+        return NextResponse.json({ invoices: [] });
+      }
+
+      // Get all invoices for user's projects
+      const allInvoices = await Promise.all(
+        projectIds.map(id => storage.getInvoices(id))
+      );
+      invoices = allInvoices.flat();
+    }
+
     return NextResponse.json({ invoices });
   } catch (error: any) {
     console.error('Error fetching invoices:', error);

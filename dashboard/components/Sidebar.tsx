@@ -14,6 +14,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Receipt,
+  Gauge,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -31,6 +32,7 @@ const navigation = [
   { name: 'Attendance', href: '/attendance', icon: Clock },
   { name: 'Documentation', href: '/documentation', icon: FileText },
   { name: 'Team', href: '/team', icon: Users },
+  { name: 'Performance', href: '/performance', icon: Gauge },
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
 

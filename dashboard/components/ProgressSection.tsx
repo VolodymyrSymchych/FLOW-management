@@ -5,6 +5,7 @@ import { CheckCircle2, Circle, Clock, Timer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import axios from 'axios';
 import { Loader } from '@/components/Loader';
+import { useTeam } from '@/contexts/TeamContext';
 
 interface Task {
   id: number;
@@ -26,18 +27,36 @@ interface ProgressItem {
 }
 
 export function ProgressSection() {
+  const { selectedTeam, isLoading: teamsLoading } = useTeam();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    // Wait for teams to load before loading data
+    if (!teamsLoading) {
+      loadData();
+    }
+  }, [teamsLoading, selectedTeam]);
 
   const loadData = async () => {
+    // Don't load if teams are still loading
+    if (teamsLoading) {
+      return;
+    }
+    
+    setLoading(true);
     try {
+      // Build query params for team filtering
+      const teamId = selectedTeam.type === 'single' && selectedTeam.teamId 
+        ? selectedTeam.teamId 
+        : 'all';
+      const tasksUrl = teamId !== 'all' 
+        ? `/api/tasks?team_id=${teamId}`
+        : '/api/tasks';
+      
       const [tasksResponse, attendanceResponse] = await Promise.all([
-        axios.get('/api/tasks'),
+        axios.get(tasksUrl),
         axios.get('/api/attendance')
       ]);
       
@@ -103,7 +122,8 @@ export function ProgressSection() {
     }
   ];
 
-  if (loading) {
+  // Show loading state while teams are loading or data is loading
+  if (teamsLoading || loading) {
     return (
       <div className="glass-medium rounded-2xl p-6">
         <h3 className="text-lg font-bold text-text-primary mb-4">Progress</h3>

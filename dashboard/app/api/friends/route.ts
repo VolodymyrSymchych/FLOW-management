@@ -12,24 +12,39 @@ export async function GET() {
     const friendships = await storage.getFriends(session.userId);
     const pendingRequests = await storage.getPendingFriendRequests(session.userId);
 
-    // Get user details for each friend
-    const friendsWithDetails = await Promise.all(
-      friendships.map(async (friendship) => {
-        const friendId = friendship.senderId === session.userId 
-          ? friendship.receiverId 
-          : friendship.senderId;
-        const friendUser = await storage.getUser(friendId);
-        return {
-          ...friendship,
-          friend: friendUser ? {
-            id: friendUser.id,
-            username: friendUser.username,
-            fullName: friendUser.fullName,
-            email: friendUser.email,
-          } : null,
-        };
-      })
+    // Optimized: Batch fetch all friend users at once
+    const friendIds = friendships.map(friendship => 
+      friendship.senderId === session.userId 
+        ? friendship.receiverId 
+        : friendship.senderId
     );
+    
+    const friendUsers = await Promise.all(
+      friendIds.map(id => storage.getUser(id))
+    );
+    
+    const usersMap = new Map<number, any>();
+    friendUsers.forEach((user, index) => {
+      if (user) {
+        usersMap.set(friendIds[index], {
+          id: user.id,
+          username: user.username,
+          fullName: user.fullName,
+          email: user.email,
+        });
+      }
+    });
+    
+    // Map friendships with friend details
+    const friendsWithDetails = friendships.map(friendship => {
+      const friendId = friendship.senderId === session.userId 
+        ? friendship.receiverId 
+        : friendship.senderId;
+      return {
+        ...friendship,
+        friend: usersMap.get(friendId) || null,
+      };
+    });
 
     return NextResponse.json({ friends: friendsWithDetails, pendingRequests });
   } catch (error: any) {

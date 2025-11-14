@@ -7,19 +7,58 @@ import { createProjectSchema, validateRequestBody, formatZodError } from '@/lib/
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const session = await getSession();
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Cache projects list for 5 minutes
-    const userProjects = await cached(
-      `projects:user:${session.userId}`,
-      async () => await storage.getUserProjects(session.userId),
-      { ttl: 300 }
-    );
+    const { searchParams } = new URL(request.url);
+    const teamId = searchParams.get('team_id');
+
+    let userProjects;
+    let cacheKey: string;
+
+    if (teamId && teamId !== 'all') {
+      // Filter by specific team
+      const teamIdNum = parseInt(teamId);
+
+      // Verify user is a member of the team
+      const teamMembers = await storage.getTeamMembers(teamIdNum);
+      console.log(`Team ${teamIdNum} members:`, teamMembers.map(tm => ({ userId: tm.userId, role: tm.role })));
+      console.log(`Current user ID: ${session.userId} (type: ${typeof session.userId})`);
+
+      const isMember = teamMembers.some(tm => {
+        console.log(`Comparing tm.userId=${tm.userId} (${typeof tm.userId}) with session.userId=${session.userId} (${typeof session.userId})`);
+        return tm.userId === session.userId;
+      });
+
+      if (!isMember) {
+        console.error(`User ${session.userId} is not a member of team ${teamIdNum}`);
+        return NextResponse.json({
+          error: 'Not a team member',
+          details: { userId: session.userId, teamId: teamIdNum }
+        }, { status: 403 });
+      }
+
+      console.log(`User ${session.userId} is a member of team ${teamIdNum}, fetching projects...`);
+      cacheKey = `projects:team:${teamIdNum}`;
+      userProjects = await cached(
+        cacheKey,
+        async () => await storage.getProjectsByTeam(teamIdNum),
+        { ttl: 300 }
+      );
+      console.log(`Found ${userProjects.length} projects for team ${teamIdNum}`);
+    } else {
+      // All teams or no filter - get all user's projects
+      cacheKey = `projects:user:${session.userId}`;
+      userProjects = await cached(
+        cacheKey,
+        async () => await storage.getUserProjects(session.userId),
+        { ttl: 300 }
+      );
+    }
 
     return NextResponse.json({
       projects: userProjects,
@@ -60,7 +99,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(formatZodError(validation.error), { status: 400 });
     }
 
-    const { name, type, industry, teamSize, timeline, budget, startDate, endDate, document, analysisData, score, riskLevel, status } = validation.data;
+    const { name, type, industry, teamSize, timeline, budget, startDate, endDate, document, analysisData, score, riskLevel, status, teamId } = validation.data;
 
     const project = await storage.createProject({
       userId: session.userId,
@@ -78,6 +117,11 @@ export async function POST(request: NextRequest) {
       document: document || null,
       analysisData: analysisData ? JSON.stringify(analysisData) : null,
     });
+
+    // Add project to team if teamId provided
+    if (teamId) {
+      await storage.addProjectToTeam(teamId, project.id);
+    }
 
     // Invalidate user caches after creating project
     await invalidateUserCache(session.userId);

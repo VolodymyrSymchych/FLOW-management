@@ -9,11 +9,13 @@ import { cn } from '@/lib/utils';
 import { Loader } from '@/components/Loader';
 import axios from 'axios';
 import { DeleteConfirmModal } from '@/components/DeleteConfirmModal';
+import { useTeam } from '@/contexts/TeamContext';
 
 type FilterType = 'all' | 'status' | 'risk_level' | 'type' | 'industry';
 
 export default function ProjectsPage() {
   const router = useRouter();
+  const { selectedTeam, isLoading: teamsLoading } = useTeam();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -26,12 +28,20 @@ export default function ProjectsPage() {
   });
 
   useEffect(() => {
-    loadProjects();
-  }, []);
+    // Wait for teams to load before loading projects
+    if (!teamsLoading) {
+      loadProjects();
+    }
+  }, [selectedTeam, teamsLoading]);
 
   const loadProjects = async () => {
     try {
-      const data = await api.getProjects();
+      setLoading(true);
+      // Use selected team from context
+      const teamId = selectedTeam.type === 'single' && selectedTeam.teamId 
+        ? selectedTeam.teamId 
+        : 'all';
+      const data = await api.getProjects(teamId);
       setProjects(data.projects);
     } catch (error) {
       console.error('Failed to load projects:', error);
@@ -101,10 +111,14 @@ export default function ProjectsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold gradient-text">
-            All Projects
+            {selectedTeam.type === 'single' && selectedTeam.teamId 
+              ? 'Team Projects' 
+              : 'All Projects'}
           </h1>
           <p className="text-sm text-text-secondary mt-0.5">
-            Manage and analyze your project scope documents
+            {selectedTeam.type === 'single' && selectedTeam.teamId
+              ? `Projects for selected team`
+              : 'Manage and analyze your project scope documents'}
           </p>
         </div>
         <button
@@ -233,9 +247,8 @@ export default function ProjectsPage() {
             <ProjectCard
               key={project.id}
               {...project}
-              team={['JD', 'SK', 'MR']}
               onClick={() => router.push(`/projects/${project.id}`)}
-              onDelete={(e) => deleteProject(project.id, e)}
+              onDelete={project.isOwner ? (e) => deleteProject(project.id, e) : undefined}
             />
           ))}
         </div>

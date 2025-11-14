@@ -13,7 +13,9 @@ if (process.env.JWT_SECRET.length < 32) {
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
 
-const SESSION_DURATION = 7 * 24 * 60 * 60;
+// Reduced session duration for better security (1 hour instead of 7 days)
+const SESSION_DURATION = 60 * 60; // 1 hour
+const REFRESH_THRESHOLD = 15 * 60; // Refresh if token expires in less than 15 minutes
 
 export interface SessionData {
   userId: number;
@@ -25,7 +27,7 @@ export async function createSession(data: SessionData) {
   const token = await new SignJWT({ ...data })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
-    .setExpirationTime('7d')
+    .setExpirationTime('1h') // Reduced from 7d to 1h
     .sign(JWT_SECRET);
 
   const cookieStore = await cookies();
@@ -45,7 +47,7 @@ export async function createSession(data: SessionData) {
   return token;
 }
 
-export async function getSession(): Promise<SessionData | null> {
+export async function getSession(autoRefresh: boolean = true): Promise<SessionData | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get('session')?.value;
 
@@ -55,16 +57,30 @@ export async function getSession(): Promise<SessionData | null> {
 
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET);
-    
+
     if (!payload.userId || !payload.email || !payload.username) {
       return null;
     }
-    
-    return {
+
+    const sessionData = {
       userId: payload.userId as number,
       email: payload.email as string,
       username: payload.username as string,
     };
+
+    // Auto-refresh token if it's close to expiration (silent refresh)
+    if (autoRefresh && payload.exp) {
+      const expiresAt = payload.exp * 1000; // Convert to milliseconds
+      const now = Date.now();
+      const timeUntilExpiry = expiresAt - now;
+
+      // Refresh if token expires in less than REFRESH_THRESHOLD
+      if (timeUntilExpiry < REFRESH_THRESHOLD * 1000) {
+        await createSession(sessionData);
+      }
+    }
+
+    return sessionData;
   } catch (error) {
     return null;
   }

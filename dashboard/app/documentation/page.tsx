@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { generateReportPDF } from '@/lib/report-pdf';
 import { Loader } from '@/components/Loader';
+import { useTeam } from '@/contexts/TeamContext';
 
 interface Report {
   id: number;
@@ -28,17 +29,35 @@ interface Report {
 }
 
 export default function DocumentationPage() {
+  const { selectedTeam, isLoading: teamsLoading } = useTeam();
   const router = useRouter();
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadReports();
-  }, []);
+    // Wait for teams to load before loading data
+    if (!teamsLoading) {
+      loadReports();
+    }
+  }, [teamsLoading, selectedTeam]);
 
   const loadReports = async () => {
+    // Don't load if teams are still loading
+    if (teamsLoading) {
+      return;
+    }
+
+    setLoading(true);
     try {
-      const response = await axios.get('/api/reports');
+      // Build query params for team filtering (filter by projects in team)
+      const teamId = selectedTeam.type === 'single' && selectedTeam.teamId 
+        ? selectedTeam.teamId 
+        : 'all';
+      const url = teamId !== 'all' 
+        ? `/api/reports?team_id=${teamId}`
+        : '/api/reports';
+      
+      const response = await axios.get(url);
       setReports(response.data.reports || []);
     } catch (error) {
       console.error('Failed to load documentation:', error);
@@ -102,7 +121,8 @@ export default function DocumentationPage() {
     });
   };
 
-  if (loading) {
+  // Show loading state while teams are loading or data is loading
+  if (teamsLoading || loading) {
     return <Loader message="Loading documentation..." />;
   }
 

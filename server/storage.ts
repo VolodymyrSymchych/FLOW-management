@@ -20,6 +20,12 @@ import {
   recurringInvoices,
   invoiceComments,
   invoicePayments,
+  chats,
+  chatMembers,
+  chatMessages,
+  chatMessageAttachments,
+  messageReactions,
+  comments,
   type User,
   type InsertUser,
   type Project,
@@ -56,6 +62,16 @@ import {
   type InsertInvoiceComment,
   type InvoicePayment,
   type InsertInvoicePayment,
+  type Chat,
+  type InsertChat,
+  type ChatMember,
+  type InsertChatMember,
+  type ChatMessage,
+  type InsertChatMessage,
+  type MessageReaction,
+  type InsertMessageReaction,
+  type Comment,
+  type InsertComment,
 } from '../shared/schema';
 
 export class DatabaseStorage {
@@ -76,7 +92,7 @@ export class DatabaseStorage {
   }
 
   async createUser(userData: InsertUser): Promise<User> {
-    const [user] = await db.insert(users).values(userData).returning();
+    const [user] = await db.insert(users).values(userData).returning() as any;
     return user;
   }
 
@@ -85,13 +101,13 @@ export class DatabaseStorage {
       .update(users)
       .set({ ...userData, updatedAt: new Date() })
       .where(eq(users.id, id))
-      .returning();
+      .returning() as any;
     return user;
   }
 
   // Teams
   async createTeam(teamData: InsertTeam): Promise<Team> {
-    const [team] = await db.insert(teams).values(teamData).returning();
+    const [team] = await db.insert(teams).values(teamData).returning() as any;
     return team;
   }
 
@@ -101,24 +117,25 @@ export class DatabaseStorage {
   }
 
   async getUserTeams(userId: number): Promise<Team[]> {
-    const teamMemberRecords = await db
-      .select()
+    // Optimized: Use JOIN to get teams in one query instead of two
+    const result = await db
+      .select({
+        id: teams.id,
+        name: teams.name,
+        description: teams.description,
+        ownerId: teams.ownerId,
+        createdAt: teams.createdAt,
+        updatedAt: teams.updatedAt,
+      })
       .from(teamMembers)
+      .innerJoin(teams, eq(teamMembers.teamId, teams.id))
       .where(eq(teamMembers.userId, userId));
-
-    const teamIds = teamMemberRecords.map((tm) => tm.teamId);
-
-    if (teamIds.length === 0) {
-      return [];
-    }
-
-    return await db.select().from(teams).where(
-      or(...teamIds.map((id) => eq(teams.id, id)))
-    );
+    
+    return result;
   }
 
   async addTeamMember(memberData: InsertTeamMember): Promise<TeamMember> {
-    const [member] = await db.insert(teamMembers).values(memberData).returning();
+    const [member] = await db.insert(teamMembers).values(memberData).returning() as any;
     return member;
   }
 
@@ -132,6 +149,52 @@ export class DatabaseStorage {
     return await db.select().from(teamMembers).where(eq(teamMembers.teamId, teamId));
   }
 
+  // Get team members with user details in one query
+  async getTeamMembersWithUsers(teamId: number): Promise<(TeamMember & { user: User })[]> {
+    // Optimized: Use JOIN to get members with user details in one query
+    const result = await db
+      .select({
+        teamMember: teamMembers,
+        user: users,
+      })
+      .from(teamMembers)
+      .innerJoin(users, eq(teamMembers.userId, users.id))
+      .where(eq(teamMembers.teamId, teamId));
+    
+    return result.map(row => ({
+      ...row.teamMember,
+      user: row.user,
+    }));
+  }
+
+  async addProjectToTeam(teamId: number, projectId: number): Promise<void> {
+    await db.insert(teamProjects).values({
+      teamId,
+      projectId,
+    });
+  }
+
+  async removeProjectFromTeam(teamId: number, projectId: number): Promise<void> {
+    await db.delete(teamProjects).where(
+      and(
+        eq(teamProjects.teamId, teamId),
+        eq(teamProjects.projectId, projectId)
+      )
+    );
+  }
+
+  async getProjectTeams(projectId: number): Promise<Team[]> {
+    const teamProjectRecords = await db
+      .select({ teamId: teamProjects.teamId })
+      .from(teamProjects)
+      .where(eq(teamProjects.projectId, projectId));
+
+    const teamIds = teamProjectRecords.map(tp => tp.teamId);
+    if (teamIds.length === 0) return [];
+
+    return await db.select().from(teams).where(inArray(teams.id, teamIds));
+  }
+
   // Friendships
   async sendFriendRequest(senderId: number, receiverId: number): Promise<Friendship> {
     const [friendship] = await db
@@ -141,7 +204,7 @@ export class DatabaseStorage {
         receiverId,
         status: 'pending',
       })
-      .returning();
+      .returning() as any;
     return friendship;
   }
 
@@ -150,7 +213,7 @@ export class DatabaseStorage {
       .update(friendships)
       .set({ status: 'accepted', updatedAt: new Date() })
       .where(eq(friendships.id, id))
-      .returning();
+      .returning() as any;
     return friendship;
   }
 
@@ -179,7 +242,7 @@ export class DatabaseStorage {
 
   // Payments
   async createPayment(paymentData: InsertPayment): Promise<Payment> {
-    const [payment] = await db.insert(payments).values(paymentData).returning();
+    const [payment] = await db.insert(payments).values(paymentData).returning() as any;
     return payment;
   }
 
@@ -193,7 +256,7 @@ export class DatabaseStorage {
       .update(payments)
       .set({ ...paymentData, updatedAt: new Date() })
       .where(eq(payments.id, id))
-      .returning();
+      .returning() as any;
     return payment;
   }
 
@@ -202,7 +265,7 @@ export class DatabaseStorage {
     const [verification] = await db
       .insert(emailVerifications)
       .values(verificationData)
-      .returning();
+      .returning() as any;
     return verification;
   }
 
@@ -250,12 +313,13 @@ export class DatabaseStorage {
     const [notification] = await db
       .insert(notifications)
       .values(data)
-      .returning();
+      .returning() as any;
     return notification;
   }
 
   // Projects
   async getUserProjects(userId: number) {
+    // 1. Get projects where user is owner
     const ownedProjects = await db
       .select()
       .from(projects)
@@ -263,7 +327,36 @@ export class DatabaseStorage {
         eq(projects.userId, userId),
         isNull(projects.deletedAt)
       ));
-    return ownedProjects;
+
+    // 2. Get teams where user is a member
+    const userTeams = await this.getUserTeams(userId);
+    const teamIds = userTeams.map(t => t.id);
+
+    if (teamIds.length === 0) {
+      // Mark all as owned
+      return ownedProjects.map(p => ({ ...p, isOwner: true, isTeamProject: false }));
+    }
+
+    // 3. Get projects from all user's teams
+    const teamProjectsList = await this.getProjectsByTeams(teamIds);
+
+    // 4. Combine and remove duplicates, marking ownership
+    const ownedProjectIds = new Set(ownedProjects.map(p => p.id));
+    const allProjects = [
+      ...ownedProjects.map(p => ({ ...p, isOwner: true, isTeamProject: false })),
+      ...teamProjectsList
+        .filter(p => !ownedProjectIds.has(p.id))
+        .map(p => ({ ...p, isOwner: false, isTeamProject: true }))
+    ];
+    
+    const uniqueProjects = Array.from(
+      new Map(allProjects.map(p => [p.id, p])).values()
+    );
+
+    // 5. Sort by createdAt descending
+    return uniqueProjects.sort((a, b) =>
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
   }
 
   async getProject(projectId: number) {
@@ -281,7 +374,7 @@ export class DatabaseStorage {
     const [project] = await db
       .insert(projects)
       .values(data)
-      .returning();
+      .returning() as any;
     return project;
   }
 
@@ -290,7 +383,7 @@ export class DatabaseStorage {
       .update(projects)
       .set({ ...data, updatedAt: new Date() })
       .where(eq(projects.id, projectId))
-      .returning();
+      .returning() as any;
     return project;
   }
 
@@ -309,6 +402,7 @@ export class DatabaseStorage {
   }
 
   async userHasProjectAccess(userId: number, projectId: number): Promise<boolean> {
+    // Check if user owns the project
     const [ownedProject] = await db
       .select()
       .from(projects)
@@ -317,7 +411,91 @@ export class DatabaseStorage {
         eq(projects.userId, userId),
         isNull(projects.deletedAt)
       ));
-    return !!ownedProject;
+    
+    if (ownedProject) {
+      return true;
+    }
+
+    // Check if user has access through team membership
+    const [project] = await db
+      .select()
+      .from(projects)
+      .where(and(
+        eq(projects.id, projectId),
+        isNull(projects.deletedAt)
+      ));
+
+    if (!project) {
+      return false;
+    }
+
+    // Check if project is in any team where user is a member
+    const userTeams = await this.getUserTeams(userId);
+    const teamIds = userTeams.map(t => t.id);
+    
+    if (teamIds.length === 0) {
+      return false;
+    }
+
+    // Check if project is associated with any of user's teams
+    const teamProjectRecords = await db
+      .select()
+      .from(teamProjects)
+      .where(and(
+        eq(teamProjects.projectId, projectId),
+        inArray(teamProjects.teamId, teamIds)
+      ));
+
+    return teamProjectRecords.length > 0;
+  }
+
+  // Get projects for a specific team
+  async getProjectsByTeam(teamId: number): Promise<Project[]> {
+    // Get all projectIds for this team
+    const teamProjectRecords = await db
+      .select({ projectId: teamProjects.projectId })
+      .from(teamProjects)
+      .where(eq(teamProjects.teamId, teamId));
+
+    const projectIds = teamProjectRecords.map(tp => tp.projectId);
+
+    if (projectIds.length === 0) {
+      return [];
+    }
+
+    return await db
+      .select()
+      .from(projects)
+      .where(and(
+        inArray(projects.id, projectIds),
+        isNull(projects.deletedAt)
+      ))
+      .orderBy(desc(projects.createdAt));
+  }
+
+  // Get projects for multiple teams (for "All Teams" view)
+  async getProjectsByTeams(teamIds: number[]): Promise<Project[]> {
+    if (teamIds.length === 0) return [];
+
+    const teamProjectRecords = await db
+      .select({ projectId: teamProjects.projectId })
+      .from(teamProjects)
+      .where(inArray(teamProjects.teamId, teamIds));
+
+    const projectIds = Array.from(new Set(teamProjectRecords.map(tp => tp.projectId)));
+
+    if (projectIds.length === 0) {
+      return [];
+    }
+
+    return await db
+      .select()
+      .from(projects)
+      .where(and(
+        inArray(projects.id, projectIds),
+        isNull(projects.deletedAt)
+      ))
+      .orderBy(desc(projects.createdAt));
   }
 
   // Helper to add workedHours to tasks from time entries
@@ -378,8 +556,15 @@ export class DatabaseStorage {
     }
     // If only userId is provided, show all tasks:
     // 1. Tasks created by the user (userId matches)
-    // 2. Tasks from projects owned by the user
+    // 2. Tasks assigned to the user (assignee matches user's email/username)
+    // 3. Tasks from projects owned by the user (owner sees all tasks in their projects)
     else if (userId) {
+      // Get user info to check assignee
+      const user = await this.getUser(userId);
+      if (!user) {
+        return [];
+      }
+
       // Get all project IDs owned by the user
       const userProjects = await db
         .select({ id: projects.id })
@@ -391,32 +576,41 @@ export class DatabaseStorage {
 
       const projectIds = userProjects.map(p => p.id);
 
-      // Return tasks where:
-      // - userId matches OR
-      // - projectId is in user's projects
-      if (projectIds.length > 0) {
-        tasksResult = await db
-          .select()
-          .from(tasks)
-          .where(and(
-            or(
-              eq(tasks.userId, userId),
-              inArray(tasks.projectId, projectIds)
-            ),
-            isNull(tasks.deletedAt)
-          ))
-          .orderBy(desc(tasks.createdAt));
-      } else {
-        // No projects, return only tasks created by user
-        tasksResult = await db
-          .select()
-          .from(tasks)
-          .where(and(
-            eq(tasks.userId, userId),
-            isNull(tasks.deletedAt)
-          ))
-          .orderBy(desc(tasks.createdAt));
+      // Build conditions:
+      // - userId matches (task created by user)
+      // - assignee matches user's email or username (task assigned to user)
+      // - projectId is in user's projects (owner sees all tasks in their projects)
+      const conditions = [
+        eq(tasks.userId, userId),
+      ];
+
+      // Add assignee condition if user has email or username
+      if (user.email || user.username) {
+        const assigneeConditions = [];
+        if (user.email) {
+          assigneeConditions.push(eq(tasks.assignee, user.email));
+        }
+        if (user.username) {
+          assigneeConditions.push(eq(tasks.assignee, user.username));
+        }
+        if (assigneeConditions.length > 0) {
+          conditions.push(or(...assigneeConditions));
+        }
       }
+
+      // If user owns projects, add condition to show all tasks in those projects
+      if (projectIds.length > 0) {
+        conditions.push(inArray(tasks.projectId, projectIds));
+      }
+
+      tasksResult = await db
+        .select()
+        .from(tasks)
+        .where(and(
+          or(...conditions),
+          isNull(tasks.deletedAt)
+        ))
+        .orderBy(desc(tasks.createdAt));
     }
     // If neither is provided, return all tasks (shouldn't happen in normal flow)
     else {
@@ -440,7 +634,7 @@ export class DatabaseStorage {
   }
 
   async createTask(data: InsertTask): Promise<Task> {
-    const result = await db.insert(tasks).values(data).returning();
+    const result = await db.insert(tasks).values(data).returning() as any;
     const [task] = result as Task[];
     if (!task) {
       throw new Error('Failed to create task');
@@ -453,7 +647,7 @@ export class DatabaseStorage {
       .update(tasks)
       .set({ ...data, updatedAt: new Date() })
       .where(eq(tasks.id, taskId))
-      .returning();
+      .returning() as any;
     const [task] = result as Task[];
     return task;
   }
@@ -488,7 +682,7 @@ export class DatabaseStorage {
     const result = await db
       .insert(tasks)
       .values({ ...data, parentId })
-      .returning();
+      .returning() as any;
     const [subtask] = result as Task[];
     if (!subtask) {
       throw new Error('Failed to create subtask');
@@ -602,6 +796,61 @@ export class DatabaseStorage {
     return false;
   }
 
+  // Get tasks for a specific team
+  async getTasksByTeam(teamId: number): Promise<(Task & { workedHours: number })[]> {
+    console.log(`[getTasksByTeam] Fetching tasks for team ${teamId}`);
+
+    const teamProjects = await this.getProjectsByTeam(teamId);
+    const projectIds = teamProjects.map(p => p.id);
+    console.log(`[getTasksByTeam] Team projects:`, teamProjects.map(p => ({ id: p.id, name: p.name })));
+    console.log(`[getTasksByTeam] Project IDs:`, projectIds);
+
+    // Get team members to include their tasks
+    const teamMembersList = await this.getTeamMembers(teamId);
+    const teamMemberIds = teamMembersList.map(tm => tm.userId);
+    console.log(`[getTasksByTeam] Team member IDs:`, teamMemberIds);
+
+    if (projectIds.length === 0 && teamMemberIds.length === 0) {
+      console.log(`[getTasksByTeam] No projects or members found for team ${teamId}`);
+      return [];
+    }
+
+    // FIXED LOGIC: Only show tasks from team projects
+    // Remove the condition that shows ALL tasks created by team members
+    // This was causing personal projects to appear in team view
+    const orConditions = [];
+
+    // Condition 1: Tasks from team projects (MAIN CONDITION)
+    if (projectIds.length > 0) {
+      orConditions.push(inArray(tasks.projectId, projectIds));
+      console.log(`[getTasksByTeam] Added condition: tasks from team projects`);
+    }
+
+    if (orConditions.length === 0) {
+      console.log(`[getTasksByTeam] No conditions to filter, returning empty array`);
+      return [];
+    }
+
+    const tasksResult = await db
+      .select()
+      .from(tasks)
+      .where(and(
+        or(...orConditions),
+        isNull(tasks.deletedAt)
+      ))
+      .orderBy(desc(tasks.createdAt));
+
+    console.log(`[getTasksByTeam] Found ${tasksResult.length} tasks for team ${teamId}`);
+    console.log(`[getTasksByTeam] Tasks:`, tasksResult.map(t => ({
+      id: t.id,
+      title: t.title,
+      projectId: t.projectId,
+      userId: t.userId
+    })));
+
+    return await this.addWorkedHoursToTasks(tasksResult);
+  }
+
   // Time Entries
   async getTimeEntries(userId?: number, taskId?: number): Promise<TimeEntry[]> {
     if (userId && taskId) {
@@ -636,7 +885,7 @@ export class DatabaseStorage {
   }
 
   async createTimeEntry(data: InsertTimeEntry): Promise<TimeEntry> {
-    const [entry] = await db.insert(timeEntries).values(data).returning();
+    const [entry] = await db.insert(timeEntries).values(data).returning() as any;
     return entry;
   }
 
@@ -645,7 +894,7 @@ export class DatabaseStorage {
       .update(timeEntries)
       .set({ ...data, updatedAt: new Date() })
       .where(eq(timeEntries.id, entryId))
-      .returning();
+      .returning() as any;
     return entry;
   }
 
@@ -660,6 +909,23 @@ export class DatabaseStorage {
       .orderBy(desc(timeEntries.createdAt))
       .limit(1);
     return entries[0];
+  }
+
+  // Get time entries for a specific team
+  async getTimeEntriesByTeam(teamId: number): Promise<TimeEntry[]> {
+    // Get all team members
+    const teamMemberRecords = await this.getTeamMembers(teamId);
+    const userIds = teamMemberRecords.map(tm => tm.userId);
+
+    if (userIds.length === 0) {
+      return [];
+    }
+
+    return await db
+      .select()
+      .from(timeEntries)
+      .where(inArray(timeEntries.userId, userIds))
+      .orderBy(desc(timeEntries.clockIn));
   }
 
   // Invoices
@@ -690,7 +956,7 @@ export class DatabaseStorage {
   }
 
   async createInvoice(data: InsertInvoice): Promise<Invoice> {
-    const [invoice] = await db.insert(invoices).values(data).returning();
+    const [invoice] = await db.insert(invoices).values(data).returning() as any;
     return invoice;
   }
 
@@ -699,7 +965,7 @@ export class DatabaseStorage {
       .update(invoices)
       .set({ ...data, updatedAt: new Date() })
       .where(eq(invoices.id, invoiceId))
-      .returning();
+      .returning() as any;
     return invoice;
   }
 
@@ -715,6 +981,23 @@ export class DatabaseStorage {
       .update(invoices)
       .set({ deletedAt: null })
       .where(eq(invoices.id, invoiceId));
+  }
+
+  // Get invoices for a specific team
+  async getInvoicesByTeam(teamId: number): Promise<Invoice[]> {
+    // Optimized: Use JOIN to get invoices directly without fetching projects first
+    const result = await db
+      .select()
+      .from(invoices)
+      .innerJoin(teamProjects, eq(invoices.projectId, teamProjects.projectId))
+      .where(and(
+        eq(teamProjects.teamId, teamId),
+        isNull(invoices.deletedAt)
+      ))
+      .orderBy(desc(invoices.createdAt));
+    
+    // Extract invoices from join result
+    return result.map(row => row.invoices);
   }
 
   // Expenses
@@ -738,7 +1021,7 @@ export class DatabaseStorage {
   }
 
   async createExpense(data: InsertExpense): Promise<Expense> {
-    const [expense] = await db.insert(expenses).values(data).returning();
+    const [expense] = await db.insert(expenses).values(data).returning() as any;
     return expense;
   }
 
@@ -747,7 +1030,7 @@ export class DatabaseStorage {
       .update(expenses)
       .set({ ...data, updatedAt: new Date() })
       .where(eq(expenses.id, expenseId))
-      .returning();
+      .returning() as any;
     return expense;
   }
 
@@ -782,7 +1065,7 @@ export class DatabaseStorage {
   }
 
   async createReport(data: InsertReport): Promise<Report> {
-    const [report] = await db.insert(reports).values(data).returning();
+    const [report] = await db.insert(reports).values(data).returning() as any;
     return report;
   }
 
@@ -791,7 +1074,7 @@ export class DatabaseStorage {
       .update(reports)
       .set({ ...data, updatedAt: new Date() })
       .where(eq(reports.id, reportId))
-      .returning();
+      .returning() as any;
     return report;
   }
 
@@ -1161,7 +1444,7 @@ export class DatabaseStorage {
 
   // File Attachments
   async createFileAttachment(fileData: InsertFileAttachment): Promise<FileAttachment> {
-    const result = await db.insert(fileAttachments).values(fileData).returning();
+    const result = await db.insert(fileAttachments).values(fileData).returning() as any;
     return (result as FileAttachment[])[0];
   }
 
@@ -1238,7 +1521,7 @@ export class DatabaseStorage {
   }
 
   async createProjectTemplate(templateData: InsertProjectTemplate): Promise<ProjectTemplate> {
-    const [template] = await db.insert(projectTemplates).values(templateData).returning();
+    const [template] = await db.insert(projectTemplates).values(templateData).returning() as any;
     return template;
   }
 
@@ -1254,7 +1537,7 @@ export class DatabaseStorage {
 
   // Recurring Invoices
   async createRecurringInvoice(recurringData: InsertRecurringInvoice): Promise<RecurringInvoice> {
-    const [recurring] = await db.insert(recurringInvoices).values(recurringData).returning();
+    const [recurring] = await db.insert(recurringInvoices).values(recurringData).returning() as any;
     return recurring;
   }
 
@@ -1282,7 +1565,7 @@ export class DatabaseStorage {
       .update(recurringInvoices)
       .set({ ...updateData, updatedAt: new Date() })
       .where(eq(recurringInvoices.id, id))
-      .returning();
+      .returning() as any;
     return recurring;
   }
 
@@ -1307,7 +1590,7 @@ export class DatabaseStorage {
 
   // Invoice Comments
   async createInvoiceComment(commentData: any): Promise<any> {
-    const [comment] = await db.insert(invoiceComments).values(commentData).returning();
+    const [comment] = await db.insert(invoiceComments).values(commentData).returning() as any;
     return comment;
   }
 
@@ -1333,7 +1616,7 @@ export class DatabaseStorage {
 
   // Invoice Payments
   async createInvoicePayment(paymentData: any): Promise<any> {
-    const [payment] = await db.insert(invoicePayments).values(paymentData).returning();
+    const [payment] = await db.insert(invoicePayments).values(paymentData).returning() as any;
     return payment;
   }
 
@@ -1350,7 +1633,7 @@ export class DatabaseStorage {
       .update(invoicePayments)
       .set(updateData)
       .where(eq(invoicePayments.id, id))
-      .returning();
+      .returning() as any;
     return payment;
   }
 
@@ -1363,6 +1646,335 @@ export class DatabaseStorage {
         isNull(invoices.deletedAt)
       ));
     return invoice;
+  }
+
+  // Chat methods
+  async getOrCreateDirectChat(userId1: number, userId2: number): Promise<Chat> {
+    // Check if direct chat already exists
+    const existingChats = await db
+      .select()
+      .from(chats)
+      .where(eq(chats.type, 'direct'));
+
+    for (const chat of existingChats) {
+      const members = await db
+        .select()
+        .from(chatMembers)
+        .where(eq(chatMembers.chatId, chat.id));
+      
+      const memberIds = members.map(m => m.userId);
+      if (memberIds.includes(userId1) && memberIds.includes(userId2) && memberIds.length === 2) {
+        return chat;
+      }
+    }
+
+    // Create new direct chat
+    const [newChat] = await db
+      .insert(chats)
+      .values({
+        type: 'direct',
+        createdBy: userId1,
+      })
+      .returning() as any;
+
+    // Add both users as members
+    await db.insert(chatMembers).values([
+      { chatId: newChat.id, userId: userId1, role: 'member' },
+      { chatId: newChat.id, userId: userId2, role: 'member' },
+    ]);
+
+    return newChat;
+  }
+
+  async createGroupChat(chatData: InsertChat, memberIds: number[]): Promise<Chat> {
+    const [chat] = await db.insert(chats).values(chatData).returning() as any;
+    
+    const members = memberIds.map(userId => ({
+      chatId: chat.id,
+      userId,
+      role: userId === chatData.createdBy ? 'admin' : 'member',
+    }));
+    
+    await db.insert(chatMembers).values(members);
+    
+    return chat;
+  }
+
+  async getUserChats(userId: number): Promise<Chat[]> {
+    const userChatMembers = await db
+      .select({ chatId: chatMembers.chatId })
+      .from(chatMembers)
+      .where(eq(chatMembers.userId, userId));
+
+    const chatIds = userChatMembers.map(m => m.chatId);
+    
+    if (chatIds.length === 0) {
+      return [];
+    }
+
+    return await db
+      .select()
+      .from(chats)
+      .where(inArray(chats.id, chatIds))
+      .orderBy(desc(chats.updatedAt));
+  }
+
+  async getChatById(chatId: number, userId: number): Promise<Chat | undefined> {
+    // Verify user is a member
+    const [member] = await db
+      .select()
+      .from(chatMembers)
+      .where(and(eq(chatMembers.chatId, chatId), eq(chatMembers.userId, userId)));
+
+    if (!member) {
+      return undefined;
+    }
+
+    const [chat] = await db.select().from(chats).where(eq(chats.id, chatId));
+    return chat;
+  }
+
+  async getChatMembers(chatId: number): Promise<(ChatMember & { user: User })[]> {
+    // Optimized: Use JOIN to get members with user details in one query
+    const result = await db
+      .select({
+        chatMember: chatMembers,
+        user: users,
+      })
+      .from(chatMembers)
+      .innerJoin(users, eq(chatMembers.userId, users.id))
+      .where(eq(chatMembers.chatId, chatId));
+    
+    return result.map(row => ({
+      ...row.chatMember,
+      user: row.user,
+    }));
+  }
+
+  async createChatMessage(messageData: InsertChatMessage): Promise<ChatMessage> {
+    const [message] = await db.insert(chatMessages).values(messageData).returning() as any;
+    
+    // Update chat's updatedAt
+    await db
+      .update(chats)
+      .set({ updatedAt: new Date() })
+      .where(eq(chats.id, messageData.chatId));
+
+    return message;
+  }
+
+  async markMessageAsRead(messageId: number, userId: number): Promise<void> {
+    // Mark as read only if user is NOT the sender
+    await db
+      .update(chatMessages)
+      .set({ readAt: new Date() })
+      .where(and(
+        eq(chatMessages.id, messageId),
+        sql`${chatMessages.senderId} != ${userId}` // Only mark as read if user is not the sender
+      ));
+  }
+
+  async getChatMessages(chatId: number, limit: number = 50, beforeId?: number): Promise<(ChatMessage & { sender: User; reactions: (MessageReaction & { user: User })[]; attachments: any[] })[]> {
+    let whereConditions = and(
+      eq(chatMessages.chatId, chatId),
+      isNull(chatMessages.deletedAt)
+    );
+
+    if (beforeId) {
+      whereConditions = and(
+        eq(chatMessages.chatId, chatId),
+        isNull(chatMessages.deletedAt),
+        sql`${chatMessages.id} < ${beforeId}`
+      );
+    }
+
+    const messages = await db
+      .select()
+      .from(chatMessages)
+      .where(whereConditions)
+      .orderBy(desc(chatMessages.createdAt))
+      .limit(limit);
+    
+    const result = [];
+    for (const message of messages) {
+      const sender = await this.getUser(message.senderId);
+      if (!sender) continue;
+
+      const reactions = await db
+        .select()
+        .from(messageReactions)
+        .where(eq(messageReactions.messageId, message.id));
+
+      const reactionsWithUsers = [];
+      for (const reaction of reactions) {
+        const user = await this.getUser(reaction.userId);
+        if (user) {
+          reactionsWithUsers.push({ ...reaction, user });
+        }
+      }
+
+      const attachments = await db
+        .select()
+        .from(chatMessageAttachments)
+        .where(eq(chatMessageAttachments.messageId, message.id));
+
+      result.push({
+        ...message,
+        sender,
+        reactions: reactionsWithUsers,
+        attachments,
+      });
+    }
+
+    return result.reverse(); // Return in chronological order
+  }
+
+  async addMessageReaction(reactionData: InsertMessageReaction): Promise<MessageReaction> {
+    const [reaction] = await db.insert(messageReactions).values(reactionData).returning() as any;
+    return reaction;
+  }
+
+  async removeMessageReaction(messageId: number, userId: number, emoji: string): Promise<void> {
+    await db
+      .delete(messageReactions)
+      .where(and(
+        eq(messageReactions.messageId, messageId),
+        eq(messageReactions.userId, userId),
+        eq(messageReactions.emoji, emoji)
+      ));
+  }
+
+  async updateLastRead(chatId: number, userId: number): Promise<void> {
+    await db
+      .update(chatMembers)
+      .set({ lastReadAt: new Date() })
+      .where(and(
+        eq(chatMembers.chatId, chatId),
+        eq(chatMembers.userId, userId)
+      ));
+  }
+
+  async addChatMember(chatId: number, userId: number, role: string = 'member'): Promise<ChatMember> {
+    const [member] = await db
+      .insert(chatMembers)
+      .values({ chatId, userId, role })
+      .returning() as any;
+    return member;
+  }
+
+  async removeChatMember(chatId: number, userId: number): Promise<void> {
+    await db
+      .delete(chatMembers)
+      .where(and(
+        eq(chatMembers.chatId, chatId),
+        eq(chatMembers.userId, userId)
+      ));
+  }
+
+  // Comments methods
+  async createComment(commentData: Partial<InsertComment> & { userId: number; entityType: string; entityId: number; content: string }): Promise<Comment> {
+    // Only include fields that are actually provided (not undefined)
+    const cleanData: any = {
+      userId: commentData.userId,
+      entityType: commentData.entityType,
+      entityId: commentData.entityId,
+      content: commentData.content,
+    };
+
+    if (commentData.parentId !== undefined) {
+      cleanData.parentId = commentData.parentId;
+    }
+
+    if (commentData.mentions !== undefined) {
+      cleanData.mentions = commentData.mentions;
+    }
+
+    // Only include status if it's explicitly provided
+    // This allows the code to work even if the column doesn't exist yet
+    if (commentData.status !== undefined) {
+      cleanData.status = commentData.status;
+    }
+
+    const [comment] = await db.insert(comments).values(cleanData).returning() as any;
+    return comment;
+  }
+
+  async getComments(entityType: string, entityId: number): Promise<(Comment & { user: User; replies: (Comment & { user: User })[] })[]> {
+    const topLevelComments = await db
+      .select()
+      .from(comments)
+      .where(and(
+        eq(comments.entityType, entityType),
+        eq(comments.entityId, entityId),
+        isNull(comments.parentId),
+        isNull(comments.deletedAt)
+      ))
+      .orderBy(asc(comments.createdAt));
+
+    const result = [];
+    for (const comment of topLevelComments) {
+      const user = await this.getUser(comment.userId);
+      if (!user) continue;
+
+      const replies = await db
+        .select()
+        .from(comments)
+        .where(and(
+          eq(comments.parentId, comment.id),
+          isNull(comments.deletedAt)
+        ))
+        .orderBy(asc(comments.createdAt));
+
+      const repliesWithUsers = [];
+      for (const reply of replies) {
+        const replyUser = await this.getUser(reply.userId);
+        if (replyUser) {
+          repliesWithUsers.push({ ...reply, user: replyUser });
+        }
+      }
+
+      result.push({
+        ...comment,
+        user,
+        replies: repliesWithUsers,
+      });
+    }
+
+    return result;
+  }
+
+  async updateComment(commentId: number, content: string): Promise<Comment | undefined> {
+    const [comment] = await db
+      .update(comments)
+      .set({ content, editedAt: new Date(), updatedAt: new Date() })
+      .where(eq(comments.id, commentId))
+      .returning() as any;
+    return comment;
+  }
+
+  async resolveComment(commentId: number, resolved: boolean, resolvedBy: number): Promise<Comment | undefined> {
+    const [comment] = await db
+      .update(comments)
+      .set({
+        status: resolved ? 'resolved' : 'active',
+        resolvedAt: resolved ? new Date() : null,
+        resolvedBy: resolved ? resolvedBy : null,
+        updatedAt: new Date(),
+      })
+      .where(eq(comments.id, commentId))
+      .returning() as any;
+    return comment;
+  }
+
+  async deleteComment(commentId: number): Promise<void> {
+    await db
+      .update(comments)
+      .set({ deletedAt: new Date() })
+      .where(eq(comments.id, commentId));
+  }
+
+  async addMessageAttachment(messageId: number, fileAttachmentId: number): Promise<void> {
+    await db.insert(chatMessageAttachments).values({ messageId, fileAttachmentId });
   }
 }
 

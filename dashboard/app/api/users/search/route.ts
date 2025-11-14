@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { storage } from '../../../../../server/storage';
+import { db } from '@/server/db';
+import { users } from '../../../../../shared/schema';
+import { eq, or, and, sql } from 'drizzle-orm';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,30 +21,32 @@ export async function GET(request: Request) {
       return NextResponse.json({ users: [] });
     }
 
-    // Search by email or username
-    const searchTerm = query.trim().toLowerCase();
+    // Search by email or username (partial match using SQL LIKE)
+    const searchTerm = `%${query.trim().toLowerCase()}%`;
     
-    // Try to find by email first
-    let user = await storage.getUserByEmail(searchTerm);
-    
-    // If not found by email, try by username
-    if (!user) {
-      user = await storage.getUserByUsername(searchTerm);
-    }
+    const matchingUsers = await db
+      .select({
+        id: users.id,
+        username: users.username,
+        fullName: users.fullName,
+        email: users.email,
+        avatarUrl: users.avatarUrl,
+      })
+      .from(users)
+      .where(
+        and(
+          eq(users.isActive, true),
+          sql`${users.id} != ${session.userId}`,
+          or(
+            sql`LOWER(${users.username}) LIKE ${searchTerm}`,
+            sql`LOWER(${users.email}) LIKE ${searchTerm}`,
+            sql`LOWER(${users.fullName}) LIKE ${searchTerm}`
+          )
+        )
+      )
+      .limit(10);
 
-    // If still not found, search for partial matches
-    // For now, return exact match only
-    const users = [];
-    if (user && user.id !== session.userId) {
-      users.push({
-        id: user.id,
-        username: user.username,
-        fullName: user.fullName,
-        email: user.email,
-      });
-    }
-
-    return NextResponse.json({ users });
+    return NextResponse.json({ users: matchingUsers });
   } catch (error: any) {
     console.error('Search users error:', error);
     return NextResponse.json(

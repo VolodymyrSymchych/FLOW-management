@@ -71,52 +71,10 @@ function TeamPageContent() {
 
   const loadTeamMembers = async (teamId: number) => {
     try {
-      const response = await axios.get(`/api/teams/${teamId}/members`);
-      const membersWithDetails = await Promise.all(
-        (response.data.members || []).map(async (member: any) => {
-          try {
-            // Get user details
-            const userRes = await axios.get(`/api/users/${member.userId}`);
-            // Get attendance
-            const attendanceRes = await axios.get(`/api/attendance?user_id=${member.userId}`);
-            const entries = attendanceRes.data.entries || [];
-            
-            const totalHours = entries.reduce((sum: number, entry: any) => {
-              return sum + (entry.duration || 0);
-            }, 0) / 60; // Convert minutes to hours
-
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const todayHours = entries
-              .filter((entry: any) => new Date(entry.clockIn) >= today)
-              .reduce((sum: number, entry: any) => sum + (entry.duration || 0), 0) / 60;
-
-            const weekAgo = new Date();
-            weekAgo.setDate(weekAgo.getDate() - 7);
-            const weekHours = entries
-              .filter((entry: any) => new Date(entry.clockIn) >= weekAgo)
-              .reduce((sum: number, entry: any) => sum + (entry.duration || 0), 0) / 60;
-
-            return {
-              ...member,
-              user: userRes.data.user,
-              attendance: {
-                totalHours: Math.round(totalHours * 10) / 10,
-                todayHours: Math.round(todayHours * 10) / 10,
-                weekHours: Math.round(weekHours * 10) / 10,
-              },
-            };
-          } catch (error) {
-            console.error(`Failed to load details for member ${member.userId}:`, error);
-            return {
-              ...member,
-              user: null,
-              attendance: null,
-            };
-          }
-        })
-      );
-      setMembers(membersWithDetails.filter(m => m.user));
+      // Optimized: Get all members with attendance in one request
+      const response = await axios.get(`/api/teams/${teamId}/members?include_attendance=true`);
+      const members = (response.data.members || []).filter((m: any) => m.user);
+      setMembers(members);
     } catch (error) {
       console.error('Failed to load team members:', error);
     }

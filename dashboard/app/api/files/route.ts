@@ -2,36 +2,28 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { storage } from '../../../../server/storage';
 import { uploadFile, deleteFile } from '../../../../server/r2-storage';
+import { withRateLimit } from '@/lib/rate-limit';
+import { validateFileType, validateFileSize, sanitizeFilename, ALLOWED_FILE_TYPES } from '@/lib/file-security';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60; // Allow up to 60 seconds for file uploads
-
-// Maximum file size (50MB for documents/images)
-const MAX_FILE_SIZE = 50 * 1024 * 1024;
-
-// Allowed file types
-const ALLOWED_TYPES = [
-  'application/pdf',
-  'image/jpeg',
-  'image/jpg',
-  'image/png',
-  'image/gif',
-  'image/webp',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
-  'application/vnd.openxmlformats-officedocument.presentationml.presentation', // .pptx
-  'application/msword', // .doc
-  'application/vnd.ms-excel', // .xls
-  'text/plain',
-  'text/csv',
-  'application/zip',
-];
 
 export async function POST(request: NextRequest) {
   try {
     const session = await getSession();
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Rate limit: 10 file uploads per 10 minutes per user
+    const rateLimitResult = await withRateLimit(request, {
+      limit: 10,
+      window: 600, // 10 minutes
+      identifier: () => `file-upload:${session.userId}`,
+    });
+
+    if (!rateLimitResult.success) {
+      return rateLimitResult.response!;
     }
 
     const formData = await request.formData();
@@ -50,20 +42,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate file size
-    if (file.size > MAX_FILE_SIZE) {
+    // Validate file size based on type
+    const sizeValidation = validateFileSize(file);
+    if (!sizeValidation.valid) {
       return NextResponse.json(
-        { error: `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB` },
+        { error: sizeValidation.error },
         { status: 400 }
       );
     }
 
-    // Validate file type
-    if (!ALLOWED_TYPES.includes(file.type)) {
+    // Validate file type (MIME)
+    if (!ALLOWED_FILE_TYPES.includes(file.type)) {
       return NextResponse.json(
         {
           error: 'Invalid file type. Allowed types: PDF, images (JPEG, PNG, GIF, WebP), Office documents (Word, Excel, PowerPoint), text files, and ZIP archives',
         },
+        { status: 400 }
+      );
+    }
+
+    // Validate file content (magic numbers) to prevent MIME type spoofing
+    const contentValidation = await validateFileType(file);
+    if (!contentValidation.valid) {
+      return NextResponse.json(
+        { error: contentValidation.error || 'File validation failed' },
         { status: 400 }
       );
     }
@@ -88,11 +90,14 @@ export async function POST(request: NextRequest) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
+    // Sanitize filename to prevent path traversal attacks
+    const sanitizedFileName = sanitizeFilename(file.name);
+
     // Upload to R2
     const folder = projectId ? `projects/${projectId}` : `tasks/${taskId}`;
     const { key, url } = await uploadFile(
       buffer,
-      file.name,
+      sanitizedFileName,
       file.type || 'application/octet-stream',
       folder
     );
@@ -101,7 +106,7 @@ export async function POST(request: NextRequest) {
     const fileAttachment = await storage.createFileAttachment({
       projectId: projectId || null,
       taskId: taskId || null,
-      fileName: file.name,
+      fileName: sanitizedFileName,
       fileType: file.type || 'application/octet-stream',
       fileSize: file.size,
       r2Key: key,
@@ -117,7 +122,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Error uploading file:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to upload file' },
+      { error: 'Failed to upload file' },
       { status: 500 }
     );
   }

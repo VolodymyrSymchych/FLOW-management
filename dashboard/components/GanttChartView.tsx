@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useState, useMemo, startTransition } from 'react';
+import dynamic from 'next/dynamic';
 import axios from 'axios';
 import { Plus, BarChart3 } from 'lucide-react';
+import { useTeam } from '@/contexts/TeamContext';
 import {
   GanttProvider,
   GanttSidebar,
@@ -15,8 +17,15 @@ import {
   GanttDependencyLines,
   type GanttFeature,
 } from '@/components/ui/gantt';
-import { AddTaskModal } from '@/components/AddTaskModal';
-import { EditTaskModal } from '@/components/EditTaskModal';
+
+// Lazy load modals - only load when opened
+const AddTaskModal = dynamic(() => import('@/components/AddTaskModal').then(m => ({ default: m.AddTaskModal })), {
+  ssr: false
+});
+
+const EditTaskModal = dynamic(() => import('@/components/EditTaskModal').then(m => ({ default: m.EditTaskModal })), {
+  ssr: false
+});
 
 interface TaskData {
   id: number;
@@ -56,6 +65,7 @@ type ViewRange = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
 type GanttType = 'tasks' | 'projects';
 
 export function GanttChartView({ projectId, readOnly = false }: GanttChartViewProps) {
+  const { selectedTeam, isLoading: teamsLoading } = useTeam();
   const [tasks, setTasks] = useState<TaskData[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,8 +83,11 @@ export function GanttChartView({ projectId, readOnly = false }: GanttChartViewPr
   const [selectedProjectId, setSelectedProjectId] = useState<number | 'all'>('all');
 
   useEffect(() => {
-    fetchData();
-  }, [ganttType]);
+    // Wait for teams to load before fetching data
+    if (!teamsLoading) {
+      fetchData();
+    }
+  }, [ganttType, selectedTeam, teamsLoading]);
 
   // Function to change view range with loading
   const handleViewRangeChange = (newRange: ViewRange) => {
@@ -109,17 +122,31 @@ export function GanttChartView({ projectId, readOnly = false }: GanttChartViewPr
   const fetchData = async () => {
     try {
       setLoading(true);
-      // Always fetch all tasks and projects
+      // Use selected team from context
+      const teamId = selectedTeam.type === 'single' && selectedTeam.teamId
+        ? selectedTeam.teamId
+        : 'all';
+
+      console.log('GanttChartView: Fetching data for team:', teamId, 'Selected team:', selectedTeam);
+
+      // Fetch tasks and projects filtered by team
       const [tasksResponse, projectsResponse] = await Promise.all([
-        axios.get('/api/tasks'),
-        axios.get('/api/projects')
+        axios.get(`/api/tasks${teamId !== 'all' ? `?team_id=${teamId}` : ''}`),
+        axios.get(`/api/projects${teamId !== 'all' ? `?team_id=${teamId}` : ''}`)
       ]);
+
+      console.log('GanttChartView: Received tasks:', tasksResponse.data.tasks?.length || 0);
+      console.log('GanttChartView: Received projects:', projectsResponse.data.projects?.length || 0);
 
       setTasks(tasksResponse.data.tasks || []);
       setProjects(projectsResponse.data.projects || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to load data:', error);
+      if (error.response?.status === 403) {
+        console.error('Access denied to team data. User may not be a team member.');
+      }
       setTasks([]);
+      setProjects([]);
     } finally {
       setLoading(false);
     }
@@ -447,7 +474,9 @@ export function GanttChartView({ projectId, readOnly = false }: GanttChartViewPr
               className="glass-medium rounded-lg px-3 py-2 text-sm font-medium text-white border border-white/10 hover:border-white/20 focus:border-primary/50 focus:outline-none transition-all duration-200 cursor-pointer bg-black/20 backdrop-blur-sm"
               aria-label="Select project"
             >
-              <option value="all" className="bg-black/90 text-white">All Projects</option>
+              <option value="all" className="bg-black/90 text-white">
+                All Projects {selectedTeam.type === 'single' ? '(from selected team)' : ''}
+              </option>
               {projects.map((project) => (
                 <option key={project.id} value={project.id} className="bg-black/90 text-white">
                   {project.name}

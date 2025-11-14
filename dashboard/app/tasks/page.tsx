@@ -1,9 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { Plus, Calendar, Edit, Trash2, ArrowUpDown } from 'lucide-react';
 import axios from 'axios';
 import { Task } from '@/lib/tasks-api';
+import { useTeam } from '@/contexts/TeamContext';
 import {
   DndContext,
   DragOverlay,
@@ -22,8 +24,15 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { EditTaskModal } from '@/components/EditTaskModal';
-import { DeleteConfirmModal } from '@/components/DeleteConfirmModal';
+
+// Lazy load modals
+const EditTaskModal = dynamic(() => import('@/components/EditTaskModal').then(m => ({ default: m.EditTaskModal })), {
+  ssr: false
+});
+
+const DeleteConfirmModal = dynamic(() => import('@/components/DeleteConfirmModal').then(m => ({ default: m.DeleteConfirmModal })), {
+  ssr: false
+});
 
 interface Project {
   id: number;
@@ -31,6 +40,7 @@ interface Project {
 }
 
 export default function TasksPage() {
+  const { selectedTeam, isLoading: teamsLoading } = useTeam();
   const [tasks, setTasks] = useState<any[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,13 +70,24 @@ export default function TasksPage() {
   );
 
   useEffect(() => {
-    loadProjects();
-    loadTasks();
-  }, []);
+    // Wait for teams to load before loading data
+    if (!teamsLoading) {
+      loadProjects();
+      loadTasks();
+    }
+  }, [selectedTeam, teamsLoading]); // Reload when team changes
 
   const loadProjects = async () => {
     try {
-      const response = await axios.get('/api/projects');
+      // Build query params for team filtering
+      const teamId = selectedTeam.type === 'single' && selectedTeam.teamId 
+        ? selectedTeam.teamId 
+        : 'all';
+      const url = teamId !== 'all' 
+        ? `/api/projects?team_id=${teamId}`
+        : '/api/projects';
+      
+      const response = await axios.get(url);
       setProjects(response.data.projects || []);
     } catch (error) {
       console.error('Failed to load projects:', error);
@@ -76,7 +97,15 @@ export default function TasksPage() {
   const loadTasks = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/tasks');
+      // Build query params for team filtering
+      const teamId = selectedTeam.type === 'single' && selectedTeam.teamId 
+        ? selectedTeam.teamId 
+        : 'all';
+      const url = teamId !== 'all' 
+        ? `/api/tasks?team_id=${teamId}`
+        : '/api/tasks';
+      
+      const response = await axios.get(url);
       console.log('API Response:', response.data);
       const tasksData = response.data?.tasks || [];
       console.log('Loaded tasks count:', tasksData.length);

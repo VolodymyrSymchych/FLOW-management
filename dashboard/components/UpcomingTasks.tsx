@@ -6,6 +6,8 @@ import axios from 'axios';
 import { EditTaskModal } from './EditTaskModal';
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
+import { useTeam } from '@/contexts/TeamContext';
+import { useUser } from '@/hooks/useUser';
 
 interface Task {
   id: number;
@@ -18,6 +20,8 @@ interface Task {
   priority: string;
   assignee: string | null;
   project_id: number | null;
+  userId?: number | null;
+  isOwner?: boolean; // Whether user is owner of the project
 }
 
 interface TimeEntry {
@@ -28,6 +32,8 @@ interface TimeEntry {
 }
 
 export function UpcomingTasks() {
+  const { selectedTeam, isLoading: teamsLoading } = useTeam();
+  const { user } = useUser();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -37,8 +43,21 @@ export function UpcomingTasks() {
 
   const loadTasks = async () => {
     try {
-      const response = await axios.get('/api/tasks');
+      // Build query params for team filtering
+      const teamId = selectedTeam.type === 'single' && selectedTeam.teamId
+        ? selectedTeam.teamId
+        : 'all';
+      const url = teamId !== 'all'
+        ? `/api/tasks?team_id=${teamId}`
+        : '/api/tasks';
+
+      console.log('UpcomingTasks: Loading tasks with URL:', url, 'Selected team:', selectedTeam);
+
+      const response = await axios.get(url);
       const allTasks = response.data.tasks || [];
+
+      console.log('UpcomingTasks: Received tasks:', allTasks.length);
+
       // Filter for upcoming tasks (not done, sorted by due date)
       const upcomingTasks = allTasks
         .filter((task: Task) => task.status !== 'done' && task.status !== 'Done')
@@ -48,9 +67,16 @@ export function UpcomingTasks() {
           return new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
         })
         .slice(0, 5); // Show only first 5 upcoming tasks
+
+      console.log('UpcomingTasks: Filtered to upcoming tasks:', upcomingTasks.length);
       setTasks(upcomingTasks);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to load tasks:', error);
+      if (error.response?.status === 403) {
+        console.error('Access denied to team tasks. User may not be a team member.');
+        // Show empty state or error message
+        setTasks([]);
+      }
     } finally {
       setLoading(false);
     }
@@ -107,9 +133,12 @@ export function UpcomingTasks() {
   };
 
   useEffect(() => {
-    loadTasks();
-    checkActiveSession();
-  }, []);
+    // Wait for teams to load before loading tasks
+    if (!teamsLoading) {
+      loadTasks();
+      checkActiveSession();
+    }
+  }, [selectedTeam, teamsLoading]); // Reload when team changes
 
   useEffect(() => {
     // Update elapsed time every second when there's an active entry
@@ -138,14 +167,41 @@ export function UpcomingTasks() {
     loadRunningTask();
   }, [activeTimeEntry, tasks]);
 
+  // Check if user can start timer on this task
+  const canStartTimer = (task: Task): boolean => {
+    if (!user) return false;
+    
+    // User can start timer if:
+    // 1. Task was created by user (userId matches)
+    // 2. Task is assigned to user (assignee matches user's email or username)
+    const isTaskOwner = task.userId === user.id;
+    const isAssigned = task.assignee && (
+      task.assignee === user.email || 
+      task.assignee === user.username
+    );
+    
+    return isTaskOwner || !!isAssigned;
+  };
+
   const handleStartAttendance = async (taskId: number) => {
     if (activeTimeEntry) {
       alert('Please stop the current time tracking before starting a new one.');
       return;
     }
 
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) {
+      alert('Task not found');
+      return;
+    }
+
+    // Check if user can start timer on this task
+    if (!canStartTimer(task)) {
+      alert('Ви можете запускати таймер тільки на своїх завданнях (де ви є власником або призначеним виконавцем).');
+      return;
+    }
+
     try {
-      const task = tasks.find(t => t.id === taskId);
       await axios.post('/api/attendance', {
         task_id: taskId,
         project_id: task?.project_id || null,
@@ -195,7 +251,8 @@ export function UpcomingTasks() {
     ? [runningTask, ...tasks.filter(t => t.id !== runningTask.id)].slice(0, 5)
     : tasks;
 
-  if (loading) {
+  // Show loading state while teams are loading or tasks are loading
+  if (teamsLoading || loading) {
     return (
       <div className="glass-medium rounded-2xl p-6">
         <h3 className="text-lg font-bold text-text-primary mb-4">
@@ -212,9 +269,16 @@ export function UpcomingTasks() {
     <>
       <div className="glass-medium rounded-2xl p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold text-text-primary">
-            Upcoming Tasks
-          </h3>
+          <div>
+            <h3 className="text-lg font-bold text-text-primary">
+              Upcoming Tasks
+            </h3>
+            {selectedTeam.type === 'single' && (
+              <p className="text-xs text-text-tertiary mt-1">
+                Showing tasks from selected team
+              </p>
+            )}
+          </div>
           {activeTimeEntry && (
             <div className="flex items-center space-x-2 text-xs text-text-tertiary">
               <div className="w-2 h-2 rounded-full bg-success animate-pulse"></div>
@@ -246,6 +310,7 @@ export function UpcomingTasks() {
                   getTaskIcon={getTaskIcon}
                   getTaskColor={getTaskColor}
                   idx={idx}
+                  canStartTimer={canStartTimer}
                 />
               );
             })
@@ -303,6 +368,7 @@ interface DraggableTaskProps {
   getTaskIcon: (index: number) => React.ElementType;
   getTaskColor: (index: number) => string;
   idx: number;
+  canStartTimer: (task: Task) => boolean;
 }
 
 function DraggableTask({
@@ -316,6 +382,7 @@ function DraggableTask({
   getTaskIcon,
   getTaskColor,
   idx,
+  canStartTimer,
 }: DraggableTaskProps) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: task.id,
@@ -406,7 +473,7 @@ function DraggableTask({
       <div className="flex items-center space-x-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
         {!isRunning && (
           <>
-            {!activeTimeEntry && (
+            {!activeTimeEntry && canStartTimer(task) && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();

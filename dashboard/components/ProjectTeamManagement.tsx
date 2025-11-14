@@ -196,7 +196,9 @@ export function ProjectTeamManagement({ projectId, teamId }: ProjectTeamManageme
       {/* Members List */}
       <div className="space-y-2">
         {members.length > 0 ? (
-          members.map((member) => (
+          members
+            .filter(member => member.user) // Filter out members without user data
+            .map((member) => (
             <div
               key={member.id}
               className="glass-light rounded-lg p-4 border border-white/10 hover:border-white/20 transition-all"
@@ -204,12 +206,12 @@ export function ProjectTeamManagement({ projectId, teamId }: ProjectTeamManageme
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3 flex-1">
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-semibold">
-                    {member.user.email.substring(0, 2).toUpperCase()}
+                    {member.user?.email?.substring(0, 2).toUpperCase() || '??'}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center space-x-2">
                       <p className="font-medium text-text-primary truncate">
-                        {member.user.name || member.user.email}
+                        {member.user?.name || member.user?.email || 'Unknown User'}
                       </p>
                       <span
                         className={cn(
@@ -221,10 +223,12 @@ export function ProjectTeamManagement({ projectId, teamId }: ProjectTeamManageme
                       </span>
                     </div>
                     <div className="flex items-center space-x-4 mt-1">
-                      <p className="text-xs text-text-tertiary flex items-center space-x-1">
-                        <Mail className="w-3 h-3" />
-                        <span>{member.user.email}</span>
-                      </p>
+                      {member.user?.email && (
+                        <p className="text-xs text-text-tertiary flex items-center space-x-1">
+                          <Mail className="w-3 h-3" />
+                          <span>{member.user.email}</span>
+                        </p>
+                      )}
                       {member.workedHours !== undefined && (
                         <p className="text-xs text-text-tertiary flex items-center space-x-1">
                           <Clock className="w-3 h-3" />

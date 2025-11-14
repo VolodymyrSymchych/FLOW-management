@@ -8,30 +8,44 @@ interface ProjectCardProps {
   status?: string;
   risk_level?: string;
   score?: number;
+  isOwner?: boolean;
+  isTeamProject?: boolean;
   onClick?: () => void;
   onDelete?: (e: React.MouseEvent) => void;
 }
 
-export function ProjectCard({ id, name, team, status, risk_level, score, onClick, onDelete }: ProjectCardProps) {
+export function ProjectCard({ id, name, team, status, risk_level, score, isOwner, isTeamProject, onClick, onDelete }: ProjectCardProps) {
   return (
     <div
       className="glass-light glass-hover rounded-xl p-4 cursor-pointer"
       onClick={onClick}
     >
       <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center space-x-2.5">
-          <div className="w-9 h-9 rounded-lg bg-primary/80 flex items-center justify-center">
+        <div className="flex items-center space-x-2.5 flex-1 min-w-0">
+          <div className="w-9 h-9 rounded-lg bg-primary/80 flex items-center justify-center flex-shrink-0">
             <span className="text-white font-semibold text-sm">
               {name.substring(0, 2).toUpperCase()}
             </span>
           </div>
-          <div>
-            <h4 className="font-semibold text-sm text-text-primary">{name}</h4>
-            {team && (
-              <p className="text-xs text-text-tertiary mt-0.5">
-                {team.length} Members
-              </p>
-            )}
+          <div className="flex-1 min-w-0">
+            <h4 className="font-semibold text-sm text-text-primary truncate">{name}</h4>
+            <div className="flex items-center space-x-2 mt-0.5">
+              {isOwner && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/20 text-primary border border-primary/30">
+                  Owner
+                </span>
+              )}
+              {isTeamProject && !isOwner && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                  Team
+                </span>
+              )}
+              {team && (
+                <p className="text-xs text-text-tertiary">
+                  {team.length} Members
+                </p>
+              )}
+            </div>
           </div>
         </div>
         {onDelete && (

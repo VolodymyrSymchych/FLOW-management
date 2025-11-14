@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { X, UserPlus, Mail, Loader2 } from 'lucide-react';
+import { UserPlus, Mail, Loader2 } from 'lucide-react';
+import { Modal, ModalFooter } from '@/components/ui/modal';
 
 interface AddFriendModalProps {
   onClose: () => void;
@@ -48,38 +49,21 @@ export function AddFriendModal({ onClose, onSuccess }: AddFriendModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="glass-strong rounded-2xl p-8 border border-border max-w-md w-full relative">
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-lg hover:bg-white/10 transition-colors"
-        >
-          <X className="w-5 h-5 text-text-tertiary" />
-        </button>
-
-        {success ? (
-          <div className="text-center py-8">
-            <div className="w-16 h-16 bg-success/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <UserPlus className="w-8 h-8 text-success" />
-            </div>
-            <h3 className="text-2xl font-bold text-text-primary mb-2">Request Sent!</h3>
-            <p className="text-text-secondary">
-              Your friend request has been sent successfully
-            </p>
+    <Modal
+      isOpen={true}
+      onClose={onClose}
+      title={success ? 'Request Sent!' : 'Add Friend'}
+      description={success ? 'Your friend request has been sent successfully' : 'Send a friend request by entering their username or email'}
+      size="md"
+    >
+      {success ? (
+        <div className="text-center py-8">
+          <div className="w-16 h-16 bg-success/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <UserPlus className="w-8 h-8 text-success" />
           </div>
-        ) : (
-          <>
-            {/* Header */}
-            <div className="mb-6">
-              <h3 className="text-2xl font-bold text-text-primary mb-2">Add Friend</h3>
-              <p className="text-text-secondary">
-                Send a friend request by entering their username or email
-              </p>
-            </div>
-
-            {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-4">
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
                 <div className="p-4 rounded-lg bg-danger/10 border border-danger/20 text-danger text-sm">
                   {error}
@@ -108,37 +92,35 @@ export function AddFriendModal({ onClose, onSuccess }: AddFriendModalProps) {
                 </div>
               </div>
 
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="flex-1 px-6 py-3 rounded-xl glass-subtle hover:glass-light border border-border font-semibold text-text-primary transition-all"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="flex-1 glass-button px-6 py-3 rounded-xl font-semibold text-white hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Sending...
-                    </>
-                  ) : (
-                    <>
-                      <UserPlus className="w-5 h-5" />
-                      Send Request
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </>
-        )}
-      </div>
-    </div>
+          <ModalFooter>
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-6 py-3 rounded-xl glass-subtle hover:glass-light border border-border font-semibold text-text-primary transition-all"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 glass-button px-6 py-3 rounded-xl font-semibold text-white hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <UserPlus className="w-5 h-5" />
+                  Send Request
+                </>
+              )}
+            </button>
+          </ModalFooter>
+        </form>
+      )}
+    </Modal>
   );
 }
 

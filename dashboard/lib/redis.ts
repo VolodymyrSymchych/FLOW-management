@@ -265,6 +265,7 @@ export async function invalidateUserCache(userId: number): Promise<void> {
       `projects:user:${userId}`,
       `tasks:user:${userId}*`,
       `stats:user:${userId}`,
+      `teams:user:${userId}`, // Add teams cache
     ];
 
     for (const pattern of patterns) {
@@ -272,5 +273,26 @@ export async function invalidateUserCache(userId: number): Promise<void> {
     }
   } catch (error) {
     console.error('User cache invalidation error:', error);
+  }
+}
+
+/**
+ * Invalidate team-related caches
+ */
+export async function invalidateTeamCache(teamId: number): Promise<void> {
+  const redis = getRedisClient();
+  if (!redis) return;
+
+  try {
+    const patterns = [
+      `projects:team:${teamId}`,
+      `tasks:team:${teamId}`,
+    ];
+
+    for (const pattern of patterns) {
+      await invalidateCache(pattern);
+    }
+  } catch (error) {
+    console.error('Team cache invalidation error:', error);
   }
 }

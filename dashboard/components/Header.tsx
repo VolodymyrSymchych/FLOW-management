@@ -6,14 +6,8 @@ import { useEffect, useState, memo, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
-
-interface User {
-  id: number;
-  email: string;
-  username: string;
-  fullName?: string | null;
-  avatarUrl?: string | null;
-}
+import { useTeam } from '@/contexts/TeamContext';
+import { useUser } from '@/hooks/useUser';
 
 interface Team {
   id: number;
@@ -30,9 +24,10 @@ interface Friend {
 
 export const Header = memo(function Header() {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
-  const [teams, setTeams] = useState<Team[]>([]);
+  const { selectedTeam, setSelectedTeam, teams, setTeams, isLoading: teamsLoading } = useTeam();
+  const { user } = useUser(); // Use useUser hook instead of fetching separately
   const [friends, setFriends] = useState<any[]>([]);
+  const [friendsLoaded, setFriendsLoaded] = useState(false);
   const [showTeamsDropdown, setShowTeamsDropdown] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [showCreateTeamModal, setShowCreateTeamModal] = useState(false);
@@ -51,37 +46,34 @@ export const Header = memo(function Header() {
     setMounted(true);
   }, []);
 
+  // Close dropdown when teams are loading
   useEffect(() => {
-    // Fetch user from session
-    fetch('/api/auth/me')
-      .then(res => res.json())
-      .then(data => {
-        if (data.user) {
-          setUser(data.user);
-        }
-      })
-      .catch(err => console.error('Failed to fetch user:', err));
+    if (teamsLoading) {
+      setShowTeamsDropdown(false);
+    }
+  }, [teamsLoading]);
 
-    // Fetch user's teams
-    fetch('/api/teams')
-      .then(res => res.json())
-      .then(data => {
-        if (data.teams) {
-          setTeams(data.teams);
-        }
-      })
-      .catch(err => console.error('Failed to fetch teams:', err));
+  // Load friends lazily when user dropdown is opened
+  const loadFriends = async () => {
+    if (friendsLoaded) return;
+    try {
+      const response = await fetch('/api/friends');
+      const data = await response.json();
+      if (data.friends) {
+        setFriends(data.friends);
+        setFriendsLoaded(true);
+      }
+    } catch (err) {
+      console.error('Failed to fetch friends:', err);
+    }
+  };
 
-    // Fetch user's friends
-    fetch('/api/friends')
-      .then(res => res.json())
-      .then(data => {
-        if (data.friends) {
-          setFriends(data.friends);
-        }
-      })
-      .catch(err => console.error('Failed to fetch friends:', err));
-  }, []);
+  useEffect(() => {
+    // Load friends when user dropdown is opened
+    if (showUserDropdown && !friendsLoaded) {
+      loadFriends();
+    }
+  }, [showUserDropdown, friendsLoaded]);
 
   const handleCreateTeam = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,6 +96,8 @@ export const Header = memo(function Header() {
         setShowCreateTeamModal(false);
         setTeamName('');
         setTeamDescription('');
+        // Automatically select the new team
+        setSelectedTeam({ type: 'single', teamId: data.team.id });
         toast.success('Team created successfully');
         router.push(`/team?teamId=${data.team.id}`);
       } else {
@@ -218,13 +212,21 @@ export const Header = memo(function Header() {
             <div className="relative">
               <button
                 ref={teamsButtonRef}
-                onClick={() => setShowTeamsDropdown(!showTeamsDropdown)}
+                onClick={() => !teamsLoading && setShowTeamsDropdown(!showTeamsDropdown)}
                 aria-expanded={showTeamsDropdown}
                 aria-haspopup="true"
                 aria-label="Open teams menu"
-                className="flex items-center space-x-2 glass-light px-3 py-1.5 rounded-lg hover:glass-medium duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] hover:scale-105 active:scale-95"
+                disabled={teamsLoading}
+                className="flex items-center space-x-2 glass-light px-3 py-1.5 rounded-lg hover:glass-medium duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
-                <span className="text-sm font-medium text-text-primary">All Teams</span>
+                <span className="text-sm font-medium text-text-primary">
+                  {teamsLoading
+                    ? 'Loading...'
+                    : selectedTeam.type === 'all'
+                    ? 'All Teams'
+                    : teams.find(t => t.id === selectedTeam.teamId)?.name || 'Select Team'
+                  }
+                </span>
                 <ChevronDown
                   className={`w-4 h-4 text-text-primary transition-transform duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] ${
                     showTeamsDropdown ? 'rotate-180' : ''
@@ -232,7 +234,7 @@ export const Header = memo(function Header() {
                 />
               </button>
 
-              {showTeamsDropdown && mounted && createPortal(
+              {showTeamsDropdown && !teamsLoading && mounted && createPortal(
                 <>
                   <div
                     className="fixed inset-0 z-[9998]"
@@ -247,6 +249,22 @@ export const Header = memo(function Header() {
                     }}
                   >
                     <div className="p-2">
+                      {/* All Teams Option */}
+                      <button
+                        onClick={() => {
+                          setSelectedTeam({ type: 'all' });
+                          setShowTeamsDropdown(false);
+                        }}
+                        className={`w-full text-left px-3 py-2 rounded-lg hover:bg-white/10 hover:backdrop-blur-sm text-text-primary transition-all duration-200 ${
+                          selectedTeam.type === 'all' ? 'bg-white/10' : ''
+                        }`}
+                      >
+                        <div className="font-medium text-sm">All Teams</div>
+                        <div className="text-xs text-text-tertiary">View all team data</div>
+                      </button>
+
+                      <div className="h-px bg-white/10 my-2" />
+
                       <div className="px-3 py-2 text-xs text-text-tertiary uppercase tracking-wider font-medium">
                         My Teams
                       </div>
@@ -272,10 +290,12 @@ export const Header = memo(function Header() {
                           <button
                             key={team.id}
                             onClick={() => {
+                              setSelectedTeam({ type: 'single', teamId: team.id });
                               setShowTeamsDropdown(false);
-                              router.push(`/team?teamId=${team.id}`);
                             }}
-                            className="w-full text-left px-3 py-2 rounded-lg hover:bg-white/10 hover:backdrop-blur-sm text-text-primary transition-all duration-200"
+                            className={`w-full text-left px-3 py-2 rounded-lg hover:bg-white/10 hover:backdrop-blur-sm text-text-primary transition-all duration-200 ${
+                              selectedTeam.type === 'single' && selectedTeam.teamId === team.id ? 'bg-white/10' : ''
+                            }`}
                           >
                             <div className="font-medium text-sm">{team.name}</div>
                             {team.description && (

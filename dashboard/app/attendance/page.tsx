@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Clock, Calendar, Play, Square, Download } from 'lucide-react';
 import axios from 'axios';
+import { useTeam } from '@/contexts/TeamContext';
 
 interface Task {
   id: number;
@@ -22,6 +23,7 @@ interface TimeEntry {
 }
 
 export default function AttendancePage() {
+  const { selectedTeam, isLoading: teamsLoading } = useTeam();
   const [view, setView] = useState<'daily' | 'weekly' | 'monthly'>('daily');
   const [isClockedIn, setIsClockedIn] = useState(false);
   const [currentSession, setCurrentSession] = useState<TimeEntry | null>(null);
@@ -31,14 +33,30 @@ export default function AttendancePage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadTasks();
-    loadTimeEntries();
-    checkActiveSession();
-  }, []);
+    // Wait for teams to load before loading data
+    if (!teamsLoading) {
+      loadTasks();
+      loadTimeEntries();
+      checkActiveSession();
+    }
+  }, [teamsLoading, selectedTeam]);
 
   const loadTasks = async () => {
+    // Don't load if teams are still loading
+    if (teamsLoading) {
+      return;
+    }
+
     try {
-      const response = await axios.get('/api/tasks');
+      // Build query params for team filtering
+      const teamId = selectedTeam.type === 'single' && selectedTeam.teamId 
+        ? selectedTeam.teamId 
+        : 'all';
+      const url = teamId !== 'all' 
+        ? `/api/tasks?team_id=${teamId}`
+        : '/api/tasks';
+      
+      const response = await axios.get(url);
       setTasks(response.data.tasks || []);
     } catch (error) {
       console.error('Failed to load tasks:', error);
@@ -46,8 +64,22 @@ export default function AttendancePage() {
   };
 
   const loadTimeEntries = async () => {
+    // Don't load if teams are still loading
+    if (teamsLoading) {
+      return;
+    }
+
+    setLoading(true);
     try {
-      const response = await axios.get('/api/attendance');
+      // Build query params for team filtering
+      const teamId = selectedTeam.type === 'single' && selectedTeam.teamId 
+        ? selectedTeam.teamId 
+        : 'all';
+      const url = teamId !== 'all' 
+        ? `/api/attendance?team_id=${teamId}`
+        : '/api/attendance';
+      
+      const response = await axios.get(url);
       setTimeEntries(response.data.entries || []);
     } catch (error) {
       console.error('Failed to load time entries:', error);
@@ -57,7 +89,13 @@ export default function AttendancePage() {
   };
 
   const checkActiveSession = async () => {
+    // Don't check if teams are still loading
+    if (teamsLoading) {
+      return;
+    }
+
     try {
+      // Always check current user's active session (not filtered by team)
       const response = await axios.get('/api/attendance');
       const entries = response.data.entries || [];
       const activeEntry = entries.find((e: TimeEntry) => !e.clockOut);
@@ -130,7 +168,8 @@ export default function AttendancePage() {
   const totalHoursToday = todayEntries.reduce((sum, e) => sum + (e.duration || 0), 0);
   const totalHoursWeek = timeEntries.reduce((sum, e) => sum + (e.duration || 0), 0);
 
-  if (loading) {
+  // Show loading state while teams are loading or data is loading
+  if (teamsLoading || loading) {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>

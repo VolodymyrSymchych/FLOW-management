@@ -14,9 +14,76 @@ export async function GET(
 
     const { id } = await params;
     const teamId = parseInt(id);
+    const { searchParams } = new URL(request.url);
+    const includeAttendance = searchParams.get('include_attendance') === 'true';
 
-    const members = await storage.getTeamMembers(teamId);
-    return NextResponse.json({ members });
+    // Optimized: Get members with user details in one query using JOIN
+    const membersWithUsers = await storage.getTeamMembersWithUsers(teamId);
+    
+    // Format user data
+    const formattedMembers = membersWithUsers.map(member => ({
+      ...member,
+      user: {
+        id: member.user.id,
+        email: member.user.email,
+        name: member.user.fullName || member.user.username,
+        username: member.user.username,
+        fullName: member.user.fullName,
+        avatarUrl: member.user.avatarUrl,
+      },
+    }));
+
+    // If attendance is requested, fetch it for all members at once
+    if (includeAttendance) {
+      const userIds = formattedMembers.map(m => m.userId);
+      const allTimeEntries = await storage.getTimeEntriesByTeam(teamId);
+      
+      // Group entries by userId
+      const entriesByUserId = new Map<number, typeof allTimeEntries>();
+      allTimeEntries.forEach(entry => {
+        if (!entriesByUserId.has(entry.userId)) {
+          entriesByUserId.set(entry.userId, []);
+        }
+        entriesByUserId.get(entry.userId)!.push(entry);
+      });
+
+      // Calculate attendance stats for each member
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
+
+      const membersWithAttendance = formattedMembers.map(member => {
+        if (!member.user) return member;
+        
+        const entries = entriesByUserId.get(member.userId) || [];
+        
+        const totalHours = entries.reduce((sum, entry) => {
+          return sum + (entry.duration || 0);
+        }, 0) / 60; // Convert minutes to hours
+
+        const todayHours = entries
+          .filter(entry => new Date(entry.clockIn) >= today)
+          .reduce((sum, entry) => sum + (entry.duration || 0), 0) / 60;
+
+        const weekHours = entries
+          .filter(entry => new Date(entry.clockIn) >= weekAgo)
+          .reduce((sum, entry) => sum + (entry.duration || 0), 0) / 60;
+
+        return {
+          ...member,
+          attendance: {
+            totalHours: Math.round(totalHours * 10) / 10,
+            todayHours: Math.round(todayHours * 10) / 10,
+            weekHours: Math.round(weekHours * 10) / 10,
+          },
+        };
+      });
+
+      return NextResponse.json({ members: membersWithAttendance });
+    }
+
+    return NextResponse.json({ members: formattedMembers });
   } catch (error: any) {
     console.error('Get team members error:', error);
     return NextResponse.json(

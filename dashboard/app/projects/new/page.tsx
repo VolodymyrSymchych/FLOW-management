@@ -115,6 +115,7 @@ export default function NewProjectPage() {
         startDate: formData.startDate || null,
         endDate: formData.endDate || null,
         status: 'in_progress',
+        teamId: selectedTeamId ? parseInt(selectedTeamId) : null,
       };
 
       const response = await axios.post('/api/projects', projectData);

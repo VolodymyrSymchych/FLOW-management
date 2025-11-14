@@ -18,14 +18,29 @@ export interface AnalyzeRequest extends ProjectMetadata {
 export interface Project {
   id: number;
   name: string;
-  type: string;
-  industry: string;
-  team_size: string;
-  timeline: string;
-  score: number;
-  risk_level: string;
-  created_at: string;
+  userId?: number;
+  type?: string | null;
+  industry?: string | null;
+  teamSize?: string | null;
+  team_size?: string | null;
+  timeline?: string | null;
+  budget?: number | null;
+  startDate?: string | null;
+  start_date?: string | null;
+  endDate?: string | null;
+  end_date?: string | null;
+  score?: number | null;
+  riskLevel?: string | null;
+  risk_level?: string | null;
   status: string;
+  document?: string | null;
+  analysisData?: string | null;
+  createdAt?: string;
+  created_at?: string;
+  updatedAt?: string;
+  deletedAt?: string | null;
+  isOwner?: boolean;
+  isTeamProject?: boolean;
 }
 
 export interface Stats {
@@ -53,8 +68,11 @@ export const api = {
   },
 
   // Get all projects
-  getProjects: async (): Promise<{ projects: Project[]; total: number }> => {
-    const response = await axios.get(`${API_BASE_URL}/projects`);
+  getProjects: async (teamId?: number | 'all'): Promise<{ projects: Project[]; total: number }> => {
+    const url = teamId !== undefined 
+      ? `${API_BASE_URL}/projects?team_id=${teamId}`
+      : `${API_BASE_URL}/projects`;
+    const response = await axios.get(url);
     return response.data;
   },
 

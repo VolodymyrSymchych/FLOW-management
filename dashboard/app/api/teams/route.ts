@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { storage } from '../../../../server/storage';
+import { cached, invalidateUserCache } from '@/lib/redis';
 
 export async function GET() {
   try {
@@ -9,7 +10,13 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const teams = await storage.getUserTeams(session.userId);
+    // Cache teams for 5 minutes since they don't change frequently
+    const teams = await cached(
+      `teams:user:${session.userId}`,
+      async () => await storage.getUserTeams(session.userId),
+      { ttl: 300 }
+    );
+    
     return NextResponse.json({ teams });
   } catch (error: any) {
     console.error('Get teams error:', error);
@@ -47,6 +54,9 @@ export async function POST(request: Request) {
       userId: session.userId,
       role: 'owner',
     });
+
+    // Invalidate user caches after creating team
+    await invalidateUserCache(session.userId);
 
     return NextResponse.json({ success: true, team });
   } catch (error: any) {

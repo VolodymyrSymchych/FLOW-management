@@ -4,6 +4,7 @@ import { nanoid } from 'nanoid';
 import { storage } from '../../../../../server/storage';
 import { createSession } from '@/lib/auth';
 import { withRateLimit } from '@/lib/rate-limit';
+import { signupSchema, formatZodError } from '@/lib/validations';
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,14 +24,18 @@ export async function POST(request: NextRequest) {
       return rateLimitResult.response!;
     }
 
-    const { email, username, password, fullName } = await request.json();
+    const body = await request.json();
 
-    if (!email || !username || !password) {
+    // Validate request body with password complexity requirements
+    const validation = signupSchema.safeParse(body);
+    if (!validation.success) {
       return NextResponse.json(
-        { error: 'Email, username and password are required' },
+        formatZodError(validation.error),
         { status: 400 }
       );
     }
+
+    const { email, username, password, name: fullName } = validation.data;
 
     const existingUserByEmail = await storage.getUserByEmail(email);
     if (existingUserByEmail) {

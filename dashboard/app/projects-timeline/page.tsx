@@ -4,35 +4,42 @@ import { useState, useEffect } from 'react';
 import { Calendar, Filter, Download, Plus, TrendingUp, Clock, Users, DollarSign } from 'lucide-react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
+import { useTeam } from '@/contexts/TeamContext';
+import { api, type Project } from '@/lib/api';
 
-interface Project {
-  id: number;
-  name: string;
-  type?: string | null;
-  industry?: string | null;
-  status: string;
-  startDate?: string | null;
-  endDate?: string | null;
-  budget?: number | null;
-  timeline?: string | null;
-  createdAt: string;
-}
+const getProjectStartDate = (project: Project) =>
+  project.startDate ?? project.start_date ?? project.createdAt ?? project.created_at ?? null;
+
+const getProjectEndDate = (project: Project) =>
+  project.endDate ?? project.end_date ?? null;
+
+const getProjectCreatedAt = (project: Project) =>
+  project.createdAt ?? project.created_at ?? new Date().toISOString();
 
 export default function ProjectsTimelinePage() {
   const router = useRouter();
+  const { selectedTeam, isLoading: teamsLoading } = useTeam();
   const [viewMode, setViewMode] = useState<'timeline' | 'stats'>('timeline');
   const [timeRange, setTimeRange] = useState<'30' | '90' | '180' | 'year'>('90');
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadProjects();
-  }, []);
+    // Wait for teams to load before loading projects
+    if (!teamsLoading) {
+      loadProjects();
+    }
+  }, [selectedTeam, teamsLoading]);
 
   const loadProjects = async () => {
     try {
-      const response = await axios.get('/api/projects');
-      setProjects(response.data.projects || []);
+      setLoading(true);
+      // Use selected team from context
+      const teamId = selectedTeam.type === 'single' && selectedTeam.teamId 
+        ? selectedTeam.teamId 
+        : 'all';
+      const data = await api.getProjects(teamId);
+      setProjects(data.projects || []);
     } catch (error) {
       console.error('Failed to load projects:', error);
     } finally {
@@ -41,9 +48,11 @@ export default function ProjectsTimelinePage() {
   };
 
   const calculateProgress = (project: Project): number => {
-    if (!project.startDate || !project.endDate) return 0;
-    const start = new Date(project.startDate).getTime();
-    const end = new Date(project.endDate).getTime();
+    const startDate = getProjectStartDate(project);
+    const endDate = getProjectEndDate(project);
+    if (!startDate || !endDate) return 0;
+    const start = new Date(startDate).getTime();
+    const end = new Date(endDate).getTime();
     const now = new Date().getTime();
     if (now < start) return 0;
     if (now > end) return 100;
@@ -106,8 +115,16 @@ export default function ProjectsTimelinePage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold gradient-text">Project Timeline</h1>
-          <p className="text-text-secondary mt-1">Track all projects in one visual timeline</p>
+          <h1 className="text-3xl font-bold gradient-text">
+            {selectedTeam.type === 'single' && selectedTeam.teamId 
+              ? 'Team Project Timeline' 
+              : 'Project Timeline'}
+          </h1>
+          <p className="text-text-secondary mt-1">
+            {selectedTeam.type === 'single' && selectedTeam.teamId
+              ? 'Track team projects in one visual timeline'
+              : 'Track all projects in one visual timeline'}
+          </p>
         </div>
         <div className="flex items-center space-x-3">
           <button className="flex items-center space-x-2 px-4 py-2 glass-light hover:glass-medium rounded-lg transition-all">
@@ -263,8 +280,8 @@ export default function ProjectsTimelinePage() {
               const progress = calculateProgress(project);
               const color = getStatusColor(project.status, progress);
               const statusLabel = getStatusLabel(project.status, progress);
-              const startDate = project.startDate ? new Date(project.startDate) : new Date(project.createdAt);
-              const endDate = project.endDate ? new Date(project.endDate) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+              const startDate = new Date(getProjectStartDate(project) || getProjectCreatedAt(project));
+              const endDate = new Date(getProjectEndDate(project) || Date.now() + 30 * 24 * 60 * 60 * 1000);
 
               return (
                 <div key={project.id} className="space-y-3">
@@ -355,8 +372,8 @@ export default function ProjectsTimelinePage() {
                 const progress = calculateProgress(project);
                 const color = getStatusColor(project.status, progress);
                 const statusLabel = getStatusLabel(project.status, progress);
-                const startDate = project.startDate ? new Date(project.startDate) : new Date(project.createdAt);
-                const endDate = project.endDate ? new Date(project.endDate) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+                const startDate = new Date(getProjectStartDate(project) || getProjectCreatedAt(project));
+                const endDate = new Date(getProjectEndDate(project) || Date.now() + 30 * 24 * 60 * 60 * 1000);
 
                 return (
                   <tr key={project.id} className="hover:bg-white/5 transition-colors">

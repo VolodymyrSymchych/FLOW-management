@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { useParams, useRouter } from 'next/navigation';
+import { useTeam } from '@/contexts/TeamContext';
 import {
   ArrowLeft,
   Calendar,
@@ -18,14 +20,24 @@ import {
   Edit,
 } from 'lucide-react';
 import { ProjectBudgetTracking } from '@/components/ProjectBudgetTracking';
-import { InvoicesAndCashFlow } from '@/components/InvoicesAndCashFlow';
 import { FileUploader } from '@/components/FileUploader';
 import { FileList } from '@/components/FileList';
 import { ProjectTeamManagement } from '@/components/ProjectTeamManagement';
-import { CashFlowSummary } from '@/components/CashFlowSummary';
 import { EditProjectModal } from '@/components/EditProjectModal';
+import { CommentsSection } from '@/components/comments/CommentsSection';
 import { api } from '@/lib/api';
 import { cn, getRiskColor, formatDate } from '@/lib/utils';
+
+// Lazy load heavy chart components
+const InvoicesAndCashFlow = dynamic(() => import('@/components/InvoicesAndCashFlow').then(m => ({ default: m.InvoicesAndCashFlow })), {
+  ssr: false,
+  loading: () => <div className="glass-light rounded-xl p-5 h-96 animate-pulse" />
+});
+
+const CashFlowSummary = dynamic(() => import('@/components/CashFlowSummary').then(m => ({ default: m.CashFlowSummary })), {
+  ssr: false,
+  loading: () => <div className="glass-light rounded-xl p-5 h-64 animate-pulse" />
+});
 
 interface ProjectDetail {
   project: {
@@ -49,19 +61,29 @@ interface ProjectDetail {
 }
 
 export default function ProjectDetailPage() {
+  const { isLoading: teamsLoading } = useTeam();
   const params = useParams();
   const router = useRouter();
   const [project, setProject] = useState<ProjectDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'team' | 'finance' | 'files' | 'report'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'team' | 'finance' | 'files' | 'comments' | 'report'>('overview');
   const [filesRefreshKey, setFilesRefreshKey] = useState(0);
   const [showEditModal, setShowEditModal] = useState(false);
 
   useEffect(() => {
-    loadProject();
-  }, [params.id]);
+    // Wait for teams to load before loading project
+    if (!teamsLoading) {
+      loadProject();
+    }
+  }, [params.id, teamsLoading]);
 
   const loadProject = async () => {
+    // Don't load if teams are still loading
+    if (teamsLoading) {
+      return;
+    }
+
+    setLoading(true);
     try {
       const data = await api.getProject(Number(params.id));
       setProject(data);
@@ -82,7 +104,8 @@ export default function ProjectDetailPage() {
     a.click();
   };
 
-  if (loading) {
+  // Show loading state while teams are loading or data is loading
+  if (teamsLoading || loading) {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -228,6 +251,17 @@ export default function ProjectDetailPage() {
             )}
           >
             Files
+          </button>
+          <button
+            onClick={() => setActiveTab('comments')}
+            className={cn(
+              'flex-1 px-4 py-3 font-semibold text-sm transition-all duration-200',
+              activeTab === 'comments'
+                ? 'text-primary bg-primary/5 border-b-2 border-primary'
+                : 'text-text-secondary hover:text-text-primary hover:bg-white/5'
+            )}
+          >
+            Comments
           </button>
           <button
             onClick={() => setActiveTab('report')}
@@ -448,6 +482,10 @@ export default function ProjectDetailPage() {
                   onDelete={() => setFilesRefreshKey(prev => prev + 1)}
                 />
               </div>
+            </div>
+          ) : activeTab === 'comments' ? (
+            <div className="glass-light rounded-xl p-5 border border-white/10">
+              <CommentsSection entityType="project" entityId={project.project.id} />
             </div>
           ) : (
             /* Full Report Tab */

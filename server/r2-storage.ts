@@ -93,16 +93,25 @@ export async function deleteFile(key: string): Promise<void> {
 
 /**
  * Generate a signed URL for downloading a file (valid for 1 hour)
+ * Sets Content-Disposition to 'attachment' to prevent inline execution
  */
-export async function getSignedUrl(key: string, expiresIn: number = 3600): Promise<string> {
+export async function getSignedUrl(
+  key: string,
+  expiresIn: number = 3600,
+  filename?: string
+): Promise<string> {
   if (!s3Client || !AWS_BUCKET_NAME) {
     throw new Error('R2 storage is not configured');
   }
 
   try {
+    // Extract filename from key if not provided
+    const downloadFilename = filename || key.split('/').pop() || 'download';
+
     const command = new GetObjectCommand({
       Bucket: AWS_BUCKET_NAME,
       Key: key,
+      ResponseContentDisposition: `attachment; filename="${downloadFilename}"`,
     });
 
     const url = await generateSignedUrl(s3Client, command, { expiresIn });

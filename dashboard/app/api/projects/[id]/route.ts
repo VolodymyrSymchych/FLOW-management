@@ -52,6 +52,10 @@ export async function GET(
       analysis.report = project.document;
     }
 
+    // Get project teams
+    const projectTeams = await storage.getProjectTeams(projectId);
+    const teamId = projectTeams.length > 0 ? projectTeams[0].id : undefined;
+
     // Format project data to match expected interface
     const projectData = {
       id: project.id,
@@ -67,6 +71,7 @@ export async function GET(
       budget: project.budget,
       start_date: project.startDate?.toISOString(),
       end_date: project.endDate?.toISOString(),
+      team_id: teamId,
     };
 
   return NextResponse.json({
@@ -123,6 +128,31 @@ export async function PUT(
       startDate: start_date ? new Date(start_date) : undefined,
       endDate: end_date ? new Date(end_date) : undefined,
     });
+
+    // Update team assignment if team_id changed
+    if (team_id !== undefined) {
+      // Get current teams for this project
+      const currentTeams = await storage.getProjectTeams(projectId);
+
+      if (team_id === null) {
+        // Remove all team associations
+        for (const team of currentTeams) {
+          await storage.removeProjectFromTeam(team.id, projectId);
+        }
+      } else {
+        const teamIdNum = parseInt(team_id);
+        const isAlreadyAssigned = currentTeams.some(t => t.id === teamIdNum);
+
+        if (!isAlreadyAssigned) {
+          // Remove all existing team associations
+          for (const team of currentTeams) {
+            await storage.removeProjectFromTeam(team.id, projectId);
+          }
+          // Add new team association
+          await storage.addProjectToTeam(teamIdNum, projectId);
+        }
+      }
+    }
 
     return NextResponse.json({
       success: true,

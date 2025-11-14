@@ -30,8 +30,8 @@ export async function GET(
       }
     }
 
-    // Generate signed URL (valid for 1 hour)
-    const downloadUrl = await getSignedUrl(file.r2Key, 3600);
+    // Generate signed URL (valid for 1 hour) with Content-Disposition header
+    const downloadUrl = await getSignedUrl(file.r2Key, 3600, file.fileName);
 
     return NextResponse.json({ downloadUrl });
   } catch (error: any) {

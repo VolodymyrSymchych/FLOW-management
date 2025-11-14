@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { InvoiceForm } from '@/components/InvoiceForm';
 import { generateInvoicePDF } from '@/lib/invoice-pdf';
 import { DeleteConfirmModal } from '@/components/DeleteConfirmModal';
+import { useTeam } from '@/contexts/TeamContext';
 
 interface Invoice {
   id: number;
@@ -28,6 +29,7 @@ interface Project {
 }
 
 export default function InvoicesPage() {
+  const { selectedTeam, isLoading: teamsLoading } = useTeam();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,14 +42,36 @@ export default function InvoicesPage() {
   });
 
   useEffect(() => {
-    loadData();
-  }, []);
+    // Wait for teams to load before loading data
+    if (!teamsLoading) {
+      loadData();
+    }
+  }, [teamsLoading, selectedTeam]);
 
   const loadData = async () => {
+    // Don't load if teams are still loading
+    if (teamsLoading) {
+      return;
+    }
+
+    setLoading(true);
     try {
+      // Build query params for team filtering
+      const teamId = selectedTeam.type === 'single' && selectedTeam.teamId 
+        ? selectedTeam.teamId 
+        : 'all';
+      
+      const invoicesUrl = teamId !== 'all' 
+        ? `/api/invoices?team_id=${teamId}`
+        : '/api/invoices';
+      
+      const projectsUrl = teamId !== 'all' 
+        ? `/api/projects?team_id=${teamId}`
+        : '/api/projects';
+
       const [invoicesRes, projectsRes] = await Promise.all([
-        axios.get('/api/invoices'),
-        axios.get('/api/projects'),
+        axios.get(invoicesUrl),
+        axios.get(projectsUrl),
       ]);
       setInvoices(invoicesRes.data.invoices || []);
       setProjects(projectsRes.data.projects || []);
@@ -161,7 +185,8 @@ export default function InvoicesPage() {
     .filter(inv => inv.status === 'paid')
     .reduce((sum, inv) => sum + inv.totalAmount, 0);
 
-  if (loading) {
+  // Show loading state while teams are loading or data is loading
+  if (teamsLoading || loading) {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>

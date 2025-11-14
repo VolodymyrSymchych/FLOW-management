@@ -16,22 +16,60 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams;
     const projectId = searchParams.get('project_id');
+    const teamId = searchParams.get('team_id');
 
-    console.log('Fetching tasks for userId:', session.userId, 'projectId:', projectId);
+    console.log('Fetching tasks for userId:', session.userId, 'projectId:', projectId, 'teamId:', teamId);
 
-    // Cache tasks for 3 minutes (tasks change more frequently than projects)
-    const cacheKey = projectId
-      ? `tasks:user:${session.userId}:project:${projectId}`
-      : `tasks:user:${session.userId}`;
+    let tasks;
+    let cacheKey: string;
 
-    const tasks = await cached(
-      cacheKey,
-      async () => await storage.getTasks(
-        session.userId,
-        projectId ? parseInt(projectId) : undefined
-      ),
-      { ttl: 180 } // 3 minutes
-    );
+    if (teamId && teamId !== 'all') {
+      // Filter by team
+      const teamIdNum = parseInt(teamId);
+
+      // Verify user is a member of the team
+      const teamMembers = await storage.getTeamMembers(teamIdNum);
+      console.log(`Team ${teamIdNum} members:`, teamMembers.map(tm => ({ userId: tm.userId, role: tm.role })));
+      console.log(`Current user ID: ${session.userId} (type: ${typeof session.userId})`);
+
+      const isMember = teamMembers.some(tm => {
+        console.log(`Comparing tm.userId=${tm.userId} (${typeof tm.userId}) with session.userId=${session.userId} (${typeof session.userId})`);
+        return tm.userId === session.userId;
+      });
+
+      if (!isMember) {
+        console.error(`User ${session.userId} is not a member of team ${teamIdNum}`);
+        return NextResponse.json({
+          error: 'Not a team member',
+          details: { userId: session.userId, teamId: teamIdNum }
+        }, { status: 403 });
+      }
+
+      console.log(`User ${session.userId} is a member of team ${teamIdNum}, fetching tasks...`);
+      cacheKey = `tasks:team:${teamIdNum}`;
+      tasks = await cached(
+        cacheKey,
+        async () => await storage.getTasksByTeam(teamIdNum),
+        { ttl: 180 }
+      );
+      console.log(`Found ${tasks.length} tasks for team ${teamIdNum}`);
+    } else if (projectId) {
+      // Filter by project
+      cacheKey = `tasks:user:${session.userId}:project:${projectId}`;
+      tasks = await cached(
+        cacheKey,
+        async () => await storage.getTasks(session.userId, parseInt(projectId)),
+        { ttl: 180 }
+      );
+    } else {
+      // All tasks for user
+      cacheKey = `tasks:user:${session.userId}`;
+      tasks = await cached(
+        cacheKey,
+        async () => await storage.getTasks(session.userId),
+        { ttl: 180 }
+      );
+    }
 
     console.log('Found tasks:', tasks.length);
 

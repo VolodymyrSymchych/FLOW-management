@@ -133,7 +133,21 @@ export async function middleware(request: NextRequest) {
   } catch (error) {
     // Log error but don't crash the middleware
     console.error('Middleware error:', error);
-    // Allow the request to continue on error
+
+    // Security: On middleware error, redirect to sign-in for protected routes
+    // This prevents bypassing authentication if an error occurs
+    const { pathname } = request.nextUrl;
+    const isProtectedRoute = protectedRoutes.some(route =>
+      route === '/' ? pathname === '/' : pathname.startsWith(route)
+    );
+
+    if (isProtectedRoute) {
+      const url = new URL('/sign-in', request.url);
+      url.searchParams.set('redirect', pathname);
+      return NextResponse.redirect(url);
+    }
+
+    // For non-protected routes, allow continuation
     return NextResponse.next();
   }
 }

@@ -6,6 +6,10 @@ import { ConditionalLayout } from '@/components/ConditionalLayout';
 import { Toaster } from 'react-hot-toast';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Analytics } from '@vercel/analytics/next';
+import { CommandPalette } from '@/components/CommandPalette';
+import { KeyboardShortcuts } from '@/components/KeyboardShortcuts';
+import { TeamProvider } from '@/contexts/TeamContext';
+import { PerformanceMonitor } from '@/components/PerformanceMonitor';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -23,9 +27,22 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.className} glass-theme bg-background text-text-primary`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <ConditionalLayout>
-            {children}
-          </ConditionalLayout>
+          <TeamProvider>
+            {/* Skip to main content link for accessibility */}
+            <a
+              href="#main-content"
+              className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:glass-heavy focus:px-6 focus:py-3 focus:rounded-xl focus:text-text-primary focus:font-medium focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+            >
+              Skip to main content
+            </a>
+            {/* Command Palette - Cmd/Ctrl+K */}
+            <CommandPalette />
+            {/* Global Keyboard Shortcuts */}
+            <KeyboardShortcuts />
+            <ConditionalLayout>
+              {children}
+            </ConditionalLayout>
+          </TeamProvider>
           <Toaster
             position="top-right"
             toastOptions={{
@@ -61,6 +78,7 @@ export default function RootLayout({
           />
           <SpeedInsights />
           <Analytics />
+          <PerformanceMonitor />
         </ThemeProvider>
       </body>
     </html>

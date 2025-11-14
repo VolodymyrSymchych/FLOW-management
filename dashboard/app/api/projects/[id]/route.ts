@@ -122,7 +122,6 @@ export async function PUT(
       budget: budget ? parseInt(budget) : undefined,
       startDate: start_date ? new Date(start_date) : undefined,
       endDate: end_date ? new Date(end_date) : undefined,
-      teamId: team_id ? parseInt(team_id) : undefined,
     });
 
     return NextResponse.json({

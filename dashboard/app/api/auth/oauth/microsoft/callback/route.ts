@@ -7,7 +7,8 @@ export const dynamic = 'force-dynamic';
 
 const MICROSOFT_CLIENT_ID = process.env.MICROSOFT_CLIENT_ID;
 const MICROSOFT_CLIENT_SECRET = process.env.MICROSOFT_CLIENT_SECRET;
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001';
+// Normalize BASE_URL - remove trailing slash if present
+const BASE_URL = (process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001').replace(/\/$/, '');
 
 export async function GET(request: NextRequest) {
   try {

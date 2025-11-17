@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     `response_type=code&` +
     `redirect_uri=${encodeURIComponent(`${BASE_URL}/api/auth/oauth/microsoft/callback`)}&` +
     `response_mode=query&` +
-    `scope=${encodeURIComponent('openid email profile User.Read')}&` +
+    `scope=${encodeURIComponent('openid email profile')}&` +
     `state=${state}`
   );
 

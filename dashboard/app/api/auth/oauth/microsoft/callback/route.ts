@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
         client_secret: MICROSOFT_CLIENT_SECRET!,
         redirect_uri: `${BASE_URL}/api/auth/oauth/microsoft/callback`,
         grant_type: 'authorization_code',
-        scope: 'openid email profile User.Read',
+        scope: 'openid email profile',
       }),
     });
 
@@ -74,9 +74,9 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Try to get user info from Microsoft Graph API
+    // Get user info from OpenID Connect userinfo endpoint (no User.Read permission needed)
     let userInfo: any = null;
-    let userInfoResponse = await fetch('https://graph.microsoft.com/v1.0/me', {
+    const userInfoResponse = await fetch('https://graph.microsoft.com/oidc/userinfo', {
       headers: {
         Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
@@ -84,32 +84,20 @@ export async function GET(request: NextRequest) {
     });
 
     if (!userInfoResponse.ok) {
-      // Fallback to OpenID Connect userinfo endpoint
-      console.warn('Microsoft Graph API failed, trying OpenID Connect userinfo endpoint');
       const errorText = await userInfoResponse.text();
-      console.error('Microsoft Graph API error:', errorText);
-      
-      userInfoResponse = await fetch('https://graph.microsoft.com/oidc/userinfo', {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!userInfoResponse.ok) {
-        const fallbackError = await userInfoResponse.text();
-        console.error('Microsoft OpenID Connect userinfo error:', fallbackError);
-        return NextResponse.redirect(
-          new URL('/sign-in?error=user_info_failed', BASE_URL)
-        );
-      }
+      console.error('Microsoft OpenID Connect userinfo error:', errorText);
+      return NextResponse.redirect(
+        new URL('/sign-in?error=user_info_failed', BASE_URL)
+      );
     }
 
     userInfo = await userInfoResponse.json();
-    const { id: providerId, mail, email, displayName: name, userPrincipalName } = userInfo;
+    // OpenID Connect userinfo returns: sub, email, name, preferred_username, etc.
+    const { sub: providerId, email, name, preferred_username } = userInfo;
+    const userPrincipalName = preferred_username || email;
     
-    // Use mail, email (from OIDC), or userPrincipalName as email
-    const userEmail = mail || email || userPrincipalName;
+    // Use email from OpenID Connect userinfo
+    const userEmail = email || userPrincipalName;
 
     if (!userEmail) {
       return NextResponse.redirect(
@@ -117,22 +105,25 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get user photo (optional)
+    // Get user photo (optional) - Note: requires User.Read permission, so we skip it
+    // to avoid triggering security notifications
     let picture: string | null = null;
-    try {
-      const photoResponse = await fetch('https://graph.microsoft.com/v1.0/me/photo/$value', {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-      if (photoResponse.ok) {
-        const photoBlob = await photoResponse.blob();
-        // In production, you might want to upload this to your storage
-        // For now, we'll skip storing the photo URL
-      }
-    } catch (e) {
-      // Photo is optional, continue without it
-    }
+    // Photo fetching disabled to minimize security notifications
+    // If photo is needed, add User.Read permission back, but this will trigger emails
+    // try {
+    //   const photoResponse = await fetch('https://graph.microsoft.com/v1.0/me/photo/$value', {
+    //     headers: {
+    //       Authorization: `Bearer ${accessToken}`,
+    //     },
+    //   });
+    //   if (photoResponse.ok) {
+    //     const photoBlob = await photoResponse.blob();
+    //     // In production, you might want to upload this to your storage
+    //     // For now, we'll skip storing the photo URL
+    //   }
+    // } catch (e) {
+    //   // Photo is optional, continue without it
+    // }
 
     // Check if user exists by provider
     let user = await storage.getUserByProvider('microsoft', providerId);

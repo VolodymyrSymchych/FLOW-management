@@ -61,6 +61,14 @@ const envSchema = z.object({
 
   // Anthropic AI (Optional)
   ANTHROPIC_API_KEY: z.string().optional(),
+
+  // OAuth - Google (Optional)
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
+
+  // OAuth - Microsoft (Optional)
+  MICROSOFT_CLIENT_ID: z.string().optional(),
+  MICROSOFT_CLIENT_SECRET: z.string().optional(),
 });
 
 // Additional validation for production environment

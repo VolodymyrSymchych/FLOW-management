@@ -91,6 +91,21 @@ export class DatabaseStorage {
     return user;
   }
 
+  async getUserByProvider(provider: string, providerId: string): Promise<User | undefined> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(
+        and(
+          eq(users.provider, provider),
+          eq(users.providerId, providerId),
+          isNotNull(users.provider),
+          isNotNull(users.providerId)
+        )
+      );
+    return user;
+  }
+
   async createUser(userData: InsertUser): Promise<User> {
     const [user] = await db.insert(users).values(userData).returning() as any;
     return user;

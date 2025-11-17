@@ -268,7 +268,10 @@ export default function SignUpPage() {
             <button
               type="button"
               className="glass-subtle hover:glass-light border border-border rounded-xl p-3 flex items-center justify-center gap-2 transition-all hover:scale-105 active:scale-95"
-              onClick={() => alert('Google OAuth integration coming soon')}
+              onClick={() => {
+                const currentUrl = window.location.pathname + window.location.search;
+                window.location.href = `/api/auth/oauth/google?redirect=${encodeURIComponent(currentUrl)}`;
+              }}
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path
@@ -294,7 +297,10 @@ export default function SignUpPage() {
             <button
               type="button"
               className="glass-subtle hover:glass-light border border-border rounded-xl p-3 flex items-center justify-center gap-2 transition-all hover:scale-105 active:scale-95"
-              onClick={() => alert('Microsoft OAuth integration coming soon')}
+              onClick={() => {
+                const currentUrl = window.location.pathname + window.location.search;
+                window.location.href = `/api/auth/oauth/microsoft?redirect=${encodeURIComponent(currentUrl)}`;
+              }}
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path fill="#f25022" d="M1 1h10v10H1z" />

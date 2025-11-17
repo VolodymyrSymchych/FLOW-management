@@ -1,18 +1,29 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Mail, Lock, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { Logo } from '@/components/Logo';
 
-export default function SignInPage() {
+function SignInForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Check for OAuth errors in URL
+  useEffect(() => {
+    const errorParam = searchParams.get('error');
+    if (errorParam) {
+      setError(decodeURIComponent(errorParam));
+      // Clean up URL
+      router.replace('/sign-in', { scroll: false });
+    }
+  }, [searchParams, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -152,7 +163,10 @@ export default function SignInPage() {
             <button
               type="button"
               className="glass-subtle hover:glass-light border border-border rounded-xl p-3 flex items-center justify-center gap-2 transition-scale hover:scale-105 active:scale-95"
-              onClick={() => alert('Google OAuth integration coming soon')}
+              onClick={() => {
+                const currentUrl = window.location.pathname + window.location.search;
+                window.location.href = `/api/auth/oauth/google?redirect=${encodeURIComponent(currentUrl)}`;
+              }}
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path
@@ -178,7 +192,10 @@ export default function SignInPage() {
             <button
               type="button"
               className="glass-subtle hover:glass-light border border-border rounded-xl p-3 flex items-center justify-center gap-2 transition-scale hover:scale-105 active:scale-95"
-              onClick={() => alert('Microsoft OAuth integration coming soon')}
+              onClick={() => {
+                const currentUrl = window.location.pathname + window.location.search;
+                window.location.href = `/api/auth/oauth/microsoft?redirect=${encodeURIComponent(currentUrl)}`;
+              }}
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path fill="#f25022" d="M1 1h10v10H1z" />
@@ -202,6 +219,18 @@ export default function SignInPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen w-full flex items-center justify-center bg-background">
+        <div className="text-text-secondary">Loading...</div>
+      </div>
+    }>
+      <SignInForm />
+    </Suspense>
   );
 }
 

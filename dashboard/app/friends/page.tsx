@@ -21,14 +21,38 @@ export default function FriendsPage() {
 
   const fetchFriends = async () => {
     try {
+      setLoading(true);
       const response = await fetch('/api/friends');
-      if (response.ok) {
-        const data = await response.json();
-        setFriends(data.friends || []);
-        setPendingRequests(data.pendingRequests || []);
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to fetch friends');
       }
-    } catch (error) {
+      
+      const data = await response.json();
+      
+      // Transform friends data to match FriendsList component expectations
+      // API returns friends with nested 'friend' object, but FriendsList expects direct friend objects
+      const transformedFriends = (data.friends || []).map((friendship: any) => {
+        if (friendship.friend) {
+          return {
+            id: friendship.friend.id,
+            username: friendship.friend.username,
+            email: friendship.friend.email,
+            fullName: friendship.friend.fullName,
+            avatarUrl: friendship.friend.avatarUrl,
+          };
+        }
+        return null;
+      }).filter((friend: any) => friend !== null);
+      
+      setFriends(transformedFriends);
+      setPendingRequests(data.pendingRequests || []);
+    } catch (error: any) {
       console.error('Failed to fetch friends:', error);
+      // Set empty arrays on error to prevent crashes
+      setFriends([]);
+      setPendingRequests([]);
     } finally {
       setLoading(false);
     }
@@ -40,11 +64,20 @@ export default function FriendsPage() {
         method: 'POST',
       });
       
+      const data = await response.json();
+      
       if (response.ok) {
-        fetchFriends();
+        // Refresh friends list after accepting
+        await fetchFriends();
+        // Switch to friends tab to show the newly accepted friend
+        setActiveTab('friends');
+      } else {
+        console.error('Failed to accept request:', data.error);
+        alert(data.error || 'Не вдалося прийняти запит');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to accept request:', error);
+      alert('Сталася помилка при прийнятті запиту. Спробуйте ще раз.');
     }
   };
 
@@ -54,11 +87,18 @@ export default function FriendsPage() {
         method: 'POST',
       });
       
+      const data = await response.json();
+      
       if (response.ok) {
-        fetchFriends();
+        // Refresh friends list after rejecting
+        await fetchFriends();
+      } else {
+        console.error('Failed to reject request:', data.error);
+        alert(data.error || 'Не вдалося відхилити запит');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to reject request:', error);
+      alert('Сталася помилка при відхиленні запиту. Спробуйте ще раз.');
     }
   };
 

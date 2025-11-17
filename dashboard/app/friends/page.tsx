@@ -40,11 +40,17 @@ export default function FriendsPage() {
         method: 'POST',
       });
       
+      const data = await response.json();
+      
       if (response.ok) {
         fetchFriends();
+      } else {
+        console.error('Failed to accept request:', data.error);
+        alert(data.error || 'Не вдалося прийняти запит');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to accept request:', error);
+      alert('Сталася помилка при прийнятті запиту. Спробуйте ще раз.');
     }
   };
 
@@ -54,11 +60,17 @@ export default function FriendsPage() {
         method: 'POST',
       });
       
+      const data = await response.json();
+      
       if (response.ok) {
         fetchFriends();
+      } else {
+        console.error('Failed to reject request:', data.error);
+        alert(data.error || 'Не вдалося відхилити запит');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to reject request:', error);
+      alert('Сталася помилка при відхиленні запиту. Спробуйте ще раз.');
     }
   };
 

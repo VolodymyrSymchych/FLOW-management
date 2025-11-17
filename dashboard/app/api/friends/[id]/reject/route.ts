@@ -15,6 +15,17 @@ export async function POST(
     const { id } = await params;
     const friendshipId = parseInt(id);
 
+    // First, verify that the friendship exists and belongs to the current user
+    const pendingRequests = await storage.getPendingFriendRequests(session.userId);
+    const friendshipToReject = pendingRequests.find(req => req.id === friendshipId);
+
+    if (!friendshipToReject) {
+      return NextResponse.json(
+        { error: 'Friend request not found or you do not have permission to reject it' },
+        { status: 404 }
+      );
+    }
+
     await storage.rejectFriendRequest(friendshipId);
 
     return NextResponse.json({ success: true });

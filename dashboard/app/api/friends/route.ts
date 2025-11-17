@@ -46,7 +46,41 @@ export async function GET() {
       };
     });
 
-    return NextResponse.json({ friends: friendsWithDetails, pendingRequests });
+    // Fetch sender information for pending requests
+    const senderIds = pendingRequests.map(request => request.senderId);
+    const senderUsers = await Promise.all(
+      senderIds.map(id => storage.getUser(id))
+    );
+    
+    const senderUsersMap = new Map<number, any>();
+    senderUsers.forEach((user, index) => {
+      if (user) {
+        senderUsersMap.set(senderIds[index], {
+          id: user.id,
+          username: user.username,
+          fullName: user.fullName,
+          email: user.email,
+          avatarUrl: user.avatarUrl,
+        });
+      }
+    });
+    
+    // Map pending requests with sender details
+    const pendingRequestsWithDetails = pendingRequests.map(request => {
+      const sender = senderUsersMap.get(request.senderId);
+      return {
+        ...request,
+        sender: sender || {
+          id: request.senderId,
+          username: 'Unknown',
+          email: '',
+          fullName: null,
+          avatarUrl: null,
+        },
+      };
+    });
+
+    return NextResponse.json({ friends: friendsWithDetails, pendingRequests: pendingRequestsWithDetails });
   } catch (error: any) {
     console.error('Get friends error:', error);
     return NextResponse.json(
@@ -63,16 +97,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { receiverEmail } = await request.json();
+    const body = await request.json();
+    const { receiverEmail, emailOrUsername } = body;
+    const searchValue = receiverEmail || emailOrUsername;
 
-    if (!receiverEmail) {
+    if (!searchValue) {
       return NextResponse.json(
-        { error: 'Receiver email is required' },
+        { error: 'Email or username is required' },
         { status: 400 }
       );
     }
 
-    const receiver = await storage.getUserByEmail(receiverEmail);
+    // Try to find user by email first, then by username
+    let receiver = await storage.getUserByEmail(searchValue);
+    if (!receiver) {
+      receiver = await storage.getUserByUsername(searchValue);
+    }
     if (!receiver) {
       return NextResponse.json(
         { error: 'User not found' },

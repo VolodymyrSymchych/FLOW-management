@@ -16,11 +16,27 @@ export const config = {
     password: process.env.DB_PASSWORD || '',
     maxConnections: parseInt(process.env.DB_MAX_CONNECTIONS || '20', 10),
   },
-  redis: {
-    host: process.env.REDIS_HOST || 'localhost',
-    port: parseInt(process.env.REDIS_PORT || '6379', 10),
-    password: process.env.REDIS_PASSWORD,
-  },
+  redis: (() => {
+    // Support REDIS_URL (connection string) for Upstash and other providers
+    if (process.env.REDIS_URL) {
+      try {
+        const url = new URL(process.env.REDIS_URL);
+        return {
+          host: url.hostname,
+          port: parseInt(url.port || '6379', 10),
+          password: url.password || undefined,
+        };
+      } catch (error) {
+        console.warn('Invalid REDIS_URL, falling back to individual variables');
+      }
+    }
+    // Fallback to individual variables
+    return {
+      host: process.env.REDIS_HOST || 'localhost',
+      port: parseInt(process.env.REDIS_PORT || '6379', 10),
+      password: process.env.REDIS_PASSWORD,
+    };
+  })(),
   eventBus: {
     type: (process.env.EVENT_BUS_TYPE || 'redis') as 'redis' | 'rabbitmq',
     rabbitmq: {

@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "cd ../.. && npm install --include=dev && npm run build:shared && cd services/project-service && npm run build",
+  "buildCommand": "cd ../.. && npm install --include=dev && rm -rf node_modules/typescript && npm run build:shared && cd services/project-service && npm run build",
   "installCommand": "cd ../.. && npm install --include=dev",
   "outputDirectory": "dist",
   "framework": null,
@@ -20,4 +20,3 @@
     }
   }
 }
-

@@ -11,8 +11,8 @@
     }
   },
   "scripts": {
-    "build": "npx --package=typescript@5.3.3 -c 'tsc -p tsconfig.json --pretty'",
-    "watch": "npx --package=typescript@5.3.3 -c 'tsc -p tsconfig.json --watch'",
+    "build": "node ../../node_modules/.bin/tsc -p tsconfig.json --pretty",
+    "watch": "node ../../node_modules/.bin/tsc -p tsconfig.json --watch",
     "clean": "rm -rf dist"
   },
   "keywords": [],

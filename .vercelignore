@@ -1,0 +1,7 @@
+# Vercel ignore file
+# This file tells Vercel which directories to ignore during deployment scanning
+
+# Don't ignore services - they should be visible
+# But ignore node_modules in services
+services/*/node_modules/
+services/*/.env

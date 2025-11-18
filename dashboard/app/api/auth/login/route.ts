@@ -7,6 +7,15 @@ const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || '');
 
 export async function POST(request: NextRequest) {
   try {
+    // Validate JWT_SECRET is set
+    if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
+      console.error('JWT_SECRET is not properly configured');
+      return NextResponse.json(
+        { error: 'Server configuration error' },
+        { status: 500 }
+      );
+    }
+
     const body = await request.json();
 
     // Call auth-service
@@ -15,16 +24,30 @@ export async function POST(request: NextRequest) {
       password: body.password,
     });
 
-    if (result.error) {
+    // Check for errors from auth-service
+    if (result.error || !result.success) {
+      console.error('Login failed:', {
+        error: result.error,
+        success: result.success,
+        hasToken: !!result.token,
+        hasUser: !!result.user,
+      });
+      
       return NextResponse.json(
-        { error: result.error },
+        { error: result.error || 'Failed to login' },
         { status: 401 }
       );
     }
 
-    if (!result.success || !result.token || !result.user) {
+    if (!result.token || !result.user) {
+      console.error('Login response missing required fields:', {
+        hasToken: !!result.token,
+        hasUser: !!result.user,
+        result: result,
+      });
+      
       return NextResponse.json(
-        { error: 'Failed to login' },
+        { error: 'Invalid response from auth service' },
         { status: 500 }
       );
     }

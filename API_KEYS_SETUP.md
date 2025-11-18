@@ -101,7 +101,7 @@ SERVICE_API_KEY=d4e53b8990758895c08c46d2d270d7b0e3c00d17f6b9ef473d40580b0afb0f58
 1. Перезапустіть всі проекти на Vercel (Redeploy)
 2. Перевірте, що всі сервіси працюють
 3. Перевірте health checks:
-   - `https://auth-service.vercel.app/health`
+   - `https://flow-auth-service.vercel.app/health`
    - `https://user-service.vercel.app/health`
    - `https://project-service.vercel.app/health`
    - `https://task-service.vercel.app/health`
@@ -124,14 +124,14 @@ SERVICE_API_KEY=d4e53b8990758895c08c46d2d270d7b0e3c00d17f6b9ef473d40580b0afb0f58
 ### Тест 1: Без API key (має повернути 401)
 
 ```bash
-curl https://auth-service.vercel.app/api/auth/me
+curl https://flow-auth-service.vercel.app/api/auth/me
 # Очікуваний результат: {"error":"Unauthorized","message":"Service API key is required"}
 ```
 
 ### Тест 2: З API key (має працювати)
 
 ```bash
-curl https://auth-service.vercel.app/api/auth/me \
+curl https://flow-auth-service.vercel.app/api/auth/me \
   -H "X-Service-API-Key: ea2a45bbaa25e45f2bb8f1cb2d7997f19524a5edbae5f9d476053577e17bd8c9" \
   -H "Authorization: Bearer <your-jwt-token>"
 ```
@@ -139,7 +139,7 @@ curl https://auth-service.vercel.app/api/auth/me \
 ### Тест 3: Health check (має працювати без API key)
 
 ```bash
-curl https://auth-service.vercel.app/health
+curl https://flow-auth-service.vercel.app/health
 # Очікуваний результат: {"status":"healthy",...}
 ```
 

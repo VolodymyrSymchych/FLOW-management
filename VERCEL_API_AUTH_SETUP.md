@@ -42,7 +42,7 @@ Auth Service (Vercel)
 
 ```env
 # Service URLs (публічні)
-NEXT_PUBLIC_AUTH_SERVICE_URL=https://auth-service.vercel.app
+NEXT_PUBLIC_AUTH_SERVICE_URL=https://flow-auth-service.vercel.app
 NEXT_PUBLIC_USER_SERVICE_URL=https://user-service.vercel.app
 NEXT_PUBLIC_PROJECT_SERVICE_URL=https://project-service.vercel.app
 NEXT_PUBLIC_TASK_SERVICE_URL=https://task-service.vercel.app
@@ -151,14 +151,14 @@ TASK_SERVICE_API_KEY=task-service-key-32-chars-min
 ### 1. Перевірити без API key (має повернути 401)
 
 ```bash
-curl https://auth-service.vercel.app/api/auth/me
+curl https://flow-auth-service.vercel.app/api/auth/me
 # Має повернути: {"error":"Unauthorized","message":"Service API key is required"}
 ```
 
 ### 2. Перевірити з API key (має працювати)
 
 ```bash
-curl https://auth-service.vercel.app/api/auth/me \
+curl https://flow-auth-service.vercel.app/api/auth/me \
   -H "X-Service-API-Key: your-secret-key" \
   -H "Authorization: Bearer <user-jwt-token>"
 ```
@@ -166,7 +166,7 @@ curl https://auth-service.vercel.app/api/auth/me \
 ### 3. Health check (має працювати без API key)
 
 ```bash
-curl https://auth-service.vercel.app/health
+curl https://flow-auth-service.vercel.app/health
 # Має повернути: {"status":"healthy",...}
 ```
 

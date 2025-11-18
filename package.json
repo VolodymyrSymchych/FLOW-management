@@ -1,12 +1,18 @@
 {
-  "name": "workspace",
+  "name": "project-scope-analyzer",
   "version": "1.0.0",
-  "main": "index.js",
+  "private": true,
+  "workspaces": [
+    "shared",
+    "services/*"
+  ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "build": "cd dashboard && npm install && npm run build"
+    "build": "cd dashboard && npm install && npm run build",
+    "build:shared": "npm run build --workspace=shared",
+    "build:auth-service": "npm run build --workspace=@project-scope-analyzer/auth-service"
   },
   "keywords": [],
   "author": "",

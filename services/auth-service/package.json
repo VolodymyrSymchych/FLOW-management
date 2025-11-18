@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "npm run build:shared && (node_modules/.bin/tsc || npx --package=typescript tsc || tsc)",
-    "build:shared": "cd ../../shared && npm install --include=dev && npm run build",
+    "build:shared": "npm --prefix ../../shared install --include=dev && npm --prefix ../../shared run build",
     "vercel-build": "npm run build",
     "start": "node dist/index.js",
     "test": "jest",

@@ -11,8 +11,8 @@
     }
   },
   "scripts": {
-    "build": "node ../../node_modules/.bin/tsc -p tsconfig.json --pretty",
-    "watch": "node ../../node_modules/.bin/tsc -p tsconfig.json --watch",
+    "build": "tsc -p tsconfig.json --pretty",
+    "watch": "tsc -p tsconfig.json --watch",
     "clean": "rm -rf dist"
   },
   "keywords": [],

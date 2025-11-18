@@ -3,7 +3,10 @@ import { eq, and } from 'drizzle-orm';
 import { db, users, emailVerifications, type User, type InsertUser } from '../db';
 import { logger } from '@project-scope-analyzer/shared';
 import { NotFoundError, ValidationError, ConflictError, UnauthorizedError } from '@project-scope-analyzer/shared';
-import Redis from 'ioredis';
+import IORedis from 'ioredis';
+
+// Type for Redis client (supports both ioredis and Upstash wrapper)
+type RedisClient = IORedis | { get: (key: string) => Promise<string | null>; incr: (key: string) => Promise<number>; expire: (key: string, seconds: number) => Promise<void>; ttl: (key: string) => Promise<number>; del: (key: string) => Promise<void> } | null;
 
 export class AuthService {
   async getUserById(id: number): Promise<User | null> {
@@ -141,7 +144,7 @@ export class AuthService {
     return user;
   }
 
-  async checkAccountLockout(email: string, redis: Redis | null): Promise<{ locked: boolean; remainingTime?: number }> {
+  async checkAccountLockout(email: string, redis: RedisClient): Promise<{ locked: boolean; remainingTime?: number }> {
     if (!redis) return { locked: false };
 
     try {
@@ -161,7 +164,7 @@ export class AuthService {
     }
   }
 
-  async recordFailedLogin(email: string, redis: Redis | null): Promise<void> {
+  async recordFailedLogin(email: string, redis: RedisClient): Promise<void> {
     if (!redis) return;
 
     try {
@@ -177,7 +180,7 @@ export class AuthService {
     }
   }
 
-  async clearFailedLogins(email: string, redis: Redis | null): Promise<void> {
+  async clearFailedLogins(email: string, redis: RedisClient): Promise<void> {
     if (!redis) return;
 
     try {

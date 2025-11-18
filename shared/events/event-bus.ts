@@ -63,31 +63,40 @@ class EventBusImpl implements IEventBus {
   }
 
   private async connectRedis(): Promise<void> {
-    const { host, port, password } = this.config.redis || {
-      host: process.env.REDIS_HOST || 'localhost',
-      port: parseInt(process.env.REDIS_PORT || '6379', 10),
-      password: process.env.REDIS_PASSWORD,
-    };
-
-    const redisConfig = {
-      host,
-      port,
-      password,
-      retryStrategy: (times: number) => {
-        const delay = Math.min(times * 50, 2000);
-        return delay;
-      },
-    };
+    // Support REDIS_URL connection string directly (for Upstash, etc.)
+    const redisConfig = process.env.REDIS_URL
+      ? {
+          // Use connection string directly
+          connectionString: process.env.REDIS_URL,
+          retryStrategy: (times: number) => {
+            const delay = Math.min(times * 50, 2000);
+            return delay;
+          },
+        }
+      : {
+          // Use individual config
+          host: this.config.redis?.host || process.env.REDIS_HOST || 'localhost',
+          port: this.config.redis?.port || parseInt(process.env.REDIS_PORT || '6379', 10),
+          password: this.config.redis?.password || process.env.REDIS_PASSWORD,
+          retryStrategy: (times: number) => {
+            const delay = Math.min(times * 50, 2000);
+            return delay;
+          },
+        };
 
     // Create separate clients for subscribing and publishing
     // Subscriber client (can only use subscriber commands)
-    this.redis = new Redis(redisConfig);
+    this.redis = process.env.REDIS_URL
+      ? new Redis(process.env.REDIS_URL, { retryStrategy: redisConfig.retryStrategy })
+      : new Redis(redisConfig);
     this.redis.on('error', (error) => {
       logger.error('Redis subscriber connection error', { error, service: this.config.serviceName });
     });
 
     // Publisher client (can use all commands including publish)
-    this.redisPublisher = new Redis(redisConfig);
+    this.redisPublisher = process.env.REDIS_URL
+      ? new Redis(process.env.REDIS_URL, { retryStrategy: redisConfig.retryStrategy })
+      : new Redis(redisConfig);
     this.redisPublisher.on('error', (error) => {
       logger.error('Redis publisher connection error', { error, service: this.config.serviceName });
     });

@@ -11,8 +11,8 @@
     }
   },
   "scripts": {
-    "build": "npx tsc",
-    "watch": "npx tsc --watch",
+    "build": "node_modules/.bin/tsc || npx --package=typescript tsc || tsc",
+    "watch": "node_modules/.bin/tsc --watch || npx --package=typescript tsc --watch || tsc --watch",
     "clean": "rm -rf dist"
   },
   "keywords": [],

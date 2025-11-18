@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "npm run build:shared && tsc",
+    "build": "npm run build:shared && npx tsc",
     "build:shared": "cd ../../shared && npm install && npm run build",
     "vercel-build": "npm run build",
     "start": "node dist/index.js",

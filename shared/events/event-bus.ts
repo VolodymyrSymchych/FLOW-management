@@ -114,7 +114,7 @@ class EventBusImpl implements IEventBus {
       exchange 
     };
 
-    connection.on('error', (error) => {
+    connection.on('error', (error: Error) => {
       logger.error('RabbitMQ connection error', { error, service: this.config.serviceName });
     });
   }
@@ -216,7 +216,7 @@ class EventBusImpl implements IEventBus {
     await channel.assertQueue(queue, { durable: true });
     await channel.bindQueue(queue, exchange, routingKey);
 
-    channel.consume(queue, async (msg) => {
+    channel.consume(queue, async (msg: amqp.ConsumeMessage | null) => {
       if (!msg) {
         return;
       }

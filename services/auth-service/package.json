@@ -5,8 +5,8 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "npm run build:shared && (node_modules/.bin/tsc || npx --package=typescript tsc || tsc)",
-    "build:shared": "npm run build --workspace=@project-scope-analyzer/shared",
+    "build": "npm run build:shared && npx --package=typescript tsc",
+    "build:shared": "npm --prefix ../../shared run build",
     "vercel-build": "npm run build",
     "start": "node dist/index.js",
     "test": "jest",

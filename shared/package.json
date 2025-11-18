@@ -11,8 +11,8 @@
     }
   },
   "scripts": {
-    "build": "npx tsc",
-    "watch": "npx tsc --watch",
+    "build": "tsc",
+    "watch": "tsc --watch",
     "clean": "rm -rf dist"
   },
   "keywords": [],

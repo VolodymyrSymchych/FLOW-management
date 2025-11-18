@@ -1,0 +1,10 @@
+# Vercel ignore file
+node_modules/
+.env
+.env.local
+*.log
+dist/
+coverage/
+.vscode/
+.idea/
+

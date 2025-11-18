@@ -1,5 +1,4 @@
 import bcrypt from 'bcryptjs';
-import { nanoid } from 'nanoid';
 import { eq, and } from 'drizzle-orm';
 import { db, users, emailVerifications, type User, type InsertUser } from '../db';
 import { logger } from '@project-scope-analyzer/shared';
@@ -72,6 +71,7 @@ export class AuthService {
   }
 
   async createEmailVerification(userId: number, email: string): Promise<string> {
+    const { nanoid } = await import('nanoid');
     const token = nanoid(32);
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 24);

@@ -140,7 +140,7 @@ export class TaskService {
    */
   async createTask(userId: number, input: CreateTaskInput): Promise<Task> {
     try {
-      const [newTask] = await db
+      const result = await db
         .insert(tasks)
         .values({
           userId,
@@ -158,6 +158,7 @@ export class TaskService {
           progress: input.progress || 0,
         })
         .returning();
+      const newTask = result[0];
 
       return this.mapToTask(newTask);
     } catch (error) {

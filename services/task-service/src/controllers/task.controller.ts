@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
-import { taskService } from '../services/task.service';
+import { taskService, UpdateTaskInput } from '../services/task.service';
 import { ValidationError, NotFoundError, ForbiddenError } from '@project-scope-analyzer/shared';
 
 const createTaskSchema = z.object({
@@ -254,7 +254,22 @@ export class TaskController {
       }
 
       const userId = parseInt(req.user.userId as string, 10);
-      const task = await taskService.updateTask(taskId, userId, validation.data);
+      // Convert null to undefined for optional fields
+      const updateData: UpdateTaskInput = {
+        ...(validation.data.title !== undefined && { title: validation.data.title }),
+        ...(validation.data.description !== undefined && { description: validation.data.description }),
+        ...(validation.data.projectId !== null && validation.data.projectId !== undefined && { projectId: validation.data.projectId }),
+        ...(validation.data.parentId !== null && validation.data.parentId !== undefined && { parentId: validation.data.parentId }),
+        ...(validation.data.assignee !== null && validation.data.assignee !== undefined && { assignee: validation.data.assignee }),
+        ...(validation.data.startDate !== undefined && { startDate: validation.data.startDate }),
+        ...(validation.data.dueDate !== undefined && { dueDate: validation.data.dueDate }),
+        ...(validation.data.endDate !== undefined && { endDate: validation.data.endDate }),
+        ...(validation.data.status !== undefined && { status: validation.data.status }),
+        ...(validation.data.priority !== undefined && { priority: validation.data.priority }),
+        ...(validation.data.dependsOn !== null && validation.data.dependsOn !== undefined && { dependsOn: validation.data.dependsOn }),
+        ...(validation.data.progress !== undefined && { progress: validation.data.progress }),
+      };
+      const task = await taskService.updateTask(taskId, userId, updateData);
 
       if (!task) {
         throw new NotFoundError('Task not found');

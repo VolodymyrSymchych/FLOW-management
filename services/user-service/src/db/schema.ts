@@ -19,6 +19,17 @@ export const users = pgTable('users', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
+// Email verifications table (read-only, managed by auth-service)
+export const emailVerifications = pgTable('email_verifications', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  email: varchar('email', { length: 255 }).notNull(),
+  token: varchar('token', { length: 255 }).notNull().unique(),
+  expiresAt: timestamp('expires_at').notNull(),
+  verified: boolean('verified').default(false).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
 // Friendships table
 export const friendships = pgTable('friendships', {
   id: serial('id').primaryKey(),
@@ -32,8 +43,16 @@ export const friendships = pgTable('friendships', {
 }));
 
 export const usersRelations = relations(users, ({ many }) => ({
+  emailVerifications: many(emailVerifications),
   sentFriendRequests: many(friendships, { relationName: 'sender' }),
   receivedFriendRequests: many(friendships, { relationName: 'receiver' }),
+}));
+
+export const emailVerificationsRelations = relations(emailVerifications, ({ one }) => ({
+  user: one(users, {
+    fields: [emailVerifications.userId],
+    references: [users.id],
+  }),
 }));
 
 export const friendshipsRelations = relations(friendships, ({ one }) => ({
@@ -51,5 +70,7 @@ export const friendshipsRelations = relations(friendships, ({ one }) => ({
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
+export type EmailVerification = typeof emailVerifications.$inferSelect;
+export type InsertEmailVerification = typeof emailVerifications.$inferInsert;
 export type Friendship = typeof friendships.$inferSelect;
 export type InsertFriendship = typeof friendships.$inferInsert;

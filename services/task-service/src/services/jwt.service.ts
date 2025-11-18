@@ -9,6 +9,7 @@ export interface JWTPayload {
   email: string;
   username: string;
   role?: string;
+  [key: string]: any;
 }
 
 export class JWTService {
@@ -41,7 +42,12 @@ export class JWTService {
    * Create JWT token
    */
   async createToken(payload: JWTPayload): Promise<string> {
-    const token = await new SignJWT(payload)
+    const token = await new SignJWT({
+      userId: payload.userId,
+      email: payload.email,
+      username: payload.username,
+      role: payload.role || 'user',
+    })
       .setProtectedHeader({ alg: 'HS256' })
       .setIssuedAt()
       .setExpirationTime(config.jwt.expiresIn)

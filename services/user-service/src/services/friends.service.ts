@@ -162,7 +162,7 @@ export class FriendsService {
           .where(eq(friendships.id, existing.id))
           .returning();
 
-        return updated!;
+        return updated! as Friendship;
       }
 
       // Create new friendship
@@ -175,7 +175,7 @@ export class FriendsService {
         })
         .returning();
 
-      return newFriendship!;
+      return newFriendship! as Friendship;
     } catch (error) {
       logger.error('Error sending friend request', { error, senderId, receiverId });
       throw error;
@@ -199,16 +199,16 @@ export class FriendsService {
         throw new Error('Friend request not found');
       }
 
-      const [accepted] = await db
+      const result = await db
         .update(friendships)
         .set({
-          status: 'accepted',
+          status: 'accepted' as const,
           updatedAt: new Date(),
         })
         .where(eq(friendships.id, requestId))
         .returning();
 
-      return accepted!;
+      return result[0] as Friendship;
     } catch (error) {
       logger.error('Error accepting friend request', { error, requestId, receiverId });
       throw error;

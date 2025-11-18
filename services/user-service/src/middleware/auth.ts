@@ -12,10 +12,11 @@ export interface AuthRequest extends Request {
 }
 
 export async function authMiddleware(
-  req: AuthRequest,
+  req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> {
+  const authReq = req as AuthRequest;
   try {
     const authHeader = req.headers.authorization;
 
@@ -26,8 +27,8 @@ export async function authMiddleware(
     const token = authHeader.substring(7);
     const payload = await jwtService.verifyToken(token);
 
-    req.userId = payload.userId;
-    req.user = {
+    authReq.userId = payload.userId;
+    authReq.user = {
       id: payload.userId,
       email: payload.email,
       role: payload.role || 'user',
@@ -41,10 +42,11 @@ export async function authMiddleware(
 
 // Optional auth middleware (doesn't fail if no token)
 export async function optionalAuthMiddleware(
-  req: AuthRequest,
+  req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> {
+  const authReq = req as AuthRequest;
   try {
     const authHeader = req.headers.authorization;
 
@@ -52,8 +54,8 @@ export async function optionalAuthMiddleware(
       const token = authHeader.substring(7);
       try {
         const payload = await jwtService.verifyToken(token);
-        req.userId = payload.userId;
-        req.user = {
+        authReq.userId = payload.userId;
+        authReq.user = {
           id: payload.userId,
           email: payload.email,
           role: payload.role || 'user',

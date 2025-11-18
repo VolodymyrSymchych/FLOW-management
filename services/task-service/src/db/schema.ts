@@ -29,7 +29,7 @@ export const tasks = pgTable('tasks', {
   id: serial('id').primaryKey(),
   projectId: integer('project_id').references(() => projects.id, { onDelete: 'cascade' }),
   userId: integer('user_id').references(() => users.id, { onDelete: 'set null' }),
-  parentId: integer('parent_id').references(() => tasks.id, { onDelete: 'cascade' }),
+  parentId: integer('parent_id'),
   title: varchar('title', { length: 255 }).notNull(),
   description: text('description'),
   assignee: varchar('assignee', { length: 100 }),

@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
-import { userService } from '../services/user.service';
+import { userService, UpdateUserProfileInput } from '../services/user.service';
 import { ValidationError, NotFoundError } from '@project-scope-analyzer/shared';
 
 const updateProfileSchema = z.object({
@@ -77,7 +77,12 @@ export class UserController {
         });
       }
 
-      const user = await userService.updateUserProfile(userId, validation.data);
+      // Convert null to undefined for optional fields
+      const updateData: UpdateUserProfileInput = {
+        ...(validation.data.fullName !== null && validation.data.fullName !== undefined && { fullName: validation.data.fullName }),
+        ...(validation.data.avatarUrl !== null && validation.data.avatarUrl !== undefined && { avatarUrl: validation.data.avatarUrl }),
+      };
+      const user = await userService.updateUserProfile(userId, updateData);
       if (!user) {
         throw new NotFoundError('User not found');
       }

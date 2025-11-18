@@ -4,7 +4,7 @@ import { authService } from '../services/auth.service';
 import { jwtService } from '../services/jwt.service';
 import { ValidationError, UnauthorizedError, ForbiddenError } from '@project-scope-analyzer/shared';
 import { getRedisClient } from '../utils/redis';
-import { eventBus } from '../index';
+import { publishEvent } from '../event-bus';
 import { logger } from '@project-scope-analyzer/shared';
 
 const passwordSchema = z
@@ -64,20 +64,14 @@ export class AuthController {
         role: user.role,
       });
 
-      // Publish event
-      if (eventBus) {
-        try {
-          await eventBus.publish({
-            type: 'user.registered',
-            userId: user.id,
-            email: user.email,
-            username: user.username,
-            timestamp: new Date(),
-          });
-        } catch (error) {
-          logger.error('Failed to publish event', { error });
-        }
-      }
+      // Publish event (non-blocking)
+      publishEvent({
+        type: 'user.registered',
+        userId: user.id,
+        email: user.email,
+        username: user.username,
+        timestamp: new Date(),
+      });
 
       res.status(201).json({
         success: true,
@@ -149,14 +143,12 @@ export class AuthController {
         role: user.role,
       });
 
-      // Publish event
-      if (eventBus) {
-        await eventBus.publish({
-          type: 'user.logged_in',
-          userId: user.id,
-          timestamp: new Date(),
-        });
-      }
+      // Publish event (non-blocking)
+      publishEvent({
+        type: 'user.logged_in',
+        userId: user.id,
+        timestamp: new Date(),
+      });
 
       res.json({
         success: true,
@@ -179,8 +171,8 @@ export class AuthController {
       // In a stateless JWT system, logout is handled client-side by removing the token
       // But we can publish an event for tracking
       const userId = (req as any).userId;
-      if (userId && eventBus) {
-        await eventBus.publish({
+      if (userId) {
+        publishEvent({
           type: 'user.logged_out',
           userId,
           timestamp: new Date(),
@@ -203,15 +195,13 @@ export class AuthController {
 
       const user = await authService.verifyEmail(token);
 
-      // Publish event
-      if (eventBus) {
-        await eventBus.publish({
-          type: 'user.verified',
-          userId: user.id,
-          email: user.email,
-          timestamp: new Date(),
-        });
-      }
+      // Publish event (non-blocking)
+      publishEvent({
+        type: 'user.verified',
+        userId: user.id,
+        email: user.email,
+        timestamp: new Date(),
+      });
 
       res.json({
         success: true,

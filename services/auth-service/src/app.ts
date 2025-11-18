@@ -23,6 +23,30 @@ export function createApp(): Express {
   app.use(requestLogger);
   app.use(metricsMiddleware);
 
+  // Root endpoint - redirect to API info
+  app.get('/', (req: express.Request, res: express.Response) => {
+    res.json({
+      service: config.service.name,
+      version: '1.0.0',
+      status: 'running',
+      message: 'Auth Service API - Visit /api for detailed endpoint information',
+      endpoints: {
+        info: '/api',
+        health: '/health',
+        apiHealth: '/api/health',
+        ready: '/api/ready',
+        metrics: '/api/metrics',
+        auth: {
+          signup: 'POST /api/auth/signup',
+          login: 'POST /api/auth/login',
+          logout: 'POST /api/auth/logout',
+          verifyEmail: 'POST /api/auth/verify-email',
+          me: 'GET /api/auth/me',
+        },
+      },
+    });
+  });
+
   // Health check without /api prefix (for convenience)
   app.get('/health', (req: express.Request, res: express.Response) => {
     res.json({

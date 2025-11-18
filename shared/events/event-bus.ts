@@ -63,49 +63,73 @@ class EventBusImpl implements IEventBus {
   }
 
   private async connectRedis(): Promise<void> {
-    // Support REDIS_URL connection string directly (for Upstash, etc.)
-    const redisConfig = process.env.REDIS_URL
-      ? {
-          // Use connection string directly
-          connectionString: process.env.REDIS_URL,
-          retryStrategy: (times: number) => {
-            const delay = Math.min(times * 50, 2000);
-            return delay;
-          },
-        }
-      : {
-          // Use individual config
-          host: this.config.redis?.host || process.env.REDIS_HOST || 'localhost',
-          port: this.config.redis?.port || parseInt(process.env.REDIS_PORT || '6379', 10),
-          password: this.config.redis?.password || process.env.REDIS_PASSWORD,
-          retryStrategy: (times: number) => {
-            const delay = Math.min(times * 50, 2000);
-            return delay;
-          },
-        };
+    // Check if Upstash REST API is being used (doesn't support pub/sub)
+    if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+      logger.warn('Upstash REST API detected - pub/sub not supported, event bus will work in publish-only mode', {
+        service: this.config.serviceName,
+      });
+      // For Upstash REST API, we can't use pub/sub, so we'll skip subscription
+      // Events can still be published, but won't be received
+      this.isConnected = true;
+      return;
+    }
+
+    // Support REDIS_URL connection string directly (for Upstash TCP, etc.)
+    const redisOptions = {
+      retryStrategy: (times: number) => {
+        const delay = Math.min(times * 50, 2000);
+        return delay;
+      },
+      connectTimeout: 5000, // 5 second timeout
+      lazyConnect: true, // Don't connect immediately
+      maxRetriesPerRequest: 1, // Fail fast
+    };
 
     // Create separate clients for subscribing and publishing
     // Subscriber client (can only use subscriber commands)
     this.redis = process.env.REDIS_URL
-      ? new Redis(process.env.REDIS_URL, { retryStrategy: redisConfig.retryStrategy })
-      : new Redis(redisConfig);
+      ? new Redis(process.env.REDIS_URL, redisOptions)
+      : new Redis({
+          host: this.config.redis?.host || process.env.REDIS_HOST || 'localhost',
+          port: this.config.redis?.port || parseInt(process.env.REDIS_PORT || '6379', 10),
+          password: this.config.redis?.password || process.env.REDIS_PASSWORD,
+          ...redisOptions,
+        });
     this.redis.on('error', (error) => {
       logger.error('Redis subscriber connection error', { error, service: this.config.serviceName });
     });
 
     // Publisher client (can use all commands including publish)
     this.redisPublisher = process.env.REDIS_URL
-      ? new Redis(process.env.REDIS_URL, { retryStrategy: redisConfig.retryStrategy })
-      : new Redis(redisConfig);
+      ? new Redis(process.env.REDIS_URL, redisOptions)
+      : new Redis({
+          host: this.config.redis?.host || process.env.REDIS_HOST || 'localhost',
+          port: this.config.redis?.port || parseInt(process.env.REDIS_PORT || '6379', 10),
+          password: this.config.redis?.password || process.env.REDIS_PASSWORD,
+          ...redisOptions,
+        });
     this.redisPublisher.on('error', (error) => {
       logger.error('Redis publisher connection error', { error, service: this.config.serviceName });
     });
 
-    // Subscribe to all event types using subscriber client
-    this.redis.psubscribe('event:*');
-    this.redis.on('pmessage', (pattern, channel, message) => {
-      this.handleRedisMessage(channel, message);
-    });
+    // Connect with timeout
+    try {
+      await Promise.race([
+        Promise.all([this.redis.connect(), this.redisPublisher.connect()]),
+        new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error('Redis connection timeout')), 5000);
+        }),
+      ]);
+
+      // Subscribe to all event types using subscriber client
+      this.redis.psubscribe('event:*');
+      this.redis.on('pmessage', (pattern, channel, message) => {
+        this.handleRedisMessage(channel, message);
+      });
+    } catch (error) {
+      logger.error('Failed to connect to Redis', { error, service: this.config.serviceName });
+      throw error;
+    }
   }
 
   private async connectRabbitMQ(): Promise<void> {
@@ -129,6 +153,15 @@ class EventBusImpl implements IEventBus {
   }
 
   async publish<T extends AppEvent>(event: T, metadata?: Partial<EventMetadata>): Promise<void> {
+    // For Upstash REST API, we skip publishing (pub/sub not supported)
+    if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+      logger.debug('Skipping event publish - Upstash REST API does not support pub/sub', {
+        eventType: event.type,
+        service: this.config.serviceName,
+      });
+      return;
+    }
+
     if (!this.isConnected) {
       throw new Error('Event bus is not connected');
     }

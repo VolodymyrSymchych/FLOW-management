@@ -11,8 +11,8 @@
     }
   },
   "scripts": {
-    "build": "./node_modules/.bin/tsc || tsc",
-    "watch": "./node_modules/.bin/tsc --watch || tsc --watch",
+    "build": "node_modules/.bin/tsc || node_modules/typescript/bin/tsc || tsc",
+    "watch": "node_modules/.bin/tsc --watch || node_modules/typescript/bin/tsc --watch || tsc --watch",
     "clean": "rm -rf dist"
   },
   "keywords": [],

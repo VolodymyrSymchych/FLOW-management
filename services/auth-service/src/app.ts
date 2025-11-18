@@ -24,7 +24,7 @@ export function createApp(): Express {
   app.use(metricsMiddleware);
 
   // Health check without /api prefix (for convenience)
-  app.get('/health', (req, res) => {
+  app.get('/health', (req: express.Request, res: express.Response) => {
     res.json({
       status: 'healthy',
       timestamp: new Date().toISOString(),
@@ -33,7 +33,7 @@ export function createApp(): Express {
   });
 
   // Service info endpoint (not on root to avoid conflicts with frontend)
-  app.get('/api', (req, res) => {
+  app.get('/api', (req: express.Request, res: express.Response) => {
     res.json({
       service: config.service.name,
       version: '1.0.0',

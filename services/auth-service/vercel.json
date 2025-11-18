@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "npm run build",
+  "buildCommand": "cd ../../shared && npm install && npm run build && cd ../../services/auth-service && npm install && npm run build",
   "outputDirectory": "dist",
   "installCommand": "npm install",
   "framework": null,

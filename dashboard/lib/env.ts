@@ -24,6 +24,12 @@ const envSchema = z.object({
   NEXT_PUBLIC_APP_URL: z.string().url('NEXT_PUBLIC_APP_URL must be a valid URL'),
   NEXT_PUBLIC_BASE_URL: z.string().url('NEXT_PUBLIC_BASE_URL must be a valid URL'),
 
+  // Microservices URLs (optional for local dev, required for production)
+  NEXT_PUBLIC_AUTH_SERVICE_URL: z.string().url().optional(),
+  NEXT_PUBLIC_USER_SERVICE_URL: z.string().url().optional(),
+  NEXT_PUBLIC_PROJECT_SERVICE_URL: z.string().url().optional(),
+  NEXT_PUBLIC_TASK_SERVICE_URL: z.string().url().optional(),
+
   // Redis (Optional)
   UPSTASH_REDIS_REST_URL: z.string().url().optional(),
   UPSTASH_REDIS_REST_TOKEN: z.string().optional(),

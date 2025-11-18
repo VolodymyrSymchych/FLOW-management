@@ -23,12 +23,15 @@ export function useUser() {
 
   const fetchUser = async () => {
     try {
-      const response = await axios.get('/api/auth/me');
+      const response = await axios.get('/api/auth/me', {
+        withCredentials: true, // Ensure cookies are sent
+      });
       if (response.data.user) {
         setUser(response.data.user);
       }
     } catch (error) {
       console.error('Failed to fetch user:', error);
+      setUser(null); // Clear user on error
     } finally {
       setLoading(false);
     }

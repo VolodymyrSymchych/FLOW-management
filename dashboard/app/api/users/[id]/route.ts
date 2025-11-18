@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
+import { userService } from '@/lib/user-service';
 import { storage } from '../../../../../server/storage';
 
 export const dynamic = 'force-dynamic';
@@ -16,6 +17,18 @@ export async function GET(
 
     const { id } = await params;
     const userId = parseInt(id);
+
+    // Try user-service first
+    const result = await userService.getUser(userId);
+    
+    if (result.user) {
+      return NextResponse.json({ user: result.user });
+    }
+
+    // Fallback to local storage
+    if (result.error) {
+      console.warn('User service error, falling back to local storage:', result.error);
+    }
 
     const user = await storage.getUser(userId);
     

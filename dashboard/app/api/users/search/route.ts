@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
-import { storage } from '../../../../../server/storage';
+import { userService } from '@/lib/user-service';
 import { db } from '@/server/db';
 import { users } from '../../../../../shared/schema';
 import { eq, or, and, sql } from 'drizzle-orm';
@@ -16,9 +16,22 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('q');
+    const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!, 10) : 10;
 
     if (!query || query.trim().length < 2) {
       return NextResponse.json({ users: [] });
+    }
+
+    // Try user-service first
+    const result = await userService.searchUsers(query, limit);
+    
+    if (result.users) {
+      return NextResponse.json({ users: result.users });
+    }
+
+    // Fallback to local storage
+    if (result.error) {
+      console.warn('User service error, falling back to local storage:', result.error);
     }
 
     // Search by email or username (partial match using SQL LIKE)
@@ -44,7 +57,7 @@ export async function GET(request: Request) {
           )
         )
       )
-      .limit(10);
+      .limit(limit);
 
     return NextResponse.json({ users: matchingUsers });
   } catch (error: any) {

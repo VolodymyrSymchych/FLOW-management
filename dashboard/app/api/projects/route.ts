@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
+import { projectService } from '@/lib/project-service';
 import { storage } from '../../../../server/storage';
 import { cached, invalidateUserCache } from '@/lib/redis';
 import { withRateLimit } from '@/lib/rate-limit';
@@ -17,6 +18,30 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const teamId = searchParams.get('team_id');
 
+    // Try project-service first
+    const result = await projectService.getProjects();
+    
+    if (result.projects) {
+      // If team filter is needed, filter in fallback
+      if (teamId && teamId !== 'all') {
+        // For now, return all projects - team filtering will be handled by Team Service later
+        return NextResponse.json({
+          projects: result.projects,
+          total: result.total || result.projects.length,
+        });
+      }
+      
+      return NextResponse.json({
+        projects: result.projects,
+        total: result.total || result.projects.length,
+      });
+    }
+
+    // Fallback to local storage
+    if (result.error) {
+      console.warn('Project service error, falling back to local storage:', result.error);
+    }
+
     let userProjects;
     let cacheKey: string;
 
@@ -26,30 +51,20 @@ export async function GET(request: NextRequest) {
 
       // Verify user is a member of the team
       const teamMembers = await storage.getTeamMembers(teamIdNum);
-      console.log(`Team ${teamIdNum} members:`, teamMembers.map(tm => ({ userId: tm.userId, role: tm.role })));
-      console.log(`Current user ID: ${session.userId} (type: ${typeof session.userId})`);
-
-      const isMember = teamMembers.some(tm => {
-        console.log(`Comparing tm.userId=${tm.userId} (${typeof tm.userId}) with session.userId=${session.userId} (${typeof session.userId})`);
-        return tm.userId === session.userId;
-      });
+      const isMember = teamMembers.some(tm => tm.userId === session.userId);
 
       if (!isMember) {
-        console.error(`User ${session.userId} is not a member of team ${teamIdNum}`);
         return NextResponse.json({
           error: 'Not a team member',
-          details: { userId: session.userId, teamId: teamIdNum }
         }, { status: 403 });
       }
 
-      console.log(`User ${session.userId} is a member of team ${teamIdNum}, fetching projects...`);
       cacheKey = `projects:team:${teamIdNum}`;
       userProjects = await cached(
         cacheKey,
         async () => await storage.getProjectsByTeam(teamIdNum),
         { ttl: 300 }
       );
-      console.log(`Found ${userProjects.length} projects for team ${teamIdNum}`);
     } else {
       // All teams or no filter - get all user's projects
       cacheKey = `projects:user:${session.userId}`;
@@ -100,6 +115,40 @@ export async function POST(request: NextRequest) {
     }
 
     const { name, type, industry, teamSize, timeline, budget, startDate, endDate, document, analysisData, score, riskLevel, status, teamId } = validation.data;
+
+    // Try project-service first
+    const result = await projectService.createProject({
+      name,
+      type: type || undefined,
+      industry: industry || undefined,
+      teamSize: teamSize || undefined,
+      timeline: timeline || undefined,
+      budget: budget || undefined,
+      startDate: startDate ? new Date(startDate).toISOString() : undefined,
+      endDate: endDate ? new Date(endDate).toISOString() : undefined,
+      document: document || undefined,
+    });
+
+    if (result.project) {
+      // Add project to team if teamId provided (fallback to local storage for now)
+      if (teamId) {
+        try {
+          await storage.addProjectToTeam(teamId, result.project.id);
+        } catch (error) {
+          console.warn('Failed to add project to team:', error);
+        }
+      }
+
+      // Invalidate user caches after creating project
+      await invalidateUserCache(session.userId);
+
+      return NextResponse.json({ project: result.project }, { status: 201 });
+    }
+
+    // Fallback to local storage
+    if (result.error) {
+      console.warn('Project service error, falling back to local storage:', result.error);
+    }
 
     const project = await storage.createProject({
       userId: session.userId,

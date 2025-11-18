@@ -1,98 +1,69 @@
 import { NextRequest, NextResponse } from 'next/server';
-import bcrypt from 'bcryptjs';
-import { nanoid } from 'nanoid';
-import { storage } from '../../../../../server/storage';
+import { authService } from '@/lib/auth-service';
 import { createSession } from '@/lib/auth';
-import { withRateLimit } from '@/lib/rate-limit';
-import { signupSchema, formatZodError } from '@/lib/validations';
+import { jwtVerify } from 'jose';
+
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || '');
 
 export async function POST(request: NextRequest) {
   try {
-    // Rate limit: 3 signup attempts per 15 minutes per IP (stricter than login)
-    const rateLimitResult = await withRateLimit(request, {
-      limit: 3,
-      window: 900, // 15 minutes
-      identifier: (req) => {
-        const ip = req.headers.get('x-forwarded-for') ||
-                   req.headers.get('x-real-ip') ||
-                   'anonymous';
-        return `signup:${ip}`;
-      },
-    });
-
-    if (!rateLimitResult.success) {
-      return rateLimitResult.response!;
-    }
-
     const body = await request.json();
 
-    // Validate request body with password complexity requirements
-    const validation = signupSchema.safeParse(body);
-    if (!validation.success) {
+    // Call auth-service
+    const result = await authService.signup({
+      email: body.email,
+      username: body.username,
+      password: body.password,
+      name: body.name,
+    });
+
+    if (result.error) {
       return NextResponse.json(
-        formatZodError(validation.error),
+        { error: result.error },
         { status: 400 }
       );
     }
 
-    const { email, username, password, name: fullName } = validation.data;
-
-    const existingUserByEmail = await storage.getUserByEmail(email);
-    if (existingUserByEmail) {
+    if (!result.success || !result.token || !result.user) {
       return NextResponse.json(
-        { error: 'Email already registered' },
-        { status: 409 }
+        { error: 'Failed to create account' },
+        { status: 500 }
       );
     }
 
-    const existingUserByUsername = await storage.getUserByUsername(username);
-    if (existingUserByUsername) {
-      return NextResponse.json(
-        { error: 'Username already taken' },
-        { status: 409 }
-      );
+    // Store the auth-service token in a separate cookie for API calls
+    // Also create a local session token for compatibility
+    try {
+      const { payload } = await jwtVerify(result.token, JWT_SECRET);
+      
+      // Store auth-service token in cookie (for API calls to auth-service)
+      const cookieStore = await import('next/headers').then(m => m.cookies());
+      const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1';
+      
+      cookieStore.set('auth_token', result.token, {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: 'lax',
+        maxAge: 60 * 60, // 1 hour
+        path: '/',
+      });
+      
+      // Create local session token for compatibility with existing code
+      await createSession({
+        userId: payload.userId as number,
+        email: payload.email as string,
+        username: payload.username as string,
+        fullName: result.user.fullName || null,
+      });
+    } catch (error) {
+      console.error('Error creating session:', error);
+      // Still return success, but session might not be set
     }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const user = await storage.createUser({
-      email,
-      username,
-      password: hashedPassword,
-      fullName: fullName || null,
-      provider: 'local',
-      emailVerified: false,
-      isActive: true,
-      role: 'user',
-    });
-
-    const verificationToken = nanoid(32);
-    const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + 24);
-
-    await storage.createEmailVerification({
-      userId: user.id,
-      email: user.email,
-      token: verificationToken,
-      expiresAt,
-      verified: false,
-    });
-
-    await createSession({
-      userId: user.id,
-      email: user.email,
-      username: user.username,
-    });
 
     return NextResponse.json({
       success: true,
-      user: {
-        id: user.id,
-        email: user.email,
-        username: user.username,
-        fullName: user.fullName,
-      },
-      verificationToken,
+      user: result.user,
+      verificationToken: (result as any).verificationToken,
     });
   } catch (error: any) {
     console.error('Signup error:', error);

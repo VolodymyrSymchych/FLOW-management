@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
+import { projectService } from '@/lib/project-service';
 import { storage } from '../../../../../server/storage';
 
 export const dynamic = 'force-dynamic';
@@ -19,6 +20,18 @@ export async function POST(request: NextRequest) {
         { error: 'Template ID is required' },
         { status: 400 }
       );
+    }
+
+    // Try project-service first
+    const result = await projectService.createFromTemplate(parseInt(templateId), projectData);
+
+    if (result.project) {
+      return NextResponse.json({ project: result.project }, { status: 201 });
+    }
+
+    // Fallback to local storage
+    if (result.error) {
+      console.warn('Project service error, falling back to local storage:', result.error);
     }
 
     // Get template

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
+import { projectService } from '@/lib/project-service';
 import { storage } from '@/server/storage';
 
 export async function GET(
@@ -12,16 +13,72 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-  const projectId = parseInt(params.id);
+    const projectId = parseInt(params.id);
     if (isNaN(projectId)) {
       return NextResponse.json({ error: 'Invalid project ID' }, { status: 400 });
     }
 
+    // Try project-service first
+    const result = await projectService.getProject(projectId);
+    
+    if (result.project) {
+      // Parse analysis data if it exists
+      let analysis = {
+        results: {},
+        report: 'Analysis not available',
+        metadata: {}
+      };
+
+      if (result.project.analysisData) {
+        try {
+          const parsed = typeof result.project.analysisData === 'string' 
+            ? JSON.parse(result.project.analysisData)
+            : result.project.analysisData;
+          analysis = {
+            results: parsed.results || {},
+            report: parsed.report || result.project.document || 'Analysis not available',
+            metadata: parsed.metadata || {}
+          };
+        } catch (e) {
+          analysis.report = result.project.document || 'Analysis not available';
+        }
+      } else if (result.project.document) {
+        analysis.report = result.project.document;
+      }
+
+      // Format project data to match expected interface
+      const projectData = {
+        id: result.project.id,
+        name: result.project.name,
+        type: result.project.type || '',
+        industry: result.project.industry || '',
+        team_size: result.project.teamSize || '',
+        timeline: result.project.timeline || '',
+        score: result.project.score || 0,
+        risk_level: result.project.riskLevel || 'LOW',
+        created_at: result.project.createdAt?.toISOString() || new Date().toISOString(),
+        status: result.project.status || 'in_progress',
+        budget: result.project.budget,
+        start_date: result.project.startDate?.toISOString(),
+        end_date: result.project.endDate?.toISOString(),
+      };
+
+      return NextResponse.json({
+        project: projectData,
+        analysis
+      });
+    }
+
+    // Fallback to local storage
+    if (result.error) {
+      console.warn('Project service error, falling back to local storage:', result.error);
+    }
+
     // Get project from database
     const project = await storage.getProject(projectId);
-  if (!project) {
-    return NextResponse.json({ error: 'Project not found' }, { status: 404 });
-  }
+    if (!project) {
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+    }
 
     // Verify user has access to this project
     const hasAccess = await storage.userHasProjectAccess(session.userId, projectId);
@@ -102,6 +159,58 @@ export async function PUT(
       return NextResponse.json({ error: 'Invalid project ID' }, { status: 400 });
     }
 
+    const body = await request.json();
+    const { name, type, industry, team_size, timeline, status, budget, start_date, end_date, team_id } = body;
+
+    // Try project-service first
+    const result = await projectService.updateProject(projectId, {
+      name,
+      type,
+      industry,
+      teamSize: team_size,
+      timeline,
+      status,
+      budget: budget ? parseInt(budget) : undefined,
+      startDate: start_date ? new Date(start_date).toISOString() : undefined,
+      endDate: end_date ? new Date(end_date).toISOString() : undefined,
+    });
+
+    if (result.project) {
+      // Update team assignment if team_id changed (fallback to local storage for now)
+      if (team_id !== undefined) {
+        try {
+          const currentTeams = await storage.getProjectTeams(projectId);
+          if (team_id === null) {
+            for (const team of currentTeams) {
+              await storage.removeProjectFromTeam(team.id, projectId);
+            }
+          } else {
+            const teamIdNum = parseInt(team_id);
+            const isAlreadyAssigned = currentTeams.some(t => t.id === teamIdNum);
+            if (!isAlreadyAssigned) {
+              for (const team of currentTeams) {
+                await storage.removeProjectFromTeam(team.id, projectId);
+              }
+              await storage.addProjectToTeam(teamIdNum, projectId);
+            }
+          }
+        } catch (error) {
+          console.warn('Failed to update team assignment:', error);
+        }
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: 'Project updated successfully',
+        project: result.project
+      });
+    }
+
+    // Fallback to local storage
+    if (result.error) {
+      console.warn('Project service error, falling back to local storage:', result.error);
+    }
+
     // Verify project exists and user has access
     const project = await storage.getProject(projectId);
     if (!project) {
@@ -112,9 +221,6 @@ export async function PUT(
     if (!hasAccess) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
-
-    const body = await request.json();
-    const { name, type, industry, team_size, timeline, status, budget, start_date, end_date, team_id } = body;
 
     // Update project
     const updatedProject = await storage.updateProject(projectId, {
@@ -180,6 +286,18 @@ export async function DELETE(
     }
 
     const projectId = parseInt(params.id);
+
+    // Try project-service first
+    const result = await projectService.deleteProject(projectId);
+
+    if (!result.error) {
+      return NextResponse.json({ success: true, message: 'Project deleted successfully' });
+    }
+
+    // Fallback to local storage
+    if (result.error) {
+      console.warn('Project service error, falling back to local storage:', result.error);
+    }
 
     // Verify project exists
     const project = await storage.getProject(projectId);

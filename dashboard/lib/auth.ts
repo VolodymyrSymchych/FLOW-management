@@ -21,6 +21,7 @@ export interface SessionData {
   userId: number;
   email: string;
   username: string;
+  fullName?: string | null;
 }
 
 export async function createSession(data: SessionData) {
@@ -66,6 +67,7 @@ export async function getSession(autoRefresh: boolean = true): Promise<SessionDa
       userId: payload.userId as number,
       email: payload.email as string,
       username: payload.username as string,
+      fullName: payload.fullName as string | null | undefined,
     };
 
     // Auto-refresh token if it's close to expiration (silent refresh)

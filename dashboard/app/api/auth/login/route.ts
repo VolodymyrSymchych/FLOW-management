@@ -1,171 +1,71 @@
 import { NextRequest, NextResponse } from 'next/server';
-import bcrypt from 'bcryptjs';
-import { storage } from '../../../../../server/storage';
+import { authService } from '@/lib/auth-service';
 import { createSession } from '@/lib/auth';
-import { withRateLimit } from '@/lib/rate-limit';
-import { getRedisClient } from '@/lib/redis';
-import { loginSchema } from '@/lib/validations';
+import { jwtVerify } from 'jose';
 
-// Account lockout settings
-const MAX_LOGIN_ATTEMPTS = 10;
-const LOCKOUT_DURATION = 30 * 60; // 30 minutes in seconds
-
-async function checkAccountLockout(email: string): Promise<{ locked: boolean; remainingTime?: number }> {
-  const redis = getRedisClient();
-  if (!redis) return { locked: false };
-
-  try {
-    const key = `account-lockout:${email.toLowerCase()}`;
-    const attempts = await redis.get(key);
-
-    if (attempts && parseInt(attempts as string) >= MAX_LOGIN_ATTEMPTS) {
-      const ttl = 'ttl' in redis ? await (redis as any).ttl(key) : 0;
-      return { locked: true, remainingTime: ttl > 0 ? ttl : 0 };
-    }
-
-    return { locked: false };
-  } catch (error) {
-    console.error('Error checking account lockout:', error);
-    return { locked: false };
-  }
-}
-
-async function recordFailedLogin(email: string): Promise<void> {
-  const redis = getRedisClient();
-  if (!redis) return;
-
-  try {
-    const key = `account-lockout:${email.toLowerCase()}`;
-    const attempts = await (redis as any).incr(key);
-
-    // Set expiration on first attempt
-    if (attempts === 1 && 'expire' in redis) {
-      await (redis as any).expire(key, LOCKOUT_DURATION);
-    }
-  } catch (error) {
-    console.error('Error recording failed login:', error);
-  }
-}
-
-async function clearFailedLogins(email: string): Promise<void> {
-  const redis = getRedisClient();
-  if (!redis) return;
-
-  try {
-    const key = `account-lockout:${email.toLowerCase()}`;
-    await redis.del(key);
-  } catch (error) {
-    console.error('Error clearing failed logins:', error);
-  }
-}
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || '');
 
 export async function POST(request: NextRequest) {
   try {
-    // Rate limit: 5 login attempts per 5 minutes per IP
-    const rateLimitResult = await withRateLimit(request, {
-      limit: 5,
-      window: 300, // 5 minutes
-      identifier: (req) => {
-        const ip = req.headers.get('x-forwarded-for') ||
-                   req.headers.get('x-real-ip') ||
-                   'anonymous';
-        return `login:${ip}`;
-      },
-    });
-
-    if (!rateLimitResult.success) {
-      return rateLimitResult.response!;
-    }
-
     const body = await request.json();
 
-    // Validate request body
-    const validation = loginSchema.safeParse({
-      email: body.emailOrUsername,
-      password: body.password
+    // Call auth-service
+    const result = await authService.login({
+      emailOrUsername: body.emailOrUsername || body.email,
+      password: body.password,
     });
 
-    if (!validation.success) {
+    if (result.error) {
       return NextResponse.json(
-        { error: 'Email and password are required' },
-        { status: 400 }
-      );
-    }
-
-    const { email: emailOrUsername, password } = validation.data;
-
-    let user = await storage.getUserByEmail(emailOrUsername);
-    if (!user) {
-      user = await storage.getUserByUsername(emailOrUsername);
-    }
-
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Invalid credentials' },
+        { error: result.error },
         { status: 401 }
       );
     }
 
-    // Check if account is locked due to too many failed attempts
-    const lockoutStatus = await checkAccountLockout(user.email);
-    if (lockoutStatus.locked) {
-      const minutes = Math.ceil((lockoutStatus.remainingTime || 0) / 60);
+    if (!result.success || !result.token || !result.user) {
       return NextResponse.json(
-        {
-          error: `Account temporarily locked due to multiple failed login attempts. Please try again in ${minutes} minute(s).`
-        },
-        { status: 429 }
+        { error: 'Failed to login' },
+        { status: 500 }
       );
     }
 
-    if (!user.password) {
-      return NextResponse.json(
-        { error: 'Invalid login method' },
-        { status: 401 }
-      );
+    // Store the auth-service token in a separate cookie for API calls
+    // Also create a local session token for compatibility
+    try {
+      const { payload } = await jwtVerify(result.token, JWT_SECRET);
+      
+      // Store auth-service token in cookie (for API calls to auth-service)
+      const cookieStore = await import('next/headers').then(m => m.cookies());
+      const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1';
+      
+      cookieStore.set('auth_token', result.token, {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: 'lax',
+        maxAge: 60 * 60, // 1 hour
+        path: '/',
+      });
+      
+      // Create local session token for compatibility with existing code
+      await createSession({
+        userId: payload.userId as number,
+        email: payload.email as string,
+        username: payload.username as string,
+        fullName: result.user.fullName || null,
+      });
+    } catch (error) {
+      console.error('Error creating session:', error);
+      // Still return success, but session might not be set
     }
-
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      // Record failed login attempt
-      await recordFailedLogin(user.email);
-
-      return NextResponse.json(
-        { error: 'Invalid credentials' },
-        { status: 401 }
-      );
-    }
-
-    // Clear failed login attempts on successful login
-    await clearFailedLogins(user.email);
-
-    if (!user.isActive) {
-      return NextResponse.json(
-        { error: 'Account is disabled' },
-        { status: 403 }
-      );
-    }
-
-    await createSession({
-      userId: user.id,
-      email: user.email,
-      username: user.username,
-    });
 
     return NextResponse.json({
       success: true,
-      user: {
-        id: user.id,
-        email: user.email,
-        username: user.username,
-        fullName: user.fullName,
-        emailVerified: user.emailVerified,
-      },
+      user: result.user,
     });
   } catch (error: any) {
     console.error('Login error:', error);
     return NextResponse.json(
-      { error: 'Failed to login' },
+      { error: error.message || 'Failed to login' },
       { status: 500 }
     );
   }

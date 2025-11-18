@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
+import { userService } from '@/lib/user-service';
 import { storage } from '../../../../server/storage';
 
 export async function GET() {
@@ -7,6 +8,21 @@ export async function GET() {
     const session = await getSession();
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Try user-service first
+    const result = await userService.getFriends();
+    
+    if (result.friends !== undefined && result.pendingRequests !== undefined) {
+      return NextResponse.json({
+        friends: result.friends,
+        pendingRequests: result.pendingRequests,
+      });
+    }
+
+    // Fallback to local storage
+    if (result.error) {
+      console.warn('User service error, falling back to local storage:', result.error);
     }
 
     const friendships = await storage.getFriends(session.userId);
@@ -98,21 +114,44 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { receiverEmail, emailOrUsername } = body;
+    const { receiverEmail, emailOrUsername, receiverId } = body;
+
+    // Try user-service first
+    const result = await userService.sendFriendRequest({
+      receiverEmail,
+      emailOrUsername,
+      receiverId,
+    });
+
+    if (result.friendship) {
+      return NextResponse.json({ success: true, friendship: result.friendship });
+    }
+
+    // Fallback to local storage
+    if (result.error) {
+      console.warn('User service error, falling back to local storage:', result.error);
+    }
+
     const searchValue = receiverEmail || emailOrUsername;
 
-    if (!searchValue) {
+    if (!searchValue && !receiverId) {
       return NextResponse.json(
-        { error: 'Email or username is required' },
+        { error: 'Email, username, or receiverId is required' },
         { status: 400 }
       );
     }
 
-    // Try to find user by email first, then by username
-    let receiver = await storage.getUserByEmail(searchValue);
-    if (!receiver) {
-      receiver = await storage.getUserByUsername(searchValue);
+    let receiver;
+    if (receiverId) {
+      receiver = await storage.getUser(receiverId);
+    } else {
+      // Try to find user by email first, then by username
+      receiver = await storage.getUserByEmail(searchValue);
+      if (!receiver) {
+        receiver = await storage.getUserByUsername(searchValue);
+      }
     }
+
     if (!receiver) {
       return NextResponse.json(
         { error: 'User not found' },

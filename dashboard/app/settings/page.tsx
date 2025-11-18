@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { User, Bell, CreditCard, Shield, Trash2, Save } from 'lucide-react';
+import { useUser } from '@/hooks/useUser';
 
 interface UserData {
   id: number;
@@ -14,23 +15,7 @@ interface UserData {
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('profile');
-  const [user, setUser] = useState<UserData | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch('/api/auth/me')
-      .then(res => res.json())
-      .then(data => {
-        if (data.user) {
-          setUser(data.user);
-        }
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error('Failed to fetch user:', err);
-        setLoading(false);
-      });
-  }, []);
+  const { user, loading } = useUser();
 
   const nameParts = user?.fullName?.split(' ') || [];
   const firstName = nameParts[0] || '';

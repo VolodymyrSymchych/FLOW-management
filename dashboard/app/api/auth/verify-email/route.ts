@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server';
-import { storage } from '../../../../../server/storage';
+import { NextRequest, NextResponse } from 'next/server';
+import { authService } from '@/lib/auth-service';
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const { token } = await request.json();
 
@@ -12,34 +12,20 @@ export async function POST(request: Request) {
       );
     }
 
-    const verification = await storage.getEmailVerificationByToken(token);
+    // Call auth-service
+    const result = await authService.verifyEmail({ token });
 
-    if (!verification) {
+    if (result.error) {
       return NextResponse.json(
-        { error: 'Invalid verification token' },
+        { error: result.error },
         { status: 400 }
       );
     }
-
-    if (verification.verified) {
-      return NextResponse.json(
-        { error: 'Email already verified' },
-        { status: 400 }
-      );
-    }
-
-    if (new Date() > verification.expiresAt) {
-      return NextResponse.json(
-        { error: 'Verification token expired' },
-        { status: 400 }
-      );
-    }
-
-    await storage.markEmailAsVerified(verification.userId);
 
     return NextResponse.json({
       success: true,
-      message: 'Email verified successfully',
+      message: result.message || 'Email verified successfully',
+      user: result.user,
     });
   } catch (error: any) {
     console.error('Email verification error:', error);

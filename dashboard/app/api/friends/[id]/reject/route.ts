@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
+import { userService } from '@/lib/user-service';
 import { storage } from '../../../../../../server/storage';
 
 export async function POST(
@@ -13,11 +14,25 @@ export async function POST(
     }
 
     const { id } = await params;
-    const friendshipId = parseInt(id);
+    const requestId = parseInt(id);
+
+    if (isNaN(requestId)) {
+      return NextResponse.json({ error: 'Invalid request ID' }, { status: 400 });
+    }
+
+    // Try user-service first
+    const result = await userService.rejectFriendRequest(requestId);
+
+    if (!result.error) {
+      return NextResponse.json({ success: true });
+    }
+
+    // Fallback to local storage
+    console.warn('User service error, falling back to local storage:', result.error);
 
     // First, verify that the friendship exists and belongs to the current user
     const pendingRequests = await storage.getPendingFriendRequests(session.userId);
-    const friendshipToReject = pendingRequests.find(req => req.id === friendshipId);
+    const friendshipToReject = pendingRequests.find(req => req.id === requestId);
 
     if (!friendshipToReject) {
       return NextResponse.json(
@@ -26,7 +41,7 @@ export async function POST(
       );
     }
 
-    await storage.rejectFriendRequest(friendshipId);
+    await storage.rejectFriendRequest(requestId);
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

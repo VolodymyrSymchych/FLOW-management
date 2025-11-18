@@ -134,17 +134,46 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Create session
+    // Get JWT token from auth-service for this user
+    // We need to create a token that auth-service can verify
+    const { SignJWT, jwtVerify } = await import('jose');
+    const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || '');
+    
+    // Create auth-service compatible token
+    const authToken = await new SignJWT({
+      userId: user.id,
+      email: user.email,
+      username: user.username,
+      role: user.role || 'user',
+    })
+      .setProtectedHeader({ alg: 'HS256' })
+      .setIssuedAt()
+      .setExpirationTime('1h')
+      .setIssuer('project-scope-analyzer')
+      .sign(JWT_SECRET);
+
+    // Create session with fullName
     await createSession({
       userId: user.id,
       email: user.email,
       username: user.username,
+      fullName: user.fullName || null,
     });
 
-    // Clear OAuth cookies
+    // Clear OAuth cookies and set auth_token cookie
     const response = NextResponse.redirect(new URL(redirectTo, BASE_URL));
     response.cookies.delete('oauth_state');
     response.cookies.delete('oauth_redirect');
+    
+    // Set auth_token cookie for auth-service API calls
+    const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1';
+    response.cookies.set('auth_token', authToken, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'lax',
+      maxAge: 60 * 60, // 1 hour
+      path: '/',
+    });
 
     return response;
   } catch (error: any) {

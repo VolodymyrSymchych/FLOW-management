@@ -68,22 +68,42 @@ export const authService = {
   },
 
   async logout(token: string): Promise<AuthServiceResponse> {
+    const headers: HeadersInit = {
+      Authorization: `Bearer ${token}`,
+    };
+    
+    // Add service API key if available (server-side only)
+    if (typeof window === 'undefined') {
+      const serviceApiKey = process.env.AUTH_SERVICE_API_KEY;
+      if (serviceApiKey) {
+        headers['X-Service-API-Key'] = serviceApiKey;
+      }
+    }
+    
     const response = await proxyToAuthService('/api/auth/logout', {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers,
     });
 
     return response.json();
   },
 
   async getMe(token: string): Promise<AuthServiceResponse> {
+    const headers: HeadersInit = {
+      Authorization: `Bearer ${token}`,
+    };
+    
+    // Add service API key if available (server-side only)
+    if (typeof window === 'undefined') {
+      const serviceApiKey = process.env.AUTH_SERVICE_API_KEY;
+      if (serviceApiKey) {
+        headers['X-Service-API-Key'] = serviceApiKey;
+      }
+    }
+    
     const response = await proxyToAuthService('/api/auth/me', {
       method: 'GET',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers,
     });
 
     return response.json();

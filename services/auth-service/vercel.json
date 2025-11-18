@@ -4,12 +4,6 @@
   "installCommand": "cd ../../shared && npm install && cd ../../services/auth-service && npm install",
   "outputDirectory": "dist",
   "framework": null,
-  "builds": [
-    {
-      "src": "api/index.ts",
-      "use": "@vercel/node"
-    }
-  ],
   "routes": [
     {
       "src": "/(.*)",

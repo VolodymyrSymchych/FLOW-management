@@ -19,7 +19,7 @@ router.get('/ready', async (req: Request, res: Response) => {
 
   // Check database connection
   try {
-    const { pool } = await import('../db');
+    const { pool } = await import('../db.js');
     if (pool) {
       const result = await pool.query('SELECT 1');
       checks.database = result && result.rows && result.rows.length > 0;
@@ -33,7 +33,7 @@ router.get('/ready', async (req: Request, res: Response) => {
 
   // Check redis connection
   try {
-    const { getRedisClient } = await import('../utils/redis');
+    const { getRedisClient } = await import('../utils/redis.js');
     const redis = getRedisClient();
     if (redis) {
       await redis.ping();

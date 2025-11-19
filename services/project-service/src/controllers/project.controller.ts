@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
-import { projectService } from '../services/project.service';
+import { projectService, CreateProjectInput } from '../services/project.service';
 import { ValidationError, NotFoundError, ForbiddenError } from '@project-scope-analyzer/shared';
 
 const createProjectSchema = z.object({
@@ -97,7 +97,7 @@ export class ProjectController {
       }
 
       const userId = parseInt(req.user.userId as string, 10);
-      const project = await projectService.createProject(userId, validation.data);
+      const project = await projectService.createProject(userId, validation.data as CreateProjectInput);
 
       res.status(201).json({ project });
     } catch (error) {

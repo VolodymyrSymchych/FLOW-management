@@ -48,8 +48,8 @@ jobs:
     
     strategy:
       matrix:
-        service: [shared]
-        # Add services as they are created
+        service: [auth-service, user-service, project-service, task-service]
+        # Only build Docker images for actual microservices, not for shared library
     
     steps:
       - uses: actions/checkout@v4
@@ -57,8 +57,18 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       
+      - name: Check if Dockerfile exists
+        id: dockerfile-check
+        run: |
+          if [ -f "services/${{ matrix.service }}/Dockerfile" ]; then
+            echo "has_dockerfile=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_dockerfile=false" >> $GITHUB_OUTPUT
+          fi
+      
       - name: Check if Docker credentials are available
         id: docker-check
+        if: steps.dockerfile-check.outputs.has_dockerfile == 'true'
         run: |
           if [ -z "${{ secrets.DOCKER_USERNAME }}" ] || [ -z "${{ secrets.DOCKER_PASSWORD }}" ]; then
             echo "has_credentials=false" >> $GITHUB_OUTPUT
@@ -72,13 +82,15 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
         if: |
+          steps.dockerfile-check.outputs.has_dockerfile == 'true' &&
           github.event_name != 'pull_request' &&
           steps.docker-check.outputs.has_credentials == 'true'
       
       - name: Build Docker image
         uses: docker/build-push-action@v5
+        if: steps.dockerfile-check.outputs.has_dockerfile == 'true'
         with:
-          context: ./${{ matrix.service }}
+          context: ./services/${{ matrix.service }}
           push: ${{ github.event_name != 'pull_request' && steps.docker-check.outputs.has_credentials == 'true' }}
           tags: |
             ${{ steps.docker-check.outputs.has_credentials == 'true' && format('{0}/{1}:latest', secrets.DOCKER_USERNAME, matrix.service) || format('{0}:local', matrix.service) }}

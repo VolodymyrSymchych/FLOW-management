@@ -8,38 +8,51 @@ Error: Cannot find module '../lib/tsc.js'
 ```
 
 This occurred because:
-1. Using npm workspaces with `npm install --include=dev` at the root level
-2. TypeScript was installed but its internal files were corrupted or not properly linked
-3. The workspace-based installation didn't properly install dependencies in each package
+1. Using `npm install` in a custom install command attempts to merge dependencies rather than clean them
+2. This leads to broken `tsc` binary links where the binary exists but can't find its internal files
+3. The corrupted TypeScript installation causes build failures
 
 ## Root Cause
 
-When using npm workspaces, running `npm install` at the root doesn't always properly install devDependencies in workspace packages. This caused TypeScript to be partially installed, where the `bin/tsc` script existed but couldn't find the actual compiler code at `../lib/tsc.js`.
+When using `npm install` in Vercel's `installCommand`, npm attempts to merge dependencies with existing `node_modules` rather than doing a clean install. This can result in:
+- Partially installed packages
+- Broken symlinks
+- Mismatched versions between `package-lock.json` and installed packages
+- Corrupted TypeScript installation where `bin/tsc` exists but `../lib/tsc.js` is missing
 
 ## Solution
 
-Changed the build approach to:
-1. Install dependencies directly in each workspace package
-2. Build the shared package first (with its own TypeScript installation)
-3. Then build the service package (with its own dependencies)
+**Use `npm ci` (Clean Install) instead of `npm install`**
 
-### Updated Build Command
+`npm ci`:
+- Deletes existing `node_modules` folder
+- Installs dependencies exactly as specified in `package-lock.json`
+- Guarantees that binaries and their internal files match perfectly
+- Prevents dependency corruption
+
+### Updated Configuration
 
 **Before:**
 ```json
-"buildCommand": "cd ../.. && npm install --include=dev && npm run build:shared && cd services/project-service && npm run build"
+{
+  "installCommand": "cd ../.. && npm install --include=dev",
+  "buildCommand": "cd ../.. && npm run build:shared && cd services/project-service && npm run build"
+}
 ```
 
 **After:**
 ```json
-"buildCommand": "cd ../../shared && npm install && npm run build && cd ../services/project-service && npm install && npm run build"
+{
+  "installCommand": "cd ../.. && npm ci --include=dev",
+  "buildCommand": "npm run build"
+}
 ```
 
 ### What Changed
 
-1. **Removed workspace dependency**: Instead of using `npm run build:shared` from root, we directly run the build in the shared package
-2. **Direct npm install**: Each package installs its own dependencies, ensuring TypeScript is properly installed
-3. **Isolated builds**: Each workspace builds independently, avoiding cross-workspace dependency issues
+1. **`npm install` → `npm ci`**: Clean install prevents dependency corruption
+2. **Simplified build command**: Service's build script already handles building shared
+3. **`--include=dev` flag**: Ensures devDependencies (like TypeScript) are installed even in production mode
 
 ## Files Updated
 
@@ -50,44 +63,55 @@ Changed the build approach to:
 
 ## Build Process Flow
 
-1. Navigate to `shared/` directory
-2. Install dependencies (including TypeScript)
-3. Build the shared package
-4. Navigate to specific service directory
-5. Install service dependencies
-6. Build the service
+1. **Install Command**: Runs from service directory, navigates to root (`cd ../..`)
+2. **Clean Install**: `npm ci --include=dev` deletes `node_modules` and installs fresh dependencies
+3. **Build Command**: Runs from service directory, executes `npm run build`
+4. **Service Build**: Service's build script automatically builds shared package first, then compiles TypeScript
 
 ## Testing
 
 To test locally:
 ```bash
-cd shared
-npm install
-npm run build
+# From root directory
+npm ci --include=dev
 
-cd ../services/project-service
-npm install
+# From service directory
+cd services/auth-service
 npm run build
 ```
 
+## Why `npm ci` Works
+
+- **Deterministic**: Installs exact versions from `package-lock.json`
+- **Clean**: Removes existing `node_modules` before installing
+- **Fast**: Optimized for CI/CD environments
+- **Reliable**: Prevents version mismatches and corruption
+
 ## Alternative Solutions Considered
 
-1. **Using `npm ci`**: Didn't work because workspaces require flexible dependency resolution
+1. **Using `npm install`**: Causes dependency merging and corruption
 2. **Installing TypeScript globally**: Not recommended for Vercel serverless environment
 3. **Using `npx tsc`**: Could work but adds overhead and doesn't solve the root cause
-4. **Removing TypeScript then reinstalling**: Too hacky and unreliable
+4. **Manual cleanup**: Too hacky and unreliable
 
 ## Prevention
 
 To avoid this issue in the future:
-- Keep workspace packages self-contained with their own dependencies
-- Test builds in a clean environment (e.g., Docker) before deploying
-- Consider using `npm ci` only when you have a stable package-lock.json
+- **Always use `npm ci` in CI/CD environments** instead of `npm install`
+- Keep `package-lock.json` committed to version control
+- Use `--include=dev` flag when devDependencies are needed (like TypeScript)
+- Test builds in a clean environment before deploying
 - Ensure each workspace has all required devDependencies listed
+
+## Requirements
+
+- `package-lock.json` must exist in the root directory (required for `npm ci`)
+- All workspace packages must have their dependencies properly listed
+- TypeScript must be in `devDependencies` of both root and shared packages
 
 ## Related Issues
 
 - GitHub Actions workflow: Fixed by removing `rm -rf node_modules/typescript` command
 - Local development: Works fine because dependencies are properly hoisted in workspace mode
-- Vercel environment: Required explicit per-package installation to work correctly
+- Vercel environment: Required `npm ci` for clean, deterministic installs
 

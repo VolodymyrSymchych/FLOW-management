@@ -25,10 +25,14 @@ export interface SessionData {
 }
 
 export async function createSession(data: SessionData) {
+  // Use same issuer as microservices for compatibility
+  const JWT_ISSUER = process.env.JWT_ISSUER || 'project-scope-analyzer';
+  
   const token = await new SignJWT({ ...data })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime('1h') // Reduced from 7d to 1h
+    .setIssuer(JWT_ISSUER) // Add issuer claim for microservice compatibility
     .sign(JWT_SECRET);
 
   const cookieStore = await cookies();
@@ -57,7 +61,10 @@ export async function getSession(autoRefresh: boolean = true): Promise<SessionDa
   }
 
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
+    const JWT_ISSUER = process.env.JWT_ISSUER || 'project-scope-analyzer';
+    const { payload } = await jwtVerify(token, JWT_SECRET, {
+      issuer: JWT_ISSUER, // Verify issuer claim matches
+    });
 
     if (!payload.userId || !payload.email || !payload.username) {
       return null;

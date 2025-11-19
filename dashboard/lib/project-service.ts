@@ -20,8 +20,25 @@ class ProjectServiceClient {
     try {
       const { cookies } = await import('next/headers');
       const cookieStore = await cookies();
-      return cookieStore.get('auth_token')?.value || null;
+      
+      // Try auth_token first (from auth-service)
+      const authToken = cookieStore.get('auth_token')?.value;
+      if (authToken) {
+        console.log('✅ Found auth_token cookie');
+        return authToken;
+      }
+      
+      // Fallback to session token (local dashboard session)
+      const sessionToken = cookieStore.get('session')?.value;
+      if (sessionToken) {
+        console.log('⚠️ Using session token as fallback (may not work with microservice)');
+        return sessionToken;
+      }
+      
+      console.warn('❌ No auth token found in cookies');
+      return null;
     } catch (error) {
+      console.error('Error getting auth token:', error);
       return null;
     }
   }
@@ -33,6 +50,9 @@ class ProjectServiceClient {
     const token = await this.getAuthToken();
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
+      console.log('✅ Added Authorization header');
+    } else {
+      console.warn('⚠️ No auth token available - request may fail');
     }
     
     // Add service API key (for service-to-service authentication, server-side only)
@@ -40,8 +60,16 @@ class ProjectServiceClient {
       const serviceApiKey = process.env.PROJECT_SERVICE_API_KEY;
       if (serviceApiKey) {
         headers['X-Service-API-Key'] = serviceApiKey;
+        console.log('✅ Added X-Service-API-Key header');
+      } else {
+        console.warn('⚠️ PROJECT_SERVICE_API_KEY not set');
       }
     }
+    
+    console.log('📋 Request headers:', {
+      hasAuth: !!headers['Authorization'],
+      hasApiKey: !!headers['X-Service-API-Key'],
+    });
     
     return headers;
   }

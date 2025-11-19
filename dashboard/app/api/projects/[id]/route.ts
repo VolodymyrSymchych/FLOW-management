@@ -3,6 +3,18 @@ import { getSession } from '@/lib/auth';
 import { projectService } from '@/lib/project-service';
 import { storage } from '@/server/storage';
 
+// Helper to safely convert to ISO string
+const toISOString = (date: any) => {
+  if (!date) return undefined;
+  if (typeof date === 'string') return date;
+  if (date instanceof Date) return date.toISOString();
+  try {
+    return new Date(date).toISOString();
+  } catch {
+    return undefined;
+  }
+};
+
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
@@ -56,11 +68,11 @@ export async function GET(
         timeline: result.project.timeline || '',
         score: result.project.score || 0,
         risk_level: result.project.riskLevel || 'LOW',
-        created_at: result.project.createdAt?.toISOString() || new Date().toISOString(),
+        created_at: toISOString(result.project.createdAt) || new Date().toISOString(),
         status: result.project.status || 'in_progress',
         budget: result.project.budget,
-        start_date: result.project.startDate?.toISOString(),
-        end_date: result.project.endDate?.toISOString(),
+        start_date: toISOString(result.project.startDate),
+        end_date: toISOString(result.project.endDate),
       };
 
       return NextResponse.json({
@@ -123,11 +135,11 @@ export async function GET(
       timeline: project.timeline || '',
       score: project.score || 0,
       risk_level: project.riskLevel || 'LOW',
-      created_at: project.createdAt?.toISOString() || new Date().toISOString(),
+      created_at: toISOString(project.createdAt) || new Date().toISOString(),
       status: project.status || 'in_progress',
       budget: project.budget,
-      start_date: project.startDate?.toISOString(),
-      end_date: project.endDate?.toISOString(),
+      start_date: toISOString(project.startDate),
+      end_date: toISOString(project.endDate),
       team_id: teamId,
     };
 

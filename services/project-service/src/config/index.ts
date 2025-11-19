@@ -43,8 +43,9 @@ export const config = {
 };
 
 // Validate required configuration
-if (!config.database.name || !config.database.user || !config.database.password) {
-  throw new Error('Database configuration is incomplete');
+// Allow either DATABASE_URL or individual DB config
+if (!process.env.DATABASE_URL && (!config.database.name || !config.database.user || !config.database.password)) {
+  throw new Error('Database configuration is incomplete. Either set DATABASE_URL or DB_NAME, DB_USER, and DB_PASSWORD.');
 }
 
 if (!config.jwt.secret) {

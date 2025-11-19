@@ -65,11 +65,37 @@ class ProjectServiceClient {
    * Get project by ID
    */
   async getProject(projectId: number): Promise<{ project?: any; error?: string }> {
+    const serviceUrl = process.env.NEXT_PUBLIC_PROJECT_SERVICE_URL || 'http://localhost:3004';
+    console.log('🔍 ProjectService.getProject called:', {
+      projectId,
+      serviceUrl,
+      baseURL: this.client.defaults.baseURL,
+    });
+    
     try {
       const headers = await this.getHeaders();
+      console.log('📤 Making request to microservice:', {
+        url: `${this.client.defaults.baseURL}/api/projects/${projectId}`,
+        hasAuthToken: !!headers['Authorization'],
+        hasApiKey: !!headers['X-Service-API-Key'],
+      });
+      
       const response = await this.client.get(`/api/projects/${projectId}`, { headers });
+      console.log('✅ Microservice response received:', {
+        status: response.status,
+        hasProject: !!response.data?.project,
+      });
+      
       return { project: response.data.project };
     } catch (error: any) {
+      console.error('❌ Microservice request failed:', {
+        message: error.message,
+        code: error.code,
+        status: error.response?.status,
+        data: error.response?.data,
+        url: error.config?.url,
+      });
+      
       return {
         error: error.response?.data?.error || error.message || 'Failed to get project',
       };

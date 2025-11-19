@@ -31,61 +31,73 @@ export async function GET(
     }
 
     // Try project-service first
-    const result = await projectService.getProject(projectId);
+    const projectServiceUrl = process.env.NEXT_PUBLIC_PROJECT_SERVICE_URL;
     
-    if (result.project) {
-      // Parse analysis data if it exists
-      let analysis = {
-        results: {},
-        report: 'Analysis not available',
-        metadata: {}
-      };
+    if (projectServiceUrl) {
+      console.log('🔗 Using project-service microservice:', projectServiceUrl);
+      const result = await projectService.getProject(projectId);
+      
+      if (result.project) {
+        console.log('✅ Got project from microservice:', result.project.id);
+        
+        // Parse analysis data if it exists
+        let analysis = {
+          results: {},
+          report: 'Analysis not available',
+          metadata: {}
+        };
 
-      if (result.project.analysisData) {
-        try {
-          const parsed = typeof result.project.analysisData === 'string' 
-            ? JSON.parse(result.project.analysisData)
-            : result.project.analysisData;
-          analysis = {
-            results: parsed.results || {},
-            report: parsed.report || result.project.document || 'Analysis not available',
-            metadata: parsed.metadata || {}
-          };
-        } catch (e) {
-          analysis.report = result.project.document || 'Analysis not available';
+        if (result.project.analysisData) {
+          try {
+            const parsed = typeof result.project.analysisData === 'string' 
+              ? JSON.parse(result.project.analysisData)
+              : result.project.analysisData;
+            analysis = {
+              results: parsed.results || {},
+              report: parsed.report || result.project.document || 'Analysis not available',
+              metadata: parsed.metadata || {}
+            };
+          } catch (e) {
+            analysis.report = result.project.document || 'Analysis not available';
+          }
+        } else if (result.project.document) {
+          analysis.report = result.project.document;
         }
-      } else if (result.project.document) {
-        analysis.report = result.project.document;
+
+        // Format project data to match expected interface
+        const projectData = {
+          id: result.project.id,
+          name: result.project.name,
+          type: result.project.type || '',
+          industry: result.project.industry || '',
+          team_size: result.project.teamSize || '',
+          timeline: result.project.timeline || '',
+          score: result.project.score || 0,
+          risk_level: result.project.riskLevel || 'LOW',
+          created_at: toISOString(result.project.createdAt) || new Date().toISOString(),
+          status: result.project.status || 'in_progress',
+          budget: result.project.budget,
+          start_date: toISOString(result.project.startDate),
+          end_date: toISOString(result.project.endDate),
+        };
+
+        return NextResponse.json({
+          project: projectData,
+          analysis
+        });
       }
-
-      // Format project data to match expected interface
-      const projectData = {
-        id: result.project.id,
-        name: result.project.name,
-        type: result.project.type || '',
-        industry: result.project.industry || '',
-        team_size: result.project.teamSize || '',
-        timeline: result.project.timeline || '',
-        score: result.project.score || 0,
-        risk_level: result.project.riskLevel || 'LOW',
-        created_at: toISOString(result.project.createdAt) || new Date().toISOString(),
-        status: result.project.status || 'in_progress',
-        budget: result.project.budget,
-        start_date: toISOString(result.project.startDate),
-        end_date: toISOString(result.project.endDate),
-      };
-
-      return NextResponse.json({
-        project: projectData,
-        analysis
-      });
+      
+      // If microservice returned error, log it
+      if (result.error) {
+        console.warn('⚠️ Project service error, falling back to local storage:', result.error);
+      }
+    } else {
+      console.log('⚠️ NEXT_PUBLIC_PROJECT_SERVICE_URL not set, using local storage');
     }
 
     // Fallback to local storage
-    if (result.error) {
-      console.warn('Project service error, falling back to local storage:', result.error);
-    }
-
+    console.log('📦 Using local database storage (fallback)');
+    
     // Get project from database
     const project = await storage.getProject(projectId);
     if (!project) {

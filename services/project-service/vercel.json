@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "buildCommand": "cd ../.. && npm run build:shared && cd services/project-service && npm run build",
-  "installCommand": "npm install",
+  "buildCommand": "npm run build",
+  "installCommand": "cd ../.. && npm install --include=dev",
   "outputDirectory": "dist",
   "framework": null,
   "routes": [

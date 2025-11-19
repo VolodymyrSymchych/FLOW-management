@@ -20,8 +20,9 @@ router.get('/ready', async (req: Request, res: Response) => {
   // Check database connection
   try {
     const { pool } = await import('../db');
-    if (pool) {
-      const result = await pool.query('SELECT 1');
+    const poolInstance = pool();
+    if (poolInstance) {
+      const result = await poolInstance.query('SELECT 1');
       checks.database = result && result.rows && result.rows.length > 0;
     } else {
       checks.database = false;

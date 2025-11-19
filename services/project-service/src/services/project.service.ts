@@ -67,7 +67,7 @@ export class ProjectService {
    */
   async getUserProjects(userId: number): Promise<Project[]> {
     try {
-      const userProjects = await db
+      const userProjects = await db()
         .select()
         .from(projects)
         .where(and(eq(projects.userId, userId), isNull(projects.deletedAt)))
@@ -91,7 +91,7 @@ export class ProjectService {
         conditions.push(eq(projects.userId, userId));
       }
 
-      const [project] = await db
+      const [project] = await db()
         .select()
         .from(projects)
         .where(and(...conditions));
@@ -112,7 +112,7 @@ export class ProjectService {
    */
   async createProject(userId: number, input: CreateProjectInput): Promise<Project> {
     try {
-      const [newProject] = await db
+      const [newProject] = await db()
         .insert(projects)
         .values({
           userId,
@@ -159,7 +159,7 @@ export class ProjectService {
       if (input.document !== undefined) updateData.document = input.document;
       if (input.analysisData !== undefined) updateData.analysisData = input.analysisData;
 
-      const [updatedProject] = await db
+      const [updatedProject] = await db()
         .update(projects)
         .set(updateData)
         .where(and(
@@ -185,7 +185,7 @@ export class ProjectService {
    */
   async deleteProject(projectId: number, userId: number): Promise<boolean> {
     try {
-      const [deletedProject] = await db
+      const [deletedProject] = await db()
         .update(projects)
         .set({
           deletedAt: new Date(),
@@ -210,7 +210,7 @@ export class ProjectService {
    */
   async getProjectStats(userId: number): Promise<ProjectStats> {
     try {
-      const userProjects = await db
+      const userProjects = await db()
         .select()
         .from(projects)
         .where(and(eq(projects.userId, userId), isNull(projects.deletedAt)));
@@ -258,7 +258,7 @@ export class ProjectService {
         conditions.push(eq(projectTemplates.isPublic, isPublic));
       }
 
-      const templates = await db
+      const templates = await db()
         .select()
         .from(projectTemplates)
         .where(conditions.length > 0 ? and(...conditions) : undefined)
@@ -287,7 +287,7 @@ export class ProjectService {
    */
   async getTemplateById(templateId: number): Promise<any | null> {
     try {
-      const [template] = await db
+      const [template] = await db()
         .select()
         .from(projectTemplates)
         .where(eq(projectTemplates.id, templateId));
@@ -344,7 +344,7 @@ export class ProjectService {
       const project = await this.createProject(userId, projectInput);
 
       // Increment template usage count
-      await db
+      await db()
         .update(projectTemplates)
         .set({
           usageCount: sql`${projectTemplates.usageCount} + 1`,

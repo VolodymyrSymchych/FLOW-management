@@ -23,12 +23,24 @@ export function createApp(): Express {
   app.use(requestLogger);
   app.use(metricsMiddleware);
 
-  // Health check without /api prefix (for convenience)
+  // Simple health check without database (for Vercel health checks)
   app.get('/health', (req, res) => {
     res.json({
       status: 'healthy',
       timestamp: new Date().toISOString(),
       service: config.service.name,
+      env: process.env.NODE_ENV,
+      hasDatabase: !!process.env.DATABASE_URL,
+    });
+  });
+
+  // Root endpoint
+  app.get('/', (req, res) => {
+    res.json({
+      service: config.service.name,
+      status: 'running',
+      version: '1.0.0',
+      timestamp: new Date().toISOString(),
     });
   });
 

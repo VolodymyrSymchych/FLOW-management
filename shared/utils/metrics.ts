@@ -4,7 +4,10 @@ import { Registry, Counter, Histogram, Gauge, collectDefaultMetrics } from 'prom
 export const register = new Registry();
 
 // Collect default metrics (CPU, memory, etc.)
-collectDefaultMetrics({ register });
+// Disabled for serverless environments to prevent timeouts
+if (process.env.ENABLE_DEFAULT_METRICS === 'true') {
+  collectDefaultMetrics({ register });
+}
 
 // Common metrics
 export const httpRequestDuration = new Histogram({

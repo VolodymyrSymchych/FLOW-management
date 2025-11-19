@@ -18,17 +18,42 @@ function getApp() {
 
 // Export as Vercel serverless function
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const app = getApp();
-  
-  // Convert Vercel request/response to Express-compatible format
-  return new Promise((resolve, reject) => {
-    app(req as any, res as any, (err?: any) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(undefined);
-      }
+  try {
+    // Set timeout headers
+    res.setHeader('X-Vercel-Timeout', '60');
+    
+    const app = getApp();
+    
+    // Create a timeout promise
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => {
+        reject(new Error('Request timeout after 55 seconds'));
+      }, 55000); // 55s timeout (before Vercel's 60s)
     });
-  });
+    
+    // Race between request and timeout
+    const requestPromise = new Promise((resolve, reject) => {
+      app(req as any, res as any, (err?: any) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(undefined);
+        }
+      });
+    });
+    
+    await Promise.race([requestPromise, timeoutPromise]);
+  } catch (error) {
+    console.error('Handler error:', error);
+    
+    // Send error response if not already sent
+    if (!res.headersSent) {
+      res.status(503).json({
+        error: 'Service temporarily unavailable',
+        message: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString(),
+      });
+    }
+  }
 }
 

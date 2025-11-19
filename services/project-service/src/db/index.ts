@@ -13,9 +13,11 @@ function getPool(): Pool {
       // Use connection string (Neon, etc.)
       pool = new Pool({
         connectionString: process.env.DATABASE_URL,
-        max: 1, // Reduced for serverless - Vercel creates many instances
-        connectionTimeoutMillis: 10000, // 10 seconds timeout
-        idleTimeoutMillis: 30000, // Close idle connections after 30s
+        max: 1, // Only 1 connection for serverless
+        min: 0, // Don't maintain idle connections
+        connectionTimeoutMillis: 5000, // Reduced to 5 seconds
+        idleTimeoutMillis: 10000, // Close idle connections after 10s
+        allowExitOnIdle: true, // Allow process to exit
         ssl: process.env.DATABASE_URL.includes('sslmode=require') ? { rejectUnauthorized: false } : undefined,
       });
     } else {
@@ -27,14 +29,24 @@ function getPool(): Pool {
         user: config.database.user,
         password: config.database.password,
         max: 1,
-        connectionTimeoutMillis: 10000,
-        idleTimeoutMillis: 30000,
+        min: 0,
+        connectionTimeoutMillis: 5000,
+        idleTimeoutMillis: 10000,
+        allowExitOnIdle: true,
       });
     }
 
     // Handle connection errors gracefully
     pool.on('error', (err) => {
-      console.error('Unexpected database error', err);
+      console.error('Unexpected database error:', err);
+      // Reset pool on error to allow retry
+      pool = null;
+      db = null;
+    });
+
+    // Log successful connection
+    pool.on('connect', () => {
+      console.log('Database connection established');
     });
   }
   return pool;

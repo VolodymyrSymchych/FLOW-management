@@ -54,7 +54,6 @@ async function cacheSession(token: string, userId: string, ttl: number = 3600): 
 
 // Routes that require authentication
 const protectedRoutes = [
-  '/',
   '/dashboard',
   '/projects',
   '/tasks',
@@ -67,6 +66,10 @@ const protectedRoutes = [
   '/friends',
   '/timeline',
   '/projects-timeline',
+  '/payment',
+  '/performance',
+  '/charts',
+  '/invoices',
 ];
 
 // Public routes that authenticated users shouldn't access
@@ -77,9 +80,7 @@ export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
     // Check if the route needs protection
-    const isProtectedRoute = protectedRoutes.some(route =>
-      route === '/' ? pathname === '/' : pathname.startsWith(route)
-    );
+    const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
     const isAuthRoute = authRoutes.some(route => pathname.startsWith(route));
 
     // Skip middleware for non-protected and non-auth routes
@@ -126,7 +127,7 @@ export async function middleware(request: NextRequest) {
     }
 
     if (isAuthRoute && isAuthenticated) {
-      return NextResponse.redirect(new URL('/dashboard/projects', request.url));
+      return NextResponse.redirect(new URL('/dashboard', request.url));
     }
 
     return NextResponse.next();
@@ -137,9 +138,7 @@ export async function middleware(request: NextRequest) {
     // Security: On middleware error, redirect to sign-in for protected routes
     // This prevents bypassing authentication if an error occurs
     const { pathname } = request.nextUrl;
-    const isProtectedRoute = protectedRoutes.some(route =>
-      route === '/' ? pathname === '/' : pathname.startsWith(route)
-    );
+    const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
 
     if (isProtectedRoute) {
       const url = new URL('/sign-in', request.url);

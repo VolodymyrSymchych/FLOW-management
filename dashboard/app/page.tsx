@@ -1,3 +1,5 @@
+'use client';
+
 import { Hero } from '@/components/landing/Hero';
 import { ProblemStatement } from '@/components/landing/ProblemStatement';
 import { Solution } from '@/components/landing/Solution';
@@ -8,8 +10,29 @@ import { Footer } from '@/components/landing/Footer';
 import { AnimatedBackground } from '@/components/landing/AnimatedBackground';
 import { Logo } from '@/components/Logo';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 
 export default function LandingPage() {
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        // Check if user is authenticated by checking for session cookie
+        const checkAuth = async () => {
+            try {
+                const response = await fetch('/api/auth/me', {
+                    credentials: 'include',
+                });
+                setIsAuthenticated(response.ok);
+            } catch {
+                setIsAuthenticated(false);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        checkAuth();
+    }, []);
+
     return (
         <div className="min-h-screen bg-background text-text-primary selection:bg-primary/30">
             <AnimatedBackground />
@@ -38,24 +61,39 @@ export default function LandingPage() {
                     </div>
 
                     <div className="flex items-center gap-4">
-                        <Link
-                            href="/sign-in"
-                            className="text-sm font-medium text-text-secondary hover:text-text-primary transition-colors"
-                        >
-                            Log in
-                        </Link>
-                        <Link
-                            href="/sign-in"
-                            className="px-4 py-2 rounded-lg glass-button text-white text-sm font-medium hover:scale-105 active:scale-95 transition-all"
-                        >
-                            Get Started
-                        </Link>
+                        {!isLoading && (
+                            <>
+                                {isAuthenticated ? (
+                                    <Link
+                                        href="/dashboard"
+                                        className="px-4 py-2 rounded-lg glass-button text-white text-sm font-medium hover:scale-105 active:scale-95 transition-all"
+                                    >
+                                        Let's Get to Work →
+                                    </Link>
+                                ) : (
+                                    <>
+                                        <Link
+                                            href="/sign-in"
+                                            className="text-sm font-medium text-text-secondary hover:text-text-primary transition-colors"
+                                        >
+                                            Log in
+                                        </Link>
+                                        <Link
+                                            href="/sign-in"
+                                            className="px-4 py-2 rounded-lg glass-button text-white text-sm font-medium hover:scale-105 active:scale-95 transition-all"
+                                        >
+                                            Get Started
+                                        </Link>
+                                    </>
+                                )}
+                            </>
+                        )}
                     </div>
                 </div>
             </nav>
 
             <main>
-                <Hero />
+                <Hero isAuthenticated={isAuthenticated} />
                 <div id="problem">
                     <ProblemStatement />
                 </div>

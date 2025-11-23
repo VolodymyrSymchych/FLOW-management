@@ -5,7 +5,7 @@ import { ArrowRight, Sparkles, ShieldCheck, Zap, CheckCircle2 } from 'lucide-rea
 import Link from 'next/link';
 import { useRef } from 'react';
 
-export function Hero() {
+export function Hero({ isAuthenticated = false }: { isAuthenticated?: boolean }) {
     const containerRef = useRef<HTMLDivElement>(null);
     const { scrollYProgress } = useScroll({
         target: containerRef,
@@ -83,10 +83,10 @@ export function Hero() {
                     className="flex flex-wrap items-center justify-center gap-4"
                 >
                     <Link
-                        href="/sign-in"
+                        href={isAuthenticated ? "/dashboard" : "/sign-in"}
                         className="group inline-flex items-center gap-2 px-8 py-4 rounded-xl glass-button text-white font-semibold hover:scale-105 active:scale-95 transition-all"
                     >
-                        Start Free Trial
+                        {isAuthenticated ? "Let's Get to Work" : "Start Free Trial"}
                         <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                     </Link>
                     <button className="px-8 py-4 rounded-xl glass-medium border border-white/10 text-text-primary font-semibold hover:bg-white/5 transition-all">

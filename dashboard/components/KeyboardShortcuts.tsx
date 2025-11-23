@@ -43,11 +43,11 @@ export function KeyboardShortcuts() {
           // Don't prevent default for Cmd+P (print)
           if (e.shiftKey) return;
           e.preventDefault();
-          router.push('/projects');
+          router.push('/dashboard/projects');
           break;
         case 't':
           e.preventDefault();
-          router.push('/tasks');
+          router.push('/dashboard/tasks');
           break;
         case 'g':
           e.preventDefault();
@@ -63,7 +63,7 @@ export function KeyboardShortcuts() {
           break;
         case ',':
           e.preventDefault();
-          router.push('/settings');
+          router.push('/dashboard/settings');
           break;
         // Cmd+K is handled by CommandPalette component
       }

@@ -136,7 +136,7 @@ export default function ProjectsTimelinePage() {
             <span className="text-text-primary">Export</span>
           </button>
           <button
-            onClick={() => router.push('/projects/new')}
+            onClick={() => router.push('/dashboard/projects/new')}
             className="flex items-center space-x-2 px-4 py-2 glass-button text-white rounded-lg"
           >
             <Plus className="w-4 h-4" />
@@ -243,7 +243,7 @@ export default function ProjectsTimelinePage() {
           <h3 className="text-xl font-semibold text-text-primary mb-2">No Projects Yet</h3>
           <p className="text-text-secondary mb-6">Create your first project to see it on the timeline</p>
           <button
-            onClick={() => router.push('/projects/new')}
+            onClick={() => router.push('/dashboard/projects/new')}
             className="glass-button px-6 py-3 rounded-lg text-white"
           >
             Create Project

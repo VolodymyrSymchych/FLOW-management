@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { Plus, Filter, Search, X } from 'lucide-react';
-import { ProjectCard } from '../../components/ProjectCard';
-import { api, Project } from '../../lib/api';
+import { ProjectCard } from '@/components/ProjectCard';
+import { api, Project } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Loader } from '@/components/Loader';
@@ -122,7 +122,7 @@ export default function ProjectsPage() {
           </p>
         </div>
         <button
-          onClick={() => router.push('/projects/new')}
+          onClick={() => router.push('/dashboard/projects/new')}
           className="glass-button flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-semibold"
         >
           <Plus className="w-4 h-4" />
@@ -247,7 +247,7 @@ export default function ProjectsPage() {
             <ProjectCard
               key={project.id}
               {...project}
-              onClick={() => router.push(`/projects/${project.id}`)}
+              onClick={() => router.push(`/dashboard/projects/${project.id}`)}
               onDelete={project.isOwner ? (e) => deleteProject(project.id, e) : undefined}
             />
           ))}

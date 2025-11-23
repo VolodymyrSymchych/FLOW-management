@@ -476,6 +476,34 @@
   background: transparent;
 }
 
+/* Custom scrollbar for horizontal scroll containers */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(128, 152, 249, 0.2) transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  display: block;
+  height: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  display: block;
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  display: block;
+  background: rgba(128, 152, 249, 0.2);
+  border-radius: 3px;
+  transition: background 0.2s ease;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(128, 152, 249, 0.4);
+}
+
+
 /* Selection */
 ::selection {
   background: hsl(var(--primary) / 0.3);

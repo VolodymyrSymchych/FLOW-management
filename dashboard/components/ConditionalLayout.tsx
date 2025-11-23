@@ -15,8 +15,11 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
   const pathname = usePathname();
 
   // Pages that should not have sidebar and header
-  const authPages = ['/sign-in', '/sign-up', '/verify', '/forgot-password'];
+  const authPages = ['/sign-in', '/sign-up', '/verify', '/forgot-password', '/login'];
   const isAuthPage = authPages.includes(pathname);
+
+  // Landing page should not have sidebar and header
+  const isLandingPage = pathname === '/';
 
   // Public invoice pages should not have sidebar and header
   const isPublicInvoicePage = pathname?.startsWith('/invoices/public/');
@@ -25,8 +28,8 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
   const fullScreenPages = ['/timeline'];
   const isFullScreenPage = fullScreenPages.includes(pathname);
 
-  if (isAuthPage || isPublicInvoicePage) {
-    // Render without sidebar and header for auth pages and public invoice pages
+  if (isAuthPage || isPublicInvoicePage || isLandingPage) {
+    // Render without sidebar and header for auth pages, landing page, and public invoice pages
     return <ErrorBoundary>{children}</ErrorBoundary>;
   }
 

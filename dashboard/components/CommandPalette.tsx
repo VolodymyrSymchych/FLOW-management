@@ -294,11 +294,11 @@ export function useKeyboardShortcuts() {
           break;
         case 'p':
           e.preventDefault();
-          router.push('/projects');
+          router.push('/dashboard/projects');
           break;
         case 't':
           e.preventDefault();
-          router.push('/tasks');
+          router.push('/dashboard/tasks');
           break;
         case 'g':
           e.preventDefault();
@@ -314,7 +314,7 @@ export function useKeyboardShortcuts() {
           break;
         case ',':
           e.preventDefault();
-          router.push('/settings');
+          router.push('/dashboard/settings');
           break;
       }
     };

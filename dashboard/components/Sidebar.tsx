@@ -3,10 +3,8 @@
 import {
   LayoutDashboard,
   FolderKanban,
-  Mail,
   Users,
   Settings,
-  CreditCard,
   CheckSquare,
   Clock,
   BarChart3,
@@ -24,16 +22,16 @@ import { useSidebar } from './SidebarContext';
 import { memo, useCallback, useEffect } from 'react';
 
 const navigation = [
-  { name: 'Overview', href: '/', icon: LayoutDashboard },
-  { name: 'Projects', href: '/projects', icon: FolderKanban },
-  { name: 'Invoices', href: '/invoices', icon: Receipt },
-  { name: 'Charts', href: '/charts', icon: BarChart3 },
-  { name: 'Tasks', href: '/tasks', icon: CheckSquare },
-  { name: 'Attendance', href: '/attendance', icon: Clock },
-  { name: 'Documentation', href: '/documentation', icon: FileText },
-  { name: 'Team', href: '/team', icon: Users },
-  { name: 'Performance', href: '/performance', icon: Gauge },
-  { name: 'Settings', href: '/settings', icon: Settings },
+  { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Projects', href: '/dashboard/projects', icon: FolderKanban },
+  { name: 'Invoices', href: '/dashboard/invoices', icon: Receipt },
+  { name: 'Charts', href: '/dashboard/charts', icon: BarChart3 },
+  { name: 'Tasks', href: '/dashboard/tasks', icon: CheckSquare },
+  { name: 'Attendance', href: '/dashboard/attendance', icon: Clock },
+  { name: 'Documentation', href: '/dashboard/documentation', icon: FileText },
+  { name: 'Team', href: '/dashboard/team', icon: Users },
+  { name: 'Performance', href: '/dashboard/performance', icon: Gauge },
+  { name: 'Settings', href: '/dashboard/settings', icon: Settings },
 ];
 
 export const Sidebar = memo(function Sidebar() {
@@ -69,7 +67,7 @@ export const Sidebar = memo(function Sidebar() {
         <div className={cn('mb-8 transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]', isExpanded ? 'px-6' : 'px-4')}>
           {isExpanded ? (
             <div className="flex items-center justify-between gap-3">
-              <Logo variant="default" showText={false} />
+              <Logo variant="default" />
               <button
                 onClick={toggleSidebar}
                 className="p-2 rounded-lg glass-light hover:glass-medium duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] hover:scale-110 active:scale-95 flex-shrink-0"
@@ -81,7 +79,7 @@ export const Sidebar = memo(function Sidebar() {
           ) : (
             <div className="flex flex-col items-center gap-4">
               <div className="flex justify-center w-full">
-                <Logo variant="icon" showText={false} />
+                <Logo variant="icon" />
               </div>
               <button
                 onClick={toggleSidebar}

@@ -12,7 +12,9 @@
     "db:studio": "drizzle-kit studio",
     "build": "cd dashboard && npm install && npm run build",
     "build:shared": "npm run build --workspace=shared",
-    "build:auth-service": "npm run build --workspace=@project-scope-analyzer/auth-service"
+    "build:auth-service": "npm run build --workspace=@project-scope-analyzer/auth-service",
+    "build:team-service": "npm run build --workspace=@project-scope-analyzer/team-service",
+    "build:task-service": "npm run build --workspace=@project-scope-analyzer/task-service"
   },
   "keywords": [],
   "author": "",

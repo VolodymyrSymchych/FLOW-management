@@ -297,7 +297,7 @@ export default function InvoicesPage() {
                   </td>
                   <td className="px-4 py-3">
                     <Link
-                      href={`/projects/${invoice.projectId}`}
+                      href={`/dashboard/projects/${invoice.projectId}`}
                       className="text-xs text-primary hover:underline"
                     >
                       {getProjectName(invoice.projectId)}

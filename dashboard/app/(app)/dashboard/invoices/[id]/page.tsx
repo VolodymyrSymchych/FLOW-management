@@ -223,7 +223,7 @@ export default function InvoiceDetailPage() {
             <p className="text-text-secondary">#{invoice.invoiceNumber}</p>
             {project && (
               <Link
-                href={`/projects/${project.id}`}
+                href={`/dashboard/projects/${project.id}`}
                 className="text-sm text-primary hover:underline mt-2 inline-block"
               >
                 {project.name}

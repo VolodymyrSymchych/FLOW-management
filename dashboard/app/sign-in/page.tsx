@@ -45,7 +45,7 @@ function SignInForm() {
         throw new Error(data.error || 'Failed to sign in');
       }
 
-      router.push('/');
+      router.push('/dashboard');
       router.refresh();
     } catch (err: any) {
       setError(err.message || 'An error occurred');
@@ -61,15 +61,15 @@ function SignInForm() {
       <div className="fixed top-1/4 -left-48 w-[600px] h-[600px] bg-gradient-to-r from-primary/20 to-primary/5 rounded-full blur-[100px] pointer-events-none" />
       <div className="fixed bottom-1/4 -right-48 w-[700px] h-[700px] bg-gradient-to-l from-secondary/20 to-secondary/5 rounded-full blur-[120px] pointer-events-none" />
 
-        <div className="relative z-10 w-full max-w-md my-auto">
-          {/* Logo/Title */}
-          <div className="text-center mb-8">
-            <div className="flex justify-center mb-20">
-              <Logo variant="default" showText={false} />
-            </div>
-            <h1 className="text-4xl font-bold gradient-text mb-2">Welcome Back</h1>
-            <p className="text-text-secondary">Sign in to your account to continue</p>
+      <div className="relative z-10 w-full max-w-md my-auto">
+        {/* Logo/Title */}
+        <div className="text-center mb-8">
+          <div className="flex justify-center mb-20">
+            <Logo variant="default" />
           </div>
+          <h1 className="text-4xl font-bold gradient-text mb-2">Welcome Back</h1>
+          <p className="text-text-secondary">Sign in to your account to continue</p>
+        </div>
 
         {/* Sign In Form */}
         <div className="glass-strong rounded-2xl p-8 border border-border">

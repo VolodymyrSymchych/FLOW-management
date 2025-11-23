@@ -14,7 +14,7 @@ import { PerformanceMonitor } from '@/components/PerformanceMonitor';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Project Scope Analyzer - Dashboard',
+  title: 'Project Management Dashboard',
   description: 'AI-powered project scope analysis and risk detection dashboard',
 };
 

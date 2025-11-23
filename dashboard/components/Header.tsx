@@ -223,14 +223,13 @@ export const Header = memo(function Header() {
                   {teamsLoading
                     ? 'Loading...'
                     : selectedTeam.type === 'all'
-                    ? 'All Teams'
-                    : teams.find(t => t.id === selectedTeam.teamId)?.name || 'Select Team'
+                      ? 'All Teams'
+                      : teams.find(t => t.id === selectedTeam.teamId)?.name || 'Select Team'
                   }
                 </span>
                 <ChevronDown
-                  className={`w-4 h-4 text-text-primary transition-transform duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] ${
-                    showTeamsDropdown ? 'rotate-180' : ''
-                  }`}
+                  className={`w-4 h-4 text-text-primary transition-transform duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] ${showTeamsDropdown ? 'rotate-180' : ''
+                    }`}
                 />
               </button>
 
@@ -255,9 +254,8 @@ export const Header = memo(function Header() {
                           setSelectedTeam({ type: 'all' });
                           setShowTeamsDropdown(false);
                         }}
-                        className={`w-full text-left px-3 py-2 rounded-lg hover:bg-white/10 hover:backdrop-blur-sm text-text-primary transition-all duration-200 ${
-                          selectedTeam.type === 'all' ? 'bg-white/10' : ''
-                        }`}
+                        className={`w-full text-left px-3 py-2 rounded-lg hover:bg-white/10 hover:backdrop-blur-sm text-text-primary transition-all duration-200 ${selectedTeam.type === 'all' ? 'bg-white/10' : ''
+                          }`}
                       >
                         <div className="font-medium text-sm">All Teams</div>
                         <div className="text-xs text-text-tertiary">View all team data</div>
@@ -293,9 +291,8 @@ export const Header = memo(function Header() {
                               setSelectedTeam({ type: 'single', teamId: team.id });
                               setShowTeamsDropdown(false);
                             }}
-                            className={`w-full text-left px-3 py-2 rounded-lg hover:bg-white/10 hover:backdrop-blur-sm text-text-primary transition-all duration-200 ${
-                              selectedTeam.type === 'single' && selectedTeam.teamId === team.id ? 'bg-white/10' : ''
-                            }`}
+                            className={`w-full text-left px-3 py-2 rounded-lg hover:bg-white/10 hover:backdrop-blur-sm text-text-primary transition-all duration-200 ${selectedTeam.type === 'single' && selectedTeam.teamId === team.id ? 'bg-white/10' : ''
+                              }`}
                           >
                             <div className="font-medium text-sm">{team.name}</div>
                             {team.description && (
@@ -339,120 +336,128 @@ export const Header = memo(function Header() {
             </div>
           </div>
 
-        {/* Right section */}
-        <div className="flex items-center space-x-4">
-          {/* Search */}
-          <div className="relative flex items-center">
-            <div className="absolute left-3 flex items-center h-full pointer-events-none">
-              <Search className="w-4 h-4 text-text-tertiary" />
-            </div>
-            <input
-              type="text"
-              placeholder="Search"
-              aria-label="Search projects and tasks"
-              className="glass-medium border border-white/10 pl-10 pr-4 py-2 rounded-lg text-text-primary placeholder:text-text-tertiary text-sm w-32 sm:w-48 md:w-64 focus:border-primary/50 focus:outline-none transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]"
-            />
-          </div>
-
-          {/* Notifications */}
-          <NotificationBell />
-
-          {/* User profile dropdown */}
-          <div className="relative pl-4 border-l border-white/10">
-            <button
-              ref={userButtonRef}
-              onClick={() => setShowUserDropdown(!showUserDropdown)}
-              aria-expanded={showUserDropdown}
-              aria-haspopup="true"
-              aria-label="Open user menu"
-              className="flex items-center space-x-3 hover:opacity-80 transition-opacity duration-200"
-            >
-              <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-semibold flex-shrink-0">
-                {initials}
+          {/* Right section */}
+          <div className="flex items-center space-x-4">
+            {/* Search */}
+            <div className="relative flex items-center">
+              <div className="absolute left-3 flex items-center h-full pointer-events-none">
+                <Search className="w-4 h-4 text-text-tertiary" />
               </div>
-              {user && (
-                <div className="hidden md:block text-left">
-                  <div className="text-sm font-semibold text-text-primary">
-                    {user.fullName || user.username}
-                  </div>
-                  <div className="text-xs text-text-tertiary">{user.email}</div>
-                </div>
-              )}
-              <ChevronDown 
-                className={`w-4 h-4 text-text-secondary transition-transform duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] flex-shrink-0 ${
-                  showUserDropdown ? 'rotate-180' : ''
-                }`} 
+              <input
+                type="text"
+                placeholder="Search"
+                aria-label="Search projects and tasks"
+                className="glass-medium border border-white/10 pl-10 pr-4 py-2 rounded-lg text-text-primary placeholder:text-text-tertiary text-sm w-32 sm:w-48 md:w-64 focus:border-primary/50 focus:outline-none transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]"
               />
-            </button>
+            </div>
 
-            {showUserDropdown && mounted && createPortal(
-              <>
-                <div
-                  className="fixed inset-0 z-[9998]"
-                  onClick={() => setShowUserDropdown(false)}
-                />
-                <div
-                  ref={userDropdownRef}
-                  className="fixed w-64 rounded-xl border border-white/10  z-[10000] glass-heavy overflow-hidden animate-fadeIn"
-                  style={{
-                    top: `${userDropdownPosition.top}px`,
-                    right: `${userDropdownPosition.right}px`
-                  }}
-                >
-                  <div className="p-2">
-                    {/* User Info */}
-                    <div className="px-3 py-3 border-b border-white/10">
-                      <div className="font-semibold text-text-primary text-sm">
-                        {user?.fullName || user?.username}
-                      </div>
-                      <div className="text-xs text-text-tertiary mt-0.5">{user?.email}</div>
+            {/* Notifications */}
+            <NotificationBell />
+
+            {/* User profile dropdown */}
+            <div className="relative pl-4 border-l border-white/10">
+              <button
+                ref={userButtonRef}
+                onClick={() => setShowUserDropdown(!showUserDropdown)}
+                aria-expanded={showUserDropdown}
+                aria-haspopup="true"
+                aria-label="Open user menu"
+                className="flex items-center space-x-3 hover:opacity-80 transition-opacity duration-200"
+              >
+                <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-semibold flex-shrink-0">
+                  {initials}
+                </div>
+                {user && (
+                  <div className="hidden md:block text-left">
+                    <div className="text-sm font-semibold text-text-primary">
+                      {user.fullName || user.username}
                     </div>
+                    <div className="text-xs text-text-tertiary">{user.email}</div>
+                  </div>
+                )}
+                <ChevronDown
+                  className={`w-4 h-4 text-text-secondary transition-transform duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] flex-shrink-0 ${showUserDropdown ? 'rotate-180' : ''
+                    }`}
+                />
+              </button>
 
-                    {/* Menu Items */}
-                    <button
-                      onClick={() => {
-                        setShowUserDropdown(false);
-                        router.push('/settings');
-                      }}
-                      className="w-full text-left px-3 py-2 rounded-lg hover:bg-white/10 hover:backdrop-blur-sm text-text-primary transition-all duration-200 mt-2"
-                    >
-                      ⚙️ Settings
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowUserDropdown(false);
-                        router.push('/friends');
-                      }}
-                      className="w-full text-left px-3 py-2 rounded-lg hover:bg-white/10 hover:backdrop-blur-sm text-text-primary transition-all duration-200"
-                    >
-                      👥 Friends
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowUserDropdown(false);
-                        router.push('/payment');
-                      }}
-                      className="w-full text-left px-3 py-2 rounded-lg hover:bg-white/10 hover:backdrop-blur-sm text-text-primary transition-all duration-200"
-                    >
-                      💳 Billing
-                    </button>
+              {showUserDropdown && mounted && createPortal(
+                <>
+                  <div
+                    className="fixed inset-0 z-[9998]"
+                    onClick={() => setShowUserDropdown(false)}
+                  />
+                  <div
+                    ref={userDropdownRef}
+                    className="fixed w-64 rounded-xl border border-white/10  z-[10000] glass-heavy overflow-hidden animate-fadeIn"
+                    style={{
+                      top: `${userDropdownPosition.top}px`,
+                      right: `${userDropdownPosition.right}px`
+                    }}
+                  >
+                    <div className="p-2">
+                      {/* User Info */}
+                      <div className="px-3 py-3 border-b border-white/10">
+                        <div className="font-semibold text-text-primary text-sm">
+                          {user?.fullName || user?.username}
+                        </div>
+                        <div className="text-xs text-text-tertiary mt-0.5">{user?.email}</div>
+                      </div>
 
-                    {/* Sign Out */}
-                    <div className="border-t border-white/10 mt-2 pt-2">
+                      {/* Menu Items */}
                       <button
                         onClick={() => {
                           setShowUserDropdown(false);
-                          handleSignOut();
+                          router.push('/dashboard/settings');
                         }}
-                        className="w-full text-left px-3 py-2 rounded-lg hover:bg-danger/20 hover:backdrop-blur-sm text-danger transition-all duration-200"
+                        className="w-full text-left px-3 py-2 rounded-lg hover:bg-white/10 hover:backdrop-blur-sm text-text-primary transition-all duration-200 mt-2"
                       >
-                        🚪 Sign Out
+                        ⚙️ Settings
                       </button>
+                      <button
+                        onClick={() => {
+                          setShowUserDropdown(false);
+                          router.push('/');
+                        }}
+                        className="w-full text-left px-3 py-2 rounded-lg hover:bg-white/10 hover:backdrop-blur-sm text-text-primary transition-all duration-200"
+                      >
+                        ℹ️ About Flow Management
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowUserDropdown(false);
+                          router.push('/friends');
+                        }}
+                        className="w-full text-left px-3 py-2 rounded-lg hover:bg-white/10 hover:backdrop-blur-sm text-text-primary transition-all duration-200"
+                      >
+                        👥 Friends
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowUserDropdown(false);
+                          router.push('/payment');
+                        }}
+                        className="w-full text-left px-3 py-2 rounded-lg hover:bg-white/10 hover:backdrop-blur-sm text-text-primary transition-all duration-200"
+                      >
+                        💳 Billing
+                      </button>
+
+                      {/* Sign Out */}
+                      <div className="border-t border-white/10 mt-2 pt-2">
+                        <button
+                          onClick={() => {
+                            setShowUserDropdown(false);
+                            handleSignOut();
+                          }}
+                          className="w-full text-left px-3 py-2 rounded-lg hover:bg-danger/20 hover:backdrop-blur-sm text-danger transition-all duration-200"
+                        >
+                          🚪 Sign Out
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </>,
-              document.body
+                </>,
+                document.body
               )}
             </div>
           </div>

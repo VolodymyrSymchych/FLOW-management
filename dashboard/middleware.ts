@@ -126,7 +126,7 @@ export async function middleware(request: NextRequest) {
     }
 
     if (isAuthRoute && isAuthenticated) {
-      return NextResponse.redirect(new URL('/projects', request.url));
+      return NextResponse.redirect(new URL('/dashboard/projects', request.url));
     }
 
     return NextResponse.next();

@@ -65,7 +65,7 @@ export default function PaymentMethodsPage() {
         {/* Header */}
         <div className="flex items-center gap-4">
           <button
-            onClick={() => router.push('/settings')}
+            onClick={() => router.push('/dashboard/settings')}
             className="p-2 glass-light rounded-lg hover:glass-medium transition-all hover:scale-110"
           >
             <ArrowLeft className="w-5 h-5 text-text-primary" />

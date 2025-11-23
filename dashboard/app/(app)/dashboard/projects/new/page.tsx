@@ -136,7 +136,7 @@ export default function NewProjectPage() {
         }
       }
 
-      router.push(`/projects/${response.data.project.id}`);
+      router.push(`/dashboard/projects/${response.data.project.id}`);
     } catch (error: any) {
       console.error('Project creation failed:', error);
       alert(error.response?.data?.error || 'Failed to create project. Please try again.');

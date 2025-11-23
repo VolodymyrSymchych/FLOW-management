@@ -26,15 +26,15 @@ export async function proxyToAuthService(
   options: RequestInit = {}
 ): Promise<Response> {
   const url = `${AUTH_SERVICE_URL}${endpoint}`;
-  
+
   // Get service API key from server-side environment (not exposed to client)
-  const serviceApiKey = typeof window === 'undefined' 
-    ? process.env.AUTH_SERVICE_API_KEY 
+  const serviceApiKey = typeof window === 'undefined'
+    ? process.env.AUTH_SERVICE_API_KEY
     : undefined;
-  
+
   const headers = new Headers(options.headers);
   headers.set('Content-Type', 'application/json');
-  
+
   // Add service-to-service authentication header (server-side only)
   if (serviceApiKey) {
     headers.set('X-Service-API-Key', serviceApiKey);
@@ -42,7 +42,7 @@ export async function proxyToAuthService(
     // Log warning if API key is missing in server-side context
     console.warn('AUTH_SERVICE_API_KEY is not set - requests may fail if auth-service requires it');
   }
-  
+
   // Log the request URL in development (without sensitive data)
   if (process.env.NODE_ENV === 'development') {
     console.log('Auth service request:', {
@@ -51,11 +51,15 @@ export async function proxyToAuthService(
       hasApiKey: !!serviceApiKey,
     });
   }
-  
+
+  console.log(`[AuthService] Proxying request to: ${url}`);
+
   const response = await fetch(url, {
     ...options,
     headers,
   });
+
+  console.log(`[AuthService] Response from ${url}: ${response.status} ${response.statusText}`);
 
   return response;
 }
@@ -81,13 +85,13 @@ export const authService = {
         } catch {
           errorData = { error: errorText || `HTTP ${response.status}` };
         }
-        
+
         console.error('Auth service signup error:', {
           status: response.status,
           statusText: response.statusText,
           error: errorData,
         });
-        
+
         return {
           success: false,
           error: errorData.error || errorData.message || `Signup failed: ${response.status}`,
@@ -122,14 +126,14 @@ export const authService = {
         } catch {
           errorData = { error: errorText || `HTTP ${response.status}` };
         }
-        
+
         console.error('Auth service login error:', {
           status: response.status,
           statusText: response.statusText,
           error: errorData,
           url: `${AUTH_SERVICE_URL}/api/auth/login`,
         });
-        
+
         return {
           success: false,
           error: errorData.error || errorData.message || `Login failed: ${response.status}`,
@@ -142,7 +146,7 @@ export const authService = {
         error: error.message,
         url: `${AUTH_SERVICE_URL}/api/auth/login`,
       });
-      
+
       return {
         success: false,
         error: error.message || 'Failed to connect to auth service',
@@ -155,7 +159,7 @@ export const authService = {
       const headers: HeadersInit = {
         Authorization: `Bearer ${token}`,
       };
-      
+
       // Add service API key if available (server-side only)
       if (typeof window === 'undefined') {
         const serviceApiKey = process.env.AUTH_SERVICE_API_KEY;
@@ -163,7 +167,7 @@ export const authService = {
           headers['X-Service-API-Key'] = serviceApiKey;
         }
       }
-      
+
       const response = await proxyToAuthService('/api/auth/logout', {
         method: 'POST',
         headers,
@@ -177,7 +181,7 @@ export const authService = {
         } catch {
           errorData = { error: errorText || `HTTP ${response.status}` };
         }
-        
+
         return {
           success: false,
           error: errorData.error || errorData.message || `Logout failed: ${response.status}`,
@@ -199,7 +203,7 @@ export const authService = {
       const headers: HeadersInit = {
         Authorization: `Bearer ${token}`,
       };
-      
+
       // Add service API key if available (server-side only)
       if (typeof window === 'undefined') {
         const serviceApiKey = process.env.AUTH_SERVICE_API_KEY;
@@ -207,7 +211,7 @@ export const authService = {
           headers['X-Service-API-Key'] = serviceApiKey;
         }
       }
-      
+
       const response = await proxyToAuthService('/api/auth/me', {
         method: 'GET',
         headers,
@@ -221,7 +225,7 @@ export const authService = {
         } catch {
           errorData = { error: errorText || `HTTP ${response.status}` };
         }
-        
+
         return {
           success: false,
           error: errorData.error || errorData.message || `Failed to get user: ${response.status}`,
@@ -253,7 +257,7 @@ export const authService = {
         } catch {
           errorData = { error: errorText || `HTTP ${response.status}` };
         }
-        
+
         return {
           success: false,
           error: errorData.error || errorData.message || `Email verification failed: ${response.status}`,

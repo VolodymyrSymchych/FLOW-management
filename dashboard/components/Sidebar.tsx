@@ -27,7 +27,7 @@ const navigation = [
   { name: 'Overview', href: '/', icon: LayoutDashboard },
   { name: 'Projects', href: '/projects', icon: FolderKanban },
   { name: 'Invoices', href: '/invoices', icon: Receipt },
-  { name: 'Gantt Chart', href: '/timeline', icon: BarChart3 },
+  { name: 'Charts', href: '/charts', icon: BarChart3 },
   { name: 'Tasks', href: '/tasks', icon: CheckSquare },
   { name: 'Attendance', href: '/attendance', icon: Clock },
   { name: 'Documentation', href: '/documentation', icon: FileText },
@@ -98,7 +98,7 @@ export const Sidebar = memo(function Sidebar() {
         <nav className="flex-1 space-y-2 px-3">
           {navigation.map((item) => {
             const isActive = pathname === item.href;
-            const isGantt = item.name === 'Gantt Chart';
+            const isGantt = item.name === 'Charts';
 
             return (
               <Link
@@ -110,10 +110,10 @@ export const Sidebar = memo(function Sidebar() {
                   isGantt && isActive
                     ? 'glass-medium text-white border-2 border-primary/60 scale-105'
                     : isActive
-                    ? 'glass-light text-white border border-primary/40 scale-105'
-                    : isGantt
-                    ? 'text-white/70 hover:glass-light hover:text-white hover:scale-105 active:scale-95 hover:border hover:border-primary/30'
-                    : 'text-white/60 hover:glass-subtle hover:text-white hover:scale-105 active:scale-95'
+                      ? 'glass-light text-white border border-primary/40 scale-105'
+                      : isGantt
+                        ? 'text-white/70 hover:glass-light hover:text-white hover:scale-105 active:scale-95 hover:border hover:border-primary/30'
+                        : 'text-white/60 hover:glass-subtle hover:text-white hover:scale-105 active:scale-95'
                 )}
                 title={!isExpanded ? item.name : undefined}
               >

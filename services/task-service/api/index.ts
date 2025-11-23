@@ -19,10 +19,21 @@ function getApp() {
 // Export as Vercel serverless function
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const app = getApp();
-  
+
+  // Set timeout to 55 seconds (5 seconds before Vercel's 60s limit)
+  const timeout = setTimeout(() => {
+    if (!res.headersSent) {
+      res.status(504).json({
+        error: 'Gateway Timeout',
+        message: 'Request took too long to process',
+      });
+    }
+  }, 55000);
+
   // Convert Vercel request/response to Express-compatible format
   return new Promise((resolve, reject) => {
     app(req as any, res as any, (err?: any) => {
+      clearTimeout(timeout);
       if (err) {
         reject(err);
       } else {

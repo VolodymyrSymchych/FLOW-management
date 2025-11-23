@@ -60,6 +60,20 @@ export function createApp(): Express {
   // Routes
   app.use('/api', routes);
 
+  // Catch-all for common browser requests (favicon, etc.)
+  app.get('/favicon.ico', (req, res) => {
+    res.status(204).end();
+  });
+
+  // 404 handler for all other routes
+  app.use((req, res, next) => {
+    res.status(404).json({
+      error: 'Not Found',
+      message: `Route ${req.method} ${req.path} not found`,
+      service: config.service.name,
+    });
+  });
+
   // Error handling (must be last)
   app.use(errorHandler);
 

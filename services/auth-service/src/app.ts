@@ -29,21 +29,7 @@ export function createApp(): Express {
       service: config.service.name,
       version: '1.0.0',
       status: 'running',
-      message: 'Auth Service API - Visit /api for detailed endpoint information',
-      endpoints: {
-        info: '/api',
-        health: '/health',
-        apiHealth: '/api/health',
-        ready: '/api/ready',
-        metrics: '/api/metrics',
-        auth: {
-          signup: 'POST /api/auth/signup',
-          login: 'POST /api/auth/login',
-          logout: 'POST /api/auth/logout',
-          verifyEmail: 'POST /api/auth/verify-email',
-          me: 'GET /api/auth/me',
-        },
-      },
+      message: 'Auth Service API - Visit /api for detailed endpoint information'
     });
   });
 

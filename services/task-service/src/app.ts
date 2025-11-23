@@ -32,6 +32,16 @@ export function createApp(): Express {
     });
   });
 
+  // Root endpoint - service info
+  app.get('/', (req, res) => {
+    res.json({
+      service: config.service.name,
+      version: '1.0.0',
+      status: 'running',
+      message: 'Task Service is operational',
+    });
+  });
+
   // Service info endpoint (not on root to avoid conflicts with frontend)
   app.get('/api', (req, res) => {
     res.json({

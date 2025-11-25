@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
+import createMiddleware from 'next-intl/middleware';
 
 // Validate JWT_SECRET is set
 if (!process.env.JWT_SECRET) {
@@ -75,17 +76,32 @@ const protectedRoutes = [
 // Public routes that authenticated users shouldn't access
 const authRoutes = ['/sign-in', '/sign-up'];
 
+const intlMiddleware = createMiddleware({
+  // A list of all locales that are supported
+  locales: ['en', 'uk'],
+
+  // Used when no locale matches
+  defaultLocale: 'en'
+});
+
 export async function middleware(request: NextRequest) {
   try {
+    // 1. Run next-intl middleware first to handle locale prefixes
+    const response = intlMiddleware(request);
+
+    // 2. Check authentication
     const { pathname } = request.nextUrl;
 
-    // Check if the route needs protection
-    const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
-    const isAuthRoute = authRoutes.some(route => pathname.startsWith(route));
+    // Remove locale prefix to check routes
+    const pathnameWithoutLocale = pathname.replace(/^\/(en|uk)/, '');
 
-    // Skip middleware for non-protected and non-auth routes
+    // Check if the route needs protection
+    const isProtectedRoute = protectedRoutes.some(route => pathnameWithoutLocale.startsWith(route));
+    const isAuthRoute = authRoutes.some(route => pathnameWithoutLocale.startsWith(route));
+
+    // Skip auth check for non-protected and non-auth routes
     if (!isProtectedRoute && !isAuthRoute) {
-      return NextResponse.next();
+      return response;
     }
 
     // Get the session token
@@ -130,7 +146,7 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
 
-    return NextResponse.next();
+    return response;
   } catch (error) {
     // Log error but don't crash the middleware
     console.error('Middleware error:', error);
@@ -159,9 +175,9 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico, favicon.png (favicon files)
-     * - public (public files)
+     * - static files (images, fonts, etc.)
      */
-    '/((?!api|_next/static|_next/image|favicon\\.ico|favicon\\.png|public).*)',
+    '/((?!api|_next/static|_next/image|favicon\\.ico|favicon\\.png|.*\\.(?:png|jpg|jpeg|gif|svg|ico|webp|woff|woff2|ttf|eot)).*)',
   ],
 };
 

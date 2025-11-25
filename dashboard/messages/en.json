@@ -1,0 +1,27 @@
+{
+    "Metadata": {
+        "title": "Project Management Dashboard",
+        "description": "AI-powered project scope analysis and risk detection dashboard"
+    },
+    "Layout": {
+        "skipToContent": "Skip to main content"
+    },
+    "Navigation": {
+        "dashboard": "Dashboard",
+        "projects": "Projects",
+        "tasks": "Tasks",
+        "team": "Team",
+        "settings": "Settings",
+        "signIn": "Sign In",
+        "signOut": "Sign Out"
+    },
+    "Common": {
+        "loading": "Loading...",
+        "error": "An error occurred",
+        "save": "Save",
+        "cancel": "Cancel",
+        "delete": "Delete",
+        "edit": "Edit",
+        "create": "Create"
+    }
+}

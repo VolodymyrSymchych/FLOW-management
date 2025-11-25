@@ -23,7 +23,7 @@ const nextConfig = {
       path.join(dir, '../node_modules'),
       'node_modules',
     ];
-    
+
     // Add alias for server directory at root level
     config.resolve.alias = {
       ...config.resolve.alias,
@@ -45,4 +45,9 @@ const nextConfig = {
   },
 };
 
-module.exports = nextConfig;
+const createNextIntlPlugin = require('next-intl/plugin');
+
+const withNextIntl = createNextIntlPlugin('./i18n.ts');
+
+module.exports = withNextIntl(nextConfig);
+

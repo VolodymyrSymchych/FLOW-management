@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
 
-const logo = "/assets/logo_1764076446995.png";
+const logo = "/logo.png";
 
 export function Navbar() {
     const [isOpen, setIsOpen] = useState(false);

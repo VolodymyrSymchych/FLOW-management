@@ -16,13 +16,14 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
 
   // Pages that should not have sidebar and header
   const authPages = ['/sign-in', '/sign-up', '/verify', '/forgot-password', '/login'];
-  const isAuthPage = authPages.includes(pathname);
+  const isAuthPage = authPages.some(page => pathname?.endsWith(page));
 
   // Landing page should not have sidebar and header
-  const isLandingPage = pathname === '/';
+  // Match both root and locale-specific root pages (/, /en, /uk)
+  const isLandingPage = pathname === '/' || pathname === '/en' || pathname === '/uk';
 
   // Public invoice pages should not have sidebar and header
-  const isPublicInvoicePage = pathname?.startsWith('/invoices/public/');
+  const isPublicInvoicePage = pathname?.includes('/invoices/public/');
 
   // Pages that need full screen with scroll
   const fullScreenPages = ['/timeline'];

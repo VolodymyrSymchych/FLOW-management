@@ -1,6 +1,6 @@
 import { Twitter, Github, Linkedin, Heart } from "lucide-react";
 
-const logo = "/assets/logo_1764076446995.png";
+const logo = "/logo.png";
 
 export function Footer() {
     return (

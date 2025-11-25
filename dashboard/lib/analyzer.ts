@@ -2,7 +2,7 @@
  * Project Scope Analyzer - TypeScript/Node.js version
  */
 
-import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 import { PromptTemplates } from './prompts';
 
 export interface ProjectMetadata {
@@ -37,25 +37,25 @@ export interface ProgressCallback {
 }
 
 export class ProjectScopeAnalyzer {
-  private client: Anthropic;
+  private client: OpenAI;
   private config: Required<AnalyzerConfig>;
   private prompts: typeof PromptTemplates;
 
   constructor(config: AnalyzerConfig = {}) {
-    const apiKey = config.apiKey || process.env.ANTHROPIC_API_KEY;
+    const apiKey = config.apiKey || process.env.OPENAI_API_KEY;
 
     if (!apiKey) {
       throw new Error(
-        'API key not found. Set ANTHROPIC_API_KEY environment variable or provide it in the config.'
+        'API key not found. Set OPENAI_API_KEY environment variable or provide it in the config.'
       );
     }
 
-    this.client = new Anthropic({ apiKey });
+    this.client = new OpenAI({ apiKey });
     this.prompts = PromptTemplates;
 
     this.config = {
       apiKey,
-      model: config.model || 'claude-sonnet-4-20250514',
+      model: config.model || 'gpt-4o',
       maxTokens: config.maxTokens || 4096,
       temperature: config.temperature || 0.7,
       runMainAnalysis: config.runMainAnalysis !== false,
@@ -69,13 +69,13 @@ export class ProjectScopeAnalyzer {
     };
   }
 
-  private async callClaude(prompt: string, stageName: string): Promise<string> {
+  private async callGPT(prompt: string, stageName: string): Promise<string> {
     if (this.config.verbose) {
       console.log(`Running ${stageName}...`);
     }
 
     try {
-      const message = await this.client.messages.create({
+      const response = await this.client.chat.completions.create({
         model: this.config.model,
         max_tokens: this.config.maxTokens,
         temperature: this.config.temperature,
@@ -87,12 +87,12 @@ export class ProjectScopeAnalyzer {
         ],
       });
 
-      const textContent = message.content.find((c) => c.type === 'text');
-      if (!textContent || textContent.type !== 'text') {
+      const message = response.choices[0]?.message?.content;
+      if (!message) {
         throw new Error('No text content in response');
       }
 
-      return textContent.text;
+      return message;
     } catch (error: any) {
       console.error(`Error in ${stageName}:`, error.message);
       return `Error occurred during ${stageName}: ${error.message}`;
@@ -134,7 +134,7 @@ export class ProjectScopeAnalyzer {
         metadata.timeline,
         document
       );
-      results.main_analysis = await this.callClaude(prompt, 'Main Analysis');
+      results.main_analysis = await this.callGPT(prompt, 'Main Analysis');
       updateProgress('Main Analysis', 'completed');
     }
 
@@ -142,7 +142,7 @@ export class ProjectScopeAnalyzer {
     if (this.config.runRequirementsQuality) {
       updateProgress('Requirements Quality', 'started');
       const prompt = this.prompts.requirementsQuality(document);
-      results.requirements_quality = await this.callClaude(
+      results.requirements_quality = await this.callGPT(
         prompt,
         'Requirements Quality Check'
       );
@@ -153,7 +153,7 @@ export class ProjectScopeAnalyzer {
     if (this.config.runRiskAssessment) {
       updateProgress('Risk Assessment', 'started');
       const prompt = this.prompts.riskAssessment(document);
-      results.risk_assessment = await this.callClaude(prompt, 'Risk Assessment');
+      results.risk_assessment = await this.callGPT(prompt, 'Risk Assessment');
       updateProgress('Risk Assessment', 'completed');
     }
 
@@ -161,7 +161,7 @@ export class ProjectScopeAnalyzer {
     if (this.config.runTechnicalComplexity) {
       updateProgress('Technical Complexity', 'started');
       const prompt = this.prompts.technicalComplexity(document);
-      results.technical_complexity = await this.callClaude(
+      results.technical_complexity = await this.callGPT(
         prompt,
         'Technical Complexity Analysis'
       );
@@ -172,7 +172,7 @@ export class ProjectScopeAnalyzer {
     if (this.config.runScopeCreepDetection) {
       updateProgress('Scope Creep Detection', 'started');
       const prompt = this.prompts.scopeCreepDetector(document);
-      results.scope_creep = await this.callClaude(prompt, 'Scope Creep Detection');
+      results.scope_creep = await this.callGPT(prompt, 'Scope Creep Detection');
       updateProgress('Scope Creep Detection', 'completed');
     }
 
@@ -180,7 +180,7 @@ export class ProjectScopeAnalyzer {
     if (this.config.runStakeholderQuestions) {
       updateProgress('Stakeholder Questions', 'started');
       const prompt = this.prompts.stakeholderQuestions(document);
-      results.stakeholder_questions = await this.callClaude(
+      results.stakeholder_questions = await this.callGPT(
         prompt,
         'Stakeholder Questions'
       );
@@ -191,7 +191,7 @@ export class ProjectScopeAnalyzer {
     if (this.config.runAssumptionExtraction) {
       updateProgress('Assumption Extraction', 'started');
       const prompt = this.prompts.assumptionExtractor(document);
-      results.assumptions = await this.callClaude(prompt, 'Assumption Extraction');
+      results.assumptions = await this.callGPT(prompt, 'Assumption Extraction');
       updateProgress('Assumption Extraction', 'completed');
     }
 
@@ -217,7 +217,7 @@ export class ProjectScopeAnalyzer {
       results.stakeholder_questions || ''
     );
 
-    const report = await this.callClaude(prompt, 'Report Generation');
+    const report = await this.callGPT(prompt, 'Report Generation');
 
     console.log('Report generation complete');
     return report;

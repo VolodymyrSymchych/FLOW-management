@@ -1,8 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { User, Bell, CreditCard, Shield, Trash2, Save } from 'lucide-react';
+import { User, Bell, CreditCard, Shield, Trash2, Save, Globe } from 'lucide-react';
 import { useUser } from '@/hooks/useUser';
+import { useRouter, usePathname } from 'next/navigation';
+import { useLocale } from 'next-intl';
+import axios from 'axios';
 
 interface UserData {
   id: number;
@@ -16,10 +19,50 @@ interface UserData {
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('profile');
   const { user, loading } = useUser();
+  const router = useRouter();
+  const pathname = usePathname();
+  const currentLocale = useLocale();
+  const [selectedLocale, setSelectedLocale] = useState(currentLocale);
+  const [isUpdatingLocale, setIsUpdatingLocale] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const nameParts = user?.fullName?.split(' ') || [];
   const firstName = nameParts[0] || '';
   const lastName = nameParts.slice(1).join(' ') || '';
+
+  const handleSaveSettings = async () => {
+    // Check if locale has changed
+    if (selectedLocale === currentLocale) {
+      return; // Nothing to save
+    }
+
+    setIsSaving(true);
+    setIsUpdatingLocale(true);
+
+    try {
+      // Update locale in database
+      await axios.patch('/api/auth/locale', { locale: selectedLocale }, {
+        withCredentials: true,
+      });
+
+      // Replace current locale in pathname with new locale
+      const newPathname = pathname.replace(`/${currentLocale}`, `/${selectedLocale}`);
+
+      // Force full page reload to apply new locale
+      window.location.href = newPathname;
+    } catch (error) {
+      console.error('Failed to update locale:', error);
+      // Revert to current locale on error
+      setSelectedLocale(currentLocale);
+      setIsUpdatingLocale(false);
+      setIsSaving(false);
+    }
+  };
+
+  const languages = [
+    { code: 'en', name: 'English', flag: '🇬🇧' },
+    { code: 'uk', name: 'Українська', flag: '🇺🇦' },
+  ];
 
   const tabs = [
     { id: 'profile', label: 'Profile', icon: User },
@@ -129,10 +172,32 @@ export default function SettingsPage() {
                 className="w-full px-4 py-3 rounded-lg glass-input text-text-primary placeholder:text-text-tertiary"
               />
             </div>
+            <div>
+              <label className="block text-sm font-medium text-text-secondary mb-2">
+                <Globe className="w-4 h-4 inline mr-2" />
+                Language / Мова
+              </label>
+              <select
+                value={selectedLocale}
+                onChange={(e) => setSelectedLocale(e.target.value)}
+                disabled={isUpdatingLocale}
+                className="w-full px-4 py-3 rounded-lg glass-input text-text-primary cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {languages.map((lang) => (
+                  <option key={lang.code} value={lang.code} className="bg-[hsl(222_47%_11%)] text-text-primary">
+                    {lang.flag} {lang.name}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className="flex justify-end">
-              <button className="flex items-center space-x-2 px-6 py-3 glass-button text-white rounded-lg font-medium">
+              <button
+                onClick={handleSaveSettings}
+                disabled={isSaving || selectedLocale === currentLocale}
+                className="flex items-center space-x-2 px-6 py-3 glass-button text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
                 <Save className="w-4 h-4" />
-                <span>Save Changes</span>
+                <span>{isSaving ? 'Saving...' : 'Save Changes'}</span>
               </button>
             </div>
           </div>

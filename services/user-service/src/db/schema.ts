@@ -15,6 +15,7 @@ export const users = pgTable('users', {
   emailVerified: boolean('email_verified').default(false).notNull(),
   isActive: boolean('is_active').default(true).notNull(),
   role: varchar('role', { length: 50 }).default('user').notNull(),
+  preferredLocale: varchar('preferred_locale', { length: 10 }).default('en'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

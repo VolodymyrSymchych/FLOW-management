@@ -237,6 +237,35 @@ export class AuthController {
           fullName: user.fullName,
           emailVerified: user.emailVerified,
           role: user.role,
+          preferredLocale: user.preferredLocale,
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async updateLocale(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userId = (req as any).userId;
+      if (!userId) {
+        throw new UnauthorizedError('Not authenticated');
+      }
+
+      const { locale } = req.body;
+      if (!locale || !['en', 'uk'].includes(locale)) {
+        throw new ValidationError('Invalid locale. Supported locales: en, uk');
+      }
+
+      const user = await authService.updateUser(userId, {
+        preferredLocale: locale,
+      });
+
+      res.json({
+        success: true,
+        user: {
+          id: user.id,
+          preferredLocale: user.preferredLocale,
         },
       });
     } catch (error) {

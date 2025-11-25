@@ -1,19 +1,14 @@
 import { motion } from "framer-motion";
 import { ArrowRight, PlayCircle, CheckCircle2, BarChart3, Clock, AlertTriangle } from "lucide-react";
 
-const heroBg = "/assets/generated_images/abstract_project_management_interface_background.png";
-
 export function Hero() {
     return (
         <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
             {/* Background Elements */}
             <div className="absolute inset-0 z-0">
                 <div className="absolute inset-0 bg-gradient-to-b from-background via-background/90 to-background z-10" />
-                <img
-                    src={heroBg}
-                    alt="Abstract Project Management Background"
-                    className="h-full w-full object-cover opacity-60"
-                />
+                {/* Clean gradient background with animated blur orbs */}
+                <div className="absolute inset-0 bg-[hsl(222_47%_6%)]" />
                 <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-[#d946ef]/20 rounded-full blur-[128px] animate-pulse" />
                 <div className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-[#6366f1]/20 rounded-full blur-[128px] animate-pulse delay-1000" />
             </div>

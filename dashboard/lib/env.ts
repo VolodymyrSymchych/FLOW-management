@@ -65,8 +65,8 @@ const envSchema = z.object({
   // Migration (Optional)
   MIGRATION_SECRET: z.string().min(32).optional(),
 
-  // Anthropic AI (Optional)
-  ANTHROPIC_API_KEY: z.string().optional(),
+  // OpenAI API (Optional)
+  OPENAI_API_KEY: z.string().optional(),
 
   // OAuth - Google (Optional)
   GOOGLE_CLIENT_ID: z.string().optional(),

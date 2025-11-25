@@ -9,7 +9,6 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.68.0",
     "@aws-crypto/crc32": "^5.2.0",
     "@aws-crypto/crc32c": "^5.2.0",
     "@aws-crypto/util": "^5.2.0",
@@ -45,6 +44,7 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "date-fns": "^3.6.0",
+    "dotenv": "^17.2.3",
     "framer-motion": "^12.23.24",
     "frappe-gantt": "^1.0.4",
     "html2canvas": "^1.4.1",
@@ -56,7 +56,9 @@
     "lucide-react": "^0.368.0",
     "nanoid": "^5.1.6",
     "next": "^14.2.33",
+    "next-intl": "^4.5.5",
     "next-themes": "^0.3.0",
+    "openai": "^6.9.1",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
     "react-dropzone": "^14.3.8",

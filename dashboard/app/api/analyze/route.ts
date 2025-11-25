@@ -21,7 +21,7 @@ export async function POST(request: Request) {
     }
 
     // Check if API key is available
-    const hasApiKey = !!process.env.ANTHROPIC_API_KEY;
+    const hasApiKey = !!process.env.OPENAI_API_KEY;
 
     let score: number | null = null;
     let risk_level: string;
@@ -83,7 +83,7 @@ export async function POST(request: Request) {
 
 ## ⚠️ Using Mock Analysis
 
-Set your ANTHROPIC_API_KEY environment variable to enable real AI-powered analysis.
+Set your OPENAI_API_KEY environment variable to enable real AI-powered analysis.
 
 ## Document Statistics
 - Document Length: ${document.length} characters
@@ -105,12 +105,12 @@ With an API key configured, you'll get:
 
 ## How to Enable Real Analysis
 
-1. Get an API key from https://console.anthropic.com/
-2. Set environment variable: ANTHROPIC_API_KEY=your_key_here
+1. Get an API key from https://platform.openai.com/
+2. Set environment variable: OPENAI_API_KEY=your_key_here
 3. Restart the application
 4. Re-run analysis
 
-Your analysis will then be powered by Claude AI!`;
+Your analysis will then be powered by ChatGPT!`;
     }
 
     // Save project to database

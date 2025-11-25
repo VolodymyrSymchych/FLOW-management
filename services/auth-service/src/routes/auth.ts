@@ -30,6 +30,7 @@ router.post(
 router.post('/logout', authMiddleware, authController.logout.bind(authController));
 router.post('/verify-email', authController.verifyEmail.bind(authController));
 router.get('/me', authMiddleware, authController.me.bind(authController));
+router.patch('/locale', authMiddleware, authController.updateLocale.bind(authController));
 
 export default router;
 

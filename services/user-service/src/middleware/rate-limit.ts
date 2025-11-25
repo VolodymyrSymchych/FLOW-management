@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import Redis from 'ioredis';
-import { RateLimitError } from '@project-scope-analyzer/shared';
-import { getRedisClient } from '../utils/redis';
+import { RateLimitError, getRedisClient } from '@project-scope-analyzer/shared';
 
 interface RateLimitOptions {
   limit: number;

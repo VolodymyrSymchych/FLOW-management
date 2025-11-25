@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { projectService, CreateProjectInput } from '../services/project.service';
-import { ValidationError, NotFoundError, ForbiddenError } from '@project-scope-analyzer/shared';
+import { ValidationError, NotFoundError, ForbiddenError, AuthenticatedRequest } from '@project-scope-analyzer/shared';
 
 const createProjectSchema = z.object({
   name: z.string().min(1, 'Name is required').max(255),
@@ -36,13 +36,13 @@ export class ProjectController {
    * GET /projects
    * Get all projects for current user
    */
-  async getProjects(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async getProjects(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
-      if (!req.user?.userId) {
+      if (!req.userId) {
         throw new ForbiddenError('Unauthorized');
       }
 
-      const userId = parseInt(req.user.userId as string, 10);
+      const userId = req.userId;
       const projects = await projectService.getUserProjects(userId);
 
       res.json({ projects, total: projects.length });
@@ -55,9 +55,9 @@ export class ProjectController {
    * GET /projects/:id
    * Get project by ID
    */
-  async getProject(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async getProject(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
-      if (!req.user?.userId) {
+      if (!req.userId) {
         throw new ForbiddenError('Unauthorized');
       }
 
@@ -66,7 +66,7 @@ export class ProjectController {
         throw new ValidationError('Invalid project ID');
       }
 
-      const userId = parseInt(req.user.userId as string, 10);
+      const userId = req.userId;
       const project = await projectService.getProjectById(projectId, userId);
 
       if (!project) {
@@ -83,9 +83,9 @@ export class ProjectController {
    * POST /projects
    * Create a new project
    */
-  async createProject(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async createProject(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
-      if (!req.user?.userId) {
+      if (!req.userId) {
         throw new ForbiddenError('Unauthorized');
       }
 
@@ -96,7 +96,7 @@ export class ProjectController {
         });
       }
 
-      const userId = parseInt(req.user.userId as string, 10);
+      const userId = req.userId;
       const project = await projectService.createProject(userId, validation.data as CreateProjectInput);
 
       res.status(201).json({ project });
@@ -109,9 +109,9 @@ export class ProjectController {
    * PUT /projects/:id
    * Update project
    */
-  async updateProject(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async updateProject(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
-      if (!req.user?.userId) {
+      if (!req.userId) {
         throw new ForbiddenError('Unauthorized');
       }
 
@@ -127,7 +127,7 @@ export class ProjectController {
         });
       }
 
-      const userId = parseInt(req.user.userId as string, 10);
+      const userId = req.userId;
       const project = await projectService.updateProject(projectId, userId, validation.data);
 
       if (!project) {
@@ -144,9 +144,9 @@ export class ProjectController {
    * DELETE /projects/:id
    * Delete project (soft delete)
    */
-  async deleteProject(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async deleteProject(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
-      if (!req.user?.userId) {
+      if (!req.userId) {
         throw new ForbiddenError('Unauthorized');
       }
 
@@ -155,7 +155,7 @@ export class ProjectController {
         throw new ValidationError('Invalid project ID');
       }
 
-      const userId = parseInt(req.user.userId as string, 10);
+      const userId = req.userId;
       const deleted = await projectService.deleteProject(projectId, userId);
 
       if (!deleted) {
@@ -172,13 +172,13 @@ export class ProjectController {
    * GET /projects/:id/stats
    * Get project statistics
    */
-  async getProjectStats(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async getProjectStats(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
-      if (!req.user?.userId) {
+      if (!req.userId) {
         throw new ForbiddenError('Unauthorized');
       }
 
-      const userId = parseInt(req.user.userId as string, 10);
+      const userId = req.userId;
       const stats = await projectService.getProjectStats(userId);
 
       res.json({ stats });
@@ -228,9 +228,9 @@ export class ProjectController {
    * POST /projects/from-template
    * Create project from template
    */
-  async createFromTemplate(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async createFromTemplate(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
-      if (!req.user?.userId) {
+      if (!req.userId) {
         throw new ForbiddenError('Unauthorized');
       }
 
@@ -240,7 +240,7 @@ export class ProjectController {
         throw new ValidationError('Template ID is required');
       }
 
-      const userId = parseInt(req.user.userId as string, 10);
+      const userId = req.userId;
       const project = await projectService.createProjectFromTemplate(
         userId,
         parseInt(templateId, 10),

@@ -27,7 +27,7 @@ export const config = {
           password: url.password || undefined,
         };
       } catch (error) {
-        console.warn('Invalid REDIS_URL, falling back to individual variables');
+        // Invalid REDIS_URL, will use individual variables instead
       }
     }
     // Fallback to individual variables
@@ -56,6 +56,13 @@ export const config = {
   metrics: {
     port: parseInt(process.env.METRICS_PORT || '9091', 10),
   },
+  cors: {
+    allowedOrigins: process.env.ALLOWED_ORIGINS?.split(',') || [
+      'http://localhost:3001', // Dashboard development
+      'http://localhost:3000', // Alternative dashboard port
+    ],
+    credentials: true,
+  },
 };
 
 // Validate required configuration
@@ -65,6 +72,7 @@ if (!process.env.DATABASE_URL && (!config.database.name || !config.database.user
 }
 
 if (!config.jwt.secret) {
-  console.warn('Warning: JWT_SECRET is not set. Authentication middleware will not work properly.');
+  // JWT_SECRET validation - will be checked at runtime
+  throw new Error('JWT_SECRET is required for authentication. Please set JWT_SECRET environment variable.');
 }
 

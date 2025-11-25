@@ -1,23 +1,24 @@
 import { Router } from 'express';
 import { authMiddleware } from '../middleware/auth';
 import { teamController } from '../controllers/team.controller';
+import { AuthenticatedRequest } from '@project-scope-analyzer/shared';
 
 const router = Router();
 
 // All routes require authentication
-router.use(authMiddleware);
+router.use(authMiddleware as any);
 
 // Team CRUD operations
-router.get('/', teamController.getTeams.bind(teamController));
-router.get('/:id', teamController.getTeamById.bind(teamController));
-router.post('/', teamController.createTeam.bind(teamController));
-router.put('/:id', teamController.updateTeam.bind(teamController));
-router.delete('/:id', teamController.deleteTeam.bind(teamController));
+router.get('/', (req, res, next) => teamController.getTeams(req as AuthenticatedRequest, res, next));
+router.get('/:id', (req, res, next) => teamController.getTeamById(req as AuthenticatedRequest, res, next));
+router.post('/', (req, res, next) => teamController.createTeam(req as AuthenticatedRequest, res, next));
+router.put('/:id', (req, res, next) => teamController.updateTeam(req as AuthenticatedRequest, res, next));
+router.delete('/:id', (req, res, next) => teamController.deleteTeam(req as AuthenticatedRequest, res, next));
 
 // Team members management
-router.get('/:id/members', teamController.getTeamMembers.bind(teamController));
-router.post('/:id/members', teamController.addTeamMember.bind(teamController));
-router.delete('/:id/members/:userId', teamController.removeTeamMember.bind(teamController));
-router.put('/:id/members/:userId/role', teamController.updateMemberRole.bind(teamController));
+router.get('/:id/members', (req, res, next) => teamController.getTeamMembers(req as AuthenticatedRequest, res, next));
+router.post('/:id/members', (req, res, next) => teamController.addTeamMember(req as AuthenticatedRequest, res, next));
+router.delete('/:id/members/:userId', (req, res, next) => teamController.removeTeamMember(req as AuthenticatedRequest, res, next));
+router.put('/:id/members/:userId/role', (req, res, next) => teamController.updateMemberRole(req as AuthenticatedRequest, res, next));
 
 export default router;

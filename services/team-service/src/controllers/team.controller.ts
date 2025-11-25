@@ -1,20 +1,19 @@
 import { Response, NextFunction } from 'express';
-import { AuthRequest } from '../middleware/auth';
 import { teamService } from '../services/team.service';
-import { ValidationError } from '@project-scope-analyzer/shared';
+import { ValidationError, AuthenticatedRequest } from '@project-scope-analyzer/shared';
 
 export class TeamController {
   /**
    * Get all teams for current user
    */
-  async getTeams(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+  async getTeams(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.user?.id || req.userId;
+      const userId = req.userId;
       if (!userId) {
         throw new ValidationError('User ID is required');
       }
 
-      const teams = await teamService.getUserTeams(Number(userId));
+      const teams = await teamService.getUserTeams(userId);
       res.json({ success: true, data: teams });
     } catch (error) {
       next(error);
@@ -24,12 +23,12 @@ export class TeamController {
   /**
    * Get team by ID
    */
-  async getTeamById(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+  async getTeamById(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const teamId = parseInt(req.params.id);
-      const userId = req.user?.id || req.userId;
+      const userId = req.userId;
 
-      const team = await teamService.getTeamById(teamId, userId ? Number(userId) : undefined);
+      const team = await teamService.getTeamById(teamId, userId);
       res.json({ success: true, data: team });
     } catch (error) {
       next(error);
@@ -39,9 +38,9 @@ export class TeamController {
   /**
    * Create new team
    */
-  async createTeam(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+  async createTeam(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.user?.id || req.userId;
+      const userId = req.userId;
       if (!userId) {
         throw new ValidationError('User ID is required');
       }
@@ -55,7 +54,7 @@ export class TeamController {
       const team = await teamService.createTeam({
         name,
         description,
-        ownerId: Number(userId),
+        ownerId: userId,
       });
 
       res.status(201).json({ success: true, data: team });
@@ -67,17 +66,17 @@ export class TeamController {
   /**
    * Update team
    */
-  async updateTeam(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+  async updateTeam(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const teamId = parseInt(req.params.id);
-      const userId = req.user?.id || req.userId;
+      const userId = req.userId;
       if (!userId) {
         throw new ValidationError('User ID is required');
       }
 
       const { name, description } = req.body;
 
-      const team = await teamService.updateTeam(teamId, Number(userId), {
+      const team = await teamService.updateTeam(teamId, userId, {
         name,
         description,
       });
@@ -91,15 +90,15 @@ export class TeamController {
   /**
    * Delete team
    */
-  async deleteTeam(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+  async deleteTeam(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const teamId = parseInt(req.params.id);
-      const userId = req.user?.id || req.userId;
+      const userId = req.userId;
       if (!userId) {
         throw new ValidationError('User ID is required');
       }
 
-      await teamService.deleteTeam(teamId, Number(userId));
+      await teamService.deleteTeam(teamId, userId);
       res.json({ success: true, message: 'Team deleted successfully' });
     } catch (error) {
       next(error);
@@ -109,12 +108,12 @@ export class TeamController {
   /**
    * Get team members
    */
-  async getTeamMembers(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+  async getTeamMembers(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const teamId = parseInt(req.params.id);
-      const userId = req.user?.id || req.userId;
+      const userId = req.userId;
 
-      const members = await teamService.getTeamMembers(teamId, userId ? Number(userId) : undefined);
+      const members = await teamService.getTeamMembers(teamId, userId);
       res.json({ success: true, data: members });
     } catch (error) {
       next(error);
@@ -124,10 +123,10 @@ export class TeamController {
   /**
    * Add team member
    */
-  async addTeamMember(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+  async addTeamMember(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const teamId = parseInt(req.params.id);
-      const userId = req.user?.id || req.userId;
+      const userId = req.userId;
       if (!userId) {
         throw new ValidationError('User ID is required');
       }
@@ -140,7 +139,7 @@ export class TeamController {
 
       const member = await teamService.addTeamMember(
         teamId,
-        Number(userId),
+        userId,
         Number(memberUserId),
         role
       );
@@ -154,16 +153,16 @@ export class TeamController {
   /**
    * Remove team member
    */
-  async removeTeamMember(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+  async removeTeamMember(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const teamId = parseInt(req.params.id);
       const memberUserId = parseInt(req.params.userId);
-      const userId = req.user?.id || req.userId;
+      const userId = req.userId;
       if (!userId) {
         throw new ValidationError('User ID is required');
       }
 
-      await teamService.removeTeamMember(teamId, Number(userId), memberUserId);
+      await teamService.removeTeamMember(teamId, userId, memberUserId);
       res.json({ success: true, message: 'Team member removed successfully' });
     } catch (error) {
       next(error);
@@ -173,11 +172,11 @@ export class TeamController {
   /**
    * Update team member role
    */
-  async updateMemberRole(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+  async updateMemberRole(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const teamId = parseInt(req.params.id);
       const memberUserId = parseInt(req.params.userId);
-      const userId = req.user?.id || req.userId;
+      const userId = req.userId;
       if (!userId) {
         throw new ValidationError('User ID is required');
       }
@@ -190,7 +189,7 @@ export class TeamController {
 
       const member = await teamService.updateMemberRole(
         teamId,
-        Number(userId),
+        userId,
         memberUserId,
         role
       );

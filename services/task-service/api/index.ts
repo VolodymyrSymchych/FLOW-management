@@ -4,6 +4,7 @@
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { Request, Response } from 'express';
 import { createApp } from '../src/app';
 
 // Create Express app instance (singleton pattern for serverless)
@@ -32,7 +33,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // Convert Vercel request/response to Express-compatible format
   return new Promise((resolve, reject) => {
-    app(req as any, res as any, (err?: any) => {
+    app(req as unknown as Request, res as unknown as Response, (err?: unknown) => {
       clearTimeout(timeout);
       if (err) {
         reject(err);

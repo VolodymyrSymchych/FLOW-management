@@ -1,0 +1,56 @@
+{
+  "root": true,
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "ecmaVersion": 2022,
+    "sourceType": "module",
+    "project": ["./services/*/tsconfig.json", "./shared/tsconfig.json"]
+  },
+  "plugins": [
+    "@typescript-eslint"
+  ],
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended"
+  ],
+  "rules": {
+    // Prevent console usage - use logger instead
+    "no-console": ["error", {
+      "allow": []
+    }],
+
+    // TypeScript specific rules
+    "@typescript-eslint/no-explicit-any": "error",
+    "@typescript-eslint/explicit-function-return-type": ["warn", {
+      "allowExpressions": true,
+      "allowTypedFunctionExpressions": true
+    }],
+    "@typescript-eslint/no-unused-vars": ["error", {
+      "argsIgnorePattern": "^_",
+      "varsIgnorePattern": "^_"
+    }],
+
+    // Code quality
+    "no-debugger": "error",
+    "no-alert": "error",
+    "prefer-const": "error",
+    "no-var": "error",
+
+    // Security
+    "no-eval": "error",
+    "no-implied-eval": "error"
+  },
+  "env": {
+    "node": true,
+    "es2022": true
+  },
+  "ignorePatterns": [
+    "node_modules/",
+    "dist/",
+    "build/",
+    "*.js",
+    "*.d.ts",
+    ".next/",
+    "dashboard/"
+  ]
+}

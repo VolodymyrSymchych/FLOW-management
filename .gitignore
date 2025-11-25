@@ -26,8 +26,17 @@ venv/
 ENV/
 env/
 
-# Environment Variables
+# Environment Variables (CRITICAL - Never commit!)
 .env
+.env.local
+.env.*.local
+.env.development
+.env.production
+.env.test
+**/.env
+**/.env.local
+services/**/.env
+services/**/.env.local
 
 # Reports
 reports/

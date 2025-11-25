@@ -27,14 +27,15 @@ router.get('/ready', async (req: Request, res: Response) => {
     } else {
       checks.database = false;
     }
-  } catch (error: any) {
-    console.error('Database check error:', error?.message);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Database check error:', message);
     checks.database = false;
   }
 
   // Check redis connection
   try {
-    const { getRedisClient } = await import('../utils/redis');
+    const { getRedisClient } = await import('@project-scope-analyzer/shared');
     const redis = getRedisClient();
     if (redis) {
       await redis.ping();

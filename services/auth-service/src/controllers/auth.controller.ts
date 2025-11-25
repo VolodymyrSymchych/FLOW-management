@@ -1,9 +1,8 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { authService } from '../services/auth.service';
 import { jwtService } from '../services/jwt.service';
-import { ValidationError, UnauthorizedError, ForbiddenError } from '@project-scope-analyzer/shared';
-import { getRedisClient } from '../utils/redis';
+import { ValidationError, UnauthorizedError, ForbiddenError, getRedisClient, AuthenticatedRequest } from '@project-scope-analyzer/shared';
 import { publishEvent } from '../event-bus';
 import { logger } from '@project-scope-analyzer/shared';
 
@@ -33,7 +32,7 @@ const loginSchema = z.object({
 });
 
 export class AuthController {
-  async signup(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async signup(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const validation = signupSchema.safeParse(req.body);
       if (!validation.success) {
@@ -90,7 +89,7 @@ export class AuthController {
     }
   }
 
-  async login(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async login(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const validation = loginSchema.safeParse(req.body);
       if (!validation.success) {
@@ -166,11 +165,19 @@ export class AuthController {
     }
   }
 
-  async logout(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async logout(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
-      // In a stateless JWT system, logout is handled client-side by removing the token
-      // But we can publish an event for tracking
-      const userId = (req as any).userId;
+      const userId = req.userId;
+
+      // Extract token from Authorization header
+      const authHeader = req.headers.authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.substring(7);
+
+        // Add token to blacklist so it can't be used again
+        await jwtService.blacklistToken(token);
+      }
+
       if (userId) {
         publishEvent({
           type: 'user.logged_out',
@@ -185,7 +192,7 @@ export class AuthController {
     }
   }
 
-  async verifyEmail(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async verifyEmail(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const { token } = req.body;
 
@@ -217,9 +224,9 @@ export class AuthController {
     }
   }
 
-  async me(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async me(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = (req as any).userId;
+      const userId = req.userId;
       if (!userId) {
         throw new UnauthorizedError('Not authenticated');
       }
@@ -245,9 +252,9 @@ export class AuthController {
     }
   }
 
-  async updateLocale(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async updateLocale(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = (req as any).userId;
+      const userId = req.userId;
       if (!userId) {
         throw new UnauthorizedError('Not authenticated');
       }

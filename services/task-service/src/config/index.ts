@@ -40,6 +40,13 @@ export const config = {
   metrics: {
     port: parseInt(process.env.METRICS_PORT || '9091', 10),
   },
+  cors: {
+    allowedOrigins: process.env.ALLOWED_ORIGINS?.split(',') || [
+      'http://localhost:3001', // Dashboard development
+      'http://localhost:3000', // Alternative dashboard port
+    ],
+    credentials: true,
+  },
 };
 
 // Validate required configuration

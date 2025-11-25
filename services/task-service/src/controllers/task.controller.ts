@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { taskService, UpdateTaskInput } from '../services/task.service';
-import { ValidationError, NotFoundError, ForbiddenError } from '@project-scope-analyzer/shared';
+import { ValidationError, NotFoundError, ForbiddenError, AuthenticatedRequest } from '@project-scope-analyzer/shared';
 
 const createTaskSchema = z.object({
   title: z.string().min(1, 'Title is required').max(255),
@@ -38,13 +38,13 @@ export class TaskController {
    * GET /tasks
    * Get all tasks for current user
    */
-  async getTasks(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async getTasks(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
-      if (!req.user?.userId) {
+      if (!req.userId) {
         throw new ForbiddenError('Unauthorized');
       }
 
-      const userId = parseInt(req.user.userId as string, 10);
+      const userId = req.userId;
       const projectId = req.query.projectId ? parseInt(req.query.projectId as string, 10) : undefined;
 
       const tasks = await taskService.getUserTasks(userId, projectId);
@@ -59,9 +59,9 @@ export class TaskController {
    * GET /tasks/:id
    * Get task by ID
    */
-  async getTask(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async getTask(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
-      if (!req.user?.userId) {
+      if (!req.userId) {
         throw new ForbiddenError('Unauthorized');
       }
 
@@ -70,7 +70,7 @@ export class TaskController {
         throw new ValidationError('Invalid task ID');
       }
 
-      const userId = parseInt(req.user.userId as string, 10);
+      const userId = req.userId;
       const task = await taskService.getTaskById(taskId, userId);
 
       if (!task) {
@@ -87,9 +87,9 @@ export class TaskController {
    * GET /tasks/:id/subtasks
    * Get subtasks for a task
    */
-  async getSubtasks(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async getSubtasks(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
-      if (!req.user?.userId) {
+      if (!req.userId) {
         throw new ForbiddenError('Unauthorized');
       }
 
@@ -99,7 +99,7 @@ export class TaskController {
       }
 
       // Verify task exists and user has access
-      const userId = parseInt(req.user.userId as string, 10);
+      const userId = req.userId;
       const task = await taskService.getTaskById(taskId, userId);
       if (!task) {
         throw new NotFoundError('Task not found');
@@ -117,9 +117,9 @@ export class TaskController {
    * GET /tasks/:id/dependencies
    * Get task dependencies
    */
-  async getDependencies(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async getDependencies(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
-      if (!req.user?.userId) {
+      if (!req.userId) {
         throw new ForbiddenError('Unauthorized');
       }
 
@@ -129,7 +129,7 @@ export class TaskController {
       }
 
       // Verify task exists and user has access
-      const userId = parseInt(req.user.userId as string, 10);
+      const userId = req.userId;
       const task = await taskService.getTaskById(taskId, userId);
       if (!task) {
         throw new NotFoundError('Task not found');
@@ -147,13 +147,13 @@ export class TaskController {
    * GET /tasks/gantt
    * Get Gantt chart data
    */
-  async getGanttData(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async getGanttData(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
-      if (!req.user?.userId) {
+      if (!req.userId) {
         throw new ForbiddenError('Unauthorized');
       }
 
-      const userId = parseInt(req.user.userId as string, 10);
+      const userId = req.userId;
       const projectId = req.query.projectId ? parseInt(req.query.projectId as string, 10) : undefined;
 
       const tasks = await taskService.getGanttData(userId, projectId);
@@ -168,9 +168,9 @@ export class TaskController {
    * POST /tasks
    * Create a new task
    */
-  async createTask(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async createTask(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
-      if (!req.user?.userId) {
+      if (!req.userId) {
         throw new ForbiddenError('Unauthorized');
       }
 
@@ -181,7 +181,7 @@ export class TaskController {
         });
       }
 
-      const userId = parseInt(req.user.userId as string, 10);
+      const userId = req.userId;
       const task = await taskService.createTask(userId, validation.data);
 
       res.status(201).json({ task });
@@ -194,9 +194,9 @@ export class TaskController {
    * POST /tasks/:id/subtasks
    * Create a subtask
    */
-  async createSubtask(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async createSubtask(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
-      if (!req.user?.userId) {
+      if (!req.userId) {
         throw new ForbiddenError('Unauthorized');
       }
 
@@ -206,7 +206,7 @@ export class TaskController {
       }
 
       // Verify parent task exists and user has access
-      const userId = parseInt(req.user.userId as string, 10);
+      const userId = req.userId;
       const parentTask = await taskService.getTaskById(parentId, userId);
       if (!parentTask) {
         throw new NotFoundError('Parent task not found');
@@ -235,9 +235,9 @@ export class TaskController {
    * PUT /tasks/:id
    * Update task
    */
-  async updateTask(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async updateTask(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
-      if (!req.user?.userId) {
+      if (!req.userId) {
         throw new ForbiddenError('Unauthorized');
       }
 
@@ -253,7 +253,7 @@ export class TaskController {
         });
       }
 
-      const userId = parseInt(req.user.userId as string, 10);
+      const userId = req.userId;
       // Convert null to undefined for optional fields
       const updateData: UpdateTaskInput = {
         ...(validation.data.title !== undefined && { title: validation.data.title }),
@@ -285,9 +285,9 @@ export class TaskController {
    * DELETE /tasks/:id
    * Delete task (soft delete)
    */
-  async deleteTask(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async deleteTask(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
-      if (!req.user?.userId) {
+      if (!req.userId) {
         throw new ForbiddenError('Unauthorized');
       }
 
@@ -296,7 +296,7 @@ export class TaskController {
         throw new ValidationError('Invalid task ID');
       }
 
-      const userId = parseInt(req.user.userId as string, 10);
+      const userId = req.userId;
       const deleted = await taskService.deleteTask(taskId, userId);
 
       if (!deleted) {

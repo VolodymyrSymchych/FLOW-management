@@ -1,34 +1,37 @@
 import { Router } from 'express';
 import { authController } from '../controllers/auth.controller';
 import { authMiddleware } from '../middleware/auth';
-import { rateLimit } from '../middleware/rate-limit';
+import {
+  loginRateLimit,
+  signupRateLimit,
+  verifyEmailRateLimit,
+} from '../middleware/rate-limit';
 
 const router = Router();
 
-// Signup: 3 attempts per 15 minutes per IP
+// Signup: 3 attempts per hour per IP (prevents account spam)
 router.post(
   '/signup',
-  rateLimit({
-    limit: 3,
-    window: 900, // 15 minutes
-    identifier: (req) => `signup:${req.ip}`,
-  }),
+  signupRateLimit,
   authController.signup.bind(authController)
 );
 
-// Login: 5 attempts per 5 minutes per IP
+// Login: 5 attempts per 15 minutes per IP + email (prevents brute-force)
 router.post(
   '/login',
-  rateLimit({
-    limit: 5,
-    window: 300, // 5 minutes
-    identifier: (req) => `login:${req.ip}`,
-  }),
+  loginRateLimit,
   authController.login.bind(authController)
 );
 
 router.post('/logout', authMiddleware, authController.logout.bind(authController));
-router.post('/verify-email', authController.verifyEmail.bind(authController));
+
+// Email verification: 5 attempts per hour per IP (prevents spam)
+router.post(
+  '/verify-email',
+  verifyEmailRateLimit,
+  authController.verifyEmail.bind(authController)
+);
+
 router.get('/me', authMiddleware, authController.me.bind(authController));
 router.patch('/locale', authMiddleware, authController.updateLocale.bind(authController));
 

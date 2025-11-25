@@ -1,10 +1,7 @@
 import express, { Express } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import { logger } from '@project-scope-analyzer/shared';
-import { requestLogger } from './middleware/logger';
-import { metricsMiddleware } from './middleware/metrics';
-import { errorHandler } from './middleware/error-handler';
+import { logger, requestLogger, metricsMiddleware, errorHandler } from '@project-scope-analyzer/shared';
 import routes from './routes';
 import { config } from './config';
 

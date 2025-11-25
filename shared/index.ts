@@ -2,6 +2,7 @@
 export * from './types/user';
 export * from './types/project';
 export * from './types/task';
+export * from './types/express';
 
 // Export events
 export * from './events/events';
@@ -12,6 +13,13 @@ export * from './utils/logger';
 export * from './utils/validator';
 export * from './utils/errors';
 export * from './utils/metrics';
+export * from './utils/https-redirect';
+export * from './utils/redis';
+
+// Export middleware
+export * from './middleware/error-handler';
+export * from './middleware/logger';
+export * from './middleware/metrics';
 
 // Export database
 export * from './database/connection';

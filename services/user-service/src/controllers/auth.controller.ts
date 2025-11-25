@@ -2,8 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { authService } from '../services/auth.service';
 import { jwtService } from '../services/jwt.service';
-import { ValidationError, UnauthorizedError, ForbiddenError } from '@project-scope-analyzer/shared';
-import { getRedisClient } from '../utils/redis';
+import { ValidationError, UnauthorizedError, ForbiddenError, getRedisClient, AuthenticatedRequest } from '@project-scope-analyzer/shared';
 import { eventBus } from '../index';
 import { logger } from '@project-scope-analyzer/shared';
 
@@ -174,11 +173,11 @@ export class AuthController {
     }
   }
 
-  async logout(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async logout(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       // In a stateless JWT system, logout is handled client-side by removing the token
       // But we can publish an event for tracking
-      const userId = (req as any).userId;
+      const userId = req.userId;
       if (userId && eventBus) {
         await eventBus.publish({
           type: 'user.logged_out',
@@ -227,9 +226,9 @@ export class AuthController {
     }
   }
 
-  async me(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async me(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = (req as any).userId;
+      const userId = req.userId;
       if (!userId) {
         throw new UnauthorizedError('Not authenticated');
       }

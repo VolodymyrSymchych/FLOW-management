@@ -25,7 +25,8 @@ module.exports = {
         "text-tertiary": "hsl(var(--text-tertiary))",
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-sans)', 'Inter', 'system-ui', 'sans-serif'],
+        display: ['var(--font-display)', 'Poppins', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'monospace'],
       },
       gridTemplateColumns: {

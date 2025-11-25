@@ -594,3 +594,48 @@
   color: hsl(var(--text-secondary));
   font-style: italic;
 }
+
+/* Styles ported from ScopeAnalyze */
+.glass-card {
+  background: rgba(58, 53, 47, 0.4);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+}
+
+.glass-card:hover {
+  background: rgba(58, 53, 47, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.text-gradient {
+  color: hsl(var(--primary));
+  background: none;
+  -webkit-text-fill-color: initial;
+  background-clip: border-box;
+}
+
+.landing-theme {
+  --background: 30 12% 10%;
+  --foreground: 30 20% 96%;
+  --card: 33 11% 21%;
+  --card-foreground: 30 20% 96%;
+  --popover: 33 11% 21%;
+  --popover-foreground: 30 20% 96%;
+  --primary: 239 84% 67%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 292 84% 60%;
+  --secondary-foreground: 210 40% 98%;
+  --muted: 30 10% 16%;
+  --muted-foreground: 30 10% 70%;
+  --accent: 280 80% 60%;
+  --accent-foreground: 210 40% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 33 11% 30%;
+  --input: 33 11% 30%;
+  --ring: 239 84% 67%;
+  --radius: 0.75rem;
+}

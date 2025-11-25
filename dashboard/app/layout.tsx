@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Inter, Poppins } from 'next/font/google';
 import './globals.css';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { ConditionalLayout } from '@/components/ConditionalLayout';
@@ -11,7 +11,12 @@ import { KeyboardShortcuts } from '@/components/KeyboardShortcuts';
 import { TeamProvider } from '@/contexts/TeamContext';
 import { PerformanceMonitor } from '@/components/PerformanceMonitor';
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
+const poppins = Poppins({
+  weight: ['400', '500', '600', '700'],
+  subsets: ['latin'],
+  variable: '--font-display'
+});
 
 export const metadata: Metadata = {
   title: 'Project Management Dashboard',
@@ -25,7 +30,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.className} glass-theme bg-background text-text-primary`}>
+      <body className={`${inter.variable} ${poppins.variable} font-sans glass-theme bg-background text-text-primary`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <TeamProvider>
             {/* Skip to main content link for accessibility */}

@@ -1,19 +1,17 @@
-'use client';
-
-import { motion } from 'framer-motion';
-import { Check } from 'lucide-react';
-import Link from 'next/link';
+import { motion } from "framer-motion";
+import { Check } from "lucide-react";
 
 const plans = [
     {
         name: "Starter",
         price: "Free",
+        period: "forever",
         description: "Perfect for freelancers and solo developers.",
         features: [
-            "Up to 3 Projects",
-            "Basic AI Analysis",
-            "Kanban Board",
-            "Community Support"
+            "Up to 3 projects",
+            "Basic AI analysis",
+            "Kanban board",
+            "Community support"
         ],
         cta: "Start for Free",
         popular: false
@@ -21,14 +19,14 @@ const plans = [
     {
         name: "Pro",
         price: "$29",
-        period: "/month",
-        description: "For growing teams that need full control.",
+        period: "per month",
+        description: "For growing teams that need full visibility.",
         features: [
-            "Unlimited Projects",
-            "Advanced AI Risk Detection",
-            "Gantt Charts & Timeline",
-            "Smart Invoicing",
-            "Priority Support"
+            "Unlimited projects",
+            "Advanced AI risk detection",
+            "Gantt charts & timeline",
+            "Smart invoicing",
+            "Priority support"
         ],
         cta: "Get Started",
         popular: true
@@ -36,80 +34,80 @@ const plans = [
     {
         name: "Enterprise",
         price: "Custom",
-        description: "For large organizations requiring custom solutions.",
+        period: "contact sales",
+        description: "Advanced security and control for large orgs.",
         features: [
-            "Custom AI Models",
-            "SLA & Dedicated Support",
-            "SSO & Advanced Security",
-            "On-premise Deployment",
-            "API Access"
+            "Custom AI models",
+            "SLA & dedicated support",
+            "SSO & advanced security",
+            "On-premise deployment",
+            "API access"
         ],
         cta: "Contact Sales",
         popular: false
     }
 ];
 
-export function Pricing() {
+export function PricingSection() {
     return (
-        <section className="py-24 relative">
-            <div className="container px-4 mx-auto">
-                <div className="text-center max-w-2xl mx-auto mb-16">
-                    <h2 className="text-3xl md:text-4xl font-bold text-text-primary mb-4">
-                        Simple, transparent pricing
+        <section id="pricing" className="py-24 relative">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="text-center max-w-3xl mx-auto mb-16">
+                    <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
+                        Simple, Transparent Pricing
                     </h2>
-                    <p className="text-text-secondary">
-                        Choose the plan that fits your team's needs. No hidden fees.
+                    <p className="text-lg text-gray-400">
+                        Choose the plan that fits your team size. Scale up or down at any time.
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto items-center">
+                <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
                     {plans.map((plan, index) => (
                         <motion.div
-                            key={plan.name}
-                            initial={{ opacity: 0, y: 20 }}
+                            key={index}
+                            initial={{ opacity: 0, y: 30 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
-                            transition={{ duration: 0.5, delay: index * 0.1 }}
-                            className={`relative rounded-2xl p-8 border ${plan.popular
-                                    ? 'glass-heavy border-primary/50 shadow-2xl shadow-primary/10 scale-105 z-10'
-                                    : 'glass-medium border-white/10'
-                                }`}
+                            transition={{ delay: index * 0.1 }}
+                            className={`glass-card relative rounded-3xl p-8 border ${plan.popular
+                                    ? "border-indigo-500/50 bg-indigo-500/5"
+                                    : "border-white/10"
+                                } flex flex-col`}
                         >
                             {plan.popular && (
-                                <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-primary text-white text-xs font-bold uppercase tracking-wider">
+                                <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 text-xs font-bold text-white uppercase tracking-wider shadow-lg shadow-indigo-500/20">
                                     Most Popular
                                 </div>
                             )}
 
                             <div className="mb-8">
-                                <h3 className="text-lg font-semibold text-text-primary mb-2">{plan.name}</h3>
-                                <div className="flex items-baseline gap-1 mb-2">
-                                    <span className="text-4xl font-bold text-text-primary">{plan.price}</span>
-                                    {plan.period && <span className="text-text-secondary">{plan.period}</span>}
+                                <h3 className="text-xl font-semibold text-white mb-2">{plan.name}</h3>
+                                <div className="flex items-baseline gap-1 mb-4">
+                                    <span className="text-4xl font-bold text-white">{plan.price}</span>
+                                    <span className="text-sm text-gray-400">/{plan.period}</span>
                                 </div>
-                                <p className="text-sm text-text-secondary">{plan.description}</p>
+                                <p className="text-gray-400 text-sm">{plan.description}</p>
                             </div>
 
-                            <ul className="space-y-4 mb-8">
-                                {plan.features.map((feature) => (
-                                    <li key={feature} className="flex items-center gap-3 text-sm text-text-primary">
-                                        <div className={`p-1 rounded-full ${plan.popular ? 'bg-primary/20 text-primary' : 'bg-white/10 text-text-secondary'}`}>
-                                            <Check className="w-3 h-3" />
+                            <div className="flex-grow space-y-4 mb-8">
+                                {plan.features.map((feature, i) => (
+                                    <div key={i} className="flex items-start gap-3">
+                                        <div className="mt-1 w-4 h-4 rounded-full bg-indigo-500/20 flex items-center justify-center flex-shrink-0">
+                                            <Check className="w-3 h-3 text-indigo-400" />
                                         </div>
-                                        {feature}
-                                    </li>
+                                        <span className="text-gray-300 text-sm">{feature}</span>
+                                    </div>
                                 ))}
-                            </ul>
+                            </div>
 
-                            <Link
-                                href="/login"
-                                className={`block w-full py-3 px-4 rounded-xl text-center font-semibold transition-all ${plan.popular
-                                        ? 'bg-primary text-white hover:opacity-90 shadow-lg shadow-primary/25'
-                                        : 'glass-light text-text-primary hover:bg-white/10'
+                            <button
+                                className={`w-full py-3 rounded-xl font-medium transition-all ${plan.popular
+                                        ? "glass-button text-white hover:shadow-lg hover:shadow-indigo-500/25"
+                                        : "bg-white/5 text-white hover:bg-white/10 border border-white/10"
                                     }`}
                             >
                                 {plan.cta}
-                            </Link>
+                            </button>
                         </motion.div>
                     ))}
                 </div>

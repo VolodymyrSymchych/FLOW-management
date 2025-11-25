@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Send, Paperclip, Smile, X, CheckCheck } from 'lucide-react';
 import { useChat, ChatMessage } from '@/hooks/useChat';
 import { useUser } from '@/hooks/useUser';
+import { useLocale } from 'next-intl';
 import { formatDistanceToNow } from 'date-fns';
 import axios from 'axios';
 import { ChatWebSocket } from '@/lib/websocket';
@@ -15,6 +16,7 @@ interface ChatWindowProps {
 export function ChatWindow({ chatId }: ChatWindowProps) {
   const { messages, sendMessage, addReaction, removeReaction, markMessageAsRead, currentChat } = useChat();
   const { user } = useUser();
+  const locale = useLocale();
   const [input, setInput] = useState('');
   const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -24,12 +26,12 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    
+
     // Mark messages as read when viewing
     const unreadMessages = messages.filter(
       m => m.chatId === chatId && m.senderId !== user?.id && !m.readAt
     );
-    
+
     unreadMessages.forEach(message => {
       markMessageAsRead(message.id);
     });
@@ -85,7 +87,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      
+
       const uploadResponse = await axios.post('/api/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
@@ -143,13 +145,21 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
                       <p className="text-xs text-text-secondary mb-1">{message.sender.username}</p>
                     )}
                     <div
-                      className={`rounded-lg px-4 py-2 ${
-                        message.senderId === user?.id
-                          ? 'bg-primary-500 text-white'
-                          : 'glass-light border border-white/10 text-text-primary'
-                      }`}
+                      className={`rounded-lg px-4 py-2 ${message.senderId === user?.id
+                        ? 'bg-primary-500 text-white'
+                        : 'glass-light border border-white/10 text-text-primary'
+                        }`}
                     >
-                      <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                      <p className="text-sm whitespace-pre-wrap">
+                        {message.translations && locale && message.translations[locale]
+                          ? message.translations[locale]
+                          : message.content}
+                      </p>
+                      {message.translations && locale && message.translations[locale] && (
+                        <p className="text-[10px] text-text-tertiary mt-1 italic">
+                          Translated from original
+                        </p>
+                      )}
                       {message.reactions && message.reactions.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-2">
                           {Object.entries(
@@ -187,7 +197,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
             </div>
           ))
         )}
-        
+
         {/* Typing indicator */}
         {typingUsers.length > 0 && (
           <div className="flex items-center space-x-2 px-4 py-2">
@@ -197,13 +207,13 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
               <div className="w-2 h-2 bg-primary-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
             </div>
             <p className="text-xs text-text-secondary">
-              {typingUsers.length === 1 
+              {typingUsers.length === 1
                 ? `${typingUsers[0].username} is typing...`
                 : `${typingUsers.length} people are typing...`}
             </p>
           </div>
         )}
-        
+
         <div ref={messagesEndRef} />
       </div>
 

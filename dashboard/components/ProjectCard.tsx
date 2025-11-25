@@ -1,5 +1,6 @@
 import { MoreVertical, Users, Trash2 } from 'lucide-react';
 import { cn, getRiskColor } from '@/lib/utils';
+import { useLocale } from 'next-intl';
 
 interface ProjectCardProps {
   id: number;
@@ -12,9 +13,13 @@ interface ProjectCardProps {
   isTeamProject?: boolean;
   onClick?: () => void;
   onDelete?: (e: React.MouseEvent) => void;
+  translations?: Record<string, any>;
 }
 
-export function ProjectCard({ id, name, team, status, risk_level, score, isOwner, isTeamProject, onClick, onDelete }: ProjectCardProps) {
+export function ProjectCard({ id, name, team, status, risk_level, score, isOwner, isTeamProject, onClick, onDelete, translations }: ProjectCardProps) {
+  const locale = useLocale();
+  const displayName = translations?.name?.[locale] || name;
+
   return (
     <div
       className="glass-light glass-hover rounded-xl p-4 cursor-pointer"
@@ -24,11 +29,11 @@ export function ProjectCard({ id, name, team, status, risk_level, score, isOwner
         <div className="flex items-center space-x-2.5 flex-1 min-w-0">
           <div className="w-9 h-9 rounded-lg bg-primary/80 flex items-center justify-center flex-shrink-0">
             <span className="text-white font-semibold text-sm">
-              {name.substring(0, 2).toUpperCase()}
+              {displayName.substring(0, 2).toUpperCase()}
             </span>
           </div>
           <div className="flex-1 min-w-0">
-            <h4 className="font-semibold text-sm text-text-primary truncate">{name}</h4>
+            <h4 className="font-semibold text-sm text-text-primary truncate">{displayName}</h4>
             <div className="flex items-center space-x-2 mt-0.5">
               {isOwner && (
                 <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/20 text-primary border border-primary/30">

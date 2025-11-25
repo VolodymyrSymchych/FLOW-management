@@ -1,4 +1,4 @@
-import { pgTable, serial, text, varchar, integer, timestamp, boolean, primaryKey, unique } from 'drizzle-orm/pg-core';
+import { pgTable, serial, text, varchar, integer, timestamp, boolean, primaryKey, unique, jsonb } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 export const users = pgTable('users', {
@@ -50,6 +50,7 @@ export const projects = pgTable('projects', {
   status: varchar('status', { length: 50 }).default('in_progress').notNull(),
   document: text('document'),
   analysisData: text('analysis_data'),
+  translations: jsonb('translations'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   deletedAt: timestamp('deleted_at'),
@@ -61,6 +62,7 @@ export const teams = pgTable('teams', {
   name: varchar('name', { length: 255 }).notNull(),
   description: text('description'),
   ownerId: integer('owner_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  translations: jsonb('translations'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

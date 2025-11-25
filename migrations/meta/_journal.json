@@ -15,6 +15,13 @@
       "when": 1763161609009,
       "tag": "0001_lying_sway",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1764103775429,
+      "tag": "0002_tiny_deathbird",
+      "breakpoints": true
     }
   ]
 }

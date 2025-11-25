@@ -6,6 +6,7 @@ import { Plus, Calendar, Edit, Trash2, ArrowUpDown, Search, Filter, CheckCircle2
 import axios from 'axios';
 import { useTeam } from '@/contexts/TeamContext';
 import { cn } from '@/lib/utils';
+import { useLocale } from 'next-intl';
 
 // Lazy load modals
 const EditTaskModal = dynamic(() => import('@/components/EditTaskModal').then(m => ({ default: m.EditTaskModal })), {
@@ -22,6 +23,7 @@ interface Project {
 }
 
 export default function TasksPage() {
+  const locale = useLocale();
   const { selectedTeam, isLoading: teamsLoading } = useTeam();
   const [tasks, setTasks] = useState<any[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -412,11 +414,11 @@ export default function TasksPage() {
                           "text-sm font-medium text-text-primary",
                           task.status === 'done' && "line-through text-text-tertiary"
                         )}>
-                          {task.title}
+                          {task.translations?.title?.[locale] || task.title}
                         </span>
-                        {task.description && (
+                        {(task.translations?.description?.[locale] || task.description) && (
                           <span className="text-xs text-text-tertiary line-clamp-1 mt-0.5">
-                            {task.description}
+                            {task.translations?.description?.[locale] || task.description}
                           </span>
                         )}
                       </div>

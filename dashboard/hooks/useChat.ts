@@ -31,6 +31,7 @@ export interface ChatMessage {
     };
   }>;
   attachments?: any[];
+  translations?: Record<string, string>;
 }
 
 export interface Chat {
@@ -151,7 +152,7 @@ export function useChat() {
       const response = await axios.get(`/api/chat?chatId=${chatId}`);
       setCurrentChat(response.data.chat);
       setMessages(response.data.messages || []);
-      
+
       // Join chat for real-time updates
       if (wsRef.current) {
         wsRef.current.joinChat(chatId);

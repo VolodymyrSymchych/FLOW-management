@@ -41,6 +41,7 @@ export interface Project {
   deletedAt?: string | null;
   isOwner?: boolean;
   isTeamProject?: boolean;
+  translations?: Record<string, any>;
 }
 
 export interface Stats {
@@ -69,7 +70,7 @@ export const api = {
 
   // Get all projects
   getProjects: async (teamId?: number | 'all'): Promise<{ projects: Project[]; total: number }> => {
-    const url = teamId !== undefined 
+    const url = teamId !== undefined
       ? `${API_BASE_URL}/projects?team_id=${teamId}`
       : `${API_BASE_URL}/projects`;
     const response = await axios.get(url);

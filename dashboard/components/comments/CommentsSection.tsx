@@ -5,6 +5,7 @@ import { Send, Edit2, Trash2, Reply, CheckCircle2, Circle, X } from 'lucide-reac
 import axios from 'axios';
 import { formatDistanceToNow } from 'date-fns';
 import { useUser } from '@/hooks/useUser';
+import { useLocale } from 'next-intl';
 import { MentionInput } from './MentionInput';
 
 interface Comment {
@@ -23,6 +24,7 @@ interface Comment {
     avatarUrl?: string;
   };
   replies?: Comment[];
+  translations?: Record<string, string>;
 }
 
 interface CommentsSectionProps {
@@ -32,6 +34,7 @@ interface CommentsSectionProps {
 
 export function CommentsSection({ entityType, entityId }: CommentsSectionProps) {
   const { user } = useUser();
+  const locale = useLocale();
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [replyingTo, setReplyingTo] = useState<Comment | null>(null);
@@ -63,7 +66,7 @@ export function CommentsSection({ entityType, entityId }: CommentsSectionProps) 
         parentId: replyingTo?.id,
         mentions: mentionedUsers,
       });
-      
+
       if (replyingTo) {
         // If replying, add to the parent's replies
         setComments(prev =>
@@ -77,7 +80,7 @@ export function CommentsSection({ entityType, entityId }: CommentsSectionProps) 
         // If top-level comment, add to main list
         setComments(prev => [...prev, response.data.comment]);
       }
-      
+
       setNewComment('');
       setReplyingTo(null);
       setMentionedUsers([]);
@@ -93,7 +96,7 @@ export function CommentsSection({ entityType, entityId }: CommentsSectionProps) 
       await axios.patch(`/api/comments/${commentId}/resolve`, {
         resolved: resolve,
       });
-      
+
       setComments(prev =>
         prev.map(c => {
           if (c.id === commentId) {
@@ -111,11 +114,11 @@ export function CommentsSection({ entityType, entityId }: CommentsSectionProps) 
               replies: c.replies.map(r =>
                 r.id === commentId
                   ? {
-                      ...r,
-                      status: resolve ? 'resolved' : 'active',
-                      resolvedAt: resolve ? new Date().toISOString() : undefined,
-                      resolvedBy: resolve ? user?.id : undefined,
-                    }
+                    ...r,
+                    status: resolve ? 'resolved' : 'active',
+                    resolvedAt: resolve ? new Date().toISOString() : undefined,
+                    resolvedBy: resolve ? user?.id : undefined,
+                  }
                   : r
               ),
             };
@@ -135,7 +138,7 @@ export function CommentsSection({ entityType, entityId }: CommentsSectionProps) 
       await axios.put(`/api/comments/${commentId}`, {
         content: editContent.trim(),
       });
-      
+
       setComments(prev =>
         prev.map(c =>
           c.id === commentId
@@ -248,16 +251,23 @@ export function CommentsSection({ entityType, entityId }: CommentsSectionProps) 
             ) : (
               <>
                 <div className="text-sm text-text-primary whitespace-pre-wrap">
-                  {comment.content.split(/(@\w+)/g).map((part, idx) => 
-                    part.startsWith('@') ? (
-                      <span key={idx} className="text-primary-500 font-medium">
-                        {part}
-                      </span>
-                    ) : (
-                      <span key={idx}>{part}</span>
-                    )
-                  )}
+                  {(comment.translations && locale && comment.translations[locale]
+                    ? comment.translations[locale]
+                    : comment.content).split(/(@\w+)/g).map((part, idx) =>
+                      part.startsWith('@') ? (
+                        <span key={idx} className="text-primary-500 font-medium">
+                          {part}
+                        </span>
+                      ) : (
+                        <span key={idx}>{part}</span>
+                      )
+                    )}
                 </div>
+                {comment.translations && locale && comment.translations[locale] && (
+                  <p className="text-[10px] text-text-tertiary mt-1 italic">
+                    Translated from original
+                  </p>
+                )}
                 {comment.editedAt && (
                   <p className="text-xs text-text-tertiary mt-1">(edited)</p>
                 )}
@@ -298,7 +308,7 @@ export function CommentsSection({ entityType, entityId }: CommentsSectionProps) 
           </span>
         )}
       </div>
-      
+
       {/* Comments list */}
       <div className="space-y-4">
         {comments.length === 0 ? (

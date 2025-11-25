@@ -73,6 +73,7 @@ import {
   type Comment,
   type InsertComment,
 } from '../shared/schema';
+import { translateContent } from './services/translation';
 
 export class DatabaseStorage {
   // Users
@@ -141,11 +142,12 @@ export class DatabaseStorage {
         ownerId: teams.ownerId,
         createdAt: teams.createdAt,
         updatedAt: teams.updatedAt,
+        translations: teams.translations,
       })
       .from(teamMembers)
       .innerJoin(teams, eq(teamMembers.teamId, teams.id))
       .where(eq(teamMembers.userId, userId));
-    
+
     return result;
   }
 
@@ -175,7 +177,7 @@ export class DatabaseStorage {
       .from(teamMembers)
       .innerJoin(users, eq(teamMembers.userId, users.id))
       .where(eq(teamMembers.teamId, teamId));
-    
+
     return result.map(row => ({
       ...row.teamMember,
       user: row.user,
@@ -363,7 +365,7 @@ export class DatabaseStorage {
         .filter(p => !ownedProjectIds.has(p.id))
         .map(p => ({ ...p, isOwner: false, isTeamProject: true }))
     ];
-    
+
     const uniqueProjects = Array.from(
       new Map(allProjects.map(p => [p.id, p])).values()
     );
@@ -390,6 +392,17 @@ export class DatabaseStorage {
       .insert(projects)
       .values(data)
       .returning() as any;
+
+    // Trigger translation
+    translateContent(project.name).then(async (translations) => {
+      if (Object.keys(translations).length > 0) {
+        await db
+          .update(projects)
+          .set({ translations: { name: translations } })
+          .where(eq(projects.id, project.id));
+      }
+    });
+
     return project;
   }
 
@@ -426,7 +439,7 @@ export class DatabaseStorage {
         eq(projects.userId, userId),
         isNull(projects.deletedAt)
       ));
-    
+
     if (ownedProject) {
       return true;
     }
@@ -447,7 +460,7 @@ export class DatabaseStorage {
     // Check if project is in any team where user is a member
     const userTeams = await this.getUserTeams(userId);
     const teamIds = userTeams.map(t => t.id);
-    
+
     if (teamIds.length === 0) {
       return false;
     }
@@ -654,6 +667,36 @@ export class DatabaseStorage {
     if (!task) {
       throw new Error('Failed to create task');
     }
+
+    // Trigger translation
+    const textToTranslate = `${task.title}\n\n${task.description || ''}`;
+    translateContent(textToTranslate).then(async (translations) => {
+      if (Object.keys(translations).length > 0) {
+        // We need to split the translations back into title and description if possible,
+        // but since we store a single translations object, we might need a structure like { title: {en: ...}, description: {en: ...} }
+        // Or just store the whole translated block.
+        // For simplicity, let's assume we translate the combined text and store it.
+        // Better approach: Translate title and description separately or return a structured JSON.
+        // Let's try to translate them separately for better quality.
+
+        const titleTranslations = await translateContent(task.title);
+        let descTranslations = {};
+        if (task.description) {
+          descTranslations = await translateContent(task.description);
+        }
+
+        const combinedTranslations = {
+          title: titleTranslations,
+          description: descTranslations,
+        };
+
+        await db
+          .update(tasks)
+          .set({ translations: combinedTranslations })
+          .where(eq(tasks.id, task.id));
+      }
+    });
+
     return task;
   }
 
@@ -1010,7 +1053,7 @@ export class DatabaseStorage {
         isNull(invoices.deletedAt)
       ))
       .orderBy(desc(invoices.createdAt));
-    
+
     // Extract invoices from join result
     return result.map(row => row.invoices);
   }
@@ -1062,7 +1105,7 @@ export class DatabaseStorage {
     if (projectId) {
       conditions.push(eq(reports.projectId, projectId));
     }
-    
+
     if (conditions.length > 0) {
       return await db
         .select()
@@ -1070,7 +1113,7 @@ export class DatabaseStorage {
         .where(and(...conditions))
         .orderBy(desc(reports.updatedAt));
     }
-    
+
     return await db.select().from(reports).orderBy(desc(reports.updatedAt));
   }
 
@@ -1141,7 +1184,7 @@ export class DatabaseStorage {
       // Calculate spending per project and identify at-risk projects
       for (const project of userProjects) {
         if (!project.budget) continue;
-        
+
         const projectExpenses = allExpenses.filter(e => e.projectId === project.id);
         const projectSpent = projectExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
         const projectUtilization = (projectSpent / project.budget) * 100;
@@ -1158,7 +1201,7 @@ export class DatabaseStorage {
 
     // Calculate forecast spending based on average daily spending rate
     // Assuming 30-day month for forecast
-    const daysSinceOldestProject = userProjects.length > 0 
+    const daysSinceOldestProject = userProjects.length > 0
       ? Math.max(1, Math.floor((Date.now() - new Date(userProjects[0].createdAt).getTime()) / (1000 * 60 * 60 * 24)))
       : 30;
     const averageDailySpending = daysSinceOldestProject > 0 ? totalSpent / daysSinceOldestProject : 0;
@@ -1189,9 +1232,9 @@ export class DatabaseStorage {
         eq(projects.userId, userId),
         isNull(projects.deletedAt)
       ));
-    
+
     const projectIds = userProjects.map(p => p.id);
-    
+
     if (projectIds.length === 0) {
       return [];
     }
@@ -1268,9 +1311,9 @@ export class DatabaseStorage {
         eq(projects.userId, userId),
         isNull(projects.deletedAt)
       ));
-    
+
     const projectIds = userProjects.map(p => p.id);
-    
+
     if (projectIds.length === 0) {
       return [];
     }
@@ -1321,9 +1364,9 @@ export class DatabaseStorage {
         eq(projects.userId, userId),
         isNull(projects.deletedAt)
       ));
-    
+
     const projectIds = userProjects.map(p => p.id);
-    
+
     if (projectIds.length === 0) {
       return [];
     }
@@ -1407,7 +1450,7 @@ export class DatabaseStorage {
       currentStart = new Date(now);
       currentStart.setDate(now.getDate() - daysFromMonday);
       currentStart.setHours(0, 0, 0, 0);
-      
+
       previousStart = new Date(currentStart);
       previousStart.setDate(previousStart.getDate() - 7);
       previousEnd = new Date(currentStart);
@@ -1416,7 +1459,7 @@ export class DatabaseStorage {
     } else if (period === 'month') {
       currentStart = new Date(now.getFullYear(), now.getMonth(), 1);
       currentEnd = new Date(now);
-      
+
       previousStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       previousEnd = new Date(now.getFullYear(), now.getMonth(), 0);
       previousEnd.setHours(23, 59, 59, 999);
@@ -1424,7 +1467,7 @@ export class DatabaseStorage {
       // year
       currentStart = new Date(now.getFullYear(), 0, 1);
       currentEnd = new Date(now);
-      
+
       if (compareTo === 'previous') {
         previousStart = new Date(now.getFullYear() - 1, 0, 1);
         previousEnd = new Date(now.getFullYear() - 1, 11, 31);
@@ -1587,7 +1630,7 @@ export class DatabaseStorage {
   async getRecurringInvoicesDueForGeneration(): Promise<RecurringInvoice[]> {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     return await db
       .select()
       .from(recurringInvoices)
@@ -1676,7 +1719,7 @@ export class DatabaseStorage {
         .select()
         .from(chatMembers)
         .where(eq(chatMembers.chatId, chat.id));
-      
+
       const memberIds = members.map(m => m.userId);
       if (memberIds.includes(userId1) && memberIds.includes(userId2) && memberIds.length === 2) {
         return chat;
@@ -1703,15 +1746,15 @@ export class DatabaseStorage {
 
   async createGroupChat(chatData: InsertChat, memberIds: number[]): Promise<Chat> {
     const [chat] = await db.insert(chats).values(chatData).returning() as any;
-    
+
     const members = memberIds.map(userId => ({
       chatId: chat.id,
       userId,
       role: userId === chatData.createdBy ? 'admin' : 'member',
     }));
-    
+
     await db.insert(chatMembers).values(members);
-    
+
     return chat;
   }
 
@@ -1722,7 +1765,7 @@ export class DatabaseStorage {
       .where(eq(chatMembers.userId, userId));
 
     const chatIds = userChatMembers.map(m => m.chatId);
-    
+
     if (chatIds.length === 0) {
       return [];
     }
@@ -1759,7 +1802,7 @@ export class DatabaseStorage {
       .from(chatMembers)
       .innerJoin(users, eq(chatMembers.userId, users.id))
       .where(eq(chatMembers.chatId, chatId));
-    
+
     return result.map(row => ({
       ...row.chatMember,
       user: row.user,
@@ -1768,12 +1811,22 @@ export class DatabaseStorage {
 
   async createChatMessage(messageData: InsertChatMessage): Promise<ChatMessage> {
     const [message] = await db.insert(chatMessages).values(messageData).returning() as any;
-    
+
     // Update chat's updatedAt
     await db
       .update(chats)
       .set({ updatedAt: new Date() })
       .where(eq(chats.id, messageData.chatId));
+
+    // Trigger translation
+    translateContent(messageData.content).then(async (translations) => {
+      if (Object.keys(translations).length > 0) {
+        await db
+          .update(chatMessages)
+          .set({ translations })
+          .where(eq(chatMessages.id, message.id));
+      }
+    });
 
     return message;
   }
@@ -1809,7 +1862,7 @@ export class DatabaseStorage {
       .where(whereConditions)
       .orderBy(desc(chatMessages.createdAt))
       .limit(limit);
-    
+
     const result = [];
     for (const message of messages) {
       const sender = await this.getUser(message.senderId);
@@ -1911,6 +1964,17 @@ export class DatabaseStorage {
     }
 
     const [comment] = await db.insert(comments).values(cleanData).returning() as any;
+
+    // Trigger translation
+    translateContent(cleanData.content).then(async (translations) => {
+      if (Object.keys(translations).length > 0) {
+        await db
+          .update(comments)
+          .set({ translations })
+          .where(eq(comments.id, comment.id));
+      }
+    });
+
     return comment;
   }
 

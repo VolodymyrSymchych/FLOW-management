@@ -1,11 +1,6 @@
 import OpenAI from 'openai';
-import dotenv from 'dotenv';
-import path from 'path';
 
-// Load environment variables
-dotenv.config({ path: path.join(process.cwd(), '.env.local') });
-dotenv.config({ path: path.join(process.cwd(), '../API_KEYS.env') });
-
+// Next.js automatically loads environment variables from .env.local
 const apiKey = process.env.OPENAI_API_KEY;
 const openai = apiKey ? new OpenAI({ apiKey }) : null;
 

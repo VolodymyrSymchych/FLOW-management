@@ -5,6 +5,8 @@ import { motion } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
 
+import { Logo } from "@/components/Logo";
+
 const logo = "/logo.png";
 
 export function Navbar({ user }: { user?: any }) {
@@ -15,13 +17,7 @@ export function Navbar({ user }: { user?: any }) {
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex h-16 items-center justify-between">
                     <div className="flex items-center">
-                        <Link href="/" className="flex items-center space-x-2">
-                            <img
-                                src={logo}
-                                alt="FLOW management"
-                                className="h-8 w-auto object-contain"
-                            />
-                        </Link>
+                        <Logo variant="default" />
                     </div>
 
                     <div className="hidden md:block">

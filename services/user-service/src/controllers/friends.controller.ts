@@ -1,7 +1,7 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { friendsService } from '../services/friends.service';
-import { ValidationError, NotFoundError, UnauthorizedError } from '@project-scope-analyzer/shared';
+import { ValidationError, NotFoundError, UnauthorizedError, AuthenticatedRequest } from '@project-scope-analyzer/shared';
 
 const sendFriendRequestSchema = z.object({
   receiverEmail: z.string().email().optional(),
@@ -17,13 +17,13 @@ export class FriendsController {
    * GET /friends
    * Get user's friends and pending requests
    */
-  async getFriends(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async getFriends(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
-      if (!req.user?.userId) {
+      if (!req.userId) {
         throw new UnauthorizedError('Unauthorized');
       }
 
-      const userId = parseInt(req.user.userId as string, 10);
+      const userId = req.userId;
       const [friends, pendingRequests] = await Promise.all([
         friendsService.getFriends(userId),
         friendsService.getPendingFriendRequests(userId),
@@ -39,15 +39,15 @@ export class FriendsController {
    * POST /friends/requests
    * Send a friend request
    */
-  async sendFriendRequest(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async sendFriendRequest(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
-      if (!req.user?.userId) {
+      if (!req.userId) {
         throw new UnauthorizedError('Unauthorized');
       }
 
-      const senderId = parseInt(req.user.userId as string, 10);
+      const senderId = req.userId;
       const validation = sendFriendRequestSchema.safeParse(req.body);
-      
+
       if (!validation.success) {
         throw new ValidationError('Validation failed', {
           errors: validation.error.errors,
@@ -64,16 +64,16 @@ export class FriendsController {
         // This would require importing userService
         const { userService } = await import('../services/user.service');
         const searchValue = receiverEmail || emailOrUsername!;
-        
+
         let user = await userService.getUserByEmail(searchValue);
         if (!user) {
           user = await userService.getUserByUsername(searchValue);
         }
-        
+
         if (!user) {
           throw new NotFoundError('User not found');
         }
-        
+
         targetUserId = user.id;
       }
 
@@ -88,15 +88,15 @@ export class FriendsController {
    * POST /friends/requests/:id/accept
    * Accept a friend request
    */
-  async acceptFriendRequest(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async acceptFriendRequest(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
-      if (!req.user?.userId) {
+      if (!req.userId) {
         throw new UnauthorizedError('Unauthorized');
       }
 
-      const receiverId = parseInt(req.user.userId as string, 10);
+      const receiverId = req.userId;
       const requestId = parseInt(req.params.id, 10);
-      
+
       if (isNaN(requestId)) {
         throw new ValidationError('Invalid request ID');
       }
@@ -112,15 +112,15 @@ export class FriendsController {
    * POST /friends/requests/:id/reject
    * Reject a friend request
    */
-  async rejectFriendRequest(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async rejectFriendRequest(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
-      if (!req.user?.userId) {
+      if (!req.userId) {
         throw new UnauthorizedError('Unauthorized');
       }
 
-      const receiverId = parseInt(req.user.userId as string, 10);
+      const receiverId = req.userId;
       const requestId = parseInt(req.params.id, 10);
-      
+
       if (isNaN(requestId)) {
         throw new ValidationError('Invalid request ID');
       }
@@ -136,15 +136,15 @@ export class FriendsController {
    * DELETE /friends/:id
    * Remove a friendship (unfriend)
    */
-  async removeFriendship(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async removeFriendship(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
-      if (!req.user?.userId) {
+      if (!req.userId) {
         throw new UnauthorizedError('Unauthorized');
       }
 
-      const userId = parseInt(req.user.userId as string, 10);
+      const userId = req.userId;
       const friendshipId = parseInt(req.params.id, 10);
-      
+
       if (isNaN(friendshipId)) {
         throw new ValidationError('Invalid friendship ID');
       }

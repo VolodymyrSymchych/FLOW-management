@@ -1,22 +1,12 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import { jwtService } from '../services/jwt.service';
-import { UnauthorizedError } from '@project-scope-analyzer/shared';
-
-export interface AuthRequest extends Request {
-  userId?: number;
-  user?: {
-    id: number;
-    email: string;
-    role: string;
-  };
-}
+import { UnauthorizedError, AuthenticatedRequest } from '@project-scope-analyzer/shared';
 
 export async function authMiddleware(
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
 ): Promise<void> {
-  const authReq = req as AuthRequest;
   try {
     const authHeader = req.headers.authorization;
 
@@ -27,8 +17,8 @@ export async function authMiddleware(
     const token = authHeader.substring(7);
     const payload = await jwtService.verifyToken(token);
 
-    authReq.userId = payload.userId;
-    authReq.user = {
+    req.userId = payload.userId;
+    req.user = {
       id: payload.userId,
       email: payload.email,
       role: payload.role || 'user',
@@ -42,11 +32,10 @@ export async function authMiddleware(
 
 // Optional auth middleware (doesn't fail if no token)
 export async function optionalAuthMiddleware(
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
 ): Promise<void> {
-  const authReq = req as AuthRequest;
   try {
     const authHeader = req.headers.authorization;
 
@@ -54,8 +43,8 @@ export async function optionalAuthMiddleware(
       const token = authHeader.substring(7);
       try {
         const payload = await jwtService.verifyToken(token);
-        authReq.userId = payload.userId;
-        authReq.user = {
+        req.userId = payload.userId;
+        req.user = {
           id: payload.userId,
           email: payload.email,
           role: payload.role || 'user',

@@ -4,12 +4,16 @@ declare global {
     namespace Express {
         interface Request {
             /**
+             * Authenticated user ID added by authentication middleware.
+             */
+            userId?: number;
+            /**
              * Authenticated user information added by authentication middleware.
              */
             user?: {
-                userId?: string | number;
-                // Additional fields can be added as needed.
-                [key: string]: any;
+                id: number;
+                email: string;
+                role: string;
             };
         }
     }

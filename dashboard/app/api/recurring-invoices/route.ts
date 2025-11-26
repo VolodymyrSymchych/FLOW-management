@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
-import { storage } from '../../../../server/storage';
+import { storage } from '@/lib/storage';
 
 export const dynamic = 'force-dynamic';
 

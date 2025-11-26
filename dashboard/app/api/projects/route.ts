@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { projectService } from '@/lib/project-service';
-import { storage } from '../../../../server/storage';
+import { storage } from '@/lib/storage';
 import { cached, invalidateUserCache } from '@/lib/redis';
 import { withRateLimit } from '@/lib/rate-limit';
 import { createProjectSchema, validateRequestBody, formatZodError } from '@/lib/validations';

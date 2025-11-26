@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { userService } from '@/lib/user-service';
-import { storage } from '../../../../server/storage';
+import { storage } from '@/lib/storage';
 
 export async function GET() {
   try {

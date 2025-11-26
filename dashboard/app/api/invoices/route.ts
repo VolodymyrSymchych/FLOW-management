@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
-import { storage } from '../../../../server/storage';
+import { storage } from '@/lib/storage';
 import { sendInvoiceEmail } from '@/lib/email/send-invoice';
 import { createInvoiceSchema, validateRequestBody, formatZodError } from '@/lib/validations';
 

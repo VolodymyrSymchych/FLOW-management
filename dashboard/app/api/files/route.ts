@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
-import { storage } from '../../../../server/storage';
+import { storage } from '@/lib/storage';
 import { uploadFile, deleteFile } from '../../../../server/r2-storage';
 import { withRateLimit } from '@/lib/rate-limit';
 import { validateFileType, validateFileSize, sanitizeFilename, ALLOWED_FILE_TYPES } from '@/lib/file-security';

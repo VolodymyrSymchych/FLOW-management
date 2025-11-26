@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { storage } from '../../../../server/storage';
+import { storage } from '@/lib/storage';
 import { getSession } from '@/lib/auth';
 import { cached } from '@/lib/redis';
 import { db } from '../../../../server/db';

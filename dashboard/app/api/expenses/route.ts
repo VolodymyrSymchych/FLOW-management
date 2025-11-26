@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
-import { storage } from '../../../../server/storage';
+import { storage } from '@/lib/storage';
 import { createExpenseSchema, validateRequestBody, formatZodError } from '@/lib/validations';
 
 export const dynamic = 'force-dynamic';

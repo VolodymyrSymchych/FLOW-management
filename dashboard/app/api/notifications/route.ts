@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
-import { storage } from '../../../../server/storage';
+import { storage } from '@/lib/storage';
 
 export async function GET(request: Request) {
   try {

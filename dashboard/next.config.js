@@ -41,7 +41,12 @@ const nextConfig = {
   },
   // Use experimental option for Next.js 14.2.0
   experimental: {
-    serverComponentsExternalPackages: ['@aws-sdk/client-s3', '@aws-sdk/s3-request-presigner'],
+    serverComponentsExternalPackages: [
+      '@aws-sdk/client-s3',
+      '@aws-sdk/s3-request-presigner',
+      'drizzle-orm',
+      '@neondatabase/serverless'
+    ],
   },
 };
 

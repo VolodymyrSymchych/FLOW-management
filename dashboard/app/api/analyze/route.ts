@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
-import { storage } from '../../../../server/storage';
+import { storage } from '@/lib/storage';
 import { ProjectScopeAnalyzer, ProjectMetadata } from '@/lib/analyzer';
 
 export const dynamic = 'force-dynamic';

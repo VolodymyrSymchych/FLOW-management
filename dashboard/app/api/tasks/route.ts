@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
-import { storage } from '../../../../server/storage';
+import { storage } from '@/lib/storage';
 import { cached, invalidateUserCache } from '@/lib/redis';
 import { withRateLimit } from '@/lib/rate-limit';
 import { createTaskSchema, validateRequestBody, formatZodError } from '@/lib/validations';

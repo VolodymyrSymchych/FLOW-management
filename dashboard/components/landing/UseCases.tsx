@@ -1,3 +1,5 @@
+'use client';
+
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
 import { Code2, Briefcase, Rocket, Building2, Users, Palette, Globe, Laptop } from "lucide-react";

@@ -1,3 +1,5 @@
+'use client';
+
 import { motion } from "framer-motion";
 import { Check } from "lucide-react";
 
@@ -70,8 +72,8 @@ export function PricingSection() {
                             viewport={{ once: true }}
                             transition={{ delay: index * 0.1 }}
                             className={`glass-card relative rounded-3xl p-8 border ${plan.popular
-                                    ? "border-indigo-500/50 bg-indigo-500/5"
-                                    : "border-white/10"
+                                ? "border-indigo-500/50 bg-indigo-500/5"
+                                : "border-white/10"
                                 } flex flex-col`}
                         >
                             {plan.popular && (
@@ -102,8 +104,8 @@ export function PricingSection() {
 
                             <button
                                 className={`w-full py-3 rounded-xl font-medium transition-all ${plan.popular
-                                        ? "glass-button text-white hover:shadow-lg hover:shadow-indigo-500/25"
-                                        : "bg-white/5 text-white hover:bg-white/10 border border-white/10"
+                                    ? "glass-button text-white hover:shadow-lg hover:shadow-indigo-500/25"
+                                    : "bg-white/5 text-white hover:bg-white/10 border border-white/10"
                                     }`}
                             >
                                 {plan.cta}

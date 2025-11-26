@@ -1,3 +1,5 @@
+'use client';
+
 import { motion } from "framer-motion";
 import { Brain, FileText, PieChart, Layers, Check } from "lucide-react";
 

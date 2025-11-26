@@ -1,8 +1,11 @@
+'use client';
+
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { ArrowRight, PlayCircle, CheckCircle2, BarChart3, Clock, AlertTriangle } from "lucide-react";
+import Link from "next/link";
 
-export function Hero() {
+export function Hero({ user }: { user?: any }) {
     return (
         <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
             {/* Background Elements */}
@@ -25,10 +28,7 @@ export function Hero() {
                         transition={{ duration: 0.8, ease: "easeOut" }}
                         className="max-w-2xl"
                     >
-                        <div className="inline-flex items-center rounded-full border border-indigo-500/30 bg-indigo-500/10 px-3 py-1 text-sm font-medium text-indigo-300 mb-6">
-                            <span className="flex h-2 w-2 rounded-full bg-indigo-400 mr-2 animate-pulse"></span>
-                            New: AI Scope Detection v2.0
-                        </div>
+
 
                         <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-white mb-6 leading-[1.1]">
                             Stop Losing Revenue to <span className="text-gradient">Scope Creep</span>
@@ -39,10 +39,17 @@ export function Hero() {
                         </p>
 
                         <div className="flex flex-wrap gap-4">
-                            <button className="glass-button px-8 py-4 rounded-full text-white font-semibold flex items-center gap-2 text-lg group">
-                                Start Free Analysis
-                                <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
-                            </button>
+                            {user ? (
+                                <Link href="/dashboard" className="glass-button px-8 py-4 rounded-full text-white font-semibold flex items-center gap-2 text-lg group">
+                                    Let's get to work
+                                    <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+                                </Link>
+                            ) : (
+                                <Link href="/sign-up" className="glass-button px-8 py-4 rounded-full text-white font-semibold flex items-center gap-2 text-lg group">
+                                    Start for Free
+                                    <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+                                </Link>
+                            )}
 
                             <button className="px-8 py-4 rounded-full text-white font-medium flex items-center gap-2 hover:bg-white/5 transition-colors border border-white/10">
                                 <PlayCircle className="w-5 h-5" />

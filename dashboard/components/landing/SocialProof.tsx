@@ -1,3 +1,5 @@
+'use client';
+
 import { motion } from "framer-motion";
 import { Star } from "lucide-react";
 
@@ -63,12 +65,31 @@ export function SocialProofSection() {
 
                 <div className="pt-12 border-t border-white/5">
                     <p className="text-center text-gray-500 text-sm mb-8">TRUSTED BY INNOVATIVE TEAMS AT</p>
-                    <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
-                        {companies.map((company, i) => (
-                            <span key={i} className="text-xl font-bold text-white/40 hover:text-white transition-colors cursor-default">
-                                {company}
-                            </span>
-                        ))}
+                    <div className="relative flex overflow-hidden mask-linear-fade group">
+                        <div className="flex gap-16 animate-infinite-scroll whitespace-nowrap py-4 group-hover:[animation-play-state:paused]">
+                            {companies.map((company, i) => (
+                                <span key={i} className="text-xl font-bold text-white/40 hover:text-white transition-colors cursor-default">
+                                    {company}
+                                </span>
+                            ))}
+                            {companies.map((company, i) => (
+                                <span key={`dup-${i}`} className="text-xl font-bold text-white/40 hover:text-white transition-colors cursor-default">
+                                    {company}
+                                </span>
+                            ))}
+                        </div>
+                        <div className="flex gap-16 animate-infinite-scroll whitespace-nowrap py-4 group-hover:[animation-play-state:paused]" aria-hidden="true">
+                            {companies.map((company, i) => (
+                                <span key={i} className="text-xl font-bold text-white/40 hover:text-white transition-colors cursor-default">
+                                    {company}
+                                </span>
+                            ))}
+                            {companies.map((company, i) => (
+                                <span key={`dup-${i}`} className="text-xl font-bold text-white/40 hover:text-white transition-colors cursor-default">
+                                    {company}
+                                </span>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </div>

@@ -1,3 +1,5 @@
+'use client';
+
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Menu, X } from "lucide-react";
@@ -5,7 +7,7 @@ import { useState } from "react";
 
 const logo = "/logo.png";
 
-export function Navbar() {
+export function Navbar({ user }: { user?: any }) {
     const [isOpen, setIsOpen] = useState(false);
 
     return (
@@ -27,12 +29,21 @@ export function Navbar() {
                             <a href="#features" className="text-sm font-medium text-gray-300 transition-colors hover:text-white">Features</a>
                             <a href="#pricing" className="text-sm font-medium text-gray-300 transition-colors hover:text-white">Pricing</a>
                             <a href="#about" className="text-sm font-medium text-gray-300 transition-colors hover:text-white">About</a>
-                            <Link href="/dashboard" className="rounded-full bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm transition-all hover:bg-white/20">
-                                Sign In
-                            </Link>
-                            <Link href="/dashboard" className="glass-button rounded-full px-5 py-2 text-sm font-medium text-white">
-                                Get Started
-                            </Link>
+
+                            {user ? (
+                                <Link href="/dashboard" className="glass-button rounded-full px-5 py-2 text-sm font-medium text-white">
+                                    Let's get to work
+                                </Link>
+                            ) : (
+                                <>
+                                    <Link href="/sign-in" className="rounded-full bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm transition-all hover:bg-white/20">
+                                        Sign In
+                                    </Link>
+                                    <Link href="/sign-up" className="glass-button rounded-full px-5 py-2 text-sm font-medium text-white">
+                                        Get Started
+                                    </Link>
+                                </>
+                            )}
                         </div>
                     </div>
 
@@ -59,12 +70,20 @@ export function Navbar() {
                         <a href="#pricing" className="block rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-white/10 hover:text-white">Pricing</a>
                         <a href="#about" className="block rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-white/10 hover:text-white">About</a>
                         <div className="mt-4 flex flex-col gap-2 px-3">
-                            <Link href="/dashboard" className="w-full block text-center rounded-md bg-white/10 px-4 py-2 text-sm font-medium text-white hover:bg-white/20">
-                                Sign In
-                            </Link>
-                            <Link href="/dashboard" className="glass-button w-full block text-center rounded-md px-4 py-2 text-sm font-medium text-white">
-                                Get Started
-                            </Link>
+                            {user ? (
+                                <Link href="/dashboard" className="glass-button w-full block text-center rounded-md px-4 py-2 text-sm font-medium text-white">
+                                    Let's get to work
+                                </Link>
+                            ) : (
+                                <>
+                                    <Link href="/sign-in" className="w-full block text-center rounded-md bg-white/10 px-4 py-2 text-sm font-medium text-white hover:bg-white/20">
+                                        Sign In
+                                    </Link>
+                                    <Link href="/sign-up" className="glass-button w-full block text-center rounded-md px-4 py-2 text-sm font-medium text-white">
+                                        Get Started
+                                    </Link>
+                                </>
+                            )}
                         </div>
                     </div>
                 </motion.div>

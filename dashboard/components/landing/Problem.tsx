@@ -1,3 +1,5 @@
+'use client';
+
 import { motion } from "framer-motion";
 import { TrendingDown, AlertOctagon, DollarSign, Clock, CalendarX, Frown } from "lucide-react";
 

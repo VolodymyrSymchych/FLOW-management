@@ -1,4 +1,7 @@
+'use client';
+
 import { Twitter, Github, Linkedin, Heart } from "lucide-react";
+import Link from "next/link";
 
 const logo = "/logo.png";
 

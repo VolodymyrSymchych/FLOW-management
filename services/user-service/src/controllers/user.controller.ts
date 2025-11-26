@@ -1,7 +1,7 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { userService, UpdateUserProfileInput } from '../services/user.service';
-import { ValidationError, NotFoundError } from '@project-scope-analyzer/shared';
+import { ValidationError, NotFoundError, AuthenticatedRequest } from '@project-scope-analyzer/shared';
 
 const updateProfileSchema = z.object({
   fullName: z.string().max(255).optional().nullable(),
@@ -13,7 +13,7 @@ export class UserController {
    * GET /users/:id
    * Get user by ID
    */
-  async getUser(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async getUser(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const userId = parseInt(req.params.id, 10);
       if (isNaN(userId)) {
@@ -35,10 +35,10 @@ export class UserController {
    * GET /users/search?q=query
    * Search users
    */
-  async searchUsers(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async searchUsers(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const query = req.query.q as string;
-      const excludeUserId = req.user?.userId ? parseInt(req.user.userId as string, 10) : undefined;
+      const excludeUserId = req.userId ? req.userId : undefined;
       const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 10;
 
       if (!query || query.trim().length < 2) {
@@ -57,7 +57,7 @@ export class UserController {
    * PUT /users/:id/profile
    * Update user profile
    */
-  async updateProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async updateProfile(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const userId = parseInt(req.params.id, 10);
       if (isNaN(userId)) {
@@ -65,7 +65,7 @@ export class UserController {
       }
 
       // Only allow users to update their own profile
-      if (req.user?.userId !== userId.toString()) {
+      if (req.userId !== userId) {
         res.status(403).json({ error: 'Forbidden: You can only update your own profile' });
         return;
       }
@@ -97,14 +97,14 @@ export class UserController {
    * GET /users/me
    * Get current user profile
    */
-  async getMe(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async getMe(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
-      if (!req.user?.userId) {
+      if (!req.userId) {
         res.status(401).json({ error: 'Unauthorized' });
         return;
       }
 
-      const userId = parseInt(req.user.userId as string, 10);
+      const userId = req.userId;
       const user = await userService.getUserById(userId);
       if (!user) {
         throw new NotFoundError('User not found');

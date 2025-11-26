@@ -31,11 +31,11 @@ export const VerificationEmail = ({
           <Section style={headerSection}>
             <Heading style={h1}>Welcome</Heading>
           </Section>
-          
+
           <Section style={contentSection}>
             <Text style={greeting}>Hi {username},</Text>
             <Text style={text}>
-              Thank you for joining Project Scope Analyzer. We're thrilled to have you on board.
+              Thank you for joining Project Scope Analyzer. We&apos;re thrilled to have you on board.
             </Text>
             <Text style={text}>
               To complete your registration and get started, please verify your email address.
@@ -54,7 +54,7 @@ export const VerificationEmail = ({
         <Section style={glassCardSecondary}>
           <Section style={linkSection}>
             <Text style={linkText}>
-              If the button doesn't work, copy and paste this link into your browser:
+              If the button doesn&apos;t work, copy and paste this link into your browser:
             </Text>
             <Link href={verificationUrl} style={link}>
               {verificationUrl}
@@ -67,7 +67,7 @@ export const VerificationEmail = ({
             This verification link will expire in 24 hours.
           </Text>
           <Text style={footer}>
-            If you didn't create an account, you can safely ignore this email.
+            If you didn&apos;t create an account, you can safely ignore this email.
           </Text>
           <Text style={signature}>
             Best regards,

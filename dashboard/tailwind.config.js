@@ -28,6 +28,7 @@ module.exports = {
         sans: ['var(--font-sans)', 'Inter', 'system-ui', 'sans-serif'],
         display: ['var(--font-display)', 'Poppins', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'monospace'],
+        "space-grotesk": ['var(--font-space-grotesk)', 'sans-serif'],
       },
       gridTemplateColumns: {
         '16': 'repeat(16, minmax(0, 1fr))',

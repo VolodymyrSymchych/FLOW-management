@@ -8,6 +8,7 @@ import { UseCasesSection } from "@/components/landing/UseCases";
 import { SocialProofSection } from "@/components/landing/SocialProof";
 import { PricingSection } from "@/components/landing/Pricing";
 import { Footer } from "@/components/landing/Footer";
+import { SystemProcess } from "@/components/landing/SystemProcess";
 
 export default function LandingPage() {
     return (
@@ -17,6 +18,7 @@ export default function LandingPage() {
                 <Hero />
                 <ProblemSection />
                 <SolutionSection />
+                <SystemProcess />
                 <UseCasesSection />
                 <SocialProofSection />
                 <PricingSection />

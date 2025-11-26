@@ -96,14 +96,14 @@ export function UseCasesSection() {
     const x = useTransform(scrollYProgress, [0, 1], ["1%", "-85%"]);
 
     return (
-        <section ref={targetRef} className="relative h-[300vh]">
+        <section ref={targetRef} className="relative h-[300vh] bg-gradient-to-b from-transparent via-purple-950/5 to-transparent">
             <div className="sticky top-0 flex h-screen items-center overflow-hidden">
                 <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="mb-12 text-center max-w-3xl mx-auto">
-                        <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">
+                        <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
                             Built for Teams Like Yours
                         </h2>
-                        <p className="text-lg text-gray-400">
+                        <p className="text-xl text-gray-400">
                             Whether you're a solo developer or a global enterprise, we have the tools you need
                             to stop scope creep and maximize revenue.
                         </p>
@@ -119,10 +119,10 @@ export function UseCasesSection() {
                                     <div className={`w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mb-4`}>
                                         <item.icon className={`w-6 h-6 ${item.color}`} />
                                     </div>
-                                    <h3 className="text-xl font-bold text-white mb-3 group-hover:text-white/90 transition-colors">
+                                    <h3 className="text-2xl font-bold text-white mb-3 group-hover:text-white/90 transition-colors">
                                         {item.title}
                                     </h3>
-                                    <p className="text-gray-400 text-sm leading-relaxed mb-6 flex-grow">
+                                    <p className="text-gray-400 text-base leading-relaxed mb-6 flex-grow">
                                         {item.description}
                                     </p>
                                 </div>
@@ -130,14 +130,14 @@ export function UseCasesSection() {
                                 <div className="space-y-4 mt-auto">
                                     <div className="space-y-2">
                                         {item.features.map((feature, i) => (
-                                            <div key={i} className="flex items-center text-xs text-gray-500">
+                                            <div key={i} className="flex items-center text-sm text-gray-500">
                                                 <div className={`w-1 h-1 rounded-full ${item.color.replace('text-', 'bg-')} mr-2`} />
                                                 {feature}
                                             </div>
                                         ))}
                                     </div>
 
-                                    <div className={`pt-4 border-t border-white/5 text-xs font-semibold ${item.color}`}>
+                                    <div className={`pt-4 border-t border-white/5 text-sm font-semibold ${item.color}`}>
                                         {item.metric}
                                     </div>
                                 </div>

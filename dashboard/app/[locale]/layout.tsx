@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Inter, Poppins } from 'next/font/google';
+import { Inter, Poppins, Space_Grotesk } from 'next/font/google';
 import '../globals.css';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { ConditionalLayout } from '@/components/ConditionalLayout';
@@ -13,11 +13,17 @@ import { PerformanceMonitor } from '@/components/PerformanceMonitor';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, setRequestLocale } from 'next-intl/server';
 
+import Script from 'next/script';
+
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
 const poppins = Poppins({
   weight: ['400', '500', '600', '700'],
   subsets: ['latin'],
   variable: '--font-display'
+});
+const spaceGrotesk = Space_Grotesk({
+  subsets: ['latin'],
+  variable: '--font-space-grotesk'
 });
 
 export const metadata: Metadata = {
@@ -41,7 +47,7 @@ export default async function RootLayout({
 
   return (
     <html lang={locale} suppressHydrationWarning>
-      <body className={`${inter.variable} ${poppins.variable} font-sans glass-theme bg-background text-text-primary`}>
+      <body className={`${inter.variable} ${poppins.variable} ${spaceGrotesk.variable} font-sans glass-theme bg-background text-text-primary`}>
         <NextIntlClientProvider messages={messages}>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <TeamProvider>
@@ -98,6 +104,7 @@ export default async function RootLayout({
             <PerformanceMonitor />
           </ThemeProvider>
         </NextIntlClientProvider>
+        <Script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js" strategy="afterInteractive" />
       </body>
     </html>
   );

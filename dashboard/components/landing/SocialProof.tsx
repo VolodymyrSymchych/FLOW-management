@@ -26,7 +26,7 @@ const companies = ["Acme Corp", "GlobalTech", "Nebula", "FoxRun", "Circle", "Tri
 
 export function SocialProofSection() {
     return (
-        <section className="py-24 bg-black/20 border-y border-white/5">
+        <section className="py-24 bg-gradient-to-b from-transparent via-black/10 to-black/20 border-y border-white/5">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center mb-16">
                     <h2 className="text-3xl font-bold text-white mb-12">Loved by Efficient Teams</h2>

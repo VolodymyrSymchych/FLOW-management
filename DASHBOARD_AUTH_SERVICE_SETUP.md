@@ -1,1 +1,0 @@
-requests.js:1  GET https://flow-managment.vercel.app/api/projects/3 500 (Internal Server Error)

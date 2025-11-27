@@ -70,3 +70,4 @@ dashboard/yarn-error.log*
 
 # API Keys (секретні)
 API_KEYS.env
+ALL_SECRETS.md

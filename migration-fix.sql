@@ -66,3 +66,24 @@ EXCEPTION
         RAISE NOTICE 'Constraint might already exist or there are duplicate values';
 END $$;
 
+-- Add translations column to teams if it doesn't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'teams' AND column_name = 'translations'
+    ) THEN
+        ALTER TABLE teams ADD COLUMN translations JSONB;
+    END IF;
+END $$;
+
+-- Add translations column to projects if it doesn't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'projects' AND column_name = 'translations'
+    ) THEN
+        ALTER TABLE projects ADD COLUMN translations JSONB;
+    END IF;
+END $$;

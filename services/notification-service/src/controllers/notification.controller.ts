@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { notificationService } from '../services/notification.service';
 import { AuthenticatedRequest } from '../types/express';
 import { z } from 'zod';
-import { BadRequestError } from '@project-scope-analyzer/shared';
+import { ValidationError } from '@project-scope-analyzer/shared';
 
 // Validation schemas
 const createNotificationSchema = z.object({
@@ -63,7 +63,7 @@ export class NotificationController {
     const id = parseInt(req.params.id);
 
     if (isNaN(id)) {
-      throw new BadRequestError('Invalid notification ID');
+      throw new ValidationError('Invalid notification ID');
     }
 
     const notification = await notificationService.getNotificationById(id, userId);
@@ -92,7 +92,7 @@ export class NotificationController {
     const id = parseInt(req.params.id);
 
     if (isNaN(id)) {
-      throw new BadRequestError('Invalid notification ID');
+      throw new ValidationError('Invalid notification ID');
     }
 
     const notification = await notificationService.markAsRead(id, userId);
@@ -114,7 +114,7 @@ export class NotificationController {
     const id = parseInt(req.params.id);
 
     if (isNaN(id)) {
-      throw new BadRequestError('Invalid notification ID');
+      throw new ValidationError('Invalid notification ID');
     }
 
     await notificationService.deleteNotification(id, userId);

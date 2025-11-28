@@ -2,7 +2,7 @@ import { Response } from 'express';
 import { messageService } from '../services/message.service';
 import { AuthenticatedRequest } from '../types/express';
 import { z } from 'zod';
-import { BadRequestError } from '@project-scope-analyzer/shared';
+import { ValidationError } from '@project-scope-analyzer/shared';
 
 // Validation schemas
 const sendMessageSchema = z.object({
@@ -40,7 +40,7 @@ export class MessageController {
     const before = req.query.before ? parseInt(req.query.before as string) : undefined;
 
     if (isNaN(chatId)) {
-      throw new BadRequestError('Invalid chat ID');
+      throw new ValidationError('Invalid chat ID');
     }
 
     const messages = await messageService.getChatMessages(chatId, userId, limit, before);
@@ -54,7 +54,7 @@ export class MessageController {
     const id = parseInt(req.params.id);
 
     if (isNaN(id)) {
-      throw new BadRequestError('Invalid message ID');
+      throw new ValidationError('Invalid message ID');
     }
 
     const message = await messageService.getMessageById(id, userId);
@@ -69,7 +69,7 @@ export class MessageController {
     const { content } = editMessageSchema.parse(req.body);
 
     if (isNaN(id)) {
-      throw new BadRequestError('Invalid message ID');
+      throw new ValidationError('Invalid message ID');
     }
 
     const message = await messageService.editMessage(id, userId, content);
@@ -83,7 +83,7 @@ export class MessageController {
     const id = parseInt(req.params.id);
 
     if (isNaN(id)) {
-      throw new BadRequestError('Invalid message ID');
+      throw new ValidationError('Invalid message ID');
     }
 
     await messageService.deleteMessage(id, userId);
@@ -97,7 +97,7 @@ export class MessageController {
     const id = parseInt(req.params.id);
 
     if (isNaN(id)) {
-      throw new BadRequestError('Invalid message ID');
+      throw new ValidationError('Invalid message ID');
     }
 
     await messageService.markAsRead(id, userId);
@@ -111,7 +111,7 @@ export class MessageController {
     const chatId = parseInt(req.params.chatId);
 
     if (isNaN(chatId)) {
-      throw new BadRequestError('Invalid chat ID');
+      throw new ValidationError('Invalid chat ID');
     }
 
     await messageService.markChatAsRead(chatId, userId);
@@ -125,7 +125,7 @@ export class MessageController {
     const chatId = parseInt(req.params.chatId);
 
     if (isNaN(chatId)) {
-      throw new BadRequestError('Invalid chat ID');
+      throw new ValidationError('Invalid chat ID');
     }
 
     const count = await messageService.getUnreadCount(chatId, userId);
@@ -140,7 +140,7 @@ export class MessageController {
     const { emoji } = addReactionSchema.parse(req.body);
 
     if (isNaN(messageId)) {
-      throw new BadRequestError('Invalid message ID');
+      throw new ValidationError('Invalid message ID');
     }
 
     const reaction = await messageService.addReaction(messageId, userId, emoji);
@@ -155,7 +155,7 @@ export class MessageController {
     const emoji = req.params.emoji;
 
     if (isNaN(messageId)) {
-      throw new BadRequestError('Invalid message ID');
+      throw new ValidationError('Invalid message ID');
     }
 
     await messageService.removeReaction(messageId, userId, emoji);
@@ -168,7 +168,7 @@ export class MessageController {
     const messageId = parseInt(req.params.id);
 
     if (isNaN(messageId)) {
-      throw new BadRequestError('Invalid message ID');
+      throw new ValidationError('Invalid message ID');
     }
 
     const reactions = await messageService.getMessageReactions(messageId);

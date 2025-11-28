@@ -1,6 +1,6 @@
 import { db, notifications, notificationPreferences, Notification, InsertNotification, NotificationPreferences } from '../db';
 import { eq, desc, and, sql } from 'drizzle-orm';
-import { NotFoundError, BadRequestError } from '@project-scope-analyzer/shared';
+import { NotFoundError } from '@project-scope-analyzer/shared';
 
 export class NotificationService {
   // Create a new notification

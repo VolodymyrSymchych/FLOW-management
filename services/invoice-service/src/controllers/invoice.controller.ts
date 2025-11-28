@@ -2,7 +2,7 @@ import { Response } from 'express';
 import { invoiceService } from '../services/invoice.service';
 import { AuthenticatedRequest } from '../types/express';
 import { z } from 'zod';
-import { BadRequestError } from '@project-scope-analyzer/shared';
+import { ValidationError } from '@project-scope-analyzer/shared';
 
 // Validation schemas
 const createInvoiceSchema = z.object({
@@ -60,7 +60,7 @@ export class InvoiceController {
     const id = parseInt(req.params.id);
 
     if (isNaN(id)) {
-      throw new BadRequestError('Invalid invoice ID');
+      throw new ValidationError('Invalid invoice ID');
     }
 
     const invoice = await invoiceService.getInvoiceById(id);
@@ -92,7 +92,7 @@ export class InvoiceController {
     const status = req.query.status as string;
 
     if (isNaN(projectId)) {
-      throw new BadRequestError('Invalid project ID');
+      throw new ValidationError('Invalid project ID');
     }
 
     let invoices;
@@ -111,7 +111,7 @@ export class InvoiceController {
     const validated = updateInvoiceSchema.parse(req.body);
 
     if (isNaN(id)) {
-      throw new BadRequestError('Invalid invoice ID');
+      throw new ValidationError('Invalid invoice ID');
     }
 
     const updates: any = { ...validated };
@@ -132,7 +132,7 @@ export class InvoiceController {
     const id = parseInt(req.params.id);
 
     if (isNaN(id)) {
-      throw new BadRequestError('Invalid invoice ID');
+      throw new ValidationError('Invalid invoice ID');
     }
 
     const invoice = await invoiceService.markAsSent(id);
@@ -146,7 +146,7 @@ export class InvoiceController {
     const paidDate = req.body.paidDate ? new Date(req.body.paidDate) : undefined;
 
     if (isNaN(id)) {
-      throw new BadRequestError('Invalid invoice ID');
+      throw new ValidationError('Invalid invoice ID');
     }
 
     const invoice = await invoiceService.markAsPaid(id, paidDate);
@@ -159,7 +159,7 @@ export class InvoiceController {
     const id = parseInt(req.params.id);
 
     if (isNaN(id)) {
-      throw new BadRequestError('Invalid invoice ID');
+      throw new ValidationError('Invalid invoice ID');
     }
 
     const invoice = await invoiceService.cancelInvoice(id);
@@ -173,7 +173,7 @@ export class InvoiceController {
     const expiresInDays = parseInt(req.body.expiresInDays) || 30;
 
     if (isNaN(id)) {
-      throw new BadRequestError('Invalid invoice ID');
+      throw new ValidationError('Invalid invoice ID');
     }
 
     const { token, url } = await invoiceService.generateShareLink(id, expiresInDays);
@@ -186,7 +186,7 @@ export class InvoiceController {
     const id = parseInt(req.params.id);
 
     if (isNaN(id)) {
-      throw new BadRequestError('Invalid invoice ID');
+      throw new ValidationError('Invalid invoice ID');
     }
 
     await invoiceService.deleteInvoice(id);
@@ -208,7 +208,7 @@ export class InvoiceController {
     const projectId = parseInt(req.params.projectId);
 
     if (isNaN(projectId)) {
-      throw new BadRequestError('Invalid project ID');
+      throw new ValidationError('Invalid project ID');
     }
 
     const stats = await invoiceService.getInvoiceStats(projectId);
@@ -222,7 +222,7 @@ export class InvoiceController {
     const validated = recordPaymentSchema.parse(req.body);
 
     if (isNaN(invoiceId)) {
-      throw new BadRequestError('Invalid invoice ID');
+      throw new ValidationError('Invalid invoice ID');
     }
 
     const payment = await invoiceService.recordPayment({
@@ -238,7 +238,7 @@ export class InvoiceController {
     const invoiceId = parseInt(req.params.id);
 
     if (isNaN(invoiceId)) {
-      throw new BadRequestError('Invalid invoice ID');
+      throw new ValidationError('Invalid invoice ID');
     }
 
     const payments = await invoiceService.getInvoicePayments(invoiceId);

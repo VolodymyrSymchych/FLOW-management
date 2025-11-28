@@ -2,7 +2,7 @@ import { Response } from 'express';
 import { AuthenticatedRequest } from '../types/express';
 import { authenticatePusherChannel } from '../utils/pusher';
 import { chatService } from '../services/chat.service';
-import { ForbiddenError, BadRequestError } from '@project-scope-analyzer/shared';
+import { ForbiddenError, ValidationError } from '@project-scope-analyzer/shared';
 import { z } from 'zod';
 
 const pusherAuthSchema = z.object({
@@ -21,7 +21,7 @@ export class PusherController {
       const chatId = parseInt(channel_name.replace('private-chat-', ''));
 
       if (isNaN(chatId)) {
-        throw new BadRequestError('Invalid channel name');
+        throw new ValidationError('Invalid channel name');
       }
 
       // Check if user is member of this chat

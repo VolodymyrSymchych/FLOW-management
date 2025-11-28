@@ -2,32 +2,34 @@ import Pusher from 'pusher';
 import { config } from '../config';
 import { logger } from '@project-scope-analyzer/shared';
 
-let pusherInstance: Pusher | null = null;
+let pusherInstance: Pusher;
 
 export function getPusher(): Pusher {
-  if (!pusherInstance) {
-    if (!config.pusher.appId || !config.pusher.key || !config.pusher.secret) {
-      logger.warn('Pusher credentials not configured. Real-time features will not work.');
-      // Return a mock instance for development
-      pusherInstance = {
-        trigger: async () => {
-          logger.debug('Mock Pusher trigger called (Pusher not configured)');
-        },
-      } as any;
-      return pusherInstance;
-    }
-
-    pusherInstance = new Pusher({
-      appId: config.pusher.appId,
-      key: config.pusher.key,
-      secret: config.pusher.secret,
-      cluster: config.pusher.cluster,
-      useTLS: true,
-    });
-
-    logger.info('Pusher initialized', { cluster: config.pusher.cluster });
+  if (pusherInstance !== undefined) {
+    return pusherInstance;
   }
 
+  if (!config.pusher.appId || !config.pusher.key || !config.pusher.secret) {
+    logger.warn('Pusher credentials not configured. Real-time features will not work.');
+    // Return a mock instance for development
+    pusherInstance = {
+      trigger: async () => {
+        logger.debug('Mock Pusher trigger called (Pusher not configured)');
+      },
+      authorizeChannel: () => ({}),
+    } as any;
+    return pusherInstance;
+  }
+
+  pusherInstance = new Pusher({
+    appId: config.pusher.appId,
+    key: config.pusher.key,
+    secret: config.pusher.secret,
+    cluster: config.pusher.cluster,
+    useTLS: true,
+  });
+
+  logger.info('Pusher initialized', { cluster: config.pusher.cluster });
   return pusherInstance;
 }
 

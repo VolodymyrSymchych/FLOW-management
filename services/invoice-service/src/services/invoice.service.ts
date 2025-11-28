@@ -1,6 +1,6 @@
 import { db, invoices, Invoice, InsertInvoice, invoicePayments, InvoicePayment, InsertInvoicePayment } from '../db';
 import { eq, desc, and, sql, gte, lte, or } from 'drizzle-orm';
-import { NotFoundError, BadRequestError } from '@project-scope-analyzer/shared';
+import { NotFoundError, ValidationError } from '@project-scope-analyzer/shared';
 import { nanoid } from 'nanoid';
 
 export class InvoiceService {
@@ -87,7 +87,7 @@ export class InvoiceService {
 
     // Check if token is expired
     if (invoice.tokenExpiresAt && new Date(invoice.tokenExpiresAt) < new Date()) {
-      throw new BadRequestError('Invoice link has expired');
+      throw new ValidationError('Invoice link has expired');
     }
 
     return invoice;
@@ -128,7 +128,7 @@ export class InvoiceService {
     if (updates.amount !== undefined || updates.taxRate !== undefined) {
       const currentInvoice = await this.getInvoiceById(id);
       const amount = updates.amount ?? currentInvoice.amount;
-      const taxRate = updates.taxRate ?? currentInvoice.taxRate;
+      const taxRate = updates.taxRate ?? currentInvoice.taxRate ?? 0;
       const { taxAmount, totalAmount } = this.calculateAmounts(amount, taxRate);
       updates.taxAmount = taxAmount;
       updates.totalAmount = totalAmount;

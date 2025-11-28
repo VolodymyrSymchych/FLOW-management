@@ -2,7 +2,7 @@ import { Response } from 'express';
 import { chatService } from '../services/chat.service';
 import { AuthenticatedRequest } from '../types/express';
 import { z } from 'zod';
-import { BadRequestError } from '@project-scope-analyzer/shared';
+import { ValidationError } from '@project-scope-analyzer/shared';
 
 // Validation schemas
 const createChatSchema = z.object({
@@ -52,7 +52,7 @@ export class ChatController {
     const id = parseInt(req.params.id);
 
     if (isNaN(id)) {
-      throw new BadRequestError('Invalid chat ID');
+      throw new ValidationError('Invalid chat ID');
     }
 
     const chat = await chatService.getChatById(id);
@@ -60,7 +60,7 @@ export class ChatController {
     // Verify user is member
     const isMember = await chatService.isUserMember(id, userId);
     if (!isMember) {
-      throw new BadRequestError('You are not a member of this chat');
+      throw new ValidationError('You are not a member of this chat');
     }
 
     res.json({ chat });
@@ -79,7 +79,7 @@ export class ChatController {
     const projectId = parseInt(req.params.projectId);
 
     if (isNaN(projectId)) {
-      throw new BadRequestError('Invalid project ID');
+      throw new ValidationError('Invalid project ID');
     }
 
     const chats = await chatService.getProjectChats(projectId);
@@ -92,7 +92,7 @@ export class ChatController {
     const teamId = parseInt(req.params.teamId);
 
     if (isNaN(teamId)) {
-      throw new BadRequestError('Invalid team ID');
+      throw new ValidationError('Invalid team ID');
     }
 
     const chats = await chatService.getTeamChats(teamId);
@@ -116,13 +116,13 @@ export class ChatController {
     const chatId = parseInt(req.params.id);
 
     if (isNaN(chatId)) {
-      throw new BadRequestError('Invalid chat ID');
+      throw new ValidationError('Invalid chat ID');
     }
 
     // Verify user is member
     const isMember = await chatService.isUserMember(chatId, userId);
     if (!isMember) {
-      throw new BadRequestError('You are not a member of this chat');
+      throw new ValidationError('You are not a member of this chat');
     }
 
     const members = await chatService.getChatMembers(chatId);
@@ -137,7 +137,7 @@ export class ChatController {
     const validated = addMemberSchema.parse(req.body);
 
     if (isNaN(chatId)) {
-      throw new BadRequestError('Invalid chat ID');
+      throw new ValidationError('Invalid chat ID');
     }
 
     const member = await chatService.addMember(chatId, validated.userId, validated.role);
@@ -152,7 +152,7 @@ export class ChatController {
     const userId = parseInt(req.params.userId);
 
     if (isNaN(chatId) || isNaN(userId)) {
-      throw new BadRequestError('Invalid chat or user ID');
+      throw new ValidationError('Invalid chat or user ID');
     }
 
     await chatService.removeMember(chatId, userId, requesterId);
@@ -167,7 +167,7 @@ export class ChatController {
     const validated = updateChatSchema.parse(req.body);
 
     if (isNaN(id)) {
-      throw new BadRequestError('Invalid chat ID');
+      throw new ValidationError('Invalid chat ID');
     }
 
     const chat = await chatService.updateChat(id, userId, validated);
@@ -181,7 +181,7 @@ export class ChatController {
     const id = parseInt(req.params.id);
 
     if (isNaN(id)) {
-      throw new BadRequestError('Invalid chat ID');
+      throw new ValidationError('Invalid chat ID');
     }
 
     await chatService.deleteChat(id, userId);

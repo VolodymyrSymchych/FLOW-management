@@ -2,34 +2,36 @@ import PushNotifications from '@pusher/push-notifications-server';
 import { config } from '../config';
 import { logger } from '@project-scope-analyzer/shared';
 
-let beamsInstance: PushNotifications | null = null;
+let beamsInstance: PushNotifications;
 
 export function getBeams(): PushNotifications {
-  if (!beamsInstance) {
-    if (!config.beams.instanceId || !config.beams.secretKey) {
-      logger.warn('Pusher Beams credentials not configured. Push notifications will not work.');
-      // Return a mock instance for development
-      beamsInstance = {
-        publishToUsers: async () => {
-          logger.debug('Mock Beams publishToUsers called (Beams not configured)');
-          return { publishId: 'mock' };
-        },
-        publishToInterests: async () => {
-          logger.debug('Mock Beams publishToInterests called (Beams not configured)');
-          return { publishId: 'mock' };
-        },
-      } as any;
-      return beamsInstance;
-    }
-
-    beamsInstance = new PushNotifications({
-      instanceId: config.beams.instanceId,
-      secretKey: config.beams.secretKey,
-    });
-
-    logger.info('Pusher Beams initialized', { instanceId: config.beams.instanceId });
+  if (beamsInstance !== undefined) {
+    return beamsInstance;
   }
 
+  if (!config.beams.instanceId || !config.beams.secretKey) {
+    logger.warn('Pusher Beams credentials not configured. Push notifications will not work.');
+    // Return a mock instance for development
+    beamsInstance = {
+      publishToUsers: async () => {
+        logger.debug('Mock Beams publishToUsers called (Beams not configured)');
+        return { publishId: 'mock' };
+      },
+      publishToInterests: async () => {
+        logger.debug('Mock Beams publishToInterests called (Beams not configured)');
+        return { publishId: 'mock' };
+      },
+      generateToken: () => ({ token: 'mock', expiresIn: 3600 }),
+    } as any;
+    return beamsInstance;
+  }
+
+  beamsInstance = new PushNotifications({
+    instanceId: config.beams.instanceId,
+    secretKey: config.beams.secretKey,
+  });
+
+  logger.info('Pusher Beams initialized', { instanceId: config.beams.instanceId });
   return beamsInstance;
 }
 

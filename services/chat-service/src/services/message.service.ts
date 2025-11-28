@@ -1,6 +1,6 @@
 import { db, chatMessages, messageReactions, chatMembers, ChatMessage, InsertChatMessage, MessageReaction, InsertMessageReaction } from '../db';
 import { eq, desc, and, sql, lt, gt, ne } from 'drizzle-orm';
-import { NotFoundError, BadRequestError, ForbiddenError } from '@project-scope-analyzer/shared';
+import { NotFoundError, ValidationError, ForbiddenError } from '@project-scope-analyzer/shared';
 import { chatService } from './chat.service';
 import { triggerChatEvent, PusherEvent } from '../utils/pusher';
 import { sendPushToUsers, getUserBeamsId } from '../utils/beams';
@@ -14,14 +14,16 @@ export class MessageService {
       throw new ForbiddenError('You are not a member of this chat');
     }
 
-    const [message] = await db
+    const messages = await db
       .insert(chatMessages)
       .values({
         ...data,
         senderId,
         readBy: JSON.stringify([senderId]), // Sender has read their own message
       })
-      .returning();
+      .returning() as ChatMessage[];
+
+    const message = messages[0]!;
 
     // Update chat's updatedAt timestamp
     await db

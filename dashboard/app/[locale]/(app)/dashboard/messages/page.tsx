@@ -6,8 +6,10 @@ import { useChat, Chat } from '@/hooks/useChat';
 import { ChatWindow } from '@/components/chat/ChatWindow';
 import { formatDistanceToNow } from 'date-fns';
 import axios from 'axios';
+import { useUser } from '@/hooks/useUser';
 
 export default function MessagesPage() {
+  const { user } = useUser();
   const { chats, fetchChats, fetchChat, currentChat, createDirectChat } = useChat();
   const [selectedChatId, setSelectedChatId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -158,8 +160,8 @@ export default function MessagesPage() {
 
         {/* Chat Area */}
         <div className="lg:col-span-2 glass-light rounded-xl border border-white/10 flex flex-col" style={{ height: '600px' }}>
-          {selectedChatId ? (
-            <ChatWindow chatId={selectedChatId} />
+          {selectedChatId && user ? (
+            <ChatWindow chatId={selectedChatId} currentUserId={user.id} />
           ) : (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">

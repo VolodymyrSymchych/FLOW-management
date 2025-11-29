@@ -1,274 +1,502 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { Send, Paperclip, Smile, X, CheckCheck } from 'lucide-react';
-import { useChat, ChatMessage } from '@/hooks/useChat';
-import { useUser } from '@/hooks/useUser';
-import { useLocale } from 'next-intl';
+import React, { useState, useEffect, useRef } from 'react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Send,
+  Paperclip,
+  Smile,
+  MoreVertical,
+  Reply,
+  Edit,
+  Trash,
+  Copy,
+  CheckCheck,
+  ListTodo,
+} from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import axios from 'axios';
-import { ChatWebSocket } from '@/lib/websocket';
+import { uk } from 'date-fns/locale';
+import { CreateTaskFromMessageModal } from './CreateTaskFromMessageModal';
+import { MentionInput } from './MentionInput';
+import { useChatWebSocket } from '@/hooks/useChatWebSocket';
+import { Badge } from '@/components/ui/badge';
+
+interface Message {
+  id: number;
+  chatId: number;
+  senderId: number;
+  content: string;
+  messageType: 'text' | 'file' | 'system';
+  replyToId?: number;
+  mentions?: number[];
+  taskId?: number;
+  readBy?: number[];
+  editedAt?: string;
+  createdAt: string;
+  sender?: {
+    id: number;
+    username: string;
+    avatarUrl?: string;
+  };
+  reactions?: Array<{
+    emoji: string;
+    count: number;
+    users: number[];
+  }>;
+}
+
+interface User {
+  id: number;
+  username: string;
+  avatarUrl?: string;
+}
 
 interface ChatWindowProps {
   chatId: number;
+  currentUserId: number;
 }
 
-export function ChatWindow({ chatId }: ChatWindowProps) {
-  const { messages, sendMessage, addReaction, removeReaction, markMessageAsRead, currentChat } = useChat();
-  const { user } = useUser();
-  const locale = useLocale();
-  const [input, setInput] = useState('');
-  const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [uploading, setUploading] = useState(false);
-  const [typingUsers, setTypingUsers] = useState<{ id: number; username: string }[]>([]);
-  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+export function ChatWindow({ chatId, currentUserId }: ChatWindowProps) {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [replyTo, setReplyTo] = useState<Message | null>(null);
+  const [messageForTask, setMessageForTask] = useState<Message | null>(null);
+  const [chatMembers, setChatMembers] = useState<User[]>([]);
+  const [typingUsers, setTypingUsers] = useState<Set<number>>(new Set());
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const typingTimeoutRef = useRef<{ [key: number]: NodeJS.Timeout }>({});
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  // WebSocket connection
+  const { isConnected, sendTypingIndicator, joinChat } = useChatWebSocket({
+    chatId,
+    onNewMessage: (message) => {
+      setMessages((prev) => [...prev, message]);
+    },
+    onMessageUpdated: (message) => {
+      setMessages((prev) =>
+        prev.map((m) => (m.id === message.id ? message : m))
+      );
+    },
+    onMessageDeleted: (messageId) => {
+      setMessages((prev) => prev.filter((m) => m.id !== messageId));
+    },
+    onTyping: (userId) => {
+      // Add user to typing indicator
+      setTypingUsers((prev) => new Set(prev).add(userId));
 
-    // Mark messages as read when viewing
-    const unreadMessages = messages.filter(
-      m => m.chatId === chatId && m.senderId !== user?.id && !m.readAt
-    );
-
-    unreadMessages.forEach(message => {
-      markMessageAsRead(message.id);
-    });
-  }, [messages, chatId, user?.id, markMessageAsRead]);
-
-  // Handle typing indicator
-  useEffect(() => {
-    if (!input.trim()) return;
-
-    // Clear existing timeout
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
-    }
-
-    // Send typing indicator
-    // This would be implemented with WebSocket
-    // For now, we'll simulate it
-
-    // Clear typing after 3 seconds of no input
-    typingTimeoutRef.current = setTimeout(() => {
-      // Stop typing indicator
-    }, 3000);
-
-    return () => {
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
+      // Clear existing timeout for this user
+      if (typingTimeoutRef.current[userId]) {
+        clearTimeout(typingTimeoutRef.current[userId]);
       }
-    };
-  }, [input]);
 
-  const handleSend = async () => {
-    if (!input.trim() && !replyingTo) return;
+      // Remove typing indicator after 3 seconds
+      typingTimeoutRef.current[userId] = setTimeout(() => {
+        setTypingUsers((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(userId);
+          return newSet;
+        });
+      }, 3000);
+    },
+  });
+
+  useEffect(() => {
+    loadMessages();
+    loadChatMembers();
+  }, [chatId]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  useEffect(() => {
+    if (isConnected) {
+      joinChat();
+    }
+  }, [isConnected, joinChat]);
+
+  const loadMessages = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/chat/messages/chat/${chatId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setMessages(data.messages || []);
+      }
+    } catch (error) {
+      console.error('Failed to load messages:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadChatMembers = async () => {
+    try {
+      const response = await fetch(`/api/chat/chats/${chatId}/members`);
+      if (response.ok) {
+        const data = await response.json();
+        setChatMembers(data.members || []);
+      }
+    } catch (error) {
+      console.error('Failed to load chat members:', error);
+    }
+  };
+
+  const scrollToBottom = () => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const sendMessage = async () => {
+    if (!newMessage.trim()) return;
 
     try {
-      await sendMessage(
-        chatId,
-        input.trim(),
-        'text',
-        replyingTo?.id
-      );
-      setInput('');
-      setReplyingTo(null);
+      const response = await fetch('/api/chat/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chatId,
+          content: newMessage,
+          replyToId: replyTo?.id,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setMessages((prev) => [...prev, data.message]);
+        setNewMessage('');
+        setReplyTo(null);
+      }
     } catch (error) {
       console.error('Failed to send message:', error);
     }
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  };
 
-    setUploading(true);
+  const handleInputChange = (value: string) => {
+    setNewMessage(value);
+    // Send typing indicator
+    if (value.length > 0) {
+      sendTypingIndicator();
+    }
+  };
+
+  const deleteMessage = async (messageId: number) => {
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const uploadResponse = await axios.post('/api/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+      const response = await fetch(`/api/chat/messages/${messageId}`, {
+        method: 'DELETE',
       });
 
-      // Create file attachment and send as message
-      // This would need to be implemented based on your file attachment system
-      console.log('File uploaded:', uploadResponse.data);
-    } catch (error) {
-      console.error('Failed to upload file:', error);
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const handleReaction = async (messageId: number, emoji: string) => {
-    try {
-      const message = messages.find(m => m.id === messageId);
-      const existingReaction = message?.reactions?.find(r => r.emoji === emoji && r.user.id === user?.id);
-
-      if (existingReaction) {
-        await removeReaction(messageId, emoji);
-      } else {
-        await addReaction(messageId, emoji);
+      if (response.ok) {
+        setMessages((prev) => prev.filter((m) => m.id !== messageId));
       }
     } catch (error) {
-      console.error('Failed to toggle reaction:', error);
+      console.error('Failed to delete message:', error);
     }
   };
 
-  const chatMessages = messages.filter(m => m.chatId === chatId);
+  const openTaskCreationModal = (message: Message) => {
+    setMessageForTask(message);
+  };
 
-  return (
-    <div className="flex flex-col h-full">
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {chatMessages.length === 0 ? (
-          <div className="flex items-center justify-center h-full text-text-secondary">
-            <p>No messages yet. Start the conversation!</p>
-          </div>
-        ) : (
-          chatMessages.map((message) => (
+  const handleTaskCreated = (taskId: number) => {
+    if (messageForTask) {
+      // Update message to show it has a task
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === messageForTask.id ? { ...m, taskId } : m
+        )
+      );
+    }
+  };
+
+  const addReaction = async (messageId: number, emoji: string) => {
+    try {
+      const response = await fetch(
+        `/api/chat/messages/${messageId}/reactions`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ emoji }),
+        }
+      );
+
+      if (response.ok) {
+        // Reload messages to get updated reactions
+        loadMessages();
+      }
+    } catch (error) {
+      console.error('Failed to add reaction:', error);
+    }
+  };
+
+  const renderMessage = (message: Message) => {
+    const isOwnMessage = message.senderId === currentUserId;
+
+    return (
+      <div
+        key={message.id}
+        className={`mb-4 flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
+      >
+        <div className={`flex max-w-[70%] gap-2 ${isOwnMessage ? 'flex-row-reverse' : ''}`}>
+          {/* Avatar */}
+          {!isOwnMessage && (
+            <Avatar className="h-8 w-8 ring-2 ring-primary/20">
+              <AvatarImage src={message.sender?.avatarUrl} />
+              <AvatarFallback className="glass-medium text-text-primary">
+                {message.sender?.username.substring(0, 2).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+          )}
+
+          {/* Message Content */}
+          <div>
+            {!isOwnMessage && (
+              <div className="mb-1 text-xs font-medium text-text-primary">
+                {message.sender?.username}
+              </div>
+            )}
+
             <div
-              key={message.id}
-              className={`flex ${message.senderId === user?.id ? 'justify-end' : 'justify-start'}`}
+              className={`group relative rounded-lg px-4 py-2 glass-hover ${
+                isOwnMessage
+                  ? 'glass-button border-primary/40 text-text-primary'
+                  : 'glass-light border-white/10 text-text-primary'
+              }`}
             >
-              <div className={`max-w-[70%] ${message.senderId === user?.id ? 'order-2' : 'order-1'}`}>
-                <div className="flex items-start space-x-2">
-                  {message.senderId !== user?.id && (
-                    <div className="w-8 h-8 rounded-full bg-primary-500 flex items-center justify-center text-white text-sm flex-shrink-0">
-                      {message.sender.username[0].toUpperCase()}
-                    </div>
-                  )}
-                  <div className="flex-1">
-                    {message.senderId !== user?.id && (
-                      <p className="text-xs text-text-secondary mb-1">{message.sender.username}</p>
-                    )}
-                    <div
-                      className={`rounded-lg px-4 py-2 ${message.senderId === user?.id
-                        ? 'bg-primary-500 text-white'
-                        : 'glass-light border border-white/10 text-text-primary'
-                        }`}
-                    >
-                      <p className="text-sm whitespace-pre-wrap">
-                        {message.translations && locale && message.translations[locale]
-                          ? message.translations[locale]
-                          : message.content}
-                      </p>
-                      {message.translations && locale && message.translations[locale] && (
-                        <p className="text-[10px] text-text-tertiary mt-1 italic">
-                          Translated from original
-                        </p>
-                      )}
-                      {message.reactions && message.reactions.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-2">
-                          {Object.entries(
-                            message.reactions.reduce((acc: any, r) => {
-                              if (!acc[r.emoji]) acc[r.emoji] = [];
-                              acc[r.emoji].push(r.user.username);
-                              return acc;
-                            }, {})
-                          ).map(([emoji, usernames]: [string, any]) => (
-                            <button
-                              key={emoji}
-                              onClick={() => handleReaction(message.id, emoji)}
-                              className="text-xs px-2 py-1 rounded bg-white/20 hover:bg-white/30"
-                            >
-                              {emoji} {usernames.length}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex items-center space-x-2 mt-1">
-                      <p className="text-xs text-text-tertiary">
-                        {formatDistanceToNow(new Date(message.createdAt), { addSuffix: true })}
-                      </p>
-                      {message.senderId === user?.id && message.readAt && (
-                        <CheckCheck className="w-3 h-3 text-primary-500" />
-                      )}
-                      {message.senderId === user?.id && !message.readAt && (
-                        <CheckCheck className="w-3 h-3 text-text-tertiary" />
-                      )}
-                    </div>
-                  </div>
+              {/* Reply indicator */}
+              {message.replyToId && (
+                <div className="mb-2 border-l-2 border-primary/50 pl-2 text-xs text-text-secondary">
+                  Відповідь на повідомлення
                 </div>
+              )}
+
+              {/* Message text */}
+              <p className="whitespace-pre-wrap break-words text-text-primary">
+                {message.content}
+              </p>
+
+              {/* Task indicator */}
+              {message.taskId && (
+                <div className="mt-2 flex items-center gap-1 text-xs text-text-secondary">
+                  <ListTodo className="h-3 w-3" />
+                  <span>Створено завдання</span>
+                </div>
+              )}
+
+              {/* Timestamp and status */}
+              <div className="mt-1 flex items-center gap-2 text-xs text-text-tertiary">
+                <span>
+                  {formatDistanceToNow(new Date(message.createdAt), {
+                    addSuffix: true,
+                    locale: uk,
+                  })}
+                </span>
+                {message.editedAt && <span>(редаговано)</span>}
+                {isOwnMessage && message.readBy && message.readBy.length > 1 && (
+                  <CheckCheck className="h-3 w-3" />
+                )}
+              </div>
+
+              {/* Message actions */}
+              <div className="absolute -right-2 -top-2 hidden group-hover:block">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      className="h-6 w-6 p-0 glass-light hover:glass-medium"
+                    >
+                      <MoreVertical className="h-3 w-3" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="glass-medium border-white/10">
+                    <DropdownMenuItem onClick={() => setReplyTo(message)}>
+                      <Reply className="mr-2 h-4 w-4" />
+                      Відповісти
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => addReaction(message.id, '👍')}>
+                      <Smile className="mr-2 h-4 w-4" />
+                      Реакція
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => openTaskCreationModal(message)}
+                      disabled={!!message.taskId}
+                    >
+                      <ListTodo className="mr-2 h-4 w-4" />
+                      {message.taskId ? 'Завдання створено' : 'Створити завдання'}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigator.clipboard.writeText(message.content)}>
+                      <Copy className="mr-2 h-4 w-4" />
+                      Копіювати
+                    </DropdownMenuItem>
+                    {isOwnMessage && (
+                      <>
+                        <DropdownMenuItem>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Редагувати
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => deleteMessage(message.id)}
+                          className="text-destructive"
+                        >
+                          <Trash className="mr-2 h-4 w-4" />
+                          Видалити
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
-          ))
-        )}
 
-        {/* Typing indicator */}
-        {typingUsers.length > 0 && (
-          <div className="flex items-center space-x-2 px-4 py-2">
-            <div className="flex space-x-1">
-              <div className="w-2 h-2 bg-primary-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-              <div className="w-2 h-2 bg-primary-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-              <div className="w-2 h-2 bg-primary-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-            </div>
-            <p className="text-xs text-text-secondary">
-              {typingUsers.length === 1
-                ? `${typingUsers[0].username} is typing...`
-                : `${typingUsers.length} people are typing...`}
-            </p>
+            {/* Reactions */}
+            {message.reactions && message.reactions.length > 0 && (
+              <div className="mt-1 flex gap-1">
+                {message.reactions.map((reaction, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => addReaction(message.id, reaction.emoji)}
+                    className="rounded-full glass-light hover:glass-medium border-white/10 px-2 py-0.5 text-xs text-text-primary transition-all duration-200"
+                  >
+                    {reaction.emoji} {reaction.count}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
-        )}
+        </div>
+      </div>
+    );
+  };
 
-        <div ref={messagesEndRef} />
+  // Get typing users names
+  const typingUserNames = chatMembers
+    .filter((member) => typingUsers.has(member.id) && member.id !== currentUserId)
+    .map((member) => member.username);
+
+  return (
+    <div className="flex h-full flex-col glass-medium">
+      {/* Header with connection status */}
+      <div className="border-b border-white/10 px-4 py-3 glass-medium">
+        <div className="flex items-center justify-between">
+          <h3 className="font-semibold text-text-primary">Чат</h3>
+          <Badge 
+            variant={isConnected ? 'default' : 'secondary'}
+            className={isConnected 
+              ? 'glass-button border-primary/50 text-text-primary' 
+              : 'glass-light border-white/20 text-text-secondary'}
+          >
+            {isConnected ? '🟢 Підключено' : '🔴 Відключено'}
+          </Badge>
+        </div>
       </div>
 
-      {/* Reply preview */}
-      {replyingTo && (
-        <div className="px-4 py-2 glass-light border-t border-white/10">
+      {/* Messages */}
+      <ScrollArea className="flex-1 p-4 scrollbar-thin">
+        {loading ? (
+          <div className="flex h-full items-center justify-center text-text-tertiary">
+            Завантаження повідомлень...
+          </div>
+        ) : messages.length === 0 ? (
+          <div className="flex h-full items-center justify-center text-text-tertiary">
+            Немає повідомлень. Почніть розмову!
+          </div>
+        ) : (
+          <>
+            {messages.map(renderMessage)}
+            
+            {/* Typing indicator */}
+            {typingUserNames.length > 0 && (
+              <div className="mb-4 text-sm text-text-secondary glass-light rounded-lg px-3 py-2 inline-block">
+                {typingUserNames.join(', ')} {typingUserNames.length === 1 ? 'друкує' : 'друкують'}...
+              </div>
+            )}
+            
+            <div ref={scrollRef} />
+          </>
+        )}
+      </ScrollArea>
+
+      {/* Reply indicator */}
+      {replyTo && (
+        <div className="border-t border-white/10 glass-medium px-4 py-2">
           <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <p className="text-xs text-text-tertiary">Replying to {replyingTo.sender.username}</p>
-              <p className="text-sm text-text-primary truncate">{replyingTo.content}</p>
+            <div className="flex items-center gap-2 text-sm text-text-primary">
+              <Reply className="h-4 w-4" />
+              <span>Відповідь на: {replyTo.content.substring(0, 50)}...</span>
             </div>
-            <button
-              onClick={() => setReplyingTo(null)}
-              className="text-text-tertiary hover:text-text-primary transition-colors"
+            <Button
+              size="sm"
+              variant="ghost"
+              className="glass-light hover:glass-medium"
+              onClick={() => setReplyTo(null)}
             >
-              <X className="w-4 h-4" />
-            </button>
+              ✕
+            </Button>
           </div>
         </div>
       )}
 
       {/* Input */}
-      <div className="p-4 border-t border-white/10">
-        <div className="flex items-center space-x-2">
-          <input
-            type="file"
-            id="file-upload"
-            className="hidden"
-            onChange={handleFileUpload}
-            disabled={uploading}
-          />
-          <label
-            htmlFor="file-upload"
-            className="p-2 text-text-tertiary hover:text-text-primary cursor-pointer transition-colors"
+      <div className="border-t border-white/10 glass-medium p-4">
+        <div className="flex gap-2">
+          <Button 
+            size="sm" 
+            variant="ghost"
+            className="glass-light hover:glass-medium"
           >
-            <Paperclip className="w-5 h-5" />
-          </label>
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
-            placeholder="Type a message..."
-            className="flex-1 px-4 py-2 rounded-lg glass-light border border-white/10 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500"
+            <Paperclip className="h-4 w-4" />
+          </Button>
+          <MentionInput
+            value={newMessage}
+            onChange={handleInputChange}
+            onKeyPress={handleKeyPress}
+            placeholder="Введіть повідомлення... (@ для згадування)"
+            className="flex-1"
+            chatMembers={chatMembers}
           />
-          <button
-            onClick={handleSend}
-            disabled={!input.trim() && !replyingTo}
-            className="p-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          <Button 
+            size="sm" 
+            variant="ghost"
+            className="glass-light hover:glass-medium"
           >
-            <Send className="w-5 h-5" />
-          </button>
+            <Smile className="h-4 w-4" />
+          </Button>
+          <Button 
+            onClick={sendMessage} 
+            disabled={!newMessage.trim()}
+            className="glass-button disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Send className="h-4 w-4" />
+          </Button>
         </div>
       </div>
+
+      {/* Create Task Modal */}
+      <CreateTaskFromMessageModal
+        open={!!messageForTask}
+        onClose={() => setMessageForTask(null)}
+        message={messageForTask}
+        onTaskCreated={handleTaskCreated}
+      />
     </div>
   );
 }
-

@@ -32,7 +32,7 @@ export function Logo({ variant = 'default', className = '' }: LogoProps) {
           width={logoSize}
           height={logoSize}
           className="object-contain transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]"
-          style={{ width: 'auto', height: 'auto', maxWidth: `${logoSize}px`, maxHeight: `${logoSize}px` }}
+          style={{ height: "auto", maxWidth: `${logoSize}px`, maxHeight: `${logoSize}px` }}
           priority
           unoptimized
         />

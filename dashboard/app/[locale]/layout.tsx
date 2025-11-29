@@ -9,7 +9,7 @@ import { Analytics } from '@vercel/analytics/next';
 import { CommandPalette } from '@/components/CommandPalette';
 import { KeyboardShortcuts } from '@/components/KeyboardShortcuts';
 import { TeamProvider } from '@/contexts/TeamContext';
-import { PerformanceMonitor } from '@/components/PerformanceMonitor';
+// import { PerformanceMonitor } from '@/components/PerformanceMonitor';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, setRequestLocale } from 'next-intl/server';
 
@@ -101,7 +101,7 @@ export default async function RootLayout({
             />
             <SpeedInsights />
             <Analytics />
-            <PerformanceMonitor />
+            {/* <PerformanceMonitor /> */}
           </ThemeProvider>
         </NextIntlClientProvider>
         <Script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js" strategy="afterInteractive" />

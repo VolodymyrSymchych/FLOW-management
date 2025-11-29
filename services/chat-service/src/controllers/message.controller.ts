@@ -21,6 +21,15 @@ const addReactionSchema = z.object({
   emoji: z.string().length(1).or(z.string().min(1).max(10)),
 });
 
+const createTaskFromMessageSchema = z.object({
+  title: z.string().min(1),
+  description: z.string().optional(),
+  projectId: z.number().optional(),
+  assignee: z.string().optional(),
+  dueDate: z.string().datetime().optional(),
+  priority: z.enum(['low', 'medium', 'high', 'urgent']).optional(),
+});
+
 export class MessageController {
   // Send message
   async sendMessage(req: AuthenticatedRequest, res: Response) {
@@ -174,6 +183,36 @@ export class MessageController {
     const reactions = await messageService.getMessageReactions(messageId);
 
     res.json({ reactions });
+  }
+
+  // Create task from message
+  async createTaskFromMessage(req: AuthenticatedRequest, res: Response) {
+    const userId = req.user!.userId;
+    const messageId = parseInt(req.params.id);
+    const validated = createTaskFromMessageSchema.parse(req.body);
+
+    if (isNaN(messageId)) {
+      throw new ValidationError('Invalid message ID');
+    }
+
+    const taskData = {
+      ...validated,
+      dueDate: validated.dueDate ? new Date(validated.dueDate) : undefined,
+    };
+
+    const result = await messageService.createTaskFromMessage(messageId, userId, taskData);
+
+    res.status(201).json(result);
+  }
+
+  // Get mentions for user
+  async getMentions(req: AuthenticatedRequest, res: Response) {
+    const userId = req.user!.userId;
+    const limit = parseInt(req.query.limit as string) || 50;
+
+    const messages = await messageService.getMentionsForUser(userId, limit);
+
+    res.json({ messages, count: messages.length });
   }
 }
 

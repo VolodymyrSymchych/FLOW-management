@@ -14,11 +14,15 @@ export class MessageService {
       throw new ForbiddenError('You are not a member of this chat');
     }
 
+    // Extract mentions from content (@username)
+    const mentions = this.extractMentions(data.content);
+
     const messages = await db
       .insert(chatMessages)
       .values({
         ...data,
         senderId,
+        mentions: mentions.length > 0 ? JSON.stringify(mentions) : null,
         readBy: JSON.stringify([senderId]), // Sender has read their own message
       })
       .returning() as ChatMessage[];
@@ -39,7 +43,43 @@ export class MessageService {
     // Send push notifications to offline chat members
     await this.sendNewMessagePushNotification(message, senderId);
 
+    // Send notifications to mentioned users
+    if (mentions.length > 0) {
+      await this.sendMentionNotifications(message, mentions, senderId);
+    }
+
     return message;
+  }
+
+  // Extract user mentions from message content
+  private extractMentions(content: string): number[] {
+    const mentionRegex = /@user:(\d+)/g;
+    const mentions: number[] = [];
+    let match;
+
+    while ((match = mentionRegex.exec(content)) !== null) {
+      const userId = parseInt(match[1], 10);
+      if (!mentions.includes(userId)) {
+        mentions.push(userId);
+      }
+    }
+
+    return mentions;
+  }
+
+  // Send notifications to mentioned users
+  private async sendMentionNotifications(
+    message: ChatMessage,
+    mentionedUserIds: number[],
+    senderId: number
+  ): Promise<void> {
+    try {
+      // TODO: Send in-app notifications to mentioned users
+      // This can be integrated with notification-service
+      console.log(`Sending mention notifications to users: ${mentionedUserIds.join(', ')}`);
+    } catch (error) {
+      console.error('Failed to send mention notifications:', error);
+    }
   }
 
   // Get messages for a chat
@@ -259,6 +299,85 @@ export class MessageService {
       .from(messageReactions)
       .where(eq(messageReactions.messageId, messageId))
       .orderBy(messageReactions.createdAt);
+  }
+
+  // Create task from message
+  async createTaskFromMessage(
+    messageId: number,
+    userId: number,
+    taskData: {
+      title: string;
+      description?: string;
+      projectId?: number;
+      assignee?: string;
+      dueDate?: Date;
+      priority?: string;
+    }
+  ): Promise<{ messageId: number; taskId: number }> {
+    const message = await this.getMessageById(messageId, userId);
+
+    // Check if message already has a task
+    if (message.taskId) {
+      throw new ValidationError('This message already has a task associated with it');
+    }
+
+    // Call task-service to create the task
+    // For now, we'll return a placeholder - this should be integrated with task-service
+    const taskId = 0; // TODO: Call task-service API
+
+    // Update message with task reference
+    await db
+      .update(chatMessages)
+      .set({
+        taskId,
+        updatedAt: new Date(),
+      })
+      .where(eq(chatMessages.id, messageId));
+
+    // Trigger real-time event
+    await triggerChatEvent(message.chatId, PusherEvent.MESSAGE_UPDATED, {
+      messageId,
+      taskId,
+      action: 'task_created',
+    });
+
+    return { messageId, taskId };
+  }
+
+  // Get messages with mentions for a user
+  async getMentionsForUser(userId: number, limit = 50): Promise<ChatMessage[]> {
+    const userChats = await db
+      .select({ chatId: chatMembers.chatId })
+      .from(chatMembers)
+      .where(eq(chatMembers.userId, userId));
+
+    if (userChats.length === 0) {
+      return [];
+    }
+
+    const chatIds = userChats.map(c => c.chatId);
+
+    const messages = await db
+      .select()
+      .from(chatMessages)
+      .where(
+        and(
+          sql`${chatMessages.mentions} IS NOT NULL`,
+          sql`${chatMessages.deletedAt} IS NULL`
+        )
+      )
+      .orderBy(desc(chatMessages.createdAt))
+      .limit(limit);
+
+    // Filter messages where user is mentioned
+    return messages.filter(msg => {
+      try {
+        const mentions = msg.mentions ? JSON.parse(msg.mentions) : [];
+        return mentions.includes(userId);
+      } catch {
+        return false;
+      }
+    });
   }
 
   // Send push notification for new message

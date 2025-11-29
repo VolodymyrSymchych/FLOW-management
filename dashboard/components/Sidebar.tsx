@@ -12,7 +12,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Receipt,
-  Gauge,
+  MessageSquare,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -24,13 +24,13 @@ import { memo, useCallback, useEffect } from 'react';
 const navigation = [
   { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Projects', href: '/dashboard/projects', icon: FolderKanban },
+  { name: 'Chat', href: '/dashboard/chat', icon: MessageSquare },
   { name: 'Invoices', href: '/dashboard/invoices', icon: Receipt },
   { name: 'Charts', href: '/dashboard/charts', icon: BarChart3 },
   { name: 'Tasks', href: '/dashboard/tasks', icon: CheckSquare },
   { name: 'Attendance', href: '/dashboard/attendance', icon: Clock },
   { name: 'Documentation', href: '/dashboard/documentation', icon: FileText },
   { name: 'Team', href: '/dashboard/team', icon: Users },
-  { name: 'Performance', href: '/dashboard/performance', icon: Gauge },
   { name: 'Settings', href: '/dashboard/settings', icon: Settings },
 ];
 

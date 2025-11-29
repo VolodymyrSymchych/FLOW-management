@@ -52,4 +52,14 @@ router.delete('/:id/reactions/:emoji', (req, res, next) =>
   messageController.removeReaction(req, res).catch(next)
 );
 
+// Create task from message
+router.post('/:id/create-task', (req, res, next) =>
+  messageController.createTaskFromMessage(req, res).catch(next)
+);
+
+// Get user mentions
+router.get('/mentions/me', (req, res, next) =>
+  messageController.getMentions(req, res).catch(next)
+);
+
 export default router;

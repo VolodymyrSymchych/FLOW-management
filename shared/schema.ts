@@ -538,7 +538,9 @@ export const chatMessages = pgTable('chat_messages', {
   content: text('content').notNull(),
   messageType: varchar('message_type', { length: 50 }).default('text').notNull(), // 'text', 'file', 'system'
   replyToId: integer('reply_to_id').references(() => chatMessages.id, { onDelete: 'set null' }),
-  readAt: timestamp('read_at'), // When message was read (for read receipts)
+  mentions: text('mentions'), // JSON array of user IDs that were mentioned (@username)
+  taskId: integer('task_id').references(() => tasks.id, { onDelete: 'set null' }), // Link to task created from this message
+  readBy: text('read_by'), // JSON array of user IDs who read the message
   editedAt: timestamp('edited_at'),
   deletedAt: timestamp('deleted_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),

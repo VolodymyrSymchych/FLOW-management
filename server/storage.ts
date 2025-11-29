@@ -1957,11 +1957,9 @@ export class DatabaseStorage {
       cleanData.mentions = commentData.mentions;
     }
 
-    // Only include status if it's explicitly provided
-    // This allows the code to work even if the column doesn't exist yet
-    if (commentData.status !== undefined) {
-      cleanData.status = commentData.status;
-    }
+    // Always set status - use provided value or default to 'active'
+    // This ensures compatibility with the schema which requires status to be NOT NULL
+    cleanData.status = commentData.status ?? 'active';
 
     const [comment] = await db.insert(comments).values(cleanData).returning() as any;
 

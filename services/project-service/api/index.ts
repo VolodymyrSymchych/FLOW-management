@@ -28,8 +28,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Create a timeout promise
     const timeoutPromise = new Promise<never>((_, reject) => {
       setTimeout(() => {
-        reject(new Error('Request timeout after 55 seconds'));
-      }, 55000); // 55s timeout (before Vercel's 60s)
+        reject(new Error('Request timeout after 59 seconds'));
+      }, 59000); // 59s timeout (before Vercel's 60s)
     });
 
     // Race between request and timeout
@@ -45,7 +45,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     await Promise.race([requestPromise, timeoutPromise]);
   } catch (error) {
-    console.error('Handler error:', error);
+    console.error(`Handler error for ${req.method} ${req.url}:`, error);
 
     // Send error response if not already sent
     if (!res.headersSent) {

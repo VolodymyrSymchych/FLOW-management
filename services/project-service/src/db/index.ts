@@ -11,11 +11,12 @@ function getPool(): Pool {
   if (!pool) {
     if (process.env.DATABASE_URL) {
       // Use connection string (Neon, etc.)
+      console.log('Initializing new database pool...');
       pool = new Pool({
         connectionString: process.env.DATABASE_URL,
         max: 1, // Only 1 connection for serverless
         min: 0, // Don't maintain idle connections
-        connectionTimeoutMillis: 5000, // Reduced to 5 seconds
+        connectionTimeoutMillis: 10000, // Increased to 10 seconds
         idleTimeoutMillis: 10000, // Close idle connections after 10s
         allowExitOnIdle: true, // Allow process to exit
         ssl: process.env.DATABASE_URL.includes('sslmode=require') ? { rejectUnauthorized: false } : undefined,
@@ -30,7 +31,7 @@ function getPool(): Pool {
         password: config.database.password,
         max: 1,
         min: 0,
-        connectionTimeoutMillis: 5000,
+        connectionTimeoutMillis: 10000,
         idleTimeoutMillis: 10000,
         allowExitOnIdle: true,
       });

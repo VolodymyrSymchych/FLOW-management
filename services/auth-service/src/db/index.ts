@@ -1,33 +1,52 @@
-import { drizzle } from 'drizzle-orm/node-postgres';
+import { drizzle, NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import * as schema from './schema';
 import { config } from '../config';
 
-// Support both DATABASE_URL (for Neon/serverless) and individual DB config
-let pool: Pool;
+// Lazy initialization for serverless environments
+let poolInstance: Pool | null = null;
+let dbInstance: NodePgDatabase<typeof schema> | null = null;
 
-if (process.env.DATABASE_URL) {
-  // Use connection string (Neon, etc.)
-  pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    max: config.database.maxConnections,
-    ssl: process.env.DATABASE_URL.includes('sslmode=require') ? { rejectUnauthorized: false } : undefined,
-  });
-} else {
-  // Use individual config
-  pool = new Pool({
-    host: config.database.host,
-    port: config.database.port,
-    database: config.database.name,
-    user: config.database.user,
-    password: config.database.password,
-    max: config.database.maxConnections,
-  });
+function getPool(): Pool {
+  if (!poolInstance) {
+    if (process.env.DATABASE_URL) {
+      // Use connection string (Neon, etc.)
+      poolInstance = new Pool({
+        connectionString: process.env.DATABASE_URL,
+        max: config.database.maxConnections,
+        ssl: process.env.DATABASE_URL.includes('sslmode=require') ? { rejectUnauthorized: false } : undefined,
+      });
+    } else {
+      // Use individual config
+      poolInstance = new Pool({
+        host: config.database.host,
+        port: config.database.port,
+        database: config.database.name,
+        user: config.database.user,
+        password: config.database.password,
+        max: config.database.maxConnections,
+      });
+    }
+  }
+  return poolInstance;
 }
 
-export { pool };
+// Export pool as lazy getter to avoid immediate connection
+export { getPool as pool };
 
-export const db = drizzle(pool, { schema });
+// Lazy db initialization
+function getDbInstance(): NodePgDatabase<typeof schema> {
+  if (!dbInstance) {
+    dbInstance = drizzle(getPool(), { schema });
+  }
+  return dbInstance;
+}
+
+export const db = new Proxy({} as NodePgDatabase<typeof schema>, {
+  get(target, prop) {
+    return (getDbInstance() as any)[prop];
+  },
+});
 
 export * from './schema';
 

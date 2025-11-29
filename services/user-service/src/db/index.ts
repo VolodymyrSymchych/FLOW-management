@@ -1,11 +1,11 @@
-import { drizzle } from 'drizzle-orm/node-postgres';
+import { drizzle, NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import * as schema from './schema';
 import { config } from '../config';
 
 // Lazy initialization for serverless environments
 let poolInstance: Pool | null = null;
-let dbInstance: ReturnType<typeof drizzle> | null = null;
+let dbInstance: NodePgDatabase<typeof schema> | null = null;
 
 function getPool(): Pool {
   if (!poolInstance) {
@@ -35,14 +35,14 @@ function getPool(): Pool {
 export { getPool as pool };
 
 // Lazy db initialization
-function getDbInstance() {
+function getDbInstance(): NodePgDatabase<typeof schema> {
   if (!dbInstance) {
     dbInstance = drizzle(getPool(), { schema });
   }
   return dbInstance;
 }
 
-export const db = new Proxy({} as ReturnType<typeof drizzle>, {
+export const db = new Proxy({} as NodePgDatabase<typeof schema>, {
   get(target, prop) {
     return (getDbInstance() as any)[prop];
   },

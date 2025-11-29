@@ -34,11 +34,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Race between request and timeout
     const requestPromise = new Promise((resolve, reject) => {
+      res.once('finish', () => resolve(undefined));
+
       app(req as unknown as Request, res as unknown as Response, (err?: unknown) => {
         if (err) {
           reject(err);
-        } else {
-          resolve(undefined);
         }
       });
     });

@@ -1,11 +1,12 @@
 import { db, invoices, Invoice, InsertInvoice, invoicePayments, InvoicePayment, InsertInvoicePayment } from '../db';
 import { eq, desc, and, sql, gte, lte, or } from 'drizzle-orm';
 import { NotFoundError, ValidationError } from '@project-scope-analyzer/shared';
-import { nanoid } from 'nanoid';
+
 
 export class InvoiceService {
   // Generate unique invoice number
-  generateInvoiceNumber(): string {
+  async generateInvoiceNumber(): Promise<string> {
+    const { nanoid } = await import('nanoid');
     const date = new Date();
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -14,7 +15,8 @@ export class InvoiceService {
   }
 
   // Generate public token for invoice sharing
-  generatePublicToken(): string {
+  async generatePublicToken(): Promise<string> {
+    const { nanoid } = await import('nanoid');
     return nanoid(32);
   }
 
@@ -27,7 +29,7 @@ export class InvoiceService {
 
   // Create invoice
   async createInvoice(data: Omit<InsertInvoice, 'invoiceNumber' | 'taxAmount' | 'totalAmount'>): Promise<Invoice> {
-    const invoiceNumber = this.generateInvoiceNumber();
+    const invoiceNumber = await this.generateInvoiceNumber();
     const { taxAmount, totalAmount } = this.calculateAmounts(data.amount, data.taxRate || 0);
 
     const [invoice] = await db
@@ -167,7 +169,7 @@ export class InvoiceService {
 
   // Generate public share link
   async generateShareLink(id: number, expiresInDays = 30): Promise<{ token: string; url: string }> {
-    const token = this.generatePublicToken();
+    const token = await this.generatePublicToken();
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + expiresInDays);
 

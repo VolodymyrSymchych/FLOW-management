@@ -6,6 +6,8 @@ import { ArrowLeft, FileText, Calendar, DollarSign, Download, Edit, Mail, Link a
 import Link from 'next/link';
 import axios from 'axios';
 import { generateInvoicePDF } from '@/lib/invoice-pdf';
+import { useDelayedLoading } from '@/hooks/useDelayedLoading';
+import { InvoiceSkeleton } from '@/components/skeletons';
 
 interface Invoice {
   id: number;
@@ -43,6 +45,9 @@ export default function InvoiceDetailPage() {
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Показувати індикатор завантаження тільки якщо завантаження триває > 250ms
+  const shouldShowLoading = useDelayedLoading(loading, 250);
 
   useEffect(() => {
     if (invoiceId) {
@@ -145,10 +150,10 @@ export default function InvoiceDetailPage() {
     }
   };
 
-  if (loading) {
+  if (shouldShowLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="container mx-auto px-4 py-8 max-w-5xl">
+        <InvoiceSkeleton />
       </div>
     );
   }

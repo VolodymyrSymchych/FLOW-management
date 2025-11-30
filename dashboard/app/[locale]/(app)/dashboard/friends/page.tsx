@@ -5,6 +5,8 @@ import { UserPlus, Users, Clock, Search } from 'lucide-react';
 import { FriendsList } from '@/components/friends/FriendsList';
 import { FriendRequestCard } from '@/components/friends/FriendRequestCard';
 import { AddFriendModal } from '@/components/friends/AddFriendModal';
+import { useDelayedLoading } from '@/hooks/useDelayedLoading';
+import { ListSkeleton } from '@/components/skeletons';
 
 type Tab = 'friends' | 'requests' | 'find';
 
@@ -14,6 +16,9 @@ export default function FriendsPage() {
   const [friends, setFriends] = useState([]);
   const [pendingRequests, setPendingRequests] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // Показувати індикатор завантаження тільки якщо завантаження триває > 200ms
+  const shouldShowLoading = useDelayedLoading(loading, 200);
 
   useEffect(() => {
     fetchFriends();
@@ -185,10 +190,8 @@ export default function FriendsPage() {
         </div>
 
         {/* Content */}
-        {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-          </div>
+        {shouldShowLoading ? (
+          <ListSkeleton items={6} />
         ) : (
           <>
             {activeTab === 'friends' && (

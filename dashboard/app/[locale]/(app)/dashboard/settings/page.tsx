@@ -6,6 +6,8 @@ import { useUser } from '@/hooks/useUser';
 import { useRouter, usePathname } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import axios from 'axios';
+import { useDelayedLoading } from '@/hooks/useDelayedLoading';
+import { SettingsSkeleton } from '@/components/skeletons';
 
 interface UserData {
   id: number;
@@ -20,6 +22,9 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('profile');
   const { user, loading } = useUser();
   const router = useRouter();
+  
+  // Показувати індикатор завантаження тільки якщо завантаження триває > 150ms
+  const shouldShowLoading = useDelayedLoading(loading, 150);
   const pathname = usePathname();
   const currentLocale = useLocale();
   const [selectedLocale, setSelectedLocale] = useState(currentLocale);

@@ -7,6 +7,8 @@ import axios from 'axios';
 import { generateReportPDF } from '@/lib/report-pdf';
 import { Loader } from '@/components/Loader';
 import { useTeam } from '@/contexts/TeamContext';
+import { useDelayedLoading } from '@/hooks/useDelayedLoading';
+import { ListSkeleton } from '@/components/skeletons';
 
 interface Report {
   id: number;
@@ -33,6 +35,9 @@ export default function DocumentationPage() {
   const router = useRouter();
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Показувати індикатор завантаження тільки якщо завантаження триває > 200ms
+  const shouldShowLoading = useDelayedLoading(loading || teamsLoading, 200);
 
   useEffect(() => {
     // Wait for teams to load before loading data
@@ -122,8 +127,19 @@ export default function DocumentationPage() {
   };
 
   // Show loading state while teams are loading or data is loading
-  if (teamsLoading || loading) {
-    return <Loader message="Loading documentation..." />;
+  if (shouldShowLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <div className="h-10 w-64 bg-white/10 rounded animate-pulse" />
+            <div className="h-4 w-96 bg-white/10 rounded animate-pulse" />
+          </div>
+          <div className="h-10 w-32 bg-white/10 rounded animate-pulse" />
+        </div>
+        <ListSkeleton items={8} />
+      </div>
+    );
   }
 
   return (

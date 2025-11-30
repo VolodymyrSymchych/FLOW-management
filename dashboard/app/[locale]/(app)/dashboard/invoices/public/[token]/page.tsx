@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { FileText, Calendar, DollarSign, CreditCard, MessageSquare, CheckCircle, XCircle } from 'lucide-react';
 import axios from 'axios';
+import { useDelayedLoading } from '@/hooks/useDelayedLoading';
+import { InvoiceSkeleton } from '@/components/skeletons';
 
 interface Invoice {
   id: number;
@@ -55,6 +57,9 @@ export default function PublicInvoicePage() {
   const [commentForm, setCommentForm] = useState({ authorName: '', authorEmail: '', comment: '' });
   const [submittingComment, setSubmittingComment] = useState(false);
   const [processingPayment, setProcessingPayment] = useState(false);
+  
+  // Показувати індикатор завантаження тільки якщо завантаження триває > 250ms
+  const shouldShowLoading = useDelayedLoading(loading, 250);
 
   useEffect(() => {
     if (token) {
@@ -126,10 +131,12 @@ export default function PublicInvoicePage() {
     }
   };
 
-  if (loading) {
+  if (shouldShowLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="min-h-screen bg-background p-6">
+        <div className="max-w-4xl mx-auto">
+          <InvoiceSkeleton />
+        </div>
       </div>
     );
   }

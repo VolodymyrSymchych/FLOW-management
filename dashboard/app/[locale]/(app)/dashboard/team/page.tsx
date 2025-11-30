@@ -4,6 +4,8 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Users, Mail, MoreVertical, UserPlus, Clock, Calendar, ChevronDown, Building2 } from 'lucide-react';
 import axios from 'axios';
+import { useDelayedLoading } from '@/hooks/useDelayedLoading';
+import { TableSkeleton } from '@/components/skeletons';
 
 interface Team {
   id: number;
@@ -35,6 +37,9 @@ function TeamPageContent() {
   const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Показувати індикатор завантаження тільки якщо завантаження триває > 200ms
+  const shouldShowLoading = useDelayedLoading(loading, 200);
 
   useEffect(() => {
     loadTeams();
@@ -82,10 +87,17 @@ function TeamPageContent() {
 
   const selectedTeam = teams.find(t => t.id === selectedTeamId);
 
-  if (loading) {
+  if (shouldShowLoading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <div className="h-10 w-48 bg-white/10 rounded animate-pulse" />
+            <div className="h-4 w-64 bg-white/10 rounded animate-pulse" />
+          </div>
+          <div className="h-10 w-32 bg-white/10 rounded animate-pulse" />
+        </div>
+        <TableSkeleton rows={8} columns={5} />
       </div>
     );
   }

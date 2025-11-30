@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { Clock, Calendar, Play, Square, Download } from 'lucide-react';
 import axios from 'axios';
 import { useTeam } from '@/contexts/TeamContext';
+import { useDelayedLoading } from '@/hooks/useDelayedLoading';
+import { TableSkeleton } from '@/components/skeletons';
 
 interface Task {
   id: number;
@@ -31,6 +33,9 @@ export default function AttendancePage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Показувати індикатор завантаження тільки якщо завантаження триває > 200ms
+  const shouldShowLoading = useDelayedLoading(loading || teamsLoading, 200);
 
   useEffect(() => {
     // Wait for teams to load before loading data

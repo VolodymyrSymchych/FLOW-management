@@ -28,6 +28,8 @@ import { uk } from 'date-fns/locale';
 import { CreateTaskFromMessageModal } from './CreateTaskFromMessageModal';
 import { MentionInput } from './MentionInput';
 import { useChatPusher } from '@/hooks/useChatPusher';
+import { useDelayedLoading } from '@/hooks/useDelayedLoading';
+import { ChatMessagesSkeleton, ChatMembersSkeleton } from './ChatSkeleton';
 import { Badge } from '@/components/ui/badge';
 
 interface Message {
@@ -69,12 +71,17 @@ export function ChatWindow({ chatId, currentUserId }: ChatWindowProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
+  const [loadingMembers, setLoadingMembers] = useState(true);
   const [replyTo, setReplyTo] = useState<Message | null>(null);
   const [messageForTask, setMessageForTask] = useState<Message | null>(null);
   const [chatMembers, setChatMembers] = useState<User[]>([]);
   const [typingUsers, setTypingUsers] = useState<Set<number>>(new Set());
   const scrollRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<{ [key: number]: NodeJS.Timeout }>({});
+
+  // Показувати індикатор завантаження тільки якщо завантаження триває > 200ms
+  const shouldShowLoadingMessages = useDelayedLoading(loading, 200);
+  const shouldShowLoadingMembers = useDelayedLoading(loadingMembers, 150);
 
   // Pusher connection
   const { isConnected, sendTypingIndicator } = useChatPusher({
@@ -111,6 +118,15 @@ export function ChatWindow({ chatId, currentUserId }: ChatWindowProps) {
   });
 
   useEffect(() => {
+    // Reset state when switching chats
+    setMessages([]);
+    setChatMembers([]);
+    setLoading(true);
+    setLoadingMembers(true);
+    setReplyTo(null);
+    setTypingUsers(new Set());
+    
+    // Load data for new chat
     loadMessages();
     loadChatMembers();
   }, [chatId]);
@@ -138,6 +154,7 @@ export function ChatWindow({ chatId, currentUserId }: ChatWindowProps) {
 
   const loadChatMembers = async () => {
     try {
+      setLoadingMembers(true);
       const response = await fetch(`/api/chat/chats/${chatId}/members`);
       if (response.ok) {
         const data = await response.json();
@@ -145,6 +162,8 @@ export function ChatWindow({ chatId, currentUserId }: ChatWindowProps) {
       }
     } catch (error) {
       console.error('Failed to load chat members:', error);
+    } finally {
+      setLoadingMembers(false);
     }
   };
 
@@ -393,7 +412,30 @@ export function ChatWindow({ chatId, currentUserId }: ChatWindowProps) {
       {/* Header with connection status */}
       <div className="border-b border-white/10 px-4 py-3 glass-medium">
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-text-primary">Чат</h3>
+          <div className="flex-1">
+            <div className="flex items-center gap-3">
+              <h3 className="font-semibold text-text-primary">Чат</h3>
+              {shouldShowLoadingMembers ? (
+                <ChatMembersSkeleton />
+              ) : chatMembers.length > 0 ? (
+                <div className="flex items-center gap-2">
+                  <div className="flex -space-x-2">
+                    {chatMembers.slice(0, 5).map((member) => (
+                      <Avatar key={member.id} className="h-6 w-6 ring-2 ring-background">
+                        <AvatarImage src={member.avatarUrl} />
+                        <AvatarFallback className="glass-medium text-xs text-text-primary">
+                          {member.username.substring(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                    ))}
+                  </div>
+                  <span className="text-sm text-text-secondary">
+                    {chatMembers.length} {chatMembers.length === 1 ? 'учасник' : chatMembers.length < 5 ? 'учасники' : 'учасників'}
+                  </span>
+                </div>
+              ) : null}
+            </div>
+          </div>
           <Badge 
             variant={isConnected ? 'primary' : 'secondary'}
             className={isConnected 
@@ -407,10 +449,8 @@ export function ChatWindow({ chatId, currentUserId }: ChatWindowProps) {
 
       {/* Messages */}
       <ScrollArea className="flex-1 p-4 scrollbar-thin">
-        {loading ? (
-          <div className="flex h-full items-center justify-center text-text-tertiary">
-            Завантаження повідомлень...
-          </div>
+        {shouldShowLoadingMessages ? (
+          <ChatMessagesSkeleton />
         ) : messages.length === 0 ? (
           <div className="flex h-full items-center justify-center text-text-tertiary">
             Немає повідомлень. Почніть розмову!

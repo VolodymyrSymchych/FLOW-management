@@ -26,6 +26,8 @@ import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { Loader } from '@/components/Loader';
 import { useTeam } from '@/contexts/TeamContext';
+import { useDelayedLoading } from '@/hooks/useDelayedLoading';
+import { StatCardGridSkeleton } from '@/components/skeletons';
 
 // Lazy load heavy components
 const CalendarView = dynamic(() => import('@/components/CalendarView').then(m => ({ default: m.CalendarView })), {
@@ -499,6 +501,9 @@ export default function DashboardPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
+  
+  // Показувати індикатор завантаження тільки якщо завантаження триває > 300ms
+  const shouldShowLoading = useDelayedLoading(loading || teamsLoading, 300);
   const [activeTask, setActiveTask] = useState<any>(null);
   const [selectedWidgets, setSelectedWidgets] = useState<string[]>(DEFAULT_WIDGETS);
   const [widgetSizes, setWidgetSizes] = useState<
@@ -863,8 +868,8 @@ export default function DashboardPage() {
 
   return (
     <>
-      {/* Show loading overlay instead of blocking entire page */}
-      {(teamsLoading || loading) && (
+      {/* Show loading overlay only if loading takes > 300ms */}
+      {shouldShowLoading && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
           <Loader message="Loading your personalized dashboard..." />
         </div>

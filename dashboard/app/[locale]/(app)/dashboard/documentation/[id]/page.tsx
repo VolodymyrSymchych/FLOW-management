@@ -7,6 +7,8 @@ import { RichTextEditor } from '@/components/RichTextEditor';
 import axios from 'axios';
 import { generateReportPDF } from '@/lib/report-pdf';
 import { Loader } from '@/components/Loader';
+import { useDelayedLoading } from '@/hooks/useDelayedLoading';
+import { FormSkeleton } from '@/components/skeletons';
 
 interface Project {
   id: number;
@@ -26,6 +28,9 @@ export default function DocumentationEditorPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(!isNew);
+  
+  // Показувати індикатор завантаження тільки якщо завантаження триває > 200ms
+  const shouldShowLoading = useDelayedLoading(loadingData, 200);
 
   useEffect(() => {
     loadProjects();
@@ -114,8 +119,12 @@ export default function DocumentationEditorPage() {
     }
   };
 
-  if (loadingData) {
-    return <Loader message="Loading document editor..." />;
+  if (shouldShowLoading) {
+    return (
+      <div className="space-y-6 max-w-6xl mx-auto">
+        <FormSkeleton fields={8} />
+      </div>
+    );
   }
 
   return (

@@ -10,6 +10,8 @@ import { Loader } from '@/components/Loader';
 import axios from 'axios';
 import { DeleteConfirmModal } from '@/components/DeleteConfirmModal';
 import { useTeam } from '@/contexts/TeamContext';
+import { useDelayedLoading } from '@/hooks/useDelayedLoading';
+import { CardGridSkeleton } from '@/components/skeletons';
 
 type FilterType = 'all' | 'status' | 'risk_level' | 'type' | 'industry';
 
@@ -19,6 +21,9 @@ export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Показувати індикатор завантаження тільки якщо завантаження триває > 250ms
+  const shouldShowLoading = useDelayedLoading(loading || teamsLoading, 250);
   const [showFilters, setShowFilters] = useState(false);
   const [filterType, setFilterType] = useState<FilterType>('all');
   const [filterValue, setFilterValue] = useState<string>('all');
@@ -239,8 +244,8 @@ export default function ProjectsPage() {
       </div>
 
       {/* Projects Grid */}
-      {loading ? (
-        <Loader message="Loading your projects..." />
+      {shouldShowLoading ? (
+        <CardGridSkeleton count={6} />
       ) : filteredProjects.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
           {filteredProjects.map((project) => (

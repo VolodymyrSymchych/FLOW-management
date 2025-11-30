@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Mail, Calendar, Award, Users, FolderOpen, Clock, TrendingUp } from 'lucide-react';
 import axios from 'axios';
+import { useDelayedLoading } from '@/hooks/useDelayedLoading';
+import { ProfileSkeleton } from '@/components/skeletons';
 
 interface UserProfile {
   id: number;
@@ -29,6 +31,9 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [attendance, setAttendance] = useState<AttendanceStats | null>(null);
   const [loading, setLoading] = useState(true);
+  
+  // Показувати індикатор завантаження тільки якщо завантаження триває > 200ms
+  const shouldShowLoading = useDelayedLoading(loading, 200);
 
   useEffect(() => {
     loadProfile();
@@ -84,10 +89,10 @@ export default function ProfilePage() {
     }
   };
 
-  if (loading) {
+  if (shouldShowLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary glow-cyan-soft"></div>
+      <div className="min-h-screen bg-background p-6">
+        <ProfileSkeleton />
       </div>
     );
   }

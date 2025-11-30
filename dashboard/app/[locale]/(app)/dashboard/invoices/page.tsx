@@ -8,6 +8,8 @@ import { InvoiceForm } from '@/components/InvoiceForm';
 import { generateInvoicePDF } from '@/lib/invoice-pdf';
 import { DeleteConfirmModal } from '@/components/DeleteConfirmModal';
 import { useTeam } from '@/contexts/TeamContext';
+import { useDelayedLoading } from '@/hooks/useDelayedLoading';
+import { TableSkeleton } from '@/components/skeletons';
 
 interface Invoice {
   id: number;
@@ -34,6 +36,9 @@ export default function InvoicesPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  
+  // Показувати індикатор завантаження тільки якщо завантаження триває > 250ms
+  const shouldShowLoading = useDelayedLoading(loading || teamsLoading, 250);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [showInvoiceForm, setShowInvoiceForm] = useState(false);
   const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; invoice: Invoice | null }>({
@@ -186,10 +191,17 @@ export default function InvoicesPage() {
     .reduce((sum, inv) => sum + inv.totalAmount, 0);
 
   // Show loading state while teams are loading or data is loading
-  if (teamsLoading || loading) {
+  if (shouldShowLoading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <div className="h-8 w-48 bg-white/10 rounded animate-pulse" />
+            <div className="h-4 w-64 bg-white/10 rounded animate-pulse" />
+          </div>
+          <div className="h-10 w-32 bg-white/10 rounded animate-pulse" />
+        </div>
+        <TableSkeleton rows={10} columns={6} />
       </div>
     );
   }

@@ -7,6 +7,8 @@ import axios from 'axios';
 import { useTeam } from '@/contexts/TeamContext';
 import { cn } from '@/lib/utils';
 import { useLocale } from 'next-intl';
+import { useDelayedLoading } from '@/hooks/useDelayedLoading';
+import { TableSkeleton } from '@/components/skeletons';
 
 // Lazy load modals
 const EditTaskModal = dynamic(() => import('@/components/EditTaskModal').then(m => ({ default: m.EditTaskModal })), {
@@ -29,6 +31,9 @@ export default function TasksPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNewTaskForm, setShowNewTaskForm] = useState(false);
+  
+  // Показувати індикатор завантаження тільки якщо завантаження триває > 200ms
+  const shouldShowLoading = useDelayedLoading(loading || teamsLoading, 200);
   const [editingTask, setEditingTask] = useState<any | null>(null);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [filterStatus, setFilterStatus] = useState<'all' | 'todo' | 'in_progress' | 'done'>('all');
@@ -198,10 +203,17 @@ export default function TasksPage() {
       return sortOrder === 'asc' ? aTitle.localeCompare(bTitle) : bTitle.localeCompare(aTitle);
     });
 
-  if (loading) {
+  if (shouldShowLoading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="space-y-6 p-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <div className="h-8 w-48 bg-white/10 rounded animate-pulse" />
+            <div className="h-4 w-64 bg-white/10 rounded animate-pulse" />
+          </div>
+          <div className="h-10 w-32 bg-white/10 rounded animate-pulse" />
+        </div>
+        <TableSkeleton rows={8} columns={6} />
       </div>
     );
   }

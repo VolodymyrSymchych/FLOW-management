@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { CreateChatModal } from './CreateChatModal';
+import { useDelayedLoading } from '@/hooks/useDelayedLoading';
+import { ChatListSkeleton } from './ChatSkeleton';
 import {
   MessageSquare,
   Users,
@@ -46,6 +48,9 @@ export function ChatList({ onChatSelect, selectedChatId }: ChatListProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<'all' | 'direct' | 'group' | 'project'>('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
+
+  // Показувати індикатор завантаження тільки якщо завантаження триває > 200ms
+  const shouldShowLoading = useDelayedLoading(loading, 200);
 
   useEffect(() => {
     loadChats();
@@ -188,10 +193,8 @@ export function ChatList({ onChatSelect, selectedChatId }: ChatListProps) {
 
       {/* Chat List */}
       <ScrollArea className="flex-1 scrollbar-thin">
-        {loading ? (
-          <div className="p-4 text-center text-sm text-text-tertiary">
-            Завантаження...
-          </div>
+        {shouldShowLoading ? (
+          <ChatListSkeleton />
         ) : filteredChats.length === 0 ? (
           <div className="p-4 text-center text-sm text-text-tertiary">
             Чати не знайдено

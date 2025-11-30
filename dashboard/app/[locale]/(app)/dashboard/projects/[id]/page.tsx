@@ -27,6 +27,8 @@ import { EditProjectModal } from '@/components/EditProjectModal';
 import { CommentsSection } from '@/components/comments/CommentsSection';
 import { api } from '@/lib/api';
 import { cn, getRiskColor, formatDate } from '@/lib/utils';
+import { useDelayedLoading } from '@/hooks/useDelayedLoading';
+import { PageSkeleton } from '@/components/skeletons';
 
 // Lazy load heavy chart components
 const InvoicesAndCashFlow = dynamic(() => import('@/components/InvoicesAndCashFlow').then(m => ({ default: m.InvoicesAndCashFlow })), {
@@ -69,6 +71,9 @@ export default function ProjectDetailPage() {
   const [activeTab, setActiveTab] = useState<'overview' | 'team' | 'finance' | 'files' | 'comments' | 'report'>('overview');
   const [filesRefreshKey, setFilesRefreshKey] = useState(0);
   const [showEditModal, setShowEditModal] = useState(false);
+  
+  // Показувати індикатор завантаження тільки якщо завантаження триває > 250ms
+  const shouldShowLoading = useDelayedLoading(loading || teamsLoading, 250);
 
   useEffect(() => {
     // Wait for teams to load before loading project
@@ -105,10 +110,10 @@ export default function ProjectDetailPage() {
   };
 
   // Show loading state while teams are loading or data is loading
-  if (teamsLoading || loading) {
+  if (shouldShowLoading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="space-y-6">
+        <PageSkeleton />
       </div>
     );
   }

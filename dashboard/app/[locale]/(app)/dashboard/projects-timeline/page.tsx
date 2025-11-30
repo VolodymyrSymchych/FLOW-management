@@ -6,6 +6,8 @@ import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import { useTeam } from '@/contexts/TeamContext';
 import { api, type Project } from '@/lib/api';
+import { useDelayedLoading } from '@/hooks/useDelayedLoading';
+import { TimelineSkeleton } from '@/components/skeletons';
 
 const getProjectStartDate = (project: Project) =>
   project.startDate ?? project.start_date ?? project.createdAt ?? project.created_at ?? null;
@@ -23,6 +25,9 @@ export default function ProjectsTimelinePage() {
   const [timeRange, setTimeRange] = useState<'30' | '90' | '180' | 'year'>('90');
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Показувати індикатор завантаження тільки якщо завантаження триває > 250ms
+  const shouldShowLoading = useDelayedLoading(loading || teamsLoading, 250);
 
   useEffect(() => {
     // Wait for teams to load before loading projects
@@ -102,10 +107,16 @@ export default function ProjectsTimelinePage() {
     }
   };
 
-  if (loading) {
+  if (shouldShowLoading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <div className="h-10 w-64 bg-white/10 rounded animate-pulse" />
+            <div className="h-4 w-96 bg-white/10 rounded animate-pulse" />
+          </div>
+        </div>
+        <TimelineSkeleton items={10} />
       </div>
     );
   }

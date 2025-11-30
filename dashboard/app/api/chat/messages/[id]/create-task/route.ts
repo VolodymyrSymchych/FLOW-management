@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth-helper';
 
+export const dynamic = 'force-dynamic';
+
 const CHAT_SERVICE_URL = process.env.CHAT_SERVICE_URL || 'http://localhost:3004';
 
 // POST /api/chat/messages/[id]/create-task - Create task from message

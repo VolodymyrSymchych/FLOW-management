@@ -27,7 +27,7 @@ import toast from 'react-hot-toast';
 import { Loader } from '@/components/Loader';
 import { useTeam } from '@/contexts/TeamContext';
 import { useDelayedLoading } from '@/hooks/useDelayedLoading';
-import { StatCardGridSkeleton } from '@/components/skeletons';
+import { StatCardGridSkeleton, CardGridSkeleton } from '@/components/skeletons';
 
 // Lazy load heavy components
 const CalendarView = dynamic(() => import('@/components/CalendarView').then(m => ({ default: m.CalendarView })), {

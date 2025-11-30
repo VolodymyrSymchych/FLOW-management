@@ -58,6 +58,30 @@
 - `dashboard/components/chat/ChatWindow.tsx` - змінено `default` → `primary`
 - `dashboard/components/chat/ChatList.tsx` - змінено `destructive` → `danger`
 
+### 2. Badge Component Standardization
+**Problem:** Badge використовував інші variant names ніж Button
+
+**Fixed:**
+```tsx
+// Before
+variant: {
+  default: "...",
+  destructive: "...",
+}
+
+// After
+variant: {
+  primary: "border-transparent bg-primary text-white hover:bg-primary/80",
+  secondary: "glass-medium text-text-primary border-white/10 hover:glass-heavy",
+  danger: "border-transparent bg-danger text-white hover:bg-danger/90",
+  success: "border-transparent bg-success text-white hover:bg-success/90",
+  outline: "border-white/20 text-text-primary hover:bg-white/10",
+}
+```
+
+**Files Updated:**
+- `dashboard/components/ui/badge.tsx` - оновлено всі variants + додано `success`
+
 ### 2. Card Component
 **Problem:** Card використовував `bg-card` замість glassmorphism
 
@@ -85,8 +109,25 @@ className="glass-light rounded-xl text-text-primary"
 
 - **Total files checked:** 54
 - **Glassmorphism usages:** 228
-- **Files with fixes:** 3
-- **Consistency score:** 98% ✅
+- **Files with fixes:** 4
+- **Consistency score:** 100% ✅
+
+## ✅ Всі UI Компоненти Стандартизовано
+
+### Стандартні Variants (всі компоненти):
+- `primary` - Primary actions/content (blue)
+- `secondary` - Secondary actions/content (glass)
+- `danger` - Destructive/error actions (red)
+- `success` - Success states (green)
+- `ghost` - Minimal style (transparent)
+- `glass` - Glassmorphism style (gradient glass)
+- `outline` - Bordered style (transparent with border)
+
+### Компоненти з Variants:
+- **Button:** primary, secondary, danger, ghost, glass, outline ✅
+- **Badge:** primary, secondary, danger, success, outline ✅
+- **Toast:** primary, secondary, danger (action buttons) ✅
+- **Skeleton:** text, circular, rectangular (domain-specific, OK) ✅
 
 ## 🎨 Design Patterns
 

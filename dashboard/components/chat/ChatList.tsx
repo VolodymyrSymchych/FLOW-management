@@ -225,7 +225,7 @@ export function ChatList({ onChatSelect, selectedChatId }: ChatListProps) {
                     )}
                     {chat.unreadCount && chat.unreadCount > 0 && (
                       <Badge
-                        variant="destructive"
+                        variant="danger"
                         className="absolute -right-1 -top-1 h-5 min-w-[20px] rounded-full px-1.5 text-xs glass-heavy border-danger/50"
                       >
                         {chat.unreadCount > 99 ? '99+' : chat.unreadCount}

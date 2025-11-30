@@ -395,7 +395,7 @@ export function ChatWindow({ chatId, currentUserId }: ChatWindowProps) {
         <div className="flex items-center justify-between">
           <h3 className="font-semibold text-text-primary">Чат</h3>
           <Badge 
-            variant={isConnected ? 'default' : 'secondary'}
+            variant={isConnected ? 'primary' : 'secondary'}
             className={isConnected 
               ? 'glass-button border-primary/50 text-text-primary' 
               : 'glass-light border-white/20 text-text-secondary'}

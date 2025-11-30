@@ -866,14 +866,25 @@ export default function DashboardPage() {
     gridColumns === 16 ? 'xl:grid-cols-16' :
     'xl:grid-cols-12';
 
+  // Show skeleton loading state
+  if (shouldShowLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <div className="h-8 w-64 bg-white/10 rounded animate-pulse" />
+            <div className="h-4 w-96 bg-white/10 rounded animate-pulse" />
+          </div>
+          <div className="h-10 w-48 bg-white/10 rounded animate-pulse" />
+        </div>
+        <StatCardGridSkeleton count={4} />
+        <CardGridSkeleton count={4} />
+      </div>
+    );
+  }
+
   return (
     <>
-      {/* Show loading overlay only if loading takes > 300ms */}
-      {shouldShowLoading && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-          <Loader message="Loading your personalized dashboard..." />
-        </div>
-      )}
       <DndContext
       sensors={sensors}
       onDragStart={handleDragStart}

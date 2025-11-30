@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authService } from '@/lib/auth-service';
+import { invalidateUserCache } from '@/lib/user-cache';
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,6 +21,11 @@ export async function POST(request: NextRequest) {
         { error: result.error },
         { status: 400 }
       );
+    }
+
+    // Invalidate user cache after email verification
+    if (result.user?.id) {
+      await invalidateUserCache(result.user.id);
     }
 
     return NextResponse.json({

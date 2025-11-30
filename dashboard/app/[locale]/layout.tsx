@@ -12,6 +12,9 @@ import { TeamProvider } from '@/contexts/TeamContext';
 // import { PerformanceMonitor } from '@/components/PerformanceMonitor';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, setRequestLocale } from 'next-intl/server';
+import { UserProvider } from '@/hooks/useUser';
+import { getSession } from '@/lib/auth';
+import { getCachedUser } from '@/lib/user-cache';
 
 import Script from 'next/script';
 
@@ -45,12 +48,25 @@ export default async function RootLayout({
   setRequestLocale(locale);
   const messages = await getMessages();
 
+  // Preload user data on server before rendering
+  const session = await getSession();
+  let preloadedUser = null;
+  
+  if (session) {
+    try {
+      preloadedUser = await getCachedUser(session.userId);
+    } catch (error) {
+      console.error('Failed to preload user:', error);
+    }
+  }
+
   return (
     <html lang={locale} suppressHydrationWarning>
       <body className={`${inter.variable} ${poppins.variable} ${spaceGrotesk.variable} font-sans glass-theme bg-background text-text-primary`}>
         <NextIntlClientProvider messages={messages}>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-            <TeamProvider>
+            <UserProvider initialUser={preloadedUser}>
+              <TeamProvider>
               {/* Skip to main content link for accessibility */}
               <a
                 href="#main-content"
@@ -66,6 +82,7 @@ export default async function RootLayout({
                 {children}
               </ConditionalLayout>
             </TeamProvider>
+            </UserProvider>
             <Toaster
               position="top-right"
               toastOptions={{

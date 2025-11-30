@@ -3,6 +3,7 @@ import { getSession } from '@/lib/auth';
 import { authService } from '@/lib/auth-service';
 import { SignJWT, jwtVerify } from 'jose';
 import { storage } from '../../../../../server/storage';
+import { getCachedUser } from '@/lib/user-cache';
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || '');
 
@@ -27,9 +28,9 @@ export async function GET() {
 
     if (!token) {
       // Fallback to session data if no token available
-      // Get full user data from database to include emailVerified
+      // Get full user data from cache/database to include emailVerified
       try {
-        const dbUser = await storage.getUser(session.userId);
+        const dbUser = await getCachedUser(session.userId);
         if (dbUser) {
           return NextResponse.json({
             user: {
@@ -43,7 +44,7 @@ export async function GET() {
           });
         }
       } catch (error) {
-        console.error('Error fetching user from database:', error);
+        console.error('Error fetching user from cache/database:', error);
       }
       
       // Final fallback to session data only
@@ -64,9 +65,9 @@ export async function GET() {
       
       if (result.error || !result.user) {
         // Fallback to session data if auth-service fails
-        // Get full user data from database to include emailVerified
+        // Get full user data from cache/database to include emailVerified
         try {
-          const dbUser = await storage.getUser(session.userId);
+          const dbUser = await getCachedUser(session.userId);
           if (dbUser) {
             return NextResponse.json({
               user: {
@@ -80,7 +81,7 @@ export async function GET() {
             });
           }
         } catch (error) {
-          console.error('Error fetching user from database:', error);
+          console.error('Error fetching user from cache/database:', error);
         }
         
         // Final fallback to session data only
@@ -101,9 +102,9 @@ export async function GET() {
     } catch (error) {
       console.error('Error calling auth-service:', error);
       // Fallback to session data if auth-service fails
-      // Get full user data from database to include emailVerified
+      // Get full user data from cache/database to include emailVerified
       try {
-        const dbUser = await storage.getUser(session.userId);
+        const dbUser = await getCachedUser(session.userId);
         if (dbUser) {
           return NextResponse.json({
             user: {
@@ -117,7 +118,7 @@ export async function GET() {
           });
         }
       } catch (dbError) {
-        console.error('Error fetching user from database:', dbError);
+        console.error('Error fetching user from cache/database:', dbError);
       }
       
       // Final fallback to session data only

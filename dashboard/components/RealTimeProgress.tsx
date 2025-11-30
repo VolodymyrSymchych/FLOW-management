@@ -46,18 +46,13 @@ export function RealTimeProgress({ projectId, onComplete }: RealTimeProgressProp
     return () => clearInterval(interval);
   }, [projectId, onComplete]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
-      </div>
-    );
-  }
-
   const overallProgress = stages.reduce((acc, stage) => acc + stage.progress, 0) / stages.length;
 
   return (
-    <div className="space-y-4">
+    <div className={cn(
+      "space-y-4 transition-opacity duration-300",
+      loading ? "opacity-50 pointer-events-none" : "opacity-100"
+    )}>
       {/* Overall Progress */}
       <div className="bg-white dark:bg-card-dark rounded-xl p-4 border border-gray-100 dark:border-gray-800">
         <div className="flex items-center justify-between mb-2">

@@ -396,19 +396,10 @@ export function GanttChartView({ projectId, readOnly = false }: GanttChartViewPr
     setShowAddTaskModal(true);
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="relative">
-          <div className="w-16 h-16 rounded-2xl glass-medium border border-white/10 flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent"></div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Show loading overlay instead of blocking content
+  const showEmptyState = !loading && displayFeatures.length === 0;
 
-  if (displayFeatures.length === 0) {
+  if (showEmptyState) {
     return (
       <div className="relative glass-medium rounded-2xl p-16 border border-white/10 text-center overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5 pointer-events-none"></div>
@@ -553,8 +544,8 @@ export function GanttChartView({ projectId, readOnly = false }: GanttChartViewPr
 
       {/* Gantt Chart */}
       <div className="glass-medium rounded-2xl border border-white/10 w-full flex-1 flex flex-col min-h-0 max-h-full overflow-hidden min-w-0 max-w-full relative">
-        {/* Type/View Change Loading Overlay */}
-        {(typeChanging || viewChanging) && (
+        {/* Loading Overlay - for initial load and type/view changes */}
+        {(loading || typeChanging || viewChanging) && (
           <div className="absolute inset-0 z-50 backdrop-blur-xl bg-black/30 flex items-center justify-center rounded-2xl">
             <div className="glass-medium px-8 py-6 rounded-2xl flex items-center gap-4 border border-white/10 shadow-2xl">
               <div className="relative w-10 h-10">
@@ -563,19 +554,23 @@ export function GanttChartView({ projectId, readOnly = false }: GanttChartViewPr
               </div>
               <div>
                 <div className="text-base font-semibold text-white">
-                  {typeChanging
+                  {loading
+                    ? 'Loading Gantt Chart...'
+                    : typeChanging
                     ? (ganttType === 'projects' ? 'Loading Projects View...' : 'Loading Tasks View...')
                     : `Loading ${viewRange.charAt(0).toUpperCase() + viewRange.slice(1)} View...`
                   }
                 </div>
-                <div className="text-xs text-white/50 mt-1">Reorganizing timeline</div>
+                <div className="text-xs text-white/50 mt-1">
+                  {loading ? 'Preparing timeline' : 'Reorganizing timeline'}
+                </div>
               </div>
             </div>
           </div>
         )}
         <div
           className={`h-full min-h-0 min-w-0 max-w-full flex flex-col overflow-hidden transition-opacity duration-300 ${
-            (typeChanging || viewChanging) ? 'opacity-0' : 'opacity-100'
+            (loading || typeChanging || viewChanging) ? 'opacity-0' : 'opacity-100'
           }`}
         >
           <GanttProvider

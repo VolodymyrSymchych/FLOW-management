@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { authService } from '@/lib/auth-service';
+import { invalidateUserCache } from '@/lib/user-cache';
 
 export const dynamic = 'force-dynamic';
 
@@ -54,6 +55,10 @@ export async function PATCH(request: NextRequest) {
     }
 
     const result = await response.json();
+    
+    // Invalidate user cache after locale update
+    await invalidateUserCache(session.userId);
+    
     return NextResponse.json(result);
   } catch (error: any) {
     console.error('Update locale error:', error);

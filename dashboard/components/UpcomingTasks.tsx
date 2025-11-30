@@ -8,6 +8,7 @@ import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { useTeam } from '@/contexts/TeamContext';
 import { useUser } from '@/hooks/useUser';
+import { cn } from '@/lib/utils';
 
 interface Task {
   id: number;
@@ -251,23 +252,12 @@ export function UpcomingTasks() {
     ? [runningTask, ...tasks.filter(t => t.id !== runningTask.id)].slice(0, 5)
     : tasks;
 
-  // Show loading state while teams are loading or tasks are loading
-  if (teamsLoading || loading) {
-    return (
-      <div className="glass-medium rounded-2xl p-6">
-        <h3 className="text-lg font-bold text-text-primary mb-4">
-          Upcoming Tasks
-        </h3>
-        <div className="flex items-center justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <>
-      <div className="glass-medium rounded-2xl p-6">
+      <div className={cn(
+        "glass-medium rounded-2xl p-6 transition-opacity duration-300",
+        (teamsLoading || loading) ? "opacity-50 pointer-events-none" : "opacity-100"
+      )}>
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-lg font-bold text-text-primary">

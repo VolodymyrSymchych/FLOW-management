@@ -856,18 +856,20 @@ export default function DashboardPage() {
     }
   };
 
-  // Show loading state while teams are loading or data is loading
-  if (teamsLoading || loading) {
-    return <Loader message="Loading your personalized dashboard..." />;
-  }
-
   const gridColsClass =
     gridColumns === 24 ? 'xl:grid-cols-24' :
     gridColumns === 16 ? 'xl:grid-cols-16' :
     'xl:grid-cols-12';
 
   return (
-    <DndContext
+    <>
+      {/* Show loading overlay instead of blocking entire page */}
+      {(teamsLoading || loading) && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <Loader message="Loading your personalized dashboard..." />
+        </div>
+      )}
+      <DndContext
       sensors={sensors}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
@@ -1065,5 +1067,6 @@ export default function DashboardPage() {
         ) : null}
       </DragOverlay>
     </DndContext>
+    </>
   );
 }

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth-helper';
 import { chatService } from '@/lib/chat-service';
+import { cachedWithValidation } from '@/lib/redis';
+import { CacheKeys } from '@/lib/cache-keys';
+import { invalidateOnUpdate } from '@/lib/cache-invalidation';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,7 +15,17 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const chats = await chatService.getUserChats(session.userId);
+    // Cache chats for 60 seconds (real-time data, short TTL)
+    // No timestamp validation for chat as it's frequently updated
+    const chats = await cachedWithValidation(
+      CacheKeys.chatsByUser(session.userId),
+      async () => await chatService.getUserChats(session.userId),
+      {
+        ttl: 60, // 60 seconds - short TTL for real-time data
+        validate: false, // No validation - rely on TTL only
+      }
+    );
+
     return NextResponse.json({ chats });
   } catch (error) {
     console.error('Error fetching chats:', error);
@@ -60,6 +73,9 @@ export async function POST(request: NextRequest) {
         );
       }
     }
+
+    // Invalidate caches after creating chat
+    await invalidateOnUpdate('chat', chat.id, session.userId);
 
     return NextResponse.json({ chat }, { status: 201 });
   } catch (error) {

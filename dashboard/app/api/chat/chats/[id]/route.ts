@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth-helper';
 import { chatService, messageService } from '@/lib/chat-service';
+import { invalidateOnUpdate } from '@/lib/cache-invalidation';
 
 export const dynamic = 'force-dynamic';
 
@@ -65,6 +66,9 @@ export async function PATCH(
 
     const chat = await chatService.updateChat(chatId, session.userId, { name });
 
+    // Invalidate caches after updating chat
+    await invalidateOnUpdate('chat', chatId, session.userId);
+
     return NextResponse.json({ chat });
   } catch (error) {
     console.error('Error updating chat:', error);
@@ -92,6 +96,9 @@ export async function DELETE(
     }
 
     await chatService.deleteChat(chatId, session.userId);
+
+    // Invalidate caches after deleting chat
+    await invalidateOnUpdate('chat', chatId, session.userId);
 
     return NextResponse.json({ success: true });
   } catch (error) {

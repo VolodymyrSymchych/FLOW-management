@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { storage } from '../../../../../server/storage';
 import { sendInvoiceEmail, sendStatusChangeEmail } from '@/lib/email/send-invoice';
+import { invalidateOnUpdate } from '@/lib/cache-invalidation';
 
 export const dynamic = 'force-dynamic';
 
@@ -160,6 +161,9 @@ export async function PUT(
       // Don't fail the request if email fails
     }
 
+    // Invalidate caches after updating invoice
+    await invalidateOnUpdate('invoice', id, session.userId, { projectId: invoice.projectId });
+
     return NextResponse.json({ invoice });
   } catch (error: any) {
     console.error('Error updating invoice:', error);
@@ -202,6 +206,9 @@ export async function DELETE(
     }
 
     await storage.deleteInvoice(id);
+
+    // Invalidate caches after deleting invoice
+    await invalidateOnUpdate('invoice', id, session.userId, { projectId: invoice.projectId });
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

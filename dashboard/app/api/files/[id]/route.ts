@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { storage } from '../../../../../server/storage';
 import { deleteFile, getSignedUrl } from '../../../../../server/r2-storage';
+import { invalidateOnUpdate } from '@/lib/cache-invalidation';
 
 export const dynamic = 'force-dynamic';
 
@@ -75,6 +76,12 @@ export async function DELETE(
 
     // Delete from database
     await storage.deleteFileAttachment(id);
+
+    // Invalidate caches after deleting file
+    await invalidateOnUpdate('file', id, session.userId, {
+      projectId: file.projectId || undefined,
+      taskId: file.taskId || undefined,
+    });
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

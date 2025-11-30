@@ -6,6 +6,24 @@ export interface CacheOptions {
   ttl?: number; // Time to live in seconds
 }
 
+/**
+ * Cached data structure with timestamp for validation
+ */
+export interface CachedData<T> {
+  data: T;
+  cachedAt: number;  // Unix timestamp when data was cached
+  metadata?: Record<string, any>;
+}
+
+/**
+ * Options for cache validation
+ */
+export interface CacheValidationOptions {
+  ttl?: number;              // Time to live in seconds (default: 300)
+  validate?: boolean;         // Enable timestamp validation (default: false)
+  getUpdatedAt?: () => Promise<Date | null>;  // Function to get last update time from DB
+}
+
 // Redis client singleton
 let redisClient: Redis | IORedis | null = null;
 
@@ -69,7 +87,7 @@ export async function cached<T>(
 
     // Fetch and cache
     const data = await fetcher();
-    
+
     // Set with TTL - handle both Upstash and IORedis
     try {
       if ('setex' in redis && typeof redis.setex === 'function') {
@@ -88,12 +106,136 @@ export async function cached<T>(
       const errorMsg = setError?.message || setError?.toString() || String(setError);
       console.warn('Failed to cache data:', errorMsg);
     }
-    
+
     return data;
   } catch (error: any) {
     // Better error handling
     const errorMessage = error?.message || error?.toString() || 'Unknown cache error';
     console.error('Cache error:', errorMessage, error);
+    // Fallback to fetcher on cache error
+    return fetcher();
+  }
+}
+
+/**
+ * Advanced cache wrapper with timestamp validation
+ *
+ * Validates cached data against database timestamp to ensure freshness
+ *
+ * @example
+ * ```typescript
+ * const projects = await cachedWithValidation(
+ *   'projects:user:123',
+ *   () => storage.getUserProjects(123),
+ *   {
+ *     ttl: 300,
+ *     validate: true,
+ *     getUpdatedAt: async () => {
+ *       const result = await db.select({ updatedAt: projects.updatedAt })
+ *         .from(projects)
+ *         .orderBy(desc(projects.updatedAt))
+ *         .limit(1);
+ *       return result[0]?.updatedAt || null;
+ *     }
+ *   }
+ * );
+ * ```
+ */
+export async function cachedWithValidation<T>(
+  key: string,
+  fetcher: () => Promise<T>,
+  options: CacheValidationOptions = {}
+): Promise<T> {
+  const redis = getRedisClient();
+  const ttl = options.ttl || 300; // Default 5 minutes
+  const validate = options.validate !== false; // Default true
+
+  if (!redis) {
+    // No cache - just fetch
+    return fetcher();
+  }
+
+  try {
+    // Try to get from cache
+    const cachedRaw = await redis.get(key);
+
+    if (cachedRaw) {
+      const cachedData: CachedData<T> = typeof cachedRaw === 'string'
+        ? JSON.parse(cachedRaw)
+        : cachedRaw;
+
+      // Check if we should validate timestamp
+      if (validate && options.getUpdatedAt) {
+        try {
+          const dbUpdatedAt = await options.getUpdatedAt();
+
+          if (dbUpdatedAt) {
+            const dbTimestamp = dbUpdatedAt.getTime();
+            const cachedTimestamp = cachedData.cachedAt;
+
+            // If DB data is newer than cached data, invalidate cache
+            if (dbTimestamp > cachedTimestamp) {
+              console.log(`[Cache] Data stale for key: ${key}. DB: ${new Date(dbTimestamp).toISOString()}, Cache: ${new Date(cachedTimestamp).toISOString()}`);
+              // Continue to fetch fresh data
+            } else {
+              // Cache is still fresh
+              console.log(`[Cache] Hit (validated) for key: ${key}`);
+              return cachedData.data;
+            }
+          } else {
+            // No timestamp from DB, use cached data
+            console.log(`[Cache] Hit (no DB timestamp) for key: ${key}`);
+            return cachedData.data;
+          }
+        } catch (validationError) {
+          console.warn(`[Cache] Validation error for key: ${key}:`, validationError);
+          // On validation error, use cached data
+          return cachedData.data;
+        }
+      } else {
+        // No validation needed, return cached data
+        console.log(`[Cache] Hit (no validation) for key: ${key}`);
+        return cachedData.data;
+      }
+    }
+
+    // Cache miss or stale data - fetch from database
+    console.log(`[Cache] Miss for key: ${key}`);
+    const data = await fetcher();
+
+    // Wrap data with timestamp
+    const cachedData: CachedData<T> = {
+      data,
+      cachedAt: Date.now(),
+    };
+
+    // Set with TTL - handle both Upstash and IORedis
+    try {
+      const serialized = JSON.stringify(cachedData);
+
+      if ('setex' in redis && typeof redis.setex === 'function') {
+        // IORedis - use setex
+        await (redis as any).setex(key, ttl, serialized);
+      } else if ('expire' in redis && typeof redis.expire === 'function') {
+        // Upstash Redis - use set + expire separately
+        await redis.set(key, serialized);
+        await (redis as any).expire(key, ttl);
+      } else {
+        // Fallback - just set without TTL
+        await redis.set(key, serialized);
+      }
+      console.log(`[Cache] Stored for key: ${key} with TTL: ${ttl}s`);
+    } catch (setError: any) {
+      // If set fails, log but don't fail the request
+      const errorMsg = setError?.message || setError?.toString() || String(setError);
+      console.warn(`[Cache] Failed to store for key: ${key}:`, errorMsg);
+    }
+
+    return data;
+  } catch (error: any) {
+    // Better error handling
+    const errorMessage = error?.message || error?.toString() || 'Unknown cache error';
+    console.error(`[Cache] Error for key: ${key}:`, errorMessage);
     // Fallback to fetcher on cache error
     return fetcher();
   }

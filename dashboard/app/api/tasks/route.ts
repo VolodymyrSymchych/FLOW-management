@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { storage } from '@/lib/storage';
-import { cached, invalidateUserCache } from '@/lib/redis';
+import { cachedWithValidation, invalidateUserCache } from '@/lib/redis';
 import { withRateLimit } from '@/lib/rate-limit';
 import { createTaskSchema, validateRequestBody, formatZodError } from '@/lib/validations';
+import { CacheKeys } from '@/lib/cache-keys';
+import { invalidateOnUpdate } from '@/lib/cache-invalidation';
+import { db } from '@/server/db';
+import { tasks } from '@/shared/schema';
+import { eq, desc, and, isNull } from 'drizzle-orm';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,7 +25,7 @@ export async function GET(request: NextRequest) {
 
     console.log('Fetching tasks for userId:', session.userId, 'projectId:', projectId, 'teamId:', teamId);
 
-    let tasks;
+    let tasksData;
     let cacheKey: string;
 
     if (teamId && teamId !== 'all') {
@@ -46,34 +51,82 @@ export async function GET(request: NextRequest) {
       }
 
       console.log(`User ${session.userId} is a member of team ${teamIdNum}, fetching tasks...`);
-      cacheKey = `tasks:team:${teamIdNum}`;
-      tasks = await cached(
+      cacheKey = CacheKeys.tasksByTeam(teamIdNum);
+      tasksData = await cachedWithValidation(
         cacheKey,
         async () => await storage.getTasksByTeam(teamIdNum),
-        { ttl: 180 }
+        {
+          ttl: 180, // 3 minutes
+          validate: true,
+          getUpdatedAt: async () => {
+            // Get the most recent updatedAt from team tasks
+            // For simplicity, we get max updatedAt from all tasks
+            // In production, you might want to join with team projects
+            const result = await db
+              .select({ updatedAt: tasks.updatedAt })
+              .from(tasks)
+              .where(isNull(tasks.deletedAt))
+              .orderBy(desc(tasks.updatedAt))
+              .limit(1);
+
+            return result[0]?.updatedAt || null;
+          },
+        }
       );
-      console.log(`Found ${tasks.length} tasks for team ${teamIdNum}`);
+      console.log(`Found ${tasksData.length} tasks for team ${teamIdNum}`);
     } else if (projectId) {
       // Filter by project
-      cacheKey = `tasks:user:${session.userId}:project:${projectId}`;
-      tasks = await cached(
+      cacheKey = CacheKeys.tasksByUserAndProject(session.userId, parseInt(projectId));
+      tasksData = await cachedWithValidation(
         cacheKey,
         async () => await storage.getTasks(session.userId, parseInt(projectId)),
-        { ttl: 180 }
+        {
+          ttl: 180, // 3 minutes
+          validate: true,
+          getUpdatedAt: async () => {
+            const result = await db
+              .select({ updatedAt: tasks.updatedAt })
+              .from(tasks)
+              .where(and(
+                eq(tasks.projectId, parseInt(projectId)),
+                isNull(tasks.deletedAt)
+              ))
+              .orderBy(desc(tasks.updatedAt))
+              .limit(1);
+
+            return result[0]?.updatedAt || null;
+          },
+        }
       );
     } else {
       // All tasks for user
-      cacheKey = `tasks:user:${session.userId}`;
-      tasks = await cached(
+      cacheKey = CacheKeys.tasksByUser(session.userId);
+      tasksData = await cachedWithValidation(
         cacheKey,
         async () => await storage.getTasks(session.userId),
-        { ttl: 180 }
+        {
+          ttl: 180, // 3 minutes
+          validate: true,
+          getUpdatedAt: async () => {
+            const result = await db
+              .select({ updatedAt: tasks.updatedAt })
+              .from(tasks)
+              .where(and(
+                eq(tasks.userId, session.userId),
+                isNull(tasks.deletedAt)
+              ))
+              .orderBy(desc(tasks.updatedAt))
+              .limit(1);
+
+            return result[0]?.updatedAt || null;
+          },
+        }
       );
     }
 
-    console.log('Found tasks:', tasks.length);
+    console.log('Found tasks:', tasksData.length);
 
-    return NextResponse.json({ tasks });
+    return NextResponse.json({ tasks: tasksData });
   } catch (error: any) {
     console.error('Error fetching tasks:', error);
     return NextResponse.json({ error: 'Failed to fetch tasks' }, { status: 500 });
@@ -128,8 +181,11 @@ export async function POST(request: NextRequest) {
 
     const task = await storage.createTask(taskData);
 
-    // Invalidate user caches after creating task
-    await invalidateUserCache(session.userId);
+    // Invalidate caches after creating task
+    await invalidateOnUpdate('task', task.id, session.userId, {
+      projectId: task.projectId || undefined,
+      // Note: teamId would need to be passed or determined from the project
+    });
 
     console.log('Task created successfully:', task.id);
     return NextResponse.json({ task }, { status: 201 });

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { storage } from '../../../../../../server/storage';
+import { invalidateOnUpdate } from '@/lib/cache-invalidation';
 
 export async function POST(
   request: Request,
@@ -18,6 +19,9 @@ export async function POST(
     }
 
     await storage.markNotificationAsRead(notificationId, session.userId);
+
+    // Invalidate notifications cache after marking as read
+    await invalidateOnUpdate('notification', notificationId, session.userId);
 
     return NextResponse.json({
       success: true,

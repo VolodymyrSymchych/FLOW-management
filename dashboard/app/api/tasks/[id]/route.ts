@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { storage } from '../../../../../server/storage';
-import { invalidateUserCache } from '@/lib/redis';
+import { invalidateOnUpdate } from '@/lib/cache-invalidation';
 
 export const dynamic = 'force-dynamic';
 
@@ -115,8 +115,10 @@ export async function PUT(
       await storage.updateParentDateRange(task.parentId);
     }
 
-    // Invalidate user caches after updating task
-    await invalidateUserCache(session.userId);
+    // Invalidate caches after updating task
+    await invalidateOnUpdate('task', id, session.userId, {
+      projectId: task.projectId || undefined,
+    });
 
     return NextResponse.json({ task });
   } catch (error: any) {
@@ -152,8 +154,10 @@ export async function DELETE(
 
     await storage.deleteTask(id);
 
-    // Invalidate user caches after deleting task
-    await invalidateUserCache(session.userId);
+    // Invalidate caches after deleting task
+    await invalidateOnUpdate('task', id, session.userId, {
+      projectId: task.projectId || undefined,
+    });
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

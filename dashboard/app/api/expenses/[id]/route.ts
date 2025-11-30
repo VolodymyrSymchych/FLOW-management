@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { storage } from '../../../../../server/storage';
+import { invalidateOnUpdate } from '@/lib/cache-invalidation';
 
 export const dynamic = 'force-dynamic';
 
@@ -79,6 +80,9 @@ export async function PUT(
       return NextResponse.json({ error: 'Expense not found' }, { status: 404 });
     }
 
+    // Invalidate caches after updating expense
+    await invalidateOnUpdate('expense', id, session.userId, { projectId: expense.projectId });
+
     return NextResponse.json({ expense });
   } catch (error: any) {
     console.error('Error updating expense:', error);
@@ -112,6 +116,9 @@ export async function DELETE(
     }
 
     await storage.deleteExpense(id);
+
+    // Invalidate caches after deleting expense
+    await invalidateOnUpdate('expense', id, session.userId, { projectId: expense.projectId });
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

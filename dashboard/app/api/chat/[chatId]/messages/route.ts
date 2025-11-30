@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { storage } from '@/server/storage';
+import { cachedWithValidation } from '@/lib/redis';
+import { CacheKeys } from '@/lib/cache-keys';
+import { invalidateOnUpdate } from '@/lib/cache-invalidation';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,7 +38,16 @@ export async function GET(
     const limit = parseInt(searchParams.get('limit') || '50');
     const beforeId = searchParams.get('beforeId') ? parseInt(searchParams.get('beforeId')!) : undefined;
 
-    const messages = await storage.getChatMessages(chatId, limit, beforeId);
+    // Cache messages for 30 seconds (real-time data, very short TTL)
+    // No validation for messages as they change frequently
+    const messages = await cachedWithValidation(
+      CacheKeys.chatMessages(chatId),
+      async () => await storage.getChatMessages(chatId, limit, beforeId),
+      {
+        ttl: 30, // 30 seconds - very short TTL for real-time messages
+        validate: false, // No validation - rely on TTL only
+      }
+    );
 
     // Update last read
     await storage.updateLastRead(chatId, session.userId);
@@ -122,6 +134,9 @@ export async function POST(
       reactions: [],
       attachments: [],
     };
+
+    // Invalidate chat messages cache after sending message
+    await invalidateOnUpdate('chat', chatId, session.userId);
 
     return NextResponse.json(
       { message: fullMessage },

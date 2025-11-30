@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { projectService } from '@/lib/project-service';
 import { storage } from '@/server/storage';
+import { invalidateOnUpdate, invalidateAllProjectCaches } from '@/lib/cache-invalidation';
 
 // Helper to safely convert to ISO string
 const toISOString = (date: any) => {
@@ -223,6 +224,9 @@ export async function PUT(
         }
       }
 
+      // Invalidate caches after updating project
+      await invalidateOnUpdate('project', projectId, session.userId, { teamId: team_id });
+
       return NextResponse.json({
         success: true,
         message: 'Project updated successfully',
@@ -284,6 +288,9 @@ export async function PUT(
       }
     }
 
+    // Invalidate caches after updating project
+    await invalidateOnUpdate('project', projectId, session.userId, { teamId: team_id });
+
     return NextResponse.json({
       success: true,
       message: 'Project updated successfully',
@@ -315,6 +322,9 @@ export async function DELETE(
     const result = await projectService.deleteProject(projectId);
 
     if (!result.error) {
+      // Invalidate all project-related caches after deletion
+      await invalidateAllProjectCaches(projectId, session.userId);
+
       return NextResponse.json({ success: true, message: 'Project deleted successfully' });
     }
 
@@ -331,6 +341,9 @@ export async function DELETE(
 
     // Soft delete the project
     await storage.deleteProject(projectId);
+
+    // Invalidate all project-related caches after deletion
+    await invalidateAllProjectCaches(projectId, session.userId);
 
     return NextResponse.json({ success: true, message: 'Project deleted successfully' });
   } catch (error: any) {

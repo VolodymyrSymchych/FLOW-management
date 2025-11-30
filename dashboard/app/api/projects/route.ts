@@ -2,9 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { projectService } from '@/lib/project-service';
 import { storage } from '@/lib/storage';
-import { cached, invalidateUserCache } from '@/lib/redis';
+import { cachedWithValidation, invalidateUserCache } from '@/lib/redis';
 import { withRateLimit } from '@/lib/rate-limit';
 import { createProjectSchema, validateRequestBody, formatZodError } from '@/lib/validations';
+import { CacheKeys } from '@/lib/cache-keys';
+import { invalidateOnUpdate } from '@/lib/cache-invalidation';
+import { db } from '@/server/db';
+import { projects, teamProjects } from '@/shared/schema';
+import { eq, desc, and, isNull, inArray } from 'drizzle-orm';
 
 export const dynamic = 'force-dynamic';
 
@@ -59,19 +64,61 @@ export async function GET(request: NextRequest) {
         }, { status: 403 });
       }
 
-      cacheKey = `projects:team:${teamIdNum}`;
-      userProjects = await cached(
+      cacheKey = CacheKeys.projectsByTeam(teamIdNum);
+      userProjects = await cachedWithValidation(
         cacheKey,
         async () => await storage.getProjectsByTeam(teamIdNum),
-        { ttl: 300 }
+        {
+          ttl: 300, // 5 minutes
+          validate: true,
+          getUpdatedAt: async () => {
+            // Get the most recent updatedAt from team projects
+            const teamProjectsList = await db
+              .select({ projectId: projects.id })
+              .from(teamProjects)
+              .where(eq(teamProjects.teamId, teamIdNum));
+
+            const projectIds = teamProjectsList.map(tp => tp.projectId);
+            if (projectIds.length === 0) return null;
+
+            const result = await db
+              .select({ updatedAt: projects.updatedAt })
+              .from(projects)
+              .where(and(
+                inArray(projects.id, projectIds),
+                isNull(projects.deletedAt)
+              ))
+              .orderBy(desc(projects.updatedAt))
+              .limit(1);
+
+            return result[0]?.updatedAt || null;
+          },
+        }
       );
     } else {
       // All teams or no filter - get all user's projects
-      cacheKey = `projects:user:${session.userId}`;
-      userProjects = await cached(
+      cacheKey = CacheKeys.projectsByUser(session.userId);
+      userProjects = await cachedWithValidation(
         cacheKey,
         async () => await storage.getUserProjects(session.userId),
-        { ttl: 300 }
+        {
+          ttl: 300, // 5 minutes
+          validate: true,
+          getUpdatedAt: async () => {
+            // Get the most recent updatedAt from user projects
+            const result = await db
+              .select({ updatedAt: projects.updatedAt })
+              .from(projects)
+              .where(and(
+                eq(projects.userId, session.userId),
+                isNull(projects.deletedAt)
+              ))
+              .orderBy(desc(projects.updatedAt))
+              .limit(1);
+
+            return result[0]?.updatedAt || null;
+          },
+        }
       );
     }
 
@@ -139,8 +186,8 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Invalidate user caches after creating project
-      await invalidateUserCache(session.userId);
+      // Invalidate caches after creating project
+      await invalidateOnUpdate('project', result.project.id, session.userId, { teamId });
 
       return NextResponse.json({ project: result.project }, { status: 201 });
     }
@@ -172,8 +219,8 @@ export async function POST(request: NextRequest) {
       await storage.addProjectToTeam(teamId, project.id);
     }
 
-    // Invalidate user caches after creating project
-    await invalidateUserCache(session.userId);
+    // Invalidate caches after creating project
+    await invalidateOnUpdate('project', project.id, session.userId, { teamId });
 
     return NextResponse.json({ project }, { status: 201 });
   } catch (error: any) {

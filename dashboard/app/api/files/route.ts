@@ -4,6 +4,12 @@ import { storage } from '@/lib/storage';
 import { uploadFile, deleteFile } from '../../../../server/r2-storage';
 import { withRateLimit } from '@/lib/rate-limit';
 import { validateFileType, validateFileSize, sanitizeFilename, ALLOWED_FILE_TYPES } from '@/lib/file-security';
+import { cachedWithValidation } from '@/lib/redis';
+import { CacheKeys } from '@/lib/cache-keys';
+import { invalidateOnUpdate } from '@/lib/cache-invalidation';
+import { db } from '@/server/db';
+import { fileAttachments } from '@/shared/schema';
+import { eq, desc, isNull, and, or } from 'drizzle-orm';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60; // Allow up to 60 seconds for file uploads
@@ -115,6 +121,12 @@ export async function POST(request: NextRequest) {
       parentFileId: null,
     });
 
+    // Invalidate caches after creating file
+    await invalidateOnUpdate('file', fileAttachment.id, session.userId, {
+      projectId: projectId || undefined,
+      taskId: taskId || undefined,
+    });
+
     return NextResponse.json({
       file: fileAttachment,
       url,
@@ -162,9 +174,51 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const files = await storage.getFileAttachments(projectId, taskId);
+    // Use different cache key based on filter
+    const cacheKey = projectId
+      ? CacheKeys.filesByProject(projectId)
+      : CacheKeys.filesByTask(taskId!);
 
-    return NextResponse.json({ files });
+    // Cache files for 5 minutes with timestamp validation
+    const filesData = await cachedWithValidation(
+      cacheKey,
+      async () => await storage.getFileAttachments(projectId, taskId),
+      {
+        ttl: 300, // 5 minutes
+        validate: true,
+        getUpdatedAt: async () => {
+          try {
+            // Get most recent file update based on filter
+            const result = projectId
+              ? await db
+                  .select({ updatedAt: fileAttachments.updatedAt })
+                  .from(fileAttachments)
+                  .where(and(
+                    isNull(fileAttachments.deletedAt),
+                    eq(fileAttachments.projectId, projectId)
+                  ))
+                  .orderBy(desc(fileAttachments.updatedAt))
+                  .limit(1)
+              : await db
+                  .select({ updatedAt: fileAttachments.updatedAt })
+                  .from(fileAttachments)
+                  .where(and(
+                    isNull(fileAttachments.deletedAt),
+                    eq(fileAttachments.taskId, taskId!)
+                  ))
+                  .orderBy(desc(fileAttachments.updatedAt))
+                  .limit(1);
+
+            return result[0]?.updatedAt || null;
+          } catch (error) {
+            console.warn('[Files] Error getting timestamps:', error);
+            return null;
+          }
+        },
+      }
+    );
+
+    return NextResponse.json({ files: filesData });
   } catch (error: any) {
     console.error('Error fetching files:', error);
     return NextResponse.json(

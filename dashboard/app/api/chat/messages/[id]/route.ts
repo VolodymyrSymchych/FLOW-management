@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth-helper';
+import { messageService } from '@/lib/chat-service';
 
 export const dynamic = 'force-dynamic';
-
-const CHAT_SERVICE_URL = process.env.CHAT_SERVICE_URL || 'http://localhost:3004';
 
 // GET /api/chat/messages/[id] - Get message by ID
 export async function GET(
@@ -11,60 +10,58 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const { token } = await requireAuth();
-
-    const response = await fetch(`${CHAT_SERVICE_URL}/messages/${params.id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      return NextResponse.json(error, { status: response.status });
+    const { session } = await requireAuth();
+    if (!session?.userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const data = await response.json();
-    return NextResponse.json(data);
+    const messageId = parseInt(params.id);
+    if (isNaN(messageId)) {
+      return NextResponse.json({ error: 'Invalid message ID' }, { status: 400 });
+    }
+
+    const message = await messageService.getMessageById(messageId, session.userId);
+
+    return NextResponse.json({ message });
   } catch (error) {
     console.error('Error fetching message:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch message' },
+      { error: error instanceof Error ? error.message : 'Failed to fetch message' },
       { status: 500 }
     );
   }
 }
 
-// PUT /api/chat/messages/[id] - Edit message
-export async function PUT(
+// PATCH /api/chat/messages/[id] - Edit message
+export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const { token } = await requireAuth();
-
-    const body = await request.json();
-
-    const response = await fetch(`${CHAT_SERVICE_URL}/messages/${params.id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(body),
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      return NextResponse.json(error, { status: response.status });
+    const { session } = await requireAuth();
+    if (!session?.userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const data = await response.json();
-    return NextResponse.json(data);
+    const messageId = parseInt(params.id);
+    if (isNaN(messageId)) {
+      return NextResponse.json({ error: 'Invalid message ID' }, { status: 400 });
+    }
+
+    const body = await request.json();
+    const { content } = body;
+
+    if (!content) {
+      return NextResponse.json({ error: 'Missing content' }, { status: 400 });
+    }
+
+    const message = await messageService.editMessage(messageId, session.userId, content);
+
+    return NextResponse.json({ message });
   } catch (error) {
-    console.error('Error updating message:', error);
+    console.error('Error editing message:', error);
     return NextResponse.json(
-      { error: 'Failed to update message' },
+      { error: error instanceof Error ? error.message : 'Failed to edit message' },
       { status: 500 }
     );
   }
@@ -76,28 +73,24 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const { token } = await requireAuth();
-
-    const response = await fetch(`${CHAT_SERVICE_URL}/messages/${params.id}`, {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      return NextResponse.json(error, { status: response.status });
+    const { session } = await requireAuth();
+    if (!session?.userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const data = await response.json();
-    return NextResponse.json(data);
+    const messageId = parseInt(params.id);
+    if (isNaN(messageId)) {
+      return NextResponse.json({ error: 'Invalid message ID' }, { status: 400 });
+    }
+
+    await messageService.deleteMessage(messageId, session.userId);
+
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting message:', error);
     return NextResponse.json(
-      { error: 'Failed to delete message' },
+      { error: error instanceof Error ? error.message : 'Failed to delete message' },
       { status: 500 }
     );
   }
 }
-

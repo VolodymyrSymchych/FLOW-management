@@ -27,7 +27,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { uk } from 'date-fns/locale';
 import { CreateTaskFromMessageModal } from './CreateTaskFromMessageModal';
 import { MentionInput } from './MentionInput';
-import { useChatWebSocket } from '@/hooks/useChatWebSocket';
+import { useChatPusher } from '@/hooks/useChatPusher';
 import { Badge } from '@/components/ui/badge';
 
 interface Message {
@@ -76,8 +76,8 @@ export function ChatWindow({ chatId, currentUserId }: ChatWindowProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<{ [key: number]: NodeJS.Timeout }>({});
 
-  // WebSocket connection
-  const { isConnected, sendTypingIndicator, joinChat } = useChatWebSocket({
+  // Pusher connection
+  const { isConnected, sendTypingIndicator } = useChatPusher({
     chatId,
     onNewMessage: (message) => {
       setMessages((prev) => [...prev, message]);
@@ -119,11 +119,7 @@ export function ChatWindow({ chatId, currentUserId }: ChatWindowProps) {
     scrollToBottom();
   }, [messages]);
 
-  useEffect(() => {
-    if (isConnected) {
-      joinChat();
-    }
-  }, [isConnected, joinChat]);
+  // Removed joinChat call as Pusher automatically subscribes to channel
 
   const loadMessages = async () => {
     try {

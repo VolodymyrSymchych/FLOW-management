@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
+import React, { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import axios from 'axios';
 
 export interface User {
@@ -21,13 +21,15 @@ interface UserContextValue {
 
 const UserContext = createContext<UserContextValue | null>(null);
 
-export function UserProvider({ 
+interface UserProviderProps {
+  children: ReactNode;
+  initialUser?: User | null;
+}
+
+export const UserProvider: React.FC<UserProviderProps> = ({ 
   children, 
   initialUser 
-}: { 
-  children: ReactNode; 
-  initialUser?: User | null;
-}) {
+}) => {
   const [user, setUser] = useState<User | null>(initialUser || null);
   const [loading, setLoading] = useState(!initialUser); // Don't load if we have initial data
   
@@ -59,7 +61,7 @@ export function UserProvider({
       {children}
     </UserContext.Provider>
   );
-}
+};
 
 export function useUser() {
   const context = useContext(UserContext);

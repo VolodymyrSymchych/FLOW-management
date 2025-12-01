@@ -274,5 +274,36 @@ export const authService = {
       };
     }
   },
-};
 
+  async resendVerificationEmail(email: string): Promise<AuthServiceResponse> {
+    try {
+      const response = await proxyToAuthService('/api/auth/resend-verification', {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { error: errorText || `HTTP ${response.status}` };
+        }
+
+        return {
+          success: false,
+          error: errorData.error || errorData.message || `Resend verification failed: ${response.status}`,
+        };
+      }
+
+      return response.json();
+    } catch (error: any) {
+      console.error('Auth service resendVerificationEmail network error:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to connect to auth service',
+      };
+    }
+  },
+};

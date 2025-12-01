@@ -32,8 +32,13 @@ router.post(
   authController.verifyEmail.bind(authController)
 );
 
+router.post(
+  '/resend-verification',
+  verifyEmailRateLimit,
+  authController.resendVerificationEmail.bind(authController)
+);
+
 router.get('/me', authMiddleware, authController.me.bind(authController));
 router.patch('/locale', authMiddleware, authController.updateLocale.bind(authController));
 
 export default router;
-

@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Mail, Lock, User, AlertCircle, Eye, EyeOff, CheckCircle } from 'lucide-react';
+import { Mail, Lock, User, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { Logo } from '@/components/Logo';
+import { EmailVerificationModal } from '@/components/EmailVerificationModal';
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -68,9 +69,6 @@ export default function SignUpPage() {
       }
 
       setSuccess(true);
-      setTimeout(() => {
-        router.push('/sign-in');
-      }, 2000);
     } catch (err: any) {
       setError(err.message || 'An error occurred');
     } finally {
@@ -78,22 +76,27 @@ export default function SignUpPage() {
     }
   };
 
+  const handleResendVerification = async () => {
+    const response = await fetch('/api/auth/resend-verification', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email: formData.email }),
+    });
+
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error || 'Failed to resend verification email');
+    }
+  };
+
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background px-4">
-        <div className="absolute inset-0 bg-grid opacity-20" />
-        <div className="relative z-10 text-center">
-          <div className="glass-strong rounded-2xl p-12 border border-border max-w-md mx-auto">
-            <div className="w-16 h-16 bg-success/20 rounded-full flex items-center justify-center mx-auto mb-6">
-              <CheckCircle className="w-8 h-8 text-success" />
-            </div>
-            <h2 className="text-2xl font-bold text-text-primary mb-4">Account Created!</h2>
-            <p className="text-text-secondary mb-6">
-              Please check your email to verify your account. Redirecting to sign in...
-            </p>
-          </div>
-        </div>
-      </div>
+      <EmailVerificationModal
+        email={formData.email}
+        onResend={handleResendVerification}
+      />
     );
   }
 

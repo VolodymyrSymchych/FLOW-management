@@ -2,6 +2,7 @@ import { Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { authService } from '../services/auth.service';
 import { jwtService } from '../services/jwt.service';
+import { emailService } from '../services/email.service';
 import { ValidationError, UnauthorizedError, ForbiddenError, getRedisClient, AuthenticatedRequest } from '@project-scope-analyzer/shared';
 import { publishEvent } from '../event-bus';
 import { logger } from '@project-scope-analyzer/shared';
@@ -55,6 +56,7 @@ export class AuthController {
       });
 
       const verificationToken = await authService.createEmailVerification(user.id, user.email);
+      await emailService.sendVerificationEmail(user.email, verificationToken, user.fullName || user.username);
 
       const token = await jwtService.createToken({
         userId: user.id,

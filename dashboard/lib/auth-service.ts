@@ -69,7 +69,8 @@ export const authService = {
     email: string;
     username: string;
     password: string;
-    name?: string;
+    fullName?: string;
+    name?: string; // Keep for backward compatibility
   }): Promise<AuthServiceResponse> {
     try {
       const response = await proxyToAuthService('/api/auth/signup', {

@@ -21,13 +21,19 @@ export async function getCachedUser(userId: number): Promise<CachedUser | null> 
     async () => {
       const user = await storage.getUser(userId);
       if (!user) return null;
+
+      // Handle both snake_case (from DB) and camelCase (from code)
+      const fullName = (user as any).fullName || (user as any).full_name || null;
+      const avatarUrl = (user as any).avatarUrl || (user as any).avatar_url || null;
+      const emailVerified = (user as any).emailVerified ?? (user as any).email_verified ?? false;
+
       return {
         id: user.id,
         email: user.email,
         username: user.username,
-        fullName: user.fullName,
-        avatarUrl: user.avatarUrl,
-        emailVerified: user.emailVerified,
+        fullName,
+        avatarUrl,
+        emailVerified,
         role: user.role,
       };
     },

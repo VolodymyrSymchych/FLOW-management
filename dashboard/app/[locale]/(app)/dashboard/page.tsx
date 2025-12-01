@@ -29,6 +29,7 @@ import { useTeam } from '@/contexts/TeamContext';
 import { useSmartDelayedLoading } from '@/hooks/useSmartDelayedLoading';
 import { StatCardGridSkeleton, CardGridSkeleton } from '@/components/skeletons';
 import { useStats, useProjects } from '@/hooks/useQueries';
+import { useDashboardCache } from '@/hooks/useDashboardCache';
 
 // Lazy load heavy components
 const CalendarView = dynamic(() => import('@/components/CalendarView').then(m => ({ default: m.CalendarView })), {
@@ -493,27 +494,32 @@ const DashboardWidgetContainer = memo(function DashboardWidgetContainer({
 export default function DashboardPage() {
   const router = useRouter();
   const { selectedTeam, isLoading: teamsLoading } = useTeam();
-  
+
   // React Query - автоматичне кешування та паралельне завантаження
   const teamId = selectedTeam.type === 'all' ? 'all' : selectedTeam.teamId;
-  const { 
-    data: stats, 
+  const {
+    data: stats,
     isLoading: statsLoading,
-    isFetching: statsFetching 
+    isFetching: statsFetching
   } = useStats();
-  const { 
-    data: projects, 
+  const {
+    data: projects,
     isLoading: projectsLoading,
-    isFetching: projectsFetching 
+    isFetching: projectsFetching
   } = useProjects(teamId);
-  
+
+  // Кеш менеджер для автоматичного оновлення
+  const cacheManager = useDashboardCache();
+
   const isLoading = statsLoading || projectsLoading;
+  // Фонове оновлення (дані вже є, але завантажуються нові)
+  const isBackgroundFetching = (statsFetching && !statsLoading) || (projectsFetching && !projectsLoading);
 
   // Є дані якщо вони вже завантажені (в кеші або отримані)
   const hasData = stats !== undefined && projects !== undefined;
-  
+
   const [refreshKey, setRefreshKey] = useState(0);
-  
+
   // Показувати skeleton тільки якщо немає даних і завантаження > 300ms
   const shouldShowLoading = useSmartDelayedLoading(isLoading || teamsLoading, hasData, 300);
   const [activeTask, setActiveTask] = useState<any>(null);
@@ -669,7 +675,7 @@ export default function DashboardPage() {
     }
 
     setActiveTask(null);
-    
+
     if (!over) return;
 
     const taskId = typeof active.id === 'number' ? active.id : parseInt(active.id as string, 10);
@@ -682,7 +688,7 @@ export default function DashboardPage() {
     if (typeof dateId === 'string' && dateId.startsWith('date-')) {
       const dateStr = dateId.replace('date-', '');
       const originalTask = active.data.current?.task;
-      
+
       try {
         if (originalTask?.start_date && originalTask?.end_date) {
           const startDate = new Date(originalTask.start_date);
@@ -690,11 +696,11 @@ export default function DashboardPage() {
           const duration = Math.ceil(
             (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
           );
-          
+
           const newStartDate = new Date(dateStr);
           const newEndDate = new Date(newStartDate);
           newEndDate.setDate(newStartDate.getDate() + duration);
-          
+
           await axios.put(`/api/tasks/${taskId}`, {
             start_date: newStartDate.toISOString().split('T')[0],
             due_date: dateStr,
@@ -705,7 +711,7 @@ export default function DashboardPage() {
             due_date: dateStr,
           });
         }
-        
+
         setRefreshKey((prev) => prev + 1);
         toast.success('Task date updated successfully');
       } catch (error: any) {
@@ -840,8 +846,8 @@ export default function DashboardPage() {
 
   const gridColsClass =
     gridColumns === 24 ? 'xl:grid-cols-24' :
-    gridColumns === 16 ? 'xl:grid-cols-16' :
-    'xl:grid-cols-12';
+      gridColumns === 16 ? 'xl:grid-cols-16' :
+        'xl:grid-cols-12';
 
   // Show skeleton loading state
   if (shouldShowLoading) {
@@ -863,208 +869,216 @@ export default function DashboardPage() {
   return (
     <>
       <DndContext
-      sensors={sensors}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-      modifiers={[widgetGridSnapModifier]}
-    >
-      <div className="space-y-6">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="space-y-0.5">
-            <h1 className="text-xl font-bold text-text-primary">Dashboard overview</h1>
-            <p className="text-sm text-text-tertiary">
-              Tailor the workspace by choosing which widgets appear on your home view.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Grid Density Selector - только в режиме кастомизации */}
-            {isCustomizationOpen && (
-              <div className="flex items-center gap-1 rounded-lg border border-white/10 p-1">
-                <button
-                  type="button"
-                  onClick={() => setGridColumns(12)}
-                  className={cn(
-                    "flex items-center gap-1.5 rounded px-2.5 py-1.5 text-xs font-semibold transition-all",
-                    gridColumns === 12
-                      ? "bg-primary/20 text-primary border border-primary/40"
-                      : "text-text-tertiary hover:text-text-secondary"
-                  )}
-                  title="12 columns (Standard)"
-                >
-                  <Grid3x3 className="h-3.5 w-3.5" />
-                  12
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setGridColumns(16)}
-                  className={cn(
-                    "flex items-center gap-1.5 rounded px-2.5 py-1.5 text-xs font-semibold transition-all",
-                    gridColumns === 16
-                      ? "bg-primary/20 text-primary border border-primary/40"
-                      : "text-text-tertiary hover:text-text-secondary"
-                  )}
-                  title="16 columns (Wide)"
-                >
-                  <Grid3x3 className="h-3.5 w-3.5" />
-                  16
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setGridColumns(24)}
-                  className={cn(
-                    "flex items-center gap-1.5 rounded px-2.5 py-1.5 text-xs font-semibold transition-all",
-                    gridColumns === 24
-                      ? "bg-primary/20 text-primary border border-primary/40"
-                      : "text-text-tertiary hover:text-text-secondary"
-                  )}
-                  title="24 columns (Ultrawide)"
-                >
-                  <Grid3x3 className="h-3.5 w-3.5" />
-                  24
-                </button>
-              </div>
-            )}
-
-            {/* Customize Button */}
-            <button
-              type="button"
-              onClick={() => setIsCustomizationOpen((prev) => !prev)}
-              className="flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2 text-sm font-semibold text-text-secondary transition-all hover:border-primary/60 hover:text-text-primary"
-            >
-              <SlidersHorizontal className="h-4 w-4" />
-              {isCustomizationOpen ? 'Hide customization' : 'Customize dashboard'}
-            </button>
-
-            {/* Save Button - только в режиме кастомизации */}
-            {isCustomizationOpen && hasUnsavedChanges && (
-              <button
-                type="button"
-                onClick={handleSaveDashboard}
-                disabled={isSaving}
-                className={cn(
-                  "flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all",
-                  "bg-primary/20 text-primary border border-primary/40 hover:bg-primary/30",
-                  isSaving && "opacity-50 cursor-not-allowed"
-                )}
-              >
-                <Save className="h-4 w-4" />
-                {isSaving ? 'Saving...' : 'Save Layout'}
-              </button>
-            )}
-          </div>
-        </div>
-
-        {isCustomizationOpen && (
-          <DashboardCustomizationPanel
-            selectedWidgets={selectedWidgets}
-            availableWidgets={AVAILABLE_WIDGETS}
-            onToggleWidget={handleToggleWidget}
-            onReset={handleResetWidgets}
-          />
-        )}
-
-        {/* Customize Mode Indicator */}
-        {isCustomizationOpen && (
-          <div className="glass-medium rounded-xl border border-primary/30 p-4 flex items-center justify-between animate-fadeIn">
-            <div className="flex items-center gap-3">
-              <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-              <div>
-                <p className="text-sm font-semibold text-text-primary">
-                  Customize Mode Active
-                </p>
-                <p className="text-xs text-text-tertiary">
-                  Drag widgets to reorder • Resize using +/- controls • Remove with X button
-                </p>
-              </div>
-            </div>
-            {hasUnsavedChanges && (
-              <span className="text-xs px-2 py-1 rounded-full bg-warning/20 text-warning border border-warning/30">
-                Unsaved Changes
-              </span>
-            )}
-          </div>
-        )}
-
-        {renderableWidgets.length > 0 ? (
-          <div className={cn(
-            "relative rounded-3xl border p-4 transition-all duration-300",
-            isCustomizationOpen
-              ? "border-primary/30 bg-primary/5"
-              : "border-white/5 bg-white/0 hover:border-white/10"
-          )}>
-            <div
-              className="pointer-events-none absolute inset-0 rounded-[22px] opacity-60"
-              style={gridBackgroundStyle}
-            />
-            <div className="relative">
-              <SortableContext
-                items={renderableWidgets.map((widget) => widget.id)}
-                strategy={rectSortingStrategy}
-              >
-                <div ref={gridRef} className={cn("grid grid-cols-1 gap-6", gridColsClass)}>
-                  {renderableWidgets.map((widget) => {
-                    const widgetSize = widgetSizes[widget.id] ?? widget.defaultSize;
-                    return (
-                      <DashboardWidgetContainer
-                        key={widget.id}
-                        widget={widget}
-                        size={widgetSize}
-                        onResize={handleResizeWidget}
-                        onRemove={handleToggleWidget}
-                      >
-                        {widget.render({
-                          stats: stats || {
-                            projects_in_progress: 0,
-                            total_projects: 0,
-                            completion_rate: 0,
-                            projects_completed: 0,
-                          },
-                          projects: projects || [],
-                          refreshKey,
-                          setRefreshKey,
-                          router,
-                        })}
-                      </DashboardWidgetContainer>
-                    );
-                  })}
-                </div>
-              </SortableContext>
-            </div>
-          </div>
-        ) : (
-          <div className={cn("grid grid-cols-1 gap-6", gridColsClass)}>
-            <div className="col-span-full rounded-2xl border border-dashed border-white/10 p-12 text-center">
-              <p className="text-lg font-semibold text-text-primary">Your dashboard is empty</p>
-              <p className="mt-2 text-sm text-text-tertiary">
-                Turn widgets back on in the customization panel to start building your view.
-              </p>
-            </div>
-          </div>
-        )}
-      </div>
-      <DragOverlay>
-        {activeTask ? (
-          <div className="glass-medium rotate-2 rounded-xl border border-white/20 bg-[#8098F9]/10 p-3 backdrop-blur-xl">
-            <div className="flex items-center space-x-3">
-              <div className="glass-light flex h-8 w-8 items-center justify-center rounded-lg">
-                <MessageSquare className="h-4 w-4 text-[#8098F9]" />
-              </div>
-              <div>
-                <div className="text-sm font-semibold text-text-primary">{activeTask.title}</div>
-                {activeTask.due_date && (
-                  <div className="text-xs text-text-tertiary">
-                    {new Date(activeTask.due_date).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                    })}
+        sensors={sensors}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+        modifiers={[widgetGridSnapModifier]}
+      >
+        <div className="space-y-6">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-3">
+                <h1 className="text-xl font-bold text-text-primary">Dashboard overview</h1>
+                {isBackgroundFetching && (
+                  <div className="flex items-center gap-2 text-xs text-text-tertiary">
+                    <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                    <span>Updating...</span>
                   </div>
                 )}
               </div>
+              <p className="text-sm text-text-tertiary">
+                Tailor the workspace by choosing which widgets appear on your home view.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Grid Density Selector - только в режиме кастомизации */}
+              {isCustomizationOpen && (
+                <div className="flex items-center gap-1 rounded-lg border border-white/10 p-1">
+                  <button
+                    type="button"
+                    onClick={() => setGridColumns(12)}
+                    className={cn(
+                      "flex items-center gap-1.5 rounded px-2.5 py-1.5 text-xs font-semibold transition-all",
+                      gridColumns === 12
+                        ? "bg-primary/20 text-primary border border-primary/40"
+                        : "text-text-tertiary hover:text-text-secondary"
+                    )}
+                    title="12 columns (Standard)"
+                  >
+                    <Grid3x3 className="h-3.5 w-3.5" />
+                    12
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setGridColumns(16)}
+                    className={cn(
+                      "flex items-center gap-1.5 rounded px-2.5 py-1.5 text-xs font-semibold transition-all",
+                      gridColumns === 16
+                        ? "bg-primary/20 text-primary border border-primary/40"
+                        : "text-text-tertiary hover:text-text-secondary"
+                    )}
+                    title="16 columns (Wide)"
+                  >
+                    <Grid3x3 className="h-3.5 w-3.5" />
+                    16
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setGridColumns(24)}
+                    className={cn(
+                      "flex items-center gap-1.5 rounded px-2.5 py-1.5 text-xs font-semibold transition-all",
+                      gridColumns === 24
+                        ? "bg-primary/20 text-primary border border-primary/40"
+                        : "text-text-tertiary hover:text-text-secondary"
+                    )}
+                    title="24 columns (Ultrawide)"
+                  >
+                    <Grid3x3 className="h-3.5 w-3.5" />
+                    24
+                  </button>
+                </div>
+              )}
+
+              {/* Customize Button */}
+              <button
+                type="button"
+                onClick={() => setIsCustomizationOpen((prev) => !prev)}
+                className="flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2 text-sm font-semibold text-text-secondary transition-all hover:border-primary/60 hover:text-text-primary"
+              >
+                <SlidersHorizontal className="h-4 w-4" />
+                {isCustomizationOpen ? 'Hide customization' : 'Customize dashboard'}
+              </button>
+
+              {/* Save Button - только в режиме кастомизации */}
+              {isCustomizationOpen && hasUnsavedChanges && (
+                <button
+                  type="button"
+                  onClick={handleSaveDashboard}
+                  disabled={isSaving}
+                  className={cn(
+                    "flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all",
+                    "bg-primary/20 text-primary border border-primary/40 hover:bg-primary/30",
+                    isSaving && "opacity-50 cursor-not-allowed"
+                  )}
+                >
+                  <Save className="h-4 w-4" />
+                  {isSaving ? 'Saving...' : 'Save Layout'}
+                </button>
+              )}
             </div>
           </div>
-        ) : null}
-      </DragOverlay>
-    </DndContext>
+
+          {isCustomizationOpen && (
+            <DashboardCustomizationPanel
+              selectedWidgets={selectedWidgets}
+              availableWidgets={AVAILABLE_WIDGETS}
+              onToggleWidget={handleToggleWidget}
+              onReset={handleResetWidgets}
+            />
+          )}
+
+          {/* Customize Mode Indicator */}
+          {isCustomizationOpen && (
+            <div className="glass-medium rounded-xl border border-primary/30 p-4 flex items-center justify-between animate-fadeIn">
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                <div>
+                  <p className="text-sm font-semibold text-text-primary">
+                    Customize Mode Active
+                  </p>
+                  <p className="text-xs text-text-tertiary">
+                    Drag widgets to reorder • Resize using +/- controls • Remove with X button
+                  </p>
+                </div>
+              </div>
+              {hasUnsavedChanges && (
+                <span className="text-xs px-2 py-1 rounded-full bg-warning/20 text-warning border border-warning/30">
+                  Unsaved Changes
+                </span>
+              )}
+            </div>
+          )}
+
+          {renderableWidgets.length > 0 ? (
+            <div className={cn(
+              "relative rounded-3xl border p-4 transition-all duration-300",
+              isCustomizationOpen
+                ? "border-primary/30 bg-primary/5"
+                : "border-white/5 bg-white/0 hover:border-white/10"
+            )}>
+              <div
+                className="pointer-events-none absolute inset-0 rounded-[22px] opacity-60"
+                style={gridBackgroundStyle}
+              />
+              <div className="relative">
+                <SortableContext
+                  items={renderableWidgets.map((widget) => widget.id)}
+                  strategy={rectSortingStrategy}
+                >
+                  <div ref={gridRef} className={cn("grid grid-cols-1 gap-6", gridColsClass)}>
+                    {renderableWidgets.map((widget) => {
+                      const widgetSize = widgetSizes[widget.id] ?? widget.defaultSize;
+                      return (
+                        <DashboardWidgetContainer
+                          key={widget.id}
+                          widget={widget}
+                          size={widgetSize}
+                          onResize={handleResizeWidget}
+                          onRemove={handleToggleWidget}
+                        >
+                          {widget.render({
+                            stats: stats || {
+                              projects_in_progress: 0,
+                              total_projects: 0,
+                              completion_rate: 0,
+                              projects_completed: 0,
+                            },
+                            projects: projects || [],
+                            refreshKey,
+                            setRefreshKey,
+                            router,
+                          })}
+                        </DashboardWidgetContainer>
+                      );
+                    })}
+                  </div>
+                </SortableContext>
+              </div>
+            </div>
+          ) : (
+            <div className={cn("grid grid-cols-1 gap-6", gridColsClass)}>
+              <div className="col-span-full rounded-2xl border border-dashed border-white/10 p-12 text-center">
+                <p className="text-lg font-semibold text-text-primary">Your dashboard is empty</p>
+                <p className="mt-2 text-sm text-text-tertiary">
+                  Turn widgets back on in the customization panel to start building your view.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+        <DragOverlay>
+          {activeTask ? (
+            <div className="glass-medium rotate-2 rounded-xl border border-white/20 bg-[#8098F9]/10 p-3 backdrop-blur-xl">
+              <div className="flex items-center space-x-3">
+                <div className="glass-light flex h-8 w-8 items-center justify-center rounded-lg">
+                  <MessageSquare className="h-4 w-4 text-[#8098F9]" />
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-text-primary">{activeTask.title}</div>
+                  {activeTask.due_date && (
+                    <div className="text-xs text-text-tertiary">
+                      {new Date(activeTask.due_date).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </DragOverlay>
+      </DndContext>
     </>
   );
 }

@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
       email: body.email,
       username: body.username,
       password: body.password,
-      name: body.name,
+      fullName: body.fullName || body.name, // Support both fullName and name
     });
 
     if (result.error) {
@@ -35,11 +35,11 @@ export async function POST(request: NextRequest) {
     // Also create a local session token for compatibility
     try {
       const { payload } = await jwtVerify(result.token, JWT_SECRET);
-      
+
       // Store auth-service token in cookie (for API calls to auth-service)
       const cookieStore = await import('next/headers').then(m => m.cookies());
       const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1';
-      
+
       cookieStore.set('auth_token', result.token, {
         httpOnly: true,
         secure: isProduction,
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
         maxAge: 60 * 60, // 1 hour
         path: '/',
       });
-      
+
       // Create local session token for compatibility with existing code
       await createSession({
         userId: payload.userId as number,

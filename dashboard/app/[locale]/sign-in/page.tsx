@@ -148,14 +148,9 @@ function SignInForm() {
             </button>
           </form>
 
-          {/* Divider */}
-          <div className="relative my-8">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-border"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-surface-elevated text-text-tertiary">Or continue with</span>
-            </div>
+          {/* OAuth Section */}
+          <div className="mt-8">
+            <p className="text-center text-sm text-text-tertiary mb-4">Or continue with</p>
           </div>
 
           {/* OAuth Buttons */}

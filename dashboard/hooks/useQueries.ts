@@ -7,8 +7,11 @@ export function useStats() {
   return useQuery({
     queryKey: ['stats'],
     queryFn: api.getStats,
-    staleTime: 2 * 60 * 1000, // 2 хвилини - stats змінюються часто
-    gcTime: 10 * 60 * 1000,
+    staleTime: 60 * 1000, // 1 хвилина - дані вважаються свіжими
+    gcTime: 10 * 60 * 1000, // Зберігати в кеші 10 хвилин
+    refetchInterval: 60 * 1000, // Автоматично оновлювати кожну хвилину
+    refetchOnWindowFocus: true, // Оновлювати при поверненні на вкладку
+    refetchOnMount: false, // Не робити зайвих запитів при монтуванні якщо дані свіжі
   });
 }
 
@@ -18,16 +21,19 @@ export function useProjects(teamId?: number | string) {
     queryKey: ['projects', teamId || 'all'],
     queryFn: async () => {
       // Конвертуємо teamId до правильного типу
-      const normalizedTeamId = teamId === 'all' || !teamId 
-        ? 'all' 
-        : typeof teamId === 'string' 
-          ? parseInt(teamId, 10) 
+      const normalizedTeamId = teamId === 'all' || !teamId
+        ? 'all'
+        : typeof teamId === 'string'
+          ? parseInt(teamId, 10)
           : teamId;
       const result = await api.getProjects(normalizedTeamId);
       return result.projects || [];
     },
-    staleTime: 5 * 60 * 1000, // 5 хвилин
-    gcTime: 15 * 60 * 1000,
+    staleTime: 60 * 1000, // 1 хвилина
+    gcTime: 15 * 60 * 1000, // Зберігати в кеші 15 хвилин
+    refetchInterval: 60 * 1000, // Автоматично оновлювати кожну хвилину
+    refetchOnWindowFocus: true,
+    refetchOnMount: false,
   });
 }
 
@@ -52,7 +58,10 @@ export function useTasks(teamId?: number | string) {
       const response = await axios.get(url);
       return response.data.tasks || [];
     },
-    staleTime: 2 * 60 * 1000,
+    staleTime: 60 * 1000, // 1 хвилина
+    refetchInterval: 60 * 1000, // Автоматично оновлювати кожну хвилину
+    refetchOnWindowFocus: true,
+    refetchOnMount: false,
   });
 }
 
@@ -134,10 +143,10 @@ export function usePrefetch() {
         queryKey: ['projects', teamId || 'all'],
         queryFn: async () => {
           // Конвертуємо teamId до правильного типу
-          const normalizedTeamId = teamId === 'all' || !teamId 
-            ? 'all' 
-            : typeof teamId === 'string' 
-              ? parseInt(teamId, 10) 
+          const normalizedTeamId = teamId === 'all' || !teamId
+            ? 'all'
+            : typeof teamId === 'string'
+              ? parseInt(teamId, 10)
               : teamId;
           const result = await api.getProjects(normalizedTeamId);
           return result.projects || [];

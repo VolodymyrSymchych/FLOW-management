@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import axios from 'axios';
 import { Plus, BarChart3 } from 'lucide-react';
 import { useTeam } from '@/contexts/TeamContext';
+import { useProjects, useTasks } from '@/hooks/useQueries';
 import {
   GanttProvider,
   GanttSidebar,
@@ -66,9 +67,25 @@ type GanttType = 'tasks' | 'projects';
 
 export function GanttChartView({ projectId, readOnly = false }: GanttChartViewProps) {
   const { selectedTeam, isLoading: teamsLoading } = useTeam();
-  const [tasks, setTasks] = useState<TaskData[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
+
+  // Use React Query hooks for data fetching with team filtering
+  const teamId = selectedTeam.type === 'all' ? 'all' : selectedTeam.teamId;
+  const {
+    data: projectsData,
+    isLoading: projectsLoading,
+    refetch: refetchProjects
+  } = useProjects(teamId);
+  const {
+    data: tasksData,
+    isLoading: tasksLoading,
+    refetch: refetchTasks
+  } = useTasks(teamId);
+
+  // Convert to local state for compatibility
+  const projects = projectsData || [];
+  const tasks = tasksData || [];
+  const loading = projectsLoading || tasksLoading || teamsLoading;
+
   const [typeChanging, setTypeChanging] = useState(false); // For gantt type change loading
   const [viewChanging, setViewChanging] = useState(false); // For view range change loading
   const [showAddTaskModal, setShowAddTaskModal] = useState(false);
@@ -82,12 +99,13 @@ export function GanttChartView({ projectId, readOnly = false }: GanttChartViewPr
   const [ganttType, setGanttType] = useState<GanttType>('tasks');
   const [selectedProjectId, setSelectedProjectId] = useState<number | 'all'>('all');
 
+  // Refetch data when team changes
   useEffect(() => {
-    // Wait for teams to load before fetching data
     if (!teamsLoading) {
-      fetchData();
+      refetchProjects();
+      refetchTasks();
     }
-  }, [ganttType, selectedTeam, teamsLoading]);
+  }, [selectedTeam, teamsLoading, refetchProjects, refetchTasks]);
 
   // Function to change view range with loading
   const handleViewRangeChange = (newRange: ViewRange) => {
@@ -112,44 +130,10 @@ export function GanttChartView({ projectId, readOnly = false }: GanttChartViewPr
     setGanttType(newType);
 
     // Reload data when switching types
-    fetchData().finally(() => {
-      startTransition(() => {
-        setTypeChanging(false);
-      });
+    // No need to call fetchData directly, React Query will handle it
+    startTransition(() => {
+      setTypeChanging(false);
     });
-  };
-
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      // Use selected team from context
-      const teamId = selectedTeam.type === 'single' && selectedTeam.teamId
-        ? selectedTeam.teamId
-        : 'all';
-
-      console.log('GanttChartView: Fetching data for team:', teamId, 'Selected team:', selectedTeam);
-
-      // Fetch tasks and projects filtered by team
-      const [tasksResponse, projectsResponse] = await Promise.all([
-        axios.get(`/api/tasks${teamId !== 'all' ? `?team_id=${teamId}` : ''}`),
-        axios.get(`/api/projects${teamId !== 'all' ? `?team_id=${teamId}` : ''}`)
-      ]);
-
-      console.log('GanttChartView: Received tasks:', tasksResponse.data.tasks?.length || 0);
-      console.log('GanttChartView: Received projects:', projectsResponse.data.projects?.length || 0);
-
-      setTasks(tasksResponse.data.tasks || []);
-      setProjects(projectsResponse.data.projects || []);
-    } catch (error: any) {
-      console.error('Failed to load data:', error);
-      if (error.response?.status === 403) {
-        console.error('Access denied to team data. User may not be a team member.');
-      }
-      setTasks([]);
-      setProjects([]);
-    } finally {
-      setLoading(false);
-    }
   };
 
   // Transform tasks to GanttFeature format
@@ -207,7 +191,7 @@ export function GanttChartView({ projectId, readOnly = false }: GanttChartViewPr
         const startDate = (project as any).startDate || (project as any).start_date;
         const endDate = (project as any).endDate || (project as any).end_date;
         const status = (project as any).status || 'todo';
-        
+
         return {
           id: `project-${project.id}`,
           name: project.name,
@@ -256,7 +240,7 @@ export function GanttChartView({ projectId, readOnly = false }: GanttChartViewPr
           start_date: startAt.toISOString().split('T')[0],
           end_date: endAt.toISOString().split('T')[0],
         });
-        await fetchData();
+        await refetchProjects();
       } catch (error) {
         console.error('Failed to update project:', error);
       }
@@ -283,21 +267,9 @@ export function GanttChartView({ projectId, readOnly = false }: GanttChartViewPr
 
       console.log('✅ Task moved successfully');
 
-      // Optimistically update task
-      setTasks(prevTasks =>
-        prevTasks.map(t =>
-          t.id.toString() === id
-            ? {
-                ...t,
-                startDate: startAt.toISOString().split('T')[0],
-                dueDate: endAt.toISOString().split('T')[0],
-              }
-            : t
-        )
-      );
-
       // Refresh data to get updated subtasks and parent
-      await fetchData();
+      await refetchTasks();
+      await refetchProjects();
     } catch (error) {
       console.error('❌ Failed to update task:', error);
     }
@@ -317,7 +289,7 @@ export function GanttChartView({ projectId, readOnly = false }: GanttChartViewPr
           start_date: startAt.toISOString().split('T')[0],
           end_date: endAt.toISOString().split('T')[0],
         });
-        await fetchData();
+        await refetchProjects();
       } catch (error) {
         console.error('Failed to resize project:', error);
       }
@@ -334,20 +306,9 @@ export function GanttChartView({ projectId, readOnly = false }: GanttChartViewPr
 
       console.log('✅ Task resized successfully');
 
-      setTasks(prevTasks =>
-        prevTasks.map(task =>
-          task.id.toString() === id
-            ? {
-                ...task,
-                startDate: startAt.toISOString().split('T')[0],
-                dueDate: endAt.toISOString().split('T')[0],
-              }
-            : task
-        )
-      );
-
       // Refresh to get updated parent dates if this was a subtask
-      await fetchData();
+      await refetchTasks();
+      await refetchProjects();
     } catch (error) {
       console.error('Failed to resize task:', error);
     }
@@ -359,7 +320,8 @@ export function GanttChartView({ projectId, readOnly = false }: GanttChartViewPr
   };
 
   const handleTaskCreated = () => {
-    fetchData();
+    refetchTasks();
+    refetchProjects();
   };
 
   const handleViewTask = (id: string) => {
@@ -371,7 +333,7 @@ export function GanttChartView({ projectId, readOnly = false }: GanttChartViewPr
     if (taskId.startsWith('project-')) {
       return;
     }
-    
+
     // Find task by ID
     const task = tasks.find(t => t.id.toString() === taskId);
     if (task) {
@@ -412,7 +374,7 @@ export function GanttChartView({ projectId, readOnly = false }: GanttChartViewPr
             {ganttType === 'projects' ? 'No Projects Available' : 'No Tasks Available'}
           </h3>
           <p className="text-text-tertiary text-sm max-w-md mx-auto mb-6">
-            {ganttType === 'projects' 
+            {ganttType === 'projects'
               ? 'Add start and end dates to projects to visualize them on the Gantt chart.'
               : 'Add start and due dates to tasks to visualize them on the Gantt chart. The timeline helps you understand project schedules and track progress.'}
           </p>
@@ -432,11 +394,10 @@ export function GanttChartView({ projectId, readOnly = false }: GanttChartViewPr
               onClick={() => handleGanttTypeChange('tasks')}
               aria-label="View tasks only"
               aria-pressed={ganttType === 'tasks'}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
-                ganttType === 'tasks'
-                  ? 'bg-primary/30 text-white border border-primary/50'
-                  : 'text-white/60 hover:text-white/80 hover:bg-white/5'
-              }`}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${ganttType === 'tasks'
+                ? 'bg-primary/30 text-white border border-primary/50'
+                : 'text-white/60 hover:text-white/80 hover:bg-white/5'
+                }`}
             >
               Tasks
             </button>
@@ -444,16 +405,15 @@ export function GanttChartView({ projectId, readOnly = false }: GanttChartViewPr
               onClick={() => handleGanttTypeChange('projects')}
               aria-label="View projects only"
               aria-pressed={ganttType === 'projects'}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
-                ganttType === 'projects'
-                  ? 'bg-primary/30 text-white border border-primary/50'
-                  : 'text-white/60 hover:text-white/80 hover:bg-white/5'
-              }`}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${ganttType === 'projects'
+                ? 'bg-primary/30 text-white border border-primary/50'
+                : 'text-white/60 hover:text-white/80 hover:bg-white/5'
+                }`}
             >
               Projects
             </button>
           </div>
-          
+
           {/* Project Filter - only show when viewing tasks */}
           {ganttType === 'tasks' && (
             <select
@@ -483,11 +443,10 @@ export function GanttChartView({ projectId, readOnly = false }: GanttChartViewPr
             onClick={() => handleViewRangeChange('daily')}
             aria-label="View daily timeline"
             aria-pressed={viewRange === 'daily'}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
-              viewRange === 'daily'
-                ? 'bg-primary/30 text-white border border-primary/50'
-                : 'text-white/60 hover:text-white/80 hover:bg-white/5'
-            }`}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${viewRange === 'daily'
+              ? 'bg-primary/30 text-white border border-primary/50'
+              : 'text-white/60 hover:text-white/80 hover:bg-white/5'
+              }`}
           >
             Daily
           </button>
@@ -495,11 +454,10 @@ export function GanttChartView({ projectId, readOnly = false }: GanttChartViewPr
             onClick={() => handleViewRangeChange('weekly')}
             aria-label="View weekly timeline"
             aria-pressed={viewRange === 'weekly'}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
-              viewRange === 'weekly'
-                ? 'bg-primary/30 text-white border border-primary/50'
-                : 'text-white/60 hover:text-white/80 hover:bg-white/5'
-            }`}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${viewRange === 'weekly'
+              ? 'bg-primary/30 text-white border border-primary/50'
+              : 'text-white/60 hover:text-white/80 hover:bg-white/5'
+              }`}
           >
             Weekly
           </button>
@@ -507,11 +465,10 @@ export function GanttChartView({ projectId, readOnly = false }: GanttChartViewPr
             onClick={() => handleViewRangeChange('monthly')}
             aria-label="View monthly timeline"
             aria-pressed={viewRange === 'monthly'}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
-              viewRange === 'monthly'
-                ? 'bg-primary/30 text-white border border-primary/50'
-                : 'text-white/60 hover:text-white/80 hover:bg-white/5'
-            }`}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${viewRange === 'monthly'
+              ? 'bg-primary/30 text-white border border-primary/50'
+              : 'text-white/60 hover:text-white/80 hover:bg-white/5'
+              }`}
           >
             Monthly
           </button>
@@ -519,11 +476,10 @@ export function GanttChartView({ projectId, readOnly = false }: GanttChartViewPr
             onClick={() => handleViewRangeChange('quarterly')}
             aria-label="View quarterly timeline"
             aria-pressed={viewRange === 'quarterly'}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
-              viewRange === 'quarterly'
-                ? 'bg-primary/30 text-white border border-primary/50'
-                : 'text-white/60 hover:text-white/80 hover:bg-white/5'
-            }`}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${viewRange === 'quarterly'
+              ? 'bg-primary/30 text-white border border-primary/50'
+              : 'text-white/60 hover:text-white/80 hover:bg-white/5'
+              }`}
           >
             Quarterly
           </button>
@@ -531,11 +487,10 @@ export function GanttChartView({ projectId, readOnly = false }: GanttChartViewPr
             onClick={() => handleViewRangeChange('yearly')}
             aria-label="View yearly timeline"
             aria-pressed={viewRange === 'yearly'}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
-              viewRange === 'yearly'
-                ? 'bg-primary/30 text-white border border-primary/50'
-                : 'text-white/60 hover:text-white/80 hover:bg-white/5'
-            }`}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${viewRange === 'yearly'
+              ? 'bg-primary/30 text-white border border-primary/50'
+              : 'text-white/60 hover:text-white/80 hover:bg-white/5'
+              }`}
           >
             Yearly
           </button>
@@ -557,8 +512,8 @@ export function GanttChartView({ projectId, readOnly = false }: GanttChartViewPr
                   {loading
                     ? 'Loading Gantt Chart...'
                     : typeChanging
-                    ? (ganttType === 'projects' ? 'Loading Projects View...' : 'Loading Tasks View...')
-                    : `Loading ${viewRange.charAt(0).toUpperCase() + viewRange.slice(1)} View...`
+                      ? (ganttType === 'projects' ? 'Loading Projects View...' : 'Loading Tasks View...')
+                      : `Loading ${viewRange.charAt(0).toUpperCase() + viewRange.slice(1)} View...`
                   }
                 </div>
                 <div className="text-xs text-white/50 mt-1">
@@ -569,9 +524,8 @@ export function GanttChartView({ projectId, readOnly = false }: GanttChartViewPr
           </div>
         )}
         <div
-          className={`h-full min-h-0 min-w-0 max-w-full flex flex-col overflow-hidden transition-opacity duration-300 ${
-            (loading || typeChanging || viewChanging) ? 'opacity-0' : 'opacity-100'
-          }`}
+          className={`h-full min-h-0 min-w-0 max-w-full flex flex-col overflow-hidden transition-opacity duration-300 ${(loading || typeChanging || viewChanging) ? 'opacity-0' : 'opacity-100'
+            }`}
         >
           <GanttProvider
             features={displayFeatures}
@@ -692,7 +646,8 @@ export function GanttChartView({ projectId, readOnly = false }: GanttChartViewPr
         isOpen={!!editingTask}
         onClose={() => setEditingTask(null)}
         onSave={() => {
-          fetchData();
+          refetchTasks();
+          refetchProjects();
           setEditingTask(null);
         }}
       />

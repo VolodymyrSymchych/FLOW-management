@@ -7,8 +7,10 @@ import axios from 'axios';
 import { useTeam } from '@/contexts/TeamContext';
 import { cn } from '@/lib/utils';
 import { useLocale } from 'next-intl';
-import { useDelayedLoading } from '@/hooks/useDelayedLoading';
+import { useSmartDelayedLoading } from '@/hooks/useSmartDelayedLoading';
 import { TableSkeleton } from '@/components/skeletons';
+import { useProjects, useTasks } from '@/hooks/useQueries';
+import { useQueryClient } from '@tanstack/react-query';
 
 // Lazy load modals
 const EditTaskModal = dynamic(() => import('@/components/EditTaskModal').then(m => ({ default: m.EditTaskModal })), {
@@ -26,14 +28,33 @@ interface Project {
 
 export default function TasksPage() {
   const locale = useLocale();
+  const queryClient = useQueryClient();
   const { selectedTeam, isLoading: teamsLoading } = useTeam();
-  const [tasks, setTasks] = useState<any[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
+  
+  // React Query - паралельне завантаження проектів та завдань
+  const teamId = selectedTeam.type === 'all' ? 'all' : selectedTeam.teamId;
+  const { 
+    data: projects = [], 
+    isLoading: projectsLoading,
+    isFetching: projectsFetching 
+  } = useProjects(teamId);
+  const { 
+    data: tasks = [], 
+    isLoading: tasksLoading,
+    isFetching: tasksFetching 
+  } = useTasks(teamId);
+  
+  // isLoading = true тільки коли немає кешу (перше завантаження)
+  // isFetching = true коли йде рефетч (навіть якщо є кеш)
+  const isLoading = projectsLoading || tasksLoading;
+
+  // Є дані якщо вони вже завантажені (в кеші або отримані)
+  const hasData = projects !== undefined && tasks !== undefined;
+  
   const [showNewTaskForm, setShowNewTaskForm] = useState(false);
   
-  // Показувати індикатор завантаження тільки якщо завантаження триває > 200ms
-  const shouldShowLoading = useDelayedLoading(loading || teamsLoading, 200);
+  // Показувати skeleton тільки якщо немає даних і завантаження > 200ms
+  const shouldShowLoading = useSmartDelayedLoading(isLoading || teamsLoading, hasData, 200);
   const [editingTask, setEditingTask] = useState<any | null>(null);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [filterStatus, setFilterStatus] = useState<'all' | 'todo' | 'in_progress' | 'done'>('all');
@@ -52,56 +73,9 @@ export default function TasksPage() {
     status: 'todo' as 'todo' | 'in_progress' | 'done'
   });
 
-  useEffect(() => {
-    // Wait for teams to load before loading data
-    if (!teamsLoading) {
-      loadProjects();
-      loadTasks();
-    }
-  }, [selectedTeam, teamsLoading]); // Reload when team changes
+  // React Query автоматично завантажує дані паралельно при зміні teamId
 
-  const loadProjects = async () => {
-    try {
-      // Build query params for team filtering
-      const teamId = selectedTeam.type === 'single' && selectedTeam.teamId
-        ? selectedTeam.teamId
-        : 'all';
-      const url = teamId !== 'all'
-        ? `/api/projects?team_id=${teamId}`
-        : '/api/projects';
-
-      const response = await axios.get(url);
-      setProjects(response.data.projects || []);
-    } catch (error) {
-      console.error('Failed to load projects:', error);
-    }
-  };
-
-  const loadTasks = async () => {
-    try {
-      setLoading(true);
-      // Build query params for team filtering
-      const teamId = selectedTeam.type === 'single' && selectedTeam.teamId
-        ? selectedTeam.teamId
-        : 'all';
-      const url = teamId !== 'all'
-        ? `/api/tasks?team_id=${teamId}`
-        : '/api/tasks';
-
-      const response = await axios.get(url);
-      const tasksData = response.data?.tasks || [];
-      if (Array.isArray(tasksData)) {
-        setTasks(tasksData);
-      } else {
-        setTasks([]);
-      }
-    } catch (error: any) {
-      console.error('Failed to load tasks:', error);
-      setTasks([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Видалено - React Query автоматично завантажує tasks
 
   const createTask = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -126,7 +100,8 @@ export default function TasksPage() {
         status: 'todo'
       });
       setShowNewTaskForm(false);
-      loadTasks();
+      // Invalidate React Query кеш для оновлення списку
+      await queryClient.invalidateQueries({ queryKey: ['tasks', teamId] });
     } catch (error: any) {
       console.error('Failed to create task:', error);
       const errorMessage = error.response?.data?.error || error.message || 'Failed to create task. Please try again.';
@@ -137,7 +112,8 @@ export default function TasksPage() {
   const updateTaskStatus = async (taskId: number, status: 'todo' | 'in_progress' | 'done') => {
     try {
       await axios.put(`/api/tasks/${taskId}`, { status });
-      loadTasks();
+      // Invalidate React Query кеш
+      await queryClient.invalidateQueries({ queryKey: ['tasks', teamId] });
     } catch (error) {
       console.error('Failed to update task:', error);
     }
@@ -160,7 +136,8 @@ export default function TasksPage() {
     try {
       await axios.delete(`/api/tasks/${deleteModal.task.id}`);
       setDeleteModal({ isOpen: false, task: null });
-      loadTasks();
+      // Invalidate React Query кеш
+      await queryClient.invalidateQueries({ queryKey: ['tasks', teamId] });
     } catch (error: any) {
       console.error('Failed to delete task:', error);
       alert(error.response?.data?.error || 'Failed to delete task. Please try again.');
@@ -205,7 +182,7 @@ export default function TasksPage() {
 
   if (shouldShowLoading) {
     return (
-      <div className="space-y-6 p-6">
+      <div className="space-y-6 p-6" suppressHydrationWarning>
         <div className="flex items-center justify-between">
           <div className="space-y-2">
             <div className="h-8 w-48 bg-white/10 rounded animate-pulse" />
@@ -507,8 +484,9 @@ export default function TasksPage() {
         task={editingTask}
         isOpen={!!editingTask}
         onClose={() => setEditingTask(null)}
-        onSave={() => {
-          loadTasks();
+        onSave={async () => {
+          // Invalidate React Query кеш
+          await queryClient.invalidateQueries({ queryKey: ['tasks', teamId] });
           setEditingTask(null);
         }}
       />

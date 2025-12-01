@@ -37,7 +37,7 @@ function PaymentSuccessContent() {
           <CheckCircle className="w-12 h-12 text-white" />
         </motion.div>
 
-        <h1 className="text-4xl font-bold gradient-text mb-4">Payment Successful!</h1>
+        <h1 className="text-4xl font-bold text-text-primary mb-4">Payment Successful!</h1>
         <p className="text-text-secondary text-lg mb-8">
           Welcome to your new plan! Your subscription is now active.
         </p>

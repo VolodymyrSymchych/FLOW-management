@@ -113,7 +113,7 @@ export default function FriendsPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-4xl font-bold gradient-text mb-2">Friends</h1>
+            <h1 className="text-4xl font-bold text-text-primary mb-2">Friends</h1>
             <p className="text-text-secondary">Manage your connections and friend requests</p>
           </div>
           <button

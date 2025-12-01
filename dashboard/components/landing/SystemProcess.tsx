@@ -81,7 +81,7 @@ export function SystemProcess() {
                         <h2 className="text-4xl md:text-5xl font-bold text-white tracking-tight leading-[1.1] mb-6">
                             From Idea to Impact
                             <br />
-                            <span className="text-gradient">Without the Chaos</span>
+                            <span className="gradient-text">Without the Chaos</span>
                         </h2>
 
                         <p className="text-xl text-gray-400 leading-relaxed mb-12 max-w-lg">

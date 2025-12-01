@@ -40,7 +40,7 @@ export function SolutionSection() {
                     </div>
                     <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
                         Everything You Need to Ship <br />
-                        <span className="text-gradient">Without the Chaos</span>
+                        <span className="gradient-text">Without the Chaos</span>
                     </h2>
                 </div>
 

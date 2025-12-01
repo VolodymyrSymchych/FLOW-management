@@ -23,7 +23,7 @@ export function CardSkeleton() {
 // Скелетон для сітки карток
 export function CardGridSkeleton({ count = 6 }: { count?: number }) {
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3" suppressHydrationWarning>
       {Array.from({ length: count }).map((_, i) => (
         <CardSkeleton key={i} />
       ))}
@@ -34,7 +34,7 @@ export function CardGridSkeleton({ count = 6 }: { count?: number }) {
 // Скелетон для таблиці
 export function TableSkeleton({ rows = 5, columns = 5 }: { rows?: number; columns?: number }) {
   return (
-    <div className="glass-medium rounded-lg border border-white/10 overflow-hidden">
+    <div className="glass-medium rounded-lg border border-white/10 overflow-hidden" suppressHydrationWarning>
       {/* Header */}
       <div className="border-b border-white/10 p-4">
         <div className="flex gap-4">
@@ -165,7 +165,7 @@ export function StatCardSkeleton() {
 // Скелетон для сітки статистичних карток
 export function StatCardGridSkeleton({ count = 4 }: { count?: number }) {
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4" suppressHydrationWarning>
       {Array.from({ length: count }).map((_, i) => (
         <StatCardSkeleton key={i} />
       ))}

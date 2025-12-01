@@ -243,16 +243,19 @@
   
   .gradient-text {
     background: linear-gradient(
-      135deg, 
-      hsl(var(--primary)), 
-      hsl(var(--secondary)) 50%, 
+      135deg,
+      hsl(var(--primary)),
+      hsl(var(--secondary)) 50%,
       hsl(var(--primary))
     );
     background-size: 200% auto;
-    background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-fill-color: transparent;
+    color: transparent;
     animation: gradient 4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    display: inline-block;
   }
   
   .gradient-border {
@@ -610,12 +613,7 @@
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
-.text-gradient {
-  color: hsl(var(--primary));
-  background: none;
-  -webkit-text-fill-color: initial;
-  background-clip: border-box;
-}
+/* Removed .text-gradient - use .gradient-text instead for consistency */
 
 .landing-theme {
   --background: 30 12% 10%;

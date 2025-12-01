@@ -31,7 +31,7 @@ export function Hero({ user }: { user?: any }) {
 
 
                         <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-white mb-6 leading-[1.1]">
-                            Stop Losing Revenue to <span className="text-gradient">Scope Creep</span>
+                            Stop Losing Revenue to <span className="gradient-text">Scope Creep</span>
                         </h1>
 
                         <p className="text-xl text-gray-400 mb-8 leading-relaxed max-w-lg">

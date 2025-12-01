@@ -147,7 +147,7 @@ export default function DocumentationPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold gradient-text">Documentation</h1>
+          <h1 className="text-2xl font-bold text-text-primary">Documentation</h1>
           <p className="text-xs text-text-secondary mt-0.5">
             Create and manage rich text documentation
           </p>

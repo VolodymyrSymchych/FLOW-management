@@ -116,7 +116,7 @@ export default function PaymentPage() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-16">
-          <h1 className="text-5xl font-bold gradient-text mb-4">
+          <h1 className="text-5xl font-bold text-text-primary mb-4">
             Choose Your Plan
           </h1>
           <p className="text-xl text-text-secondary max-w-2xl mx-auto">

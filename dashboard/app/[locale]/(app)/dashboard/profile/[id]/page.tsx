@@ -134,7 +134,7 @@ export default function ProfilePage() {
 
             {/* Info */}
             <div className="flex-1">
-              <h1 className="text-3xl font-bold gradient-text mb-2">
+              <h1 className="text-3xl font-bold text-text-primary mb-2">
                 {profile.fullName || profile.username}
               </h1>
               <p className="text-text-secondary text-lg mb-4">@{profile.username}</p>
@@ -164,7 +164,7 @@ export default function ProfilePage() {
               <FolderOpen className="w-5 h-5 text-primary" />
               <span className="text-text-secondary">Projects</span>
             </div>
-            <div className="text-3xl font-bold gradient-text">-</div>
+            <div className="text-3xl font-bold text-text-primary">-</div>
           </div>
 
           <div className="glass-medium rounded-2xl p-6 border border-white/10 hover:glass-light transition-all">
@@ -172,7 +172,7 @@ export default function ProfilePage() {
               <Users className="w-5 h-5 text-primary" />
               <span className="text-text-secondary">Friends</span>
             </div>
-            <div className="text-3xl font-bold gradient-text">-</div>
+            <div className="text-3xl font-bold text-text-primary">-</div>
           </div>
 
           {/* Attendance Stats */}
@@ -183,7 +183,7 @@ export default function ProfilePage() {
                   <Clock className="w-5 h-5 text-[#00D66B]" />
                   <span className="text-text-secondary">Today</span>
                 </div>
-                <div className="text-3xl font-bold gradient-text">{attendance.todayHours}h</div>
+                <div className="text-3xl font-bold text-text-primary">{attendance.todayHours}h</div>
               </div>
 
               <div className="glass-medium rounded-2xl p-6 border border-white/10 hover:glass-light transition-all">
@@ -191,7 +191,7 @@ export default function ProfilePage() {
                   <TrendingUp className="w-5 h-5 text-purple-400" />
                   <span className="text-text-secondary">This Week</span>
                 </div>
-                <div className="text-3xl font-bold gradient-text">{attendance.weekHours}h</div>
+                <div className="text-3xl font-bold text-text-primary">{attendance.weekHours}h</div>
               </div>
             </>
           )}

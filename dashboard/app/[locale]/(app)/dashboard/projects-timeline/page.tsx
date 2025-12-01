@@ -126,9 +126,9 @@ export default function ProjectsTimelinePage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold gradient-text">
-            {selectedTeam.type === 'single' && selectedTeam.teamId 
-              ? 'Team Project Timeline' 
+          <h1 className="text-3xl font-bold text-text-primary">
+            {selectedTeam.type === 'single' && selectedTeam.teamId
+              ? 'Team Project Timeline'
               : 'Project Timeline'}
           </h1>
           <p className="text-text-secondary mt-1">

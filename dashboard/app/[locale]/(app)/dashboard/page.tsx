@@ -26,8 +26,9 @@ import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { Loader } from '@/components/Loader';
 import { useTeam } from '@/contexts/TeamContext';
-import { useDelayedLoading } from '@/hooks/useDelayedLoading';
+import { useSmartDelayedLoading } from '@/hooks/useSmartDelayedLoading';
 import { StatCardGridSkeleton, CardGridSkeleton } from '@/components/skeletons';
+import { useStats, useProjects } from '@/hooks/useQueries';
 
 // Lazy load heavy components
 const CalendarView = dynamic(() => import('@/components/CalendarView').then(m => ({ default: m.CalendarView })), {
@@ -492,18 +493,29 @@ const DashboardWidgetContainer = memo(function DashboardWidgetContainer({
 export default function DashboardPage() {
   const router = useRouter();
   const { selectedTeam, isLoading: teamsLoading } = useTeam();
-  const [stats, setStats] = useState<Stats>({
-    projects_in_progress: 0,
-    total_projects: 0,
-    completion_rate: 0,
-    projects_completed: 0,
-  });
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
+  
+  // React Query - автоматичне кешування та паралельне завантаження
+  const teamId = selectedTeam.type === 'all' ? 'all' : selectedTeam.teamId;
+  const { 
+    data: stats, 
+    isLoading: statsLoading,
+    isFetching: statsFetching 
+  } = useStats();
+  const { 
+    data: projects, 
+    isLoading: projectsLoading,
+    isFetching: projectsFetching 
+  } = useProjects(teamId);
+  
+  const isLoading = statsLoading || projectsLoading;
+
+  // Є дані якщо вони вже завантажені (в кеші або отримані)
+  const hasData = stats !== undefined && projects !== undefined;
+  
   const [refreshKey, setRefreshKey] = useState(0);
   
-  // Показувати індикатор завантаження тільки якщо завантаження триває > 300ms
-  const shouldShowLoading = useDelayedLoading(loading || teamsLoading, 300);
+  // Показувати skeleton тільки якщо немає даних і завантаження > 300ms
+  const shouldShowLoading = useSmartDelayedLoading(isLoading || teamsLoading, hasData, 300);
   const [activeTask, setActiveTask] = useState<any>(null);
   const [selectedWidgets, setSelectedWidgets] = useState<string[]>(DEFAULT_WIDGETS);
   const [widgetSizes, setWidgetSizes] = useState<
@@ -581,17 +593,7 @@ export default function DashboardPage() {
     setGridPatternSize(pattern);
   }, []);
 
-  useEffect(() => {
-    // Wait for teams to load before loading data
-    if (!teamsLoading) {
-      // Reset loading state when team changes to show loading indicator
-      setLoading(true);
-      loadData();
-    } else {
-      // If teams are loading, ensure loading state is true
-      setLoading(true);
-    }
-  }, [selectedTeam, teamsLoading]); // Reload when team changes
+  // React Query автоматично перезавантажує дані при зміні teamId
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -640,32 +642,7 @@ export default function DashboardPage() {
     setHasUnsavedChanges(true);
   }, [selectedWidgets, widgetSizes, gridColumns]);
 
-  const loadData = async () => {
-    // Don't load if teams are still loading
-    if (teamsLoading) {
-      return;
-    }
-    
-    setLoading(true);
-    try {
-      // Build query params for team filtering
-      const teamParam = selectedTeam.type === 'all'
-        ? 'all'
-        : selectedTeam.teamId?.toString() || '';
-
-      const [statsData, projectsData] = await Promise.all([
-        api.getStats(),
-        fetch(`/api/projects${teamParam ? `?team_id=${teamParam}` : ''}`).then(r => r.json())
-      ]);
-
-      setStats(statsData);
-      setProjects(projectsData.projects || []);
-    } catch (error) {
-      console.error('Failed to load data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // loadData вже не потрібен - React Query робить це автоматично
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
     const { active } = event;
@@ -869,7 +846,7 @@ export default function DashboardPage() {
   // Show skeleton loading state
   if (shouldShowLoading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6" suppressHydrationWarning>
         <div className="flex items-center justify-between">
           <div className="space-y-2">
             <div className="h-8 w-64 bg-white/10 rounded animate-pulse" />
@@ -1036,8 +1013,13 @@ export default function DashboardPage() {
                         onRemove={handleToggleWidget}
                       >
                         {widget.render({
-                          stats,
-                          projects,
+                          stats: stats || {
+                            projects_in_progress: 0,
+                            total_projects: 0,
+                            completion_rate: 0,
+                            projects_completed: 0,
+                          },
+                          projects: projects || [],
                           refreshKey,
                           setRefreshKey,
                           router,

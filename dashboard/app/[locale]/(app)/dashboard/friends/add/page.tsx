@@ -64,7 +64,7 @@ export default function AddFriendsPage() {
             <ArrowLeft className="w-5 h-5 text-text-primary" />
           </button>
           <div>
-            <h1 className="text-3xl font-bold gradient-text">Add Friends</h1>
+            <h1 className="text-3xl font-bold text-text-primary">Add Friends</h1>
             <p className="text-text-secondary mt-1">
               Search for users to connect with
             </p>

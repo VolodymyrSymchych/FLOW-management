@@ -15,6 +15,7 @@ import { getMessages, setRequestLocale } from 'next-intl/server';
 import { UserProvider } from '@/hooks/useUser';
 import { getSession } from '@/lib/auth';
 import { getCachedUser } from '@/lib/user-cache';
+import { QueryProvider } from '@/providers/QueryProvider';
 
 import Script from 'next/script';
 
@@ -65,8 +66,9 @@ export default async function RootLayout({
       <body className={`${inter.variable} ${poppins.variable} ${spaceGrotesk.variable} font-sans glass-theme bg-background text-text-primary`}>
         <NextIntlClientProvider messages={messages}>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-            <UserProvider initialUser={preloadedUser}>
-              <TeamProvider>
+            <QueryProvider>
+              <UserProvider initialUser={preloadedUser}>
+                <TeamProvider>
               {/* Skip to main content link for accessibility */}
               <a
                 href="#main-content"
@@ -81,8 +83,9 @@ export default async function RootLayout({
               <ConditionalLayout>
                 {children}
               </ConditionalLayout>
-            </TeamProvider>
-            </UserProvider>
+                </TeamProvider>
+              </UserProvider>
+            </QueryProvider>
             <Toaster
               position="top-right"
               toastOptions={{

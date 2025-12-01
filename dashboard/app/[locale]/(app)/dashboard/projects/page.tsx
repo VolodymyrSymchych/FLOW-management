@@ -10,20 +10,33 @@ import { Loader } from '@/components/Loader';
 import axios from 'axios';
 import { DeleteConfirmModal } from '@/components/DeleteConfirmModal';
 import { useTeam } from '@/contexts/TeamContext';
-import { useDelayedLoading } from '@/hooks/useDelayedLoading';
+import { useSmartDelayedLoading } from '@/hooks/useSmartDelayedLoading';
 import { CardGridSkeleton } from '@/components/skeletons';
+import { useProjects } from '@/hooks/useQueries';
+import { useQueryClient } from '@tanstack/react-query';
 
 type FilterType = 'all' | 'status' | 'risk_level' | 'type' | 'industry';
 
 export default function ProjectsPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { selectedTeam, isLoading: teamsLoading } = useTeam();
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
+  
+  // React Query - автоматичне кешування
+  const teamId = selectedTeam.type === 'all' ? 'all' : selectedTeam.teamId;
+  const {
+    data: projects = [],
+    isLoading,
+    isFetching
+  } = useProjects(teamId);
+
+  // Є дані якщо вони вже завантажені (в кеші або отримані)
+  const hasData = projects !== undefined && projects.length >= 0;
+  
   const [searchQuery, setSearchQuery] = useState('');
   
-  // Показувати індикатор завантаження тільки якщо завантаження триває > 250ms
-  const shouldShowLoading = useDelayedLoading(loading || teamsLoading, 250);
+  // Показувати skeleton тільки якщо немає даних і завантаження > 250ms
+  const shouldShowLoading = useSmartDelayedLoading(isLoading || teamsLoading, hasData, 250);
   const [showFilters, setShowFilters] = useState(false);
   const [filterType, setFilterType] = useState<FilterType>('all');
   const [filterValue, setFilterValue] = useState<string>('all');
@@ -32,28 +45,7 @@ export default function ProjectsPage() {
     project: null,
   });
 
-  useEffect(() => {
-    // Wait for teams to load before loading projects
-    if (!teamsLoading) {
-      loadProjects();
-    }
-  }, [selectedTeam, teamsLoading]);
-
-  const loadProjects = async () => {
-    try {
-      setLoading(true);
-      // Use selected team from context
-      const teamId = selectedTeam.type === 'single' && selectedTeam.teamId 
-        ? selectedTeam.teamId 
-        : 'all';
-      const data = await api.getProjects(teamId);
-      setProjects(data.projects);
-    } catch (error) {
-      console.error('Failed to load projects:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // React Query автоматично перезавантажує при зміні teamId
 
   const deleteProject = async (projectId: number, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent navigation
@@ -69,7 +61,10 @@ export default function ProjectsPage() {
     try {
       await axios.delete(`/api/projects/${deleteModal.project.id}`);
       setDeleteModal({ isOpen: false, project: null });
-      loadProjects();
+      
+      // Invalidate та рефетч проектів з React Query
+      await queryClient.invalidateQueries({ queryKey: ['projects'] });
+      await queryClient.invalidateQueries({ queryKey: ['stats'] }); // Оновити статистику теж
     } catch (error: any) {
       console.error('Failed to delete project:', error);
       alert(error.response?.data?.error || 'Failed to delete project. Please try again.');
@@ -115,9 +110,9 @@ export default function ProjectsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold gradient-text">
-            {selectedTeam.type === 'single' && selectedTeam.teamId 
-              ? 'Team Projects' 
+          <h1 className="text-xl font-bold text-text-primary">
+            {selectedTeam.type === 'single' && selectedTeam.teamId
+              ? 'Team Projects'
               : 'All Projects'}
           </h1>
           <p className="text-sm text-text-secondary mt-0.5">

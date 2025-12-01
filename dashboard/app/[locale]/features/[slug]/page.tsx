@@ -93,5 +93,5 @@ export default async function FeaturePage({ params }: { params: { slug: string }
         notFound();
     }
 
-    return <FeatureView feature={feature} session={session} />;
+    return <FeatureView feature={feature} session={session} slug={slug} />;
 }

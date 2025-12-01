@@ -52,31 +52,43 @@ export function SolutionSection() {
 
                 <div className="grid md:grid-cols-2 gap-8">
                     {features.map((feature, index) => (
-                        <motion.div
-                            key={index}
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            whileInView={{ opacity: 1, scale: 1 }}
-                            viewport={{ once: true }}
-                            transition={{ delay: index * 0.1 }}
-                            className="glass-card group relative overflow-hidden rounded-3xl p-8 border border-white/10 hover:border-white/20 transition-all"
-                        >
-                            <div className={`absolute top-0 right-0 w-64 h-64 bg-gradient-to-br ${feature.color} opacity-[0.08] blur-[80px] group-hover:opacity-[0.15] transition-opacity`} />
+                        <Link key={index} href={`/features/${feature.slug}`} className="block">
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                whileInView={{ opacity: 1, scale: 1 }}
+                                whileHover={{ scale: 1.02, y: -5 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: index * 0.1, duration: 0.3 }}
+                                className="glass-card group relative h-full overflow-hidden rounded-3xl p-8 border border-white/10 hover:border-white/20 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all cursor-pointer"
+                            >
+                                <div className={`absolute top-0 right-0 w-64 h-64 bg-gradient-to-br ${feature.color} opacity-[0.08] blur-[80px] group-hover:opacity-[0.15] transition-opacity duration-500`} />
 
-                            <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${feature.color} p-[1px] mb-6`}>
-                                <div className="w-full h-full rounded-2xl bg-black/50 backdrop-blur-sm flex items-center justify-center">
-                                    <feature.icon className="w-7 h-7 text-white" />
+                                <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${feature.color} p-[1px] mb-6 group-hover:scale-110 transition-transform duration-300`}>
+                                    <div className="w-full h-full rounded-2xl bg-black/50 backdrop-blur-sm flex items-center justify-center">
+                                        <feature.icon className="w-7 h-7 text-white" />
+                                    </div>
                                 </div>
-                            </div>
 
-                            <h3 className="text-2xl font-bold text-white mb-3">{feature.title}</h3>
-                            <p className="text-gray-400 leading-relaxed mb-6">
-                                {feature.description}
-                            </p>
+                                <h3 className="text-2xl font-bold text-white mb-3 group-hover:text-indigo-300 transition-colors">{feature.title}</h3>
+                                <p className="text-gray-400 leading-relaxed mb-6">
+                                    {feature.description}
+                                </p>
 
-                            <Link href={`/features/${feature.slug}`} className="flex items-center text-sm font-medium text-white/60 group-hover:text-white transition-colors cursor-pointer w-fit">
-                                Learn more <Check className="w-4 h-4 ml-2" />
-                            </Link>
-                        </motion.div>
+                                <div className="flex items-center text-sm font-medium text-white/60 group-hover:text-white transition-colors w-fit">
+                                    Learn more
+                                    <motion.div
+                                        animate={{ x: [0, 5, 0] }}
+                                        transition={{
+                                            duration: 1.5,
+                                            repeat: Infinity,
+                                            ease: "easeInOut"
+                                        }}
+                                    >
+                                        <Check className="w-4 h-4 ml-2" />
+                                    </motion.div>
+                                </div>
+                            </motion.div>
+                        </Link>
                     ))}
                 </div>
             </div>

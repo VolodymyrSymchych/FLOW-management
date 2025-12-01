@@ -1,25 +1,90 @@
-import * as React from "react"
+'use client';
 
-import { cn } from "@/lib/utils"
+import { forwardRef, useId } from 'react';
+import { cn } from '@/lib/utils';
+import { AlertCircle, Info } from 'lucide-react';
 
-export interface TextareaProps
-  extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {}
+export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+  label?: string;
+  error?: string;
+  helperText?: string;
+  fullWidth?: boolean;
+}
 
-const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
-  ({ className, ...props }, ref) => {
+export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
+  (
+    {
+      className,
+      label,
+      error,
+      helperText,
+      fullWidth = false,
+      required,
+      disabled,
+      id: providedId,
+      ...props
+    },
+    ref
+  ) => {
+    const generatedId = useId();
+    const id = providedId || generatedId;
+    const errorId = `${id}-error`;
+    const helperId = `${id}-helper`;
+
+    const hasError = Boolean(error);
+    const hasHelper = Boolean(helperText);
+
     return (
-      <textarea
-        className={cn(
-          "flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-          className
+      <div className={cn('space-y-2', fullWidth && 'w-full')}>
+        {label && (
+          <label
+            htmlFor={id}
+            className="block text-sm font-medium text-text-primary"
+          >
+            {label}
+            {required && <span className="text-danger ml-1" aria-label="required">*</span>}
+          </label>
         )}
-        ref={ref}
-        {...props}
-      />
-    )
+
+        <textarea
+          ref={ref}
+          id={id}
+          className={cn(
+            'glass-input w-full px-4 py-3 rounded-xl text-text-primary placeholder:text-text-tertiary resize-none',
+            'transition-all duration-200',
+            'disabled:opacity-50 disabled:cursor-not-allowed',
+            hasError && 'border-danger focus:border-danger focus:ring-danger',
+            className
+          )}
+          aria-invalid={hasError}
+          aria-describedby={
+            hasError ? errorId : hasHelper ? helperId : undefined
+          }
+          disabled={disabled}
+          required={required}
+          {...props}
+        />
+
+        {hasHelper && !hasError && (
+          <div className="flex items-start gap-1.5">
+            <Info className="w-4 h-4 text-text-tertiary flex-shrink-0 mt-0.5" aria-hidden="true" />
+            <p id={helperId} className="text-xs text-text-tertiary">
+              {helperText}
+            </p>
+          </div>
+        )}
+
+        {hasError && (
+          <div className="flex items-start gap-1.5">
+            <AlertCircle className="w-4 h-4 text-danger flex-shrink-0 mt-0.5" aria-hidden="true" />
+            <p id={errorId} role="alert" className="text-xs text-danger">
+              {error}
+            </p>
+          </div>
+        )}
+      </div>
+    );
   }
-)
-Textarea.displayName = "Textarea"
+);
 
-export { Textarea }
-
+Textarea.displayName = 'Textarea';

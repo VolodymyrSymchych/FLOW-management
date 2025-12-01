@@ -22,6 +22,9 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
   // Match both root and locale-specific root pages (/, /en, /uk)
   const isLandingPage = pathname === '/' || pathname === '/en' || pathname === '/uk';
 
+  // Feature pages should not have sidebar and header
+  const isFeaturePage = pathname?.includes('/features/');
+
   // Public invoice pages should not have sidebar and header
   const isPublicInvoicePage = pathname?.includes('/invoices/public/');
 
@@ -29,7 +32,7 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
   const fullScreenPages = ['/timeline'];
   const isFullScreenPage = fullScreenPages.includes(pathname);
 
-  if (isAuthPage || isPublicInvoicePage || isLandingPage) {
+  if (isAuthPage || isPublicInvoicePage || isLandingPage || isFeaturePage) {
     // Render without sidebar and header for auth pages, landing page, and public invoice pages
     return <ErrorBoundary>{children}</ErrorBoundary>;
   }
@@ -65,10 +68,10 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
           <Sidebar />
           <MainContent>
             <Header />
-            <div 
-              id="main-content" 
-              className={`${isNoPaddingPage ? '' : 'p-8'} h-full flex flex-col overflow-y-auto min-h-0`} 
-              role="main" 
+            <div
+              id="main-content"
+              className={`${isNoPaddingPage ? '' : 'p-8'} h-full flex flex-col overflow-y-auto min-h-0`}
+              role="main"
               aria-label="Main content"
             >
               {children}

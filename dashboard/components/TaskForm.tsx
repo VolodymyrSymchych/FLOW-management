@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Input, Textarea } from '@/components/ui/input';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { useProjects } from '@/hooks/useProjects';
 import { formatDateForInput } from '@/lib/utils';
 import { Task, Project } from '@/types';
@@ -59,10 +60,10 @@ export function TaskForm({
   // Load team members if project is selected
   useEffect(() => {
     const loadTeamMembers = async () => {
-      const selectedProjectId = formData.project_id 
+      const selectedProjectId = formData.project_id
         ? (typeof formData.project_id === 'string' ? parseInt(formData.project_id) : formData.project_id)
         : null;
-      
+
       if (!selectedProjectId) {
         setTeamMembers([]);
         return;

@@ -3,28 +3,34 @@
 import { motion } from "framer-motion";
 import { Brain, FileText, PieChart, Layers, Check } from "lucide-react";
 
+import Link from "next/link";
+
 const features = [
     {
         icon: Brain,
         title: "AI Scope Analysis",
+        slug: "ai-scope-analysis",
         description: "Automatically analyzes requirements against deliverables to detect scope creep before it impacts your budget.",
         color: "from-indigo-500 to-blue-500"
     },
     {
         icon: FileText,
         title: "Smart Invoicing",
+        slug: "smart-invoicing",
         description: "Turn tracked time and approved milestones into professional invoices with one click.",
         color: "from-purple-500 to-pink-500"
     },
     {
         icon: PieChart,
         title: "Advanced Analytics",
+        slug: "advanced-analytics",
         description: "Visualise team velocity, burn-down charts, and project health in real-time.",
         color: "from-emerald-500 to-teal-500"
     },
     {
         icon: Layers,
         title: "Unified Workspace",
+        slug: "unified-workspace",
         description: "Kanban, Gantt charts, and Documentation all living together in one seamless interface.",
         color: "from-orange-500 to-red-500"
     }
@@ -67,9 +73,9 @@ export function SolutionSection() {
                                 {feature.description}
                             </p>
 
-                            <div className="flex items-center text-sm font-medium text-white/60 group-hover:text-white transition-colors cursor-pointer">
+                            <Link href={`/features/${feature.slug}`} className="flex items-center text-sm font-medium text-white/60 group-hover:text-white transition-colors cursor-pointer w-fit">
                                 Learn more <Check className="w-4 h-4 ml-2" />
-                            </div>
+                            </Link>
                         </motion.div>
                     ))}
                 </div>

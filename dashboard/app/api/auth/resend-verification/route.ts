@@ -23,6 +23,8 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        // Verification email is sent asynchronously by notification-service via event bus
+
         return NextResponse.json({
             success: true,
             message: 'Verification email sent successfully',

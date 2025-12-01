@@ -60,6 +60,7 @@ export async function POST(request: NextRequest) {
       // Still return success, but session might not be set
     }
 
+    // Verification email is sent asynchronously by notification-service via event bus
     return NextResponse.json({
       success: true,
       user: result.user,

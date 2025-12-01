@@ -320,12 +320,30 @@ export interface AIReportGeneratedEvent {
   timestamp: Date;
 }
 
+export interface UserVerificationRequestedEvent {
+  type: 'user.verification_requested';
+  email: string;
+  name: string;
+  token: string;
+  timestamp: Date;
+}
+
+export interface UserVerificationResendEvent {
+  type: 'user.verification_resend';
+  email: string;
+  name: string;
+  token: string;
+  timestamp: Date;
+}
+
 // Union type for all events
 export type AppEvent =
   | UserRegisteredEvent
   | UserVerifiedEvent
   | UserLoggedInEvent
   | UserLoggedOutEvent
+  | UserVerificationRequestedEvent
+  | UserVerificationResendEvent
   | UserUpdatedEvent
   | UserDeletedEvent
   | FriendshipCreatedEvent

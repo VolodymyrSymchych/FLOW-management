@@ -33,6 +33,9 @@ export const config = {
   metrics: {
     port: parseInt(process.env.METRICS_PORT || '9095', 10),
   },
+  eventBus: {
+    type: (process.env.EVENT_BUS_TYPE || 'redis') as 'redis' | 'memory',
+  },
 };
 
 // Validate required configuration

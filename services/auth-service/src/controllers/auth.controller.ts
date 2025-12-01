@@ -56,6 +56,16 @@ export class AuthController {
       });
 
       const verificationToken = await authService.createEmailVerification(user.id, user.email);
+
+      // Publish verification requested event
+      // @ts-ignore - Event type mismatch due to shared lib version
+      publishEvent({
+        type: 'user.verification_requested',
+        email: user.email,
+        name: user.fullName || user.username,
+        token: verificationToken,
+        timestamp: new Date(),
+      });
       await emailService.sendVerificationEmail(user.email, verificationToken, user.fullName || user.username);
 
       const token = await jwtService.createToken({
@@ -84,7 +94,7 @@ export class AuthController {
           emailVerified: user.emailVerified,
         },
         token,
-        verificationToken,
+        // verificationToken, // Don't return verification token to client
       });
     } catch (error) {
       next(error);
@@ -221,6 +231,43 @@ export class AuthController {
           emailVerified: user.emailVerified,
         },
       });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async resendVerificationEmail(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { email } = req.body;
+      if (!email) {
+        throw new ValidationError('Email is required');
+      }
+
+      const user = await authService.getUserByEmail(email);
+      if (!user) {
+        // Don't reveal if user exists
+        res.json({ success: true, message: 'If the email exists, a verification link has been sent.' });
+        return;
+      }
+
+      if (user.emailVerified) {
+        res.json({ success: true, message: 'Email already verified' });
+        return;
+      }
+
+      const verificationToken = await authService.createEmailVerification(user.id, user.email);
+
+      // Publish verification resend event
+      // @ts-ignore - Event type mismatch due to shared lib version
+      publishEvent({
+        type: 'user.verification_resend',
+        email: user.email,
+        name: user.fullName || user.username,
+        token: verificationToken,
+        timestamp: new Date(),
+      });
+
+      res.json({ success: true, message: 'Verification email sent successfully' });
     } catch (error) {
       next(error);
     }

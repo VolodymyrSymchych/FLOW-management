@@ -38,6 +38,18 @@ router.post(
   authController.resendVerificationEmail.bind(authController)
 );
 
+router.post(
+  '/forgot-password',
+  verifyEmailRateLimit, // Reuse same limit (5 per hour)
+  authController.forgotPassword.bind(authController)
+);
+
+router.post(
+  '/reset-password',
+  verifyEmailRateLimit, // Reuse same limit
+  authController.resetPassword.bind(authController)
+);
+
 router.get('/me', authMiddleware, authController.me.bind(authController));
 router.patch('/locale', authMiddleware, authController.updateLocale.bind(authController));
 

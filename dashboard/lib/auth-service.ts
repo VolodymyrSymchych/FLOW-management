@@ -95,7 +95,7 @@ export const authService = {
 
         return {
           success: false,
-          error: errorData.error || errorData.message || `Signup failed: ${response.status}`,
+          error: extractErrorMessage(errorData, response.status),
         };
       }
 
@@ -137,7 +137,7 @@ export const authService = {
 
         return {
           success: false,
-          error: errorData.error || errorData.message || `Login failed: ${response.status}`,
+          error: extractErrorMessage(errorData, response.status),
         };
       }
 
@@ -185,7 +185,7 @@ export const authService = {
 
         return {
           success: false,
-          error: errorData.error || errorData.message || `Logout failed: ${response.status}`,
+          error: extractErrorMessage(errorData, response.status),
         };
       }
 
@@ -229,7 +229,7 @@ export const authService = {
 
         return {
           success: false,
-          error: errorData.error || errorData.message || `Failed to get user: ${response.status}`,
+          error: extractErrorMessage(errorData, response.status),
         };
       }
 
@@ -261,7 +261,7 @@ export const authService = {
 
         return {
           success: false,
-          error: errorData.error || errorData.message || `Email verification failed: ${response.status}`,
+          error: extractErrorMessage(errorData, response.status),
         };
       }
 
@@ -293,7 +293,7 @@ export const authService = {
 
         return {
           success: false,
-          error: errorData.error || errorData.message || `Resend verification failed: ${response.status}`,
+          error: extractErrorMessage(errorData, response.status),
         };
       }
 
@@ -306,4 +306,91 @@ export const authService = {
       };
     }
   },
+
+  async forgotPassword(email: string): Promise<AuthServiceResponse> {
+    try {
+      const response = await proxyToAuthService('/api/auth/forgot-password', {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { error: errorText || `HTTP ${response.status}` };
+        }
+
+        return {
+          success: false,
+          error: extractErrorMessage(errorData, response.status),
+        };
+      }
+
+      return response.json();
+    } catch (error: any) {
+      console.error('Auth service forgotPassword network error:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to connect to auth service',
+      };
+    }
+  },
+
+  async resetPassword(token: string, password: string): Promise<AuthServiceResponse> {
+    try {
+      const response = await proxyToAuthService('/api/auth/reset-password', {
+        method: 'POST',
+        body: JSON.stringify({ token, password }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { error: errorText || `HTTP ${response.status}` };
+        }
+
+        return {
+          success: false,
+          error: extractErrorMessage(errorData, response.status),
+        };
+      }
+
+      return response.json();
+    } catch (error: any) {
+      console.error('Auth service resetPassword network error:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to connect to auth service',
+      };
+    }
+  },
 };
+
+function extractErrorMessage(errorData: any, status: number): string {
+  if (typeof errorData === 'string') return errorData;
+
+  if (errorData?.error) {
+    if (typeof errorData.error === 'string') return errorData.error;
+    if (typeof errorData.error === 'object') {
+      const errObj = errorData.error;
+
+      // Handle validation errors
+      if (errObj.code === 'VALIDATION_ERROR' && errObj.details?.errors && Array.isArray(errObj.details.errors)) {
+        const firstError = errObj.details.errors[0];
+        if (firstError?.message) {
+          return firstError.message; // Return the first validation error message
+        }
+      }
+
+      if (errObj.message) return errObj.message;
+    }
+  }
+
+  return errorData?.message || `Request failed: ${status}`;
+}

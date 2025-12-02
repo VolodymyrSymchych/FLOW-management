@@ -336,6 +336,20 @@ export interface UserVerificationResendEvent {
   timestamp: Date;
 }
 
+export interface UserPasswordResetRequestedEvent {
+  type: 'user.password_reset_requested';
+  email: string;
+  name: string;
+  token: string;
+  timestamp: Date;
+}
+
+export interface UserPasswordChangedEvent {
+  type: 'user.password_changed';
+  userId: number;
+  timestamp: Date;
+}
+
 // Union type for all events
 export type AppEvent =
   | UserRegisteredEvent
@@ -344,6 +358,8 @@ export type AppEvent =
   | UserLoggedOutEvent
   | UserVerificationRequestedEvent
   | UserVerificationResendEvent
+  | UserPasswordResetRequestedEvent
+  | UserPasswordChangedEvent
   | UserUpdatedEvent
   | UserDeletedEvent
   | FriendshipCreatedEvent

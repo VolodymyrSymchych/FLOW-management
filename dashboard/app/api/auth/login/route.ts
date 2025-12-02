@@ -32,9 +32,15 @@ export async function POST(request: NextRequest) {
         hasToken: !!result.token,
         hasUser: !!result.user,
       });
-      
+
+      const errorMessage = typeof result.error === 'string'
+        ? result.error
+        : (typeof result.error === 'object' && (result.error as any)?.message)
+          ? (result.error as any).message
+          : JSON.stringify(result.error) || 'Failed to login';
+
       return NextResponse.json(
-        { error: result.error || 'Failed to login' },
+        { error: errorMessage },
         { status: 401 }
       );
     }
@@ -45,7 +51,7 @@ export async function POST(request: NextRequest) {
         hasUser: !!result.user,
         result: result,
       });
-      
+
       return NextResponse.json(
         { error: 'Invalid response from auth service' },
         { status: 500 }
@@ -56,11 +62,11 @@ export async function POST(request: NextRequest) {
     // Also create a local session token for compatibility
     try {
       const { payload } = await jwtVerify(result.token, JWT_SECRET);
-      
+
       // Store auth-service token in cookie (for API calls to auth-service)
       const cookieStore = await import('next/headers').then(m => m.cookies());
       const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1';
-      
+
       cookieStore.set('auth_token', result.token, {
         httpOnly: true,
         secure: isProduction,
@@ -68,7 +74,7 @@ export async function POST(request: NextRequest) {
         maxAge: 60 * 60, // 1 hour
         path: '/',
       });
-      
+
       // Create local session token for compatibility with existing code
       await createSession({
         userId: payload.userId as number,

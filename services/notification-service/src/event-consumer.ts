@@ -35,6 +35,18 @@ export async function startEventConsumer() {
             }
         });
 
+        // Subscribe to password reset requested event
+        // @ts-ignore - Event type mismatch due to shared lib version
+        await bus.subscribe('user.password_reset_requested', async (event: AppEvent) => {
+            // @ts-ignore
+            if (event.type === 'user.password_reset_requested') {
+                // @ts-ignore
+                const { email, name, token } = event;
+                logger.info('Processing password reset email', { email });
+                await emailService.sendPasswordResetEmail(email, name, token);
+            }
+        });
+
         logger.info('Event subscriptions set up successfully');
     } catch (error) {
         logger.error('Failed to start event consumer', { error });

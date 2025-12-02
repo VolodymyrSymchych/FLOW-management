@@ -8,7 +8,7 @@
     "build": "npm run build:shared && tsc",
     "build:shared": "npm --prefix ../../shared run build",
     "vercel-build": "npm run build",
-    "start": "node dist/index.js",
+    "start": "node dist/src/index.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "lint": "eslint src --ext .ts",

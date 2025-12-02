@@ -328,6 +328,74 @@ export class AuthController {
       next(error);
     }
   }
+
+  async forgotPassword(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { email } = req.body;
+      if (!email) {
+        throw new ValidationError('Email is required');
+      }
+
+      const user = await authService.getUserByEmail(email);
+      if (user) {
+        const redis = getRedisClient();
+        const token = await authService.createPasswordResetToken(user.email, redis);
+
+        // Publish password reset requested event
+        // @ts-ignore - Event type mismatch due to shared lib version
+        publishEvent({
+          type: 'user.password_reset_requested',
+          email: user.email,
+          name: user.fullName || user.username,
+          token,
+          timestamp: new Date(),
+        });
+      }
+
+      // Always return success to prevent email enumeration
+      res.json({
+        success: true,
+        message: 'If an account exists with this email, a password reset link has been sent.',
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async resetPassword(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { token, password } = req.body;
+
+      if (!token) {
+        throw new ValidationError('Token is required');
+      }
+
+      const passwordValidation = passwordSchema.safeParse(password);
+      if (!passwordValidation.success) {
+        throw new ValidationError('Invalid password', {
+          errors: passwordValidation.error.errors,
+        });
+      }
+
+      const redis = getRedisClient();
+      const user = await authService.resetPassword(token, password, redis);
+
+      // Publish password reset success event
+      // @ts-ignore - Event type mismatch due to shared lib version
+      publishEvent({
+        type: 'user.password_changed',
+        userId: user.id,
+        timestamp: new Date(),
+      });
+
+      res.json({
+        success: true,
+        message: 'Password has been reset successfully',
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export const authController = new AuthController();

@@ -119,6 +119,71 @@ export class EmailService {
       html,
     });
   }
+
+  async sendPasswordResetEmail(email: string, name: string, token: string): Promise<void> {
+    const resetUrl = `${process.env.APP_URL || 'http://localhost:3000'}/reset-password?token=${token}`;
+
+    const html = `
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Відновлення паролю</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f5;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="min-height: 100vh; padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
+          <tr>
+            <td style="padding: 40px; text-align: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+              <h1 style="margin: 0; color: white; font-size: 28px; font-weight: 700;">Flow Management</h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 40px;">
+              <h2 style="margin: 0 0 20px 0; color: #18181b; font-size: 24px; font-weight: 600;">Відновлення паролю 🔒</h2>
+              <p style="margin: 0 0 24px 0; color: #52525b; font-size: 16px; line-height: 1.6;">
+                Вітаємо, ${name}. Ми отримали запит на відновлення паролю для вашого облікового запису.
+              </p>
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center" style="padding: 20px 0;">
+                    <a href="${resetUrl}" style="display: inline-block; background-color: #7c3aed; color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-size: 16px; font-weight: 600; transition: background-color 0.2s;">
+                      Змінити пароль
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin: 24px 0 0 0; color: #71717a; font-size: 14px; line-height: 1.5;">
+                Якщо ви не робили цей запит, просто проігноруйте цей лист. Посилання дійсне протягом 1 години.<br>
+                Якщо кнопка не працює, скопіюйте це посилання:<br>
+                <a href="${resetUrl}" style="color: #7c3aed; word-break: break-all;">${resetUrl}</a>
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 24px; background-color: #fafafa; border-top: 1px solid #e4e4e7; text-align: center;">
+              <p style="margin: 0; color: #a1a1aa; font-size: 12px;">
+                © ${new Date().getFullYear()} Flow Management. Всі права захищені.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+    `;
+
+    await this.sendEmail({
+      to: email,
+      subject: 'Відновлення паролю - Flow Management',
+      html,
+    });
+  }
 }
 
 export const emailService = new EmailService();

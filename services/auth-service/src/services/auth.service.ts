@@ -190,6 +190,59 @@ export class AuthService {
       logger.error('Error clearing failed logins', { error, email });
     }
   }
+
+  async createPasswordResetToken(email: string, redis: RedisClient): Promise<string> {
+    if (!redis) {
+      throw new Error('Redis client is required for password reset');
+    }
+
+    const { nanoid } = await import('nanoid');
+    const token = nanoid(32);
+    const key = `password-reset:${token}`;
+
+    // Store email in Redis with 1 hour expiration
+    // Support both ioredis and Upstash wrapper
+    if ('setex' in redis && typeof redis.setex === 'function') {
+      // Use setex for compatibility (ioredis and RedisWrapper both support it)
+      await redis.setex(key, 3600, email.toLowerCase());
+    } else if ('set' in redis && typeof redis.set === 'function') {
+      // Fallback to set with options for ioredis if setex is missing (unlikely)
+      await (redis as IORedis).set(key, email.toLowerCase(), 'EX', 3600);
+    } else {
+      throw new Error('Redis client implementation not supported for password reset');
+    }
+
+    return token;
+  }
+
+  async resetPassword(token: string, newPassword: string, redis: RedisClient): Promise<User> {
+    if (!redis) {
+      throw new Error('Redis client is required for password reset');
+    }
+
+    const key = `password-reset:${token}`;
+    const email = await redis.get(key);
+
+    if (!email) {
+      throw new ValidationError('Invalid or expired password reset token');
+    }
+
+    const user = await this.getUserByEmail(email);
+    if (!user) {
+      throw new NotFoundError('User', email);
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await this.updateUser(user.id, {
+      password: hashedPassword,
+    });
+
+    // Delete the token so it can't be used again
+    await redis.del(key);
+
+    return user;
+  }
 }
 
 export const authService = new AuthService();

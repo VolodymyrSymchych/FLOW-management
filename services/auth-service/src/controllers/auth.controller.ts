@@ -350,6 +350,14 @@ export class AuthController {
           token,
           timestamp: new Date(),
         });
+
+        // Also send email directly as fallback (for Vercel where notification-service might not be running)
+        try {
+          await emailService.sendPasswordResetEmail(user.email, user.fullName || user.username, token);
+        } catch (emailError) {
+          logger.error('Failed to send password reset email directly', { emailError });
+          // Don't throw - event bus might still handle it
+        }
       }
 
       // Always return success to prevent email enumeration

@@ -15,7 +15,7 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
   const pathname = usePathname();
 
   // Pages that should not have sidebar and header
-  const authPages = ['/sign-in', '/sign-up', '/verify', '/forgot-password', '/login'];
+  const authPages = ['/sign-in', '/sign-up', '/verify', '/forgot-password', '/reset-password', '/login'];
   const isAuthPage = authPages.some(page => pathname?.endsWith(page));
 
   // Landing page should not have sidebar and header

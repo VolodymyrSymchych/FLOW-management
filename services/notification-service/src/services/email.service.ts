@@ -44,14 +44,25 @@ export class EmailService {
       });
 
       if (!response.ok) {
-        const errorData = await response.json() as { message?: string };
-        throw new Error(errorData.message || 'Failed to send email via Resend');
+        const errorData = await response.json() as { message?: string; name?: string };
+        const errorMessage = errorData.message || 'Failed to send email via Resend';
+        logger.error('Resend API error', {
+          status: response.status,
+          statusText: response.statusText,
+          errorData,
+          to
+        });
+        throw new Error(errorMessage);
       }
 
       const data = await response.json() as { id: string };
       logger.info('Email sent successfully', { id: data.id, to });
-    } catch (error) {
-      logger.error('Failed to send email', { error, to });
+    } catch (error: any) {
+      logger.error('Failed to send email', {
+        error: error.message || error,
+        errorStack: error.stack,
+        to
+      });
       throw error;
     }
   }

@@ -40,13 +40,11 @@ router.post(
 
 router.post(
   '/forgot-password',
-  verifyEmailRateLimit, // Reuse same limit (5 per hour)
   authController.forgotPassword.bind(authController)
 );
 
 router.post(
   '/reset-password',
-  verifyEmailRateLimit, // Reuse same limit
   authController.resetPassword.bind(authController)
 );
 

@@ -1,12 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
-import { storage } from '@/lib/storage';
-import { cachedWithValidation } from '@/lib/redis';
-import { CacheKeys } from '@/lib/cache-keys';
-import { invalidateOnUpdate } from '@/lib/cache-invalidation';
-import { db } from '@/server/db';
-import { teams, teamMembers } from '@/shared/schema';
-import { eq, desc, and } from 'drizzle-orm';
+import { teamService } from '@/lib/team-service';
 
 export async function GET() {
   try {
@@ -20,65 +14,16 @@ export async function GET() {
 
     console.log('[Teams API] Session found for user:', session.userId);
 
-    // Cache teams for 5 minutes with timestamp validation
-    const teamsData = await cachedWithValidation(
-      CacheKeys.teamsByUser(session.userId),
-      async () => {
-        console.log('[Teams API] Fetching teams from storage for user:', session.userId);
-        const result = await storage.getUserTeams(session.userId);
-        console.log('[Teams API] Found teams:', result.length);
-        return result;
-      },
-      {
-        ttl: 300, // 5 minutes
-        validate: true,
-        getUpdatedAt: async () => {
-          // Get the most recent team or team member update for this user
-          const timestamps: (Date | null)[] = [];
+    // Use team-service microservice
+    const result = await teamService.getTeams();
 
-          try {
-            // Get team IDs for this user
-            const userTeamMembers = await db
-              .select({ teamId: teamMembers.teamId })
-              .from(teamMembers)
-              .where(eq(teamMembers.userId, session.userId));
+    if (result.error) {
+      console.error('[Teams API] Team service error:', result.error);
+      return NextResponse.json({ error: result.error }, { status: 500 });
+    }
 
-            const teamIds = userTeamMembers.map(tm => tm.teamId);
-            if (teamIds.length === 0) return null;
-
-            // Most recent team update
-            const teamUpdate = await db
-              .select({ updatedAt: teams.updatedAt })
-              .from(teams)
-              .where(eq(teams.id, teamIds[0])) // Drizzle requires single value for eq
-              .orderBy(desc(teams.updatedAt))
-              .limit(1);
-            if (teamUpdate[0]?.updatedAt) {
-              timestamps.push(teamUpdate[0].updatedAt);
-            }
-
-            // Note: teamMembers table may not have updatedAt field
-            // We rely on teams.updatedAt for changes
-          } catch (error) {
-            console.warn('[Teams] Error getting timestamps:', error);
-          }
-
-          // Return the most recent timestamp
-          if (timestamps.length === 0) return null;
-
-          const mostRecent = timestamps.reduce((max, current) => {
-            if (!max) return current;
-            if (!current) return max;
-            return current > max ? current : max;
-          }, null as Date | null);
-
-          return mostRecent;
-        },
-      }
-    );
-
-    console.log('[Teams API] Returning teams:', teamsData.length);
-    return NextResponse.json({ teams: teamsData });
+    console.log('[Teams API] Found teams:', result.teams?.length || 0);
+    return NextResponse.json({ teams: result.teams || [] });
   } catch (error: any) {
     console.error('[Teams API] Error:', error);
     console.error('[Teams API] Error stack:', error?.stack);
@@ -117,22 +62,18 @@ export async function POST(request: Request) {
       );
     }
 
-    const team = await storage.createTeam({
+    // Use team-service microservice
+    const result = await teamService.createTeam({
       name,
-      description: description || null,
-      ownerId: session.userId,
+      description: description || undefined,
     });
 
-    await storage.addTeamMember({
-      teamId: team.id,
-      userId: session.userId,
-      role: 'owner',
-    });
+    if (result.error) {
+      console.error('Team service error:', result.error);
+      return NextResponse.json({ error: result.error }, { status: 500 });
+    }
 
-    // Invalidate caches after creating team
-    await invalidateOnUpdate('team', team.id, session.userId);
-
-    return NextResponse.json({ success: true, team });
+    return NextResponse.json({ success: true, team: result.team });
   } catch (error: any) {
     console.error('Create team error:', error);
     return NextResponse.json(

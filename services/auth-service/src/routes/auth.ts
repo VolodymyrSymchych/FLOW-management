@@ -23,6 +23,18 @@ router.post(
   authController.login.bind(authController)
 );
 
+router.post(
+  '/google',
+  loginRateLimit,
+  authController.google.bind(authController)
+);
+
+router.post(
+  '/microsoft',
+  loginRateLimit,
+  authController.microsoft.bind(authController)
+);
+
 router.post('/logout', authMiddleware, authController.logout.bind(authController));
 
 // Email verification: 5 attempts per hour per IP (prevents spam)

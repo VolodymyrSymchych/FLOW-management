@@ -4,6 +4,7 @@ import { authService } from '../services/auth.service';
 import { jwtService } from '../services/jwt.service';
 import { emailService } from '../services/email.service';
 import { ValidationError, UnauthorizedError, ForbiddenError, getRedisClient, AuthenticatedRequest } from '@project-scope-analyzer/shared';
+import { verifyGoogleToken, verifyMicrosoftToken } from '../utils/auth-providers';
 import { publishEvent } from '../event-bus';
 import { logger } from '@project-scope-analyzer/shared';
 
@@ -172,6 +173,100 @@ export class AuthController {
         },
         token,
       });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async google(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { token } = req.body;
+      if (!token) throw new ValidationError('Token is required');
+
+      const googleUser = await verifyGoogleToken(token);
+
+      const user = await authService.findOrCreateOAuthUser({
+        email: googleUser.email,
+        name: googleUser.name,
+        provider: 'google',
+        providerId: googleUser.sub
+      });
+
+      if (!user.isActive) throw new ForbiddenError('Account is disabled');
+
+      const jwtToken = await jwtService.createToken({
+        userId: user.id,
+        email: user.email,
+        username: user.username,
+        role: user.role,
+      });
+
+      publishEvent({
+        type: 'user.logged_in',
+        userId: user.id,
+        timestamp: new Date(),
+        provider: 'google'
+      });
+
+      res.json({
+        success: true,
+        user: {
+          id: user.id,
+          email: user.email,
+          username: user.username,
+          fullName: user.fullName,
+          emailVerified: user.emailVerified,
+        },
+        token: jwtToken,
+      });
+
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async microsoft(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { token } = req.body;
+      if (!token) throw new ValidationError('Token is required');
+
+      const microsoftUser = await verifyMicrosoftToken(token);
+
+      const user = await authService.findOrCreateOAuthUser({
+        email: microsoftUser.userPrincipalName,
+        name: microsoftUser.displayName,
+        provider: 'microsoft',
+        providerId: microsoftUser.id
+      });
+
+      if (!user.isActive) throw new ForbiddenError('Account is disabled');
+
+      const jwtToken = await jwtService.createToken({
+        userId: user.id,
+        email: user.email,
+        username: user.username,
+        role: user.role,
+      });
+
+      publishEvent({
+        type: 'user.logged_in',
+        userId: user.id,
+        timestamp: new Date(),
+        provider: 'microsoft'
+      });
+
+      res.json({
+        success: true,
+        user: {
+          id: user.id,
+          email: user.email,
+          username: user.username,
+          fullName: user.fullName,
+          emailVerified: user.emailVerified,
+        },
+        token: jwtToken,
+      });
+
     } catch (error) {
       next(error);
     }

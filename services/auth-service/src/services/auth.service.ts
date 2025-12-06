@@ -243,6 +243,74 @@ export class AuthService {
 
     return user;
   }
+
+  async findOrCreateOAuthUser(profile: {
+    email: string;
+    name?: string;
+    provider: string;
+    providerId: string;
+  }): Promise<User> {
+    // 1. Try to find by provider + providerId
+    const existingUser = await this.getUserByProvider(profile.provider, profile.providerId);
+    if (existingUser) return existingUser;
+
+    // 2. Try to find by email
+    const userByEmail = await this.getUserByEmail(profile.email);
+    if (userByEmail) {
+      // If user exists, we link the provider information if it's missing
+      if (!userByEmail.providerId) {
+        const [updatedUser] = await db
+          .update(users)
+          .set({
+            provider: profile.provider,
+            providerId: profile.providerId,
+            emailVerified: true, // OAuth implies verified email
+            updatedAt: new Date(),
+          })
+          .where(eq(users.id, userByEmail.id))
+          .returning();
+
+        return updatedUser || userByEmail;
+      }
+      return userByEmail;
+    }
+
+    // 3. Create new user
+    const { nanoid } = await import('nanoid');
+    // Generate base username from name or email
+    let baseUsername = profile.name
+      ? profile.name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()
+      : profile.email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+
+    if (baseUsername.length < 3) {
+      baseUsername = `user${nanoid(4)}`;
+    }
+
+    let username = baseUsername;
+
+    // Ensure username uniqueness
+    let counter = 0;
+    while (await this.getUserByUsername(username)) {
+      counter++;
+      username = `${baseUsername}${counter}`;
+    }
+
+    const [newUser] = await db.insert(users).values({
+      email: profile.email.toLowerCase(),
+      username,
+      fullName: profile.name || null,
+      provider: profile.provider,
+      providerId: profile.providerId,
+      emailVerified: true, // Trusted provider
+      isActive: true,
+      role: 'user',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }).returning();
+
+    logger.info('User created via OAuth', { userId: newUser.id, provider: profile.provider });
+    return newUser;
+  }
 }
 
 export const authService = new AuthService();

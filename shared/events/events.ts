@@ -20,6 +20,7 @@ export interface UserLoggedInEvent {
   type: 'user.logged_in';
   userId: number;
   timestamp: Date;
+  provider?: string;
 }
 
 export interface UserLoggedOutEvent {

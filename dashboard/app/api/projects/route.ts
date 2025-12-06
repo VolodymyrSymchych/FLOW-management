@@ -1,15 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { projectService } from '@/lib/project-service';
-import { storage } from '@/lib/storage';
-import { cachedWithValidation, invalidateUserCache } from '@/lib/redis';
 import { withRateLimit } from '@/lib/rate-limit';
 import { createProjectSchema, validateRequestBody, formatZodError } from '@/lib/validations';
-import { CacheKeys } from '@/lib/cache-keys';
-import { invalidateOnUpdate } from '@/lib/cache-invalidation';
-import { db } from '@/server/db';
-import { projects, teamProjects } from '@/shared/schema';
-import { eq, desc, and, isNull, inArray } from 'drizzle-orm';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,111 +13,17 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { searchParams } = new URL(request.url);
-    const teamId = searchParams.get('team_id');
-
-    // Try project-service first
+    // Use project-service microservice
     const result = await projectService.getProjects();
-    
-    if (result.projects) {
-      // If team filter is needed, filter in fallback
-      if (teamId && teamId !== 'all') {
-        // For now, return all projects - team filtering will be handled by Team Service later
-        return NextResponse.json({
-          projects: result.projects,
-          total: result.total || result.projects.length,
-        });
-      }
-      
-      return NextResponse.json({
-        projects: result.projects,
-        total: result.total || result.projects.length,
-      });
-    }
 
-    // Fallback to local storage
     if (result.error) {
-      console.warn('Project service error, falling back to local storage:', result.error);
-    }
-
-    let userProjects;
-    let cacheKey: string;
-
-    if (teamId && teamId !== 'all') {
-      // Filter by specific team
-      const teamIdNum = parseInt(teamId);
-
-      // Verify user is a member of the team
-      const teamMembers = await storage.getTeamMembers(teamIdNum);
-      const isMember = teamMembers.some(tm => tm.userId === session.userId);
-
-      if (!isMember) {
-        return NextResponse.json({
-          error: 'Not a team member',
-        }, { status: 403 });
-      }
-
-      cacheKey = CacheKeys.projectsByTeam(teamIdNum);
-      userProjects = await cachedWithValidation(
-        cacheKey,
-        async () => await storage.getProjectsByTeam(teamIdNum),
-        {
-          ttl: 300, // 5 minutes
-          validate: true,
-          getUpdatedAt: async () => {
-            // Get the most recent updatedAt from team projects
-            const teamProjectsList = await db
-              .select({ projectId: projects.id })
-              .from(teamProjects)
-              .where(eq(teamProjects.teamId, teamIdNum));
-
-            const projectIds = teamProjectsList.map(tp => tp.projectId);
-            if (projectIds.length === 0) return null;
-
-            const result = await db
-              .select({ updatedAt: projects.updatedAt })
-              .from(projects)
-              .where(and(
-                inArray(projects.id, projectIds),
-                isNull(projects.deletedAt)
-              ))
-              .orderBy(desc(projects.updatedAt))
-              .limit(1);
-
-            return result[0]?.updatedAt || null;
-          },
-        }
-      );
-    } else {
-      // All teams or no filter - get all user's projects
-      cacheKey = CacheKeys.projectsByUser(session.userId);
-      userProjects = await cachedWithValidation(
-        cacheKey,
-        async () => await storage.getUserProjects(session.userId),
-        {
-          ttl: 300, // 5 minutes
-          validate: true,
-          getUpdatedAt: async () => {
-            // Get the most recent updatedAt from user projects
-            const result = await db
-              .select({ updatedAt: projects.updatedAt })
-              .from(projects)
-              .where(and(
-                eq(projects.userId, session.userId),
-                isNull(projects.deletedAt)
-              ))
-              .orderBy(desc(projects.updatedAt))
-              .limit(1);
-
-            return result[0]?.updatedAt || null;
-          },
-        }
-      );
+      console.error('Project service error:', result.error);
+      return NextResponse.json({ error: result.error }, { status: 500 });
     }
 
     return NextResponse.json({
-      projects: userProjects,
-      total: userProjects.length
+      projects: result.projects || [],
+      total: result.total || 0,
     });
   } catch (error: any) {
     console.error('Get projects error:', error);
@@ -161,9 +60,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(formatZodError(validation.error), { status: 400 });
     }
 
-    const { name, type, industry, teamSize, timeline, budget, startDate, endDate, document, analysisData, score, riskLevel, status, teamId } = validation.data;
+    const { name, type, industry, teamSize, timeline, budget, startDate, endDate, document } = validation.data;
 
-    // Try project-service first
+    // Use project-service microservice
     const result = await projectService.createProject({
       name,
       type: type || undefined,
@@ -176,53 +75,12 @@ export async function POST(request: NextRequest) {
       document: document || undefined,
     });
 
-    if (result.project) {
-      // Add project to team if teamId provided (fallback to local storage for now)
-      if (teamId) {
-        try {
-          await storage.addProjectToTeam(teamId, result.project.id);
-        } catch (error) {
-          console.warn('Failed to add project to team:', error);
-        }
-      }
-
-      // Invalidate caches after creating project
-      await invalidateOnUpdate('project', result.project.id, session.userId, { teamId });
-
-      return NextResponse.json({ project: result.project }, { status: 201 });
-    }
-
-    // Fallback to local storage
     if (result.error) {
-      console.warn('Project service error, falling back to local storage:', result.error);
+      console.error('Project service error:', result.error);
+      return NextResponse.json({ error: result.error }, { status: 500 });
     }
 
-    const project = await storage.createProject({
-      userId: session.userId,
-      name,
-      type: type || null,
-      industry: industry || null,
-      teamSize: teamSize || null,
-      timeline: timeline || null,
-      budget: budget || null,
-      startDate: startDate ? new Date(startDate) : null,
-      endDate: endDate ? new Date(endDate) : null,
-      score: score || 0,
-      riskLevel: riskLevel || null,
-      status: status || 'in_progress',
-      document: document || null,
-      analysisData: analysisData ? JSON.stringify(analysisData) : null,
-    });
-
-    // Add project to team if teamId provided
-    if (teamId) {
-      await storage.addProjectToTeam(teamId, project.id);
-    }
-
-    // Invalidate caches after creating project
-    await invalidateOnUpdate('project', project.id, session.userId, { teamId });
-
-    return NextResponse.json({ project }, { status: 201 });
+    return NextResponse.json({ project: result.project }, { status: 201 });
   } catch (error: any) {
     console.error('Create project error:', error);
     return NextResponse.json(

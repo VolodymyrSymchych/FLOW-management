@@ -1,517 +1,411 @@
-import { db } from '@/server/db';
-import { chats, chatMembers, chatMessages, messageReactions, users } from '@/shared/schema';
-import { eq, desc, and, sql, or, inArray, lt, gt, ne } from 'drizzle-orm';
-import { triggerChatEvent, PusherEvent } from './pusher-server';
+import axios, { AxiosInstance } from 'axios';
 
-// Types
-type Chat = typeof chats.$inferSelect;
-type InsertChat = typeof chats.$inferInsert;
-type ChatMember = typeof chatMembers.$inferSelect;
-type InsertChatMember = typeof chatMembers.$inferInsert;
-type ChatMessage = typeof chatMessages.$inferSelect;
-type InsertChatMessage = typeof chatMessages.$inferInsert;
-type MessageReaction = typeof messageReactions.$inferSelect;
+const CHAT_SERVICE_URL = process.env.NEXT_PUBLIC_CHAT_SERVICE_URL || 'http://localhost:3006';
 
-export class ChatService {
-  // Create a new chat
-  async createChat(data: Omit<InsertChat, 'createdBy'>, creatorId: number): Promise<Chat> {
-    const [chat] = await db
-      .insert(chats)
-      .values({
-        ...data,
-        createdBy: creatorId,
-      })
-      .returning();
+class ChatServiceClient {
+  private client: AxiosInstance;
 
-    // Add creator as admin member
-    await this.addMember(chat.id, creatorId, 'admin');
-
-    return chat;
+  constructor() {
+    this.client = axios.create({
+      baseURL: CHAT_SERVICE_URL,
+      timeout: 10000,
+      withCredentials: true,
+    });
   }
 
-  // Get chat by ID
-  async getChatById(id: number): Promise<Chat> {
-    const [chat] = await db
-      .select()
-      .from(chats)
-      .where(eq(chats.id, id))
-      .limit(1);
+  private async getAuthToken(): Promise<string | null> {
+    if (typeof document !== 'undefined') {
+      // Client-side: cookies are automatically sent with withCredentials: true
+      return null;
+    }
+    // Server-side: get from cookies
+    try {
+      const { cookies } = await import('next/headers');
+      const cookieStore = await cookies();
+      return cookieStore.get('auth_token')?.value || null;
+    } catch (error) {
+      // If cookies() fails (e.g., in middleware), return null
+      return null;
+    }
+  }
 
-    if (!chat) {
-      throw new Error('Chat not found');
+  private async getHeaders(): Promise<Record<string, string>> {
+    const headers: Record<string, string> = {};
+
+    // Add user JWT token (for user authentication)
+    const token = await this.getAuthToken();
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
     }
 
-    return chat;
-  }
-
-  // Get user's chats
-  async getUserChats(userId: number): Promise<Chat[]> {
-    const userChatMemberships = await db
-      .select({ chatId: chatMembers.chatId })
-      .from(chatMembers)
-      .where(eq(chatMembers.userId, userId));
-
-    if (userChatMemberships.length === 0) {
-      return [];
-    }
-
-    const chatIds = userChatMemberships.map(m => m.chatId);
-
-    return await db
-      .select()
-      .from(chats)
-      .where(inArray(chats.id, chatIds))
-      .orderBy(desc(chats.updatedAt));
-  }
-
-  // Find or create direct chat between two users
-  async findOrCreateDirectChat(userId1: number, userId2: number): Promise<Chat> {
-    // Find existing direct chat between these users
-    const user1Chats = await db
-      .select({ chatId: chatMembers.chatId })
-      .from(chatMembers)
-      .where(eq(chatMembers.userId, userId1));
-
-    const user2Chats = await db
-      .select({ chatId: chatMembers.chatId })
-      .from(chatMembers)
-      .where(eq(chatMembers.userId, userId2));
-
-    const commonChatIds = user1Chats
-      .filter(c1 => user2Chats.some(c2 => c2.chatId === c1.chatId))
-      .map(c => c.chatId);
-
-    if (commonChatIds.length > 0) {
-      const [existingChat] = await db
-        .select()
-        .from(chats)
-        .where(and(eq(chats.type, 'direct'), inArray(chats.id, commonChatIds)))
-        .limit(1);
-
-      if (existingChat) {
-        return existingChat;
+    // Add service API key (for service-to-service authentication, server-side only)
+    if (typeof window === 'undefined') {
+      const serviceApiKey = process.env.CHAT_SERVICE_API_KEY;
+      if (serviceApiKey) {
+        headers['X-Service-API-Key'] = serviceApiKey;
       }
     }
 
-    // Create new direct chat
-    const [chat] = await db
-      .insert(chats)
-      .values({
-        type: 'direct',
-        createdBy: userId1,
-      })
-      .returning();
-
-    // Add both users as members
-    await Promise.all([
-      this.addMember(chat.id, userId1, 'member'),
-      this.addMember(chat.id, userId2, 'member'),
-    ]);
-
-    return chat;
+    return headers;
   }
 
-  // Add member to chat
-  async addMember(chatId: number, userId: number, role: 'admin' | 'member' = 'member'): Promise<ChatMember> {
-    const [member] = await db
-      .insert(chatMembers)
-      .values({
-        chatId,
-        userId,
-        role,
-      })
-      .returning();
+  // ==================== Chat Methods ====================
 
-    // Trigger real-time event
-    await triggerChatEvent(chatId, PusherEvent.USER_JOINED, {
-      userId,
-      role,
-    });
-
-    return member;
-  }
-
-  // Remove member from chat
-  async removeMember(chatId: number, userId: number, requesterId: number): Promise<void> {
-    // Check if requester is admin
-    const isAdmin = await this.isUserAdmin(chatId, requesterId);
-    if (!isAdmin && requesterId !== userId) {
-      throw new Error('Only admins can remove members');
+  /**
+   * Get user's chats
+   */
+  async getUserChats(): Promise<{ chats?: any[]; error?: string }> {
+    try {
+      const headers = await this.getHeaders();
+      const response = await this.client.get('/api/chats/my', { headers });
+      return { chats: response.data.chats };
+    } catch (error: any) {
+      return {
+        error: error.response?.data?.error || error.message || 'Failed to get chats',
+      };
     }
+  }
 
-    const result = await db
-      .delete(chatMembers)
-      .where(and(eq(chatMembers.chatId, chatId), eq(chatMembers.userId, userId)))
-      .returning({ id: chatMembers.id });
-
-    if (result.length === 0) {
-      throw new Error('Member not found in chat');
+  /**
+   * Get project chats
+   */
+  async getProjectChats(projectId: number): Promise<{ chats?: any[]; error?: string }> {
+    try {
+      const headers = await this.getHeaders();
+      const response = await this.client.get(`/api/chats/project/${projectId}`, { headers });
+      return { chats: response.data.chats };
+    } catch (error: any) {
+      return {
+        error: error.response?.data?.error || error.message || 'Failed to get project chats',
+      };
     }
-
-    // Trigger real-time event
-    await triggerChatEvent(chatId, PusherEvent.USER_LEFT, {
-      userId,
-    });
   }
 
-  // Get chat members
-  async getChatMembers(chatId: number): Promise<ChatMember[]> {
-    return await db
-      .select()
-      .from(chatMembers)
-      .where(eq(chatMembers.chatId, chatId))
-      .orderBy(chatMembers.joinedAt);
-  }
-
-  // Check if user is member of chat
-  async isUserMember(chatId: number, userId: number): Promise<boolean> {
-    const [member] = await db
-      .select()
-      .from(chatMembers)
-      .where(and(eq(chatMembers.chatId, chatId), eq(chatMembers.userId, userId)))
-      .limit(1);
-
-    return !!member;
-  }
-
-  // Check if user is admin of chat
-  async isUserAdmin(chatId: number, userId: number): Promise<boolean> {
-    const [member] = await db
-      .select()
-      .from(chatMembers)
-      .where(and(eq(chatMembers.chatId, chatId), eq(chatMembers.userId, userId), eq(chatMembers.role, 'admin')))
-      .limit(1);
-
-    return !!member;
-  }
-
-  // Update chat
-  async updateChat(id: number, userId: number, updates: Partial<Pick<Chat, 'name'>>): Promise<Chat> {
-    // Check if user is admin
-    const isAdmin = await this.isUserAdmin(id, userId);
-    if (!isAdmin) {
-      throw new Error('Only admins can update chat');
+  /**
+   * Get team chats
+   */
+  async getTeamChats(teamId: number): Promise<{ chats?: any[]; error?: string }> {
+    try {
+      const headers = await this.getHeaders();
+      const response = await this.client.get(`/api/chats/team/${teamId}`, { headers });
+      return { chats: response.data.chats };
+    } catch (error: any) {
+      return {
+        error: error.response?.data?.error || error.message || 'Failed to get team chats',
+      };
     }
-
-    const [updated] = await db
-      .update(chats)
-      .set({ ...updates, updatedAt: new Date() })
-      .where(eq(chats.id, id))
-      .returning();
-
-    if (!updated) {
-      throw new Error('Chat not found');
-    }
-
-    // Trigger real-time event
-    await triggerChatEvent(id, PusherEvent.CHAT_UPDATED, {
-      chatId: id,
-      updates,
-    });
-
-    return updated;
   }
 
-  // Delete chat
-  async deleteChat(id: number, userId: number): Promise<void> {
-    const chat = await this.getChatById(id);
-
-    // Only creator can delete chat
-    if (chat.createdBy !== userId) {
-      throw new Error('Only chat creator can delete chat');
+  /**
+   * Find or create direct chat
+   */
+  async findOrCreateDirectChat(userId1: number, userId2: number): Promise<{ chat?: any; error?: string }> {
+    try {
+      const headers = await this.getHeaders();
+      const response = await this.client.post('/api/chats/direct', { userId1, userId2 }, { headers });
+      return { chat: response.data.chat };
+    } catch (error: any) {
+      return {
+        error: error.response?.data?.error || error.message || 'Failed to find or create direct chat',
+      };
     }
-
-    await db.delete(chats).where(eq(chats.id, id));
-  }
-}
-
-export class MessageService {
-  private chatService = new ChatService();
-
-  // Send a message
-  async sendMessage(data: InsertChatMessage, senderId: number): Promise<ChatMessage> {
-    // Verify user is member of chat
-    const isMember = await this.chatService.isUserMember(data.chatId, senderId);
-    if (!isMember) {
-      throw new Error('You are not a member of this chat');
-    }
-
-    // Extract mentions from content (@username)
-    const mentions = this.extractMentions(data.content);
-
-    const messages = await db
-      .insert(chatMessages)
-      .values({
-        ...data,
-        senderId,
-        mentions: mentions.length > 0 ? JSON.stringify(mentions) : null,
-        readBy: JSON.stringify([senderId]), // Sender has read their own message
-      })
-      .returning() as ChatMessage[];
-
-    const message = messages[0]!;
-
-    // Trigger real-time event
-    await triggerChatEvent(data.chatId, PusherEvent.NEW_MESSAGE, {
-      message,
-    });
-
-    return message;
   }
 
-  // Extract user mentions from message content
-  private extractMentions(content: string): number[] {
-    const mentionRegex = /@user:(\d+)/g;
-    const mentions: number[] = [];
-    let match;
-
-    while ((match = mentionRegex.exec(content)) !== null) {
-      const userId = parseInt(match[1], 10);
-      if (!mentions.includes(userId)) {
-        mentions.push(userId);
-      }
+  /**
+   * Create chat
+   */
+  async createChat(data: {
+    name?: string;
+    type?: 'direct' | 'group' | 'project' | 'team';
+    projectId?: number;
+    teamId?: number;
+  }): Promise<{ chat?: any; error?: string }> {
+    try {
+      const headers = await this.getHeaders();
+      const response = await this.client.post('/api/chats', data, { headers });
+      return { chat: response.data.chat };
+    } catch (error: any) {
+      return {
+        error: error.response?.data?.error || error.message || 'Failed to create chat',
+      };
     }
-
-    return mentions;
   }
 
-  // Get messages for a chat
-  async getChatMessages(chatId: number, userId: number, limit = 50, before?: number): Promise<ChatMessage[]> {
-    // Verify user is member of chat
-    const isMember = await this.chatService.isUserMember(chatId, userId);
-    if (!isMember) {
-      throw new Error('You are not a member of this chat');
+  /**
+   * Get chat by ID
+   */
+  async getChatById(chatId: number): Promise<{ chat?: any; error?: string }> {
+    try {
+      const headers = await this.getHeaders();
+      const response = await this.client.get(`/api/chats/${chatId}`, { headers });
+      return { chat: response.data.chat };
+    } catch (error: any) {
+      return {
+        error: error.response?.data?.error || error.message || 'Failed to get chat',
+      };
     }
-
-    const conditions = [
-      eq(chatMessages.chatId, chatId),
-      sql`${chatMessages.deletedAt} IS NULL`,
-    ];
-
-    if (before) {
-      conditions.push(lt(chatMessages.id, before));
-    }
-
-    return await db
-      .select()
-      .from(chatMessages)
-      .where(and(...conditions))
-      .orderBy(desc(chatMessages.createdAt))
-      .limit(limit);
   }
 
-  // Get message by ID
-  async getMessageById(id: number, userId: number): Promise<ChatMessage> {
-    const [message] = await db
-      .select()
-      .from(chatMessages)
-      .where(and(eq(chatMessages.id, id), sql`${chatMessages.deletedAt} IS NULL`))
-      .limit(1);
-
-    if (!message) {
-      throw new Error('Message not found');
+  /**
+   * Update chat
+   */
+  async updateChat(chatId: number, data: { name?: string }): Promise<{ chat?: any; error?: string }> {
+    try {
+      const headers = await this.getHeaders();
+      const response = await this.client.put(`/api/chats/${chatId}`, data, { headers });
+      return { chat: response.data.chat };
+    } catch (error: any) {
+      return {
+        error: error.response?.data?.error || error.message || 'Failed to update chat',
+      };
     }
-
-    // Verify user is member of chat
-    const isMember = await this.chatService.isUserMember(message.chatId, userId);
-    if (!isMember) {
-      throw new Error('You are not a member of this chat');
-    }
-
-    return message;
   }
 
-  // Edit message
-  async editMessage(id: number, userId: number, content: string): Promise<ChatMessage> {
-    const message = await this.getMessageById(id, userId);
-
-    // Only sender can edit
-    if (message.senderId !== userId) {
-      throw new Error('You can only edit your own messages');
+  /**
+   * Delete chat
+   */
+  async deleteChat(chatId: number): Promise<{ error?: string }> {
+    try {
+      const headers = await this.getHeaders();
+      await this.client.delete(`/api/chats/${chatId}`, { headers });
+      return {};
+    } catch (error: any) {
+      return {
+        error: error.response?.data?.error || error.message || 'Failed to delete chat',
+      };
     }
-
-    const [updated] = await db
-      .update(chatMessages)
-      .set({
-        content,
-        editedAt: new Date(),
-        updatedAt: new Date(),
-      })
-      .where(eq(chatMessages.id, id))
-      .returning();
-
-    // Trigger real-time event
-    await triggerChatEvent(message.chatId, PusherEvent.MESSAGE_UPDATED, {
-      message: updated,
-    });
-
-    return updated;
   }
 
-  // Delete message (soft delete)
-  async deleteMessage(id: number, userId: number): Promise<void> {
-    const message = await this.getMessageById(id, userId);
-
-    // Only sender or chat admin can delete
-    const isAdmin = await this.chatService.isUserAdmin(message.chatId, userId);
-    if (message.senderId !== userId && !isAdmin) {
-      throw new Error('You can only delete your own messages or be a chat admin');
+  /**
+   * Get chat members
+   */
+  async getChatMembers(chatId: number): Promise<{ members?: any[]; error?: string }> {
+    try {
+      const headers = await this.getHeaders();
+      const response = await this.client.get(`/api/chats/${chatId}/members`, { headers });
+      return { members: response.data.members };
+    } catch (error: any) {
+      return {
+        error: error.response?.data?.error || error.message || 'Failed to get chat members',
+      };
     }
-
-    await db
-      .update(chatMessages)
-      .set({
-        deletedAt: new Date(),
-        updatedAt: new Date(),
-      })
-      .where(eq(chatMessages.id, id));
-
-    // Trigger real-time event
-    await triggerChatEvent(message.chatId, PusherEvent.MESSAGE_DELETED, {
-      messageId: id,
-    });
   }
 
-  // Add reaction to message
-  async addReaction(messageId: number, userId: number, emoji: string): Promise<MessageReaction> {
-    const message = await this.getMessageById(messageId, userId);
-
-    const [reaction] = await db
-      .insert(messageReactions)
-      .values({
-        messageId,
-        userId,
-        emoji,
-      })
-      .returning();
-
-    // Trigger real-time event
-    await triggerChatEvent(message.chatId, PusherEvent.MESSAGE_REACTION, {
-      messageId,
-      userId,
-      emoji,
-      action: 'add',
-    });
-
-    return reaction;
+  /**
+   * Add member to chat
+   */
+  async addMember(chatId: number, userId: number, role?: 'admin' | 'member'): Promise<{ member?: any; error?: string }> {
+    try {
+      const headers = await this.getHeaders();
+      const response = await this.client.post(`/api/chats/${chatId}/members`, { userId, role }, { headers });
+      return { member: response.data.member };
+    } catch (error: any) {
+      return {
+        error: error.response?.data?.error || error.message || 'Failed to add member',
+      };
+    }
   }
 
-  // Remove reaction from message
-  async removeReaction(messageId: number, userId: number, emoji: string): Promise<void> {
-    const message = await this.getMessageById(messageId, userId);
+  /**
+   * Remove member from chat
+   */
+  async removeMember(chatId: number, userId: number): Promise<{ error?: string }> {
+    try {
+      const headers = await this.getHeaders();
+      await this.client.delete(`/api/chats/${chatId}/members/${userId}`, { headers });
+      return {};
+    } catch (error: any) {
+      return {
+        error: error.response?.data?.error || error.message || 'Failed to remove member',
+      };
+    }
+  }
 
-    await db
-      .delete(messageReactions)
-      .where(
-        and(
-          eq(messageReactions.messageId, messageId),
-          eq(messageReactions.userId, userId),
-          eq(messageReactions.emoji, emoji)
-        )
+  // ==================== Message Methods ====================
+
+  /**
+   * Send message
+   */
+  async sendMessage(data: {
+    chatId: number;
+    content: string;
+    messageType?: 'text' | 'file' | 'system';
+    replyToId?: number;
+    metadata?: string;
+  }): Promise<{ message?: any; error?: string }> {
+    try {
+      const headers = await this.getHeaders();
+      const response = await this.client.post('/api/messages', data, { headers });
+      return { message: response.data.message };
+    } catch (error: any) {
+      return {
+        error: error.response?.data?.error || error.message || 'Failed to send message',
+      };
+    }
+  }
+
+  /**
+   * Get chat messages
+   */
+  async getChatMessages(
+    chatId: number,
+    options?: {
+      limit?: number;
+      before?: number;
+    }
+  ): Promise<{ messages?: any[]; error?: string }> {
+    try {
+      const headers = await this.getHeaders();
+      const params = new URLSearchParams();
+      if (options?.limit) params.append('limit', options.limit.toString());
+      if (options?.before) params.append('before', options.before.toString());
+
+      const response = await this.client.get(
+        `/api/messages/chat/${chatId}?${params.toString()}`,
+        { headers }
       );
-
-    // Trigger real-time event
-    await triggerChatEvent(message.chatId, PusherEvent.MESSAGE_REACTION, {
-      messageId,
-      userId,
-      emoji,
-      action: 'remove',
-    });
+      return { messages: response.data.messages };
+    } catch (error: any) {
+      return {
+        error: error.response?.data?.error || error.message || 'Failed to get messages',
+      };
+    }
   }
 
-  // Get mentions for user
-  async getMentionsForUser(userId: number, limit = 50): Promise<ChatMessage[]> {
-    const userChats = await db
-      .select({ chatId: chatMembers.chatId })
-      .from(chatMembers)
-      .where(eq(chatMembers.userId, userId));
-
-    if (userChats.length === 0) {
-      return [];
+  /**
+   * Get unread count for chat
+   */
+  async getUnreadCount(chatId: number): Promise<{ count?: number; error?: string }> {
+    try {
+      const headers = await this.getHeaders();
+      const response = await this.client.get(`/api/messages/chat/${chatId}/unread`, { headers });
+      return { count: response.data.count };
+    } catch (error: any) {
+      return {
+        error: error.response?.data?.error || error.message || 'Failed to get unread count',
+      };
     }
-
-    const chatIds = userChats.map(c => c.chatId);
-
-    const messages = await db
-      .select()
-      .from(chatMessages)
-      .where(
-        and(
-          inArray(chatMessages.chatId, chatIds),
-          sql`${chatMessages.mentions} IS NOT NULL`,
-          sql`${chatMessages.deletedAt} IS NULL`
-        )
-      )
-      .orderBy(desc(chatMessages.createdAt))
-      .limit(limit);
-
-    // Filter messages where user is mentioned
-    return messages.filter(msg => {
-      try {
-        const mentions = msg.mentions ? JSON.parse(msg.mentions) : [];
-        return mentions.includes(userId);
-      } catch {
-        return false;
-      }
-    });
   }
 
-  // Create task from message
-  async createTaskFromMessage(
-    messageId: number,
-    userId: number,
-    taskData: {
-      title: string;
-      description?: string;
-      projectId?: number;
-      assignee?: string;
-      dueDate?: Date;
-      priority?: string;
+  /**
+   * Mark chat as read
+   */
+  async markChatAsRead(chatId: number): Promise<{ error?: string }> {
+    try {
+      const headers = await this.getHeaders();
+      await this.client.put(`/api/messages/chat/${chatId}/read`, {}, { headers });
+      return {};
+    } catch (error: any) {
+      return {
+        error: error.response?.data?.error || error.message || 'Failed to mark chat as read',
+      };
     }
-  ): Promise<{ messageId: number; taskId: number }> {
-    const message = await this.getMessageById(messageId, userId);
+  }
 
-    // Check if message already has a task
-    if (message.taskId) {
-      throw new Error('This message already has a task associated with it');
+  /**
+   * Get message by ID
+   */
+  async getMessage(messageId: number): Promise<{ message?: any; error?: string }> {
+    try {
+      const headers = await this.getHeaders();
+      const response = await this.client.get(`/api/messages/${messageId}`, { headers });
+      return { message: response.data.message };
+    } catch (error: any) {
+      return {
+        error: error.response?.data?.error || error.message || 'Failed to get message',
+      };
     }
+  }
 
-    // Call task API to create the task
-    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001'}/api/tasks`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(taskData),
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to create task');
+  /**
+   * Edit message
+   */
+  async editMessage(messageId: number, content: string): Promise<{ message?: any; error?: string }> {
+    try {
+      const headers = await this.getHeaders();
+      const response = await this.client.put(`/api/messages/${messageId}`, { content }, { headers });
+      return { message: response.data.message };
+    } catch (error: any) {
+      return {
+        error: error.response?.data?.error || error.message || 'Failed to edit message',
+      };
     }
+  }
 
-    const { task } = await response.json();
-    const taskId = task.id;
+  /**
+   * Delete message
+   */
+  async deleteMessage(messageId: number): Promise<{ error?: string }> {
+    try {
+      const headers = await this.getHeaders();
+      await this.client.delete(`/api/messages/${messageId}`, { headers });
+      return {};
+    } catch (error: any) {
+      return {
+        error: error.response?.data?.error || error.message || 'Failed to delete message',
+      };
+    }
+  }
 
-    // Update message with task reference
-    await db
-      .update(chatMessages)
-      .set({
-        taskId,
-        updatedAt: new Date(),
-      })
-      .where(eq(chatMessages.id, messageId));
+  /**
+   * Mark message as read
+   */
+  async markMessageAsRead(messageId: number): Promise<{ error?: string }> {
+    try {
+      const headers = await this.getHeaders();
+      await this.client.put(`/api/messages/${messageId}/read`, {}, { headers });
+      return {};
+    } catch (error: any) {
+      return {
+        error: error.response?.data?.error || error.message || 'Failed to mark message as read',
+      };
+    }
+  }
 
-    // Trigger real-time event
-    await triggerChatEvent(message.chatId, PusherEvent.MESSAGE_UPDATED, {
-      messageId,
-      taskId,
-      action: 'task_created',
-    });
+  /**
+   * Get message reactions
+   */
+  async getReactions(messageId: number): Promise<{ reactions?: any[]; error?: string }> {
+    try {
+      const headers = await this.getHeaders();
+      const response = await this.client.get(`/api/messages/${messageId}/reactions`, { headers });
+      return { reactions: response.data.reactions };
+    } catch (error: any) {
+      return {
+        error: error.response?.data?.error || error.message || 'Failed to get reactions',
+      };
+    }
+  }
 
-    return { messageId, taskId };
+  /**
+   * Add reaction to message
+   */
+  async addReaction(messageId: number, emoji: string): Promise<{ reaction?: any; error?: string }> {
+    try {
+      const headers = await this.getHeaders();
+      const response = await this.client.post(`/api/messages/${messageId}/reactions`, { emoji }, { headers });
+      return { reaction: response.data.reaction };
+    } catch (error: any) {
+      return {
+        error: error.response?.data?.error || error.message || 'Failed to add reaction',
+      };
+    }
+  }
+
+  /**
+   * Remove reaction from message
+   */
+  async removeReaction(messageId: number, emoji: string): Promise<{ error?: string }> {
+    try {
+      const headers = await this.getHeaders();
+      await this.client.delete(`/api/messages/${messageId}/reactions/${emoji}`, { headers });
+      return {};
+    } catch (error: any) {
+      return {
+        error: error.response?.data?.error || error.message || 'Failed to remove reaction',
+      };
+    }
   }
 }
 
-export const chatService = new ChatService();
-export const messageService = new MessageService();
-
+export const chatService = new ChatServiceClient();

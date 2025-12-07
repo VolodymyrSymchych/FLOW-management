@@ -220,6 +220,62 @@ class TaskServiceClient {
       };
     }
   }
+
+  /**
+   * Check task lock status
+   */
+  async checkLock(taskId: number): Promise<{
+    isLocked?: boolean;
+    lockedBy?: string;
+    lockedAt?: string;
+    canEdit?: boolean;
+    error?: string;
+  }> {
+    try {
+      const headers = await this.getHeaders();
+      const response = await this.client.get(`/api/tasks/${taskId}/lock`, { headers });
+      return response.data;
+    } catch (error: any) {
+      return {
+        error: error.response?.data?.error || error.message || 'Failed to check lock',
+      };
+    }
+  }
+
+  /**
+   * Acquire lock on task
+   */
+  async acquireLock(taskId: number): Promise<{
+    success?: boolean;
+    lockedBy?: number;
+    lockedAt?: string;
+    error?: string;
+  }> {
+    try {
+      const headers = await this.getHeaders();
+      const response = await this.client.post(`/api/tasks/${taskId}/lock`, {}, { headers });
+      return response.data;
+    } catch (error: any) {
+      return {
+        error: error.response?.data?.error || error.message || 'Failed to acquire lock',
+      };
+    }
+  }
+
+  /**
+   * Release lock on task
+   */
+  async releaseLock(taskId: number): Promise<{ success?: boolean; error?: string }> {
+    try {
+      const headers = await this.getHeaders();
+      const response = await this.client.delete(`/api/tasks/${taskId}/lock`, { headers });
+      return response.data;
+    } catch (error: any) {
+      return {
+        error: error.response?.data?.error || error.message || 'Failed to release lock',
+      };
+    }
+  }
 }
 
 export const taskService = new TaskServiceClient();

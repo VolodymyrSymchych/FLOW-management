@@ -40,6 +40,9 @@ export const tasks = pgTable('tasks', {
   priority: varchar('priority', { length: 50 }).default('medium').notNull(),
   dependsOn: text('depends_on'), // JSON array of task IDs
   progress: integer('progress').default(0).notNull(), // 0-100 percentage
+  lockedBy: integer('locked_by').references(() => users.id, { onDelete: 'set null' }),
+  lockedAt: timestamp('locked_at'),
+  lockedByEmail: varchar('locked_by_email', { length: 255 }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   deletedAt: timestamp('deleted_at'),

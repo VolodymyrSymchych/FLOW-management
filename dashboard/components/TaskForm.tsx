@@ -28,6 +28,7 @@ interface TaskFormProps {
   onSubmit: (data: TaskFormData) => Promise<void>;
   onCancel?: () => void;
   loading?: boolean;
+  disabled?: boolean;
   submitLabel?: string;
 }
 
@@ -39,6 +40,7 @@ export function TaskForm({
   onSubmit,
   onCancel,
   loading = false,
+  disabled = false,
   submitLabel = 'Save',
 }: TaskFormProps) {
   const { projects, loading: projectsLoading } = useProjects();
@@ -144,6 +146,8 @@ export function TaskForm({
   const selectedProject = projects.find(p => p.id === (typeof formData.project_id === 'string' ? parseInt(formData.project_id) : formData.project_id));
   const hasTeamMembers = teamMembers.length > 0;
 
+  const isDisabled = loading || disabled;
+
   return (
     <form id="task-form" onSubmit={handleSubmit} className="space-y-4">
       <Input
@@ -151,7 +155,7 @@ export function TaskForm({
         required
         value={formData.title}
         onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-        disabled={loading}
+        disabled={isDisabled}
       />
 
       <Textarea
@@ -159,7 +163,7 @@ export function TaskForm({
         rows={3}
         value={formData.description}
         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-        disabled={loading}
+        disabled={isDisabled}
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -171,7 +175,7 @@ export function TaskForm({
             value={formData.project_id}
             onChange={(e) => setFormData({ ...formData, project_id: e.target.value })}
             className="w-full px-3 py-2.5 rounded-lg glass-medium border border-white/10 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary bg-surface"
-            disabled={loading || projectsLoading}
+            disabled={isDisabled || projectsLoading}
           >
             <option value="">No Project</option>
             {projects.map((project) => (
@@ -190,7 +194,7 @@ export function TaskForm({
             value={formData.priority}
             onChange={(e) => setFormData({ ...formData, priority: e.target.value as any })}
             className="w-full px-3 py-2.5 rounded-lg glass-medium border border-white/10 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary bg-surface"
-            disabled={loading}
+            disabled={isDisabled}
           >
             <option value="low">Low</option>
             <option value="medium">Medium</option>
@@ -208,7 +212,7 @@ export function TaskForm({
             value={formData.status}
             onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
             className="w-full px-3 py-2.5 rounded-lg glass-medium border border-white/10 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary bg-surface"
-            disabled={loading}
+            disabled={isDisabled}
           >
             <option value="todo">To Do</option>
             <option value="in_progress">In Progress</option>
@@ -225,7 +229,7 @@ export function TaskForm({
               value={formData.assignee}
               onChange={(e) => setFormData({ ...formData, assignee: e.target.value })}
               className="w-full px-3 py-2.5 rounded-lg glass-medium border border-white/10 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary bg-surface"
-              disabled={loading || loadingMembers}
+              disabled={isDisabled || loadingMembers}
             >
               <option value="">No Assignee</option>
               {teamMembers.map((member) => (
@@ -240,7 +244,7 @@ export function TaskForm({
               value={formData.assignee}
               onChange={(e) => setFormData({ ...formData, assignee: e.target.value })}
               placeholder="Email or username"
-              disabled={loading}
+              disabled={isDisabled}
             />
           )}
         </div>
@@ -252,21 +256,21 @@ export function TaskForm({
           label="Start Date"
           value={formData.start_date}
           onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-          disabled={loading}
+          disabled={isDisabled}
         />
         <Input
           type="date"
           label="Due Date"
           value={formData.due_date}
           onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
-          disabled={loading}
+          disabled={isDisabled}
         />
         <Input
           type="date"
           label="End Date"
           value={formData.end_date}
           onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-          disabled={loading}
+          disabled={isDisabled}
         />
       </div>
     </form>

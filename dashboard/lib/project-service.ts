@@ -77,10 +77,13 @@ class ProjectServiceClient {
   /**
    * Get all projects
    */
-  async getProjects(): Promise<{ projects?: any[]; total?: number; error?: string }> {
+  async getProjects(teamId?: number | 'all'): Promise<{ projects?: any[]; total?: number; error?: string }> {
     try {
       const headers = await this.getHeaders();
-      const response = await this.client.get(`/api/projects`, { headers });
+      const url = teamId !== undefined && teamId !== 'all'
+        ? `/api/projects?team_id=${teamId}`
+        : `/api/projects`;
+      const response = await this.client.get(url, { headers });
       return { projects: response.data.projects, total: response.data.total };
     } catch (error: any) {
       return {

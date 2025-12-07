@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { taskController } from '../controllers/task.controller';
 import { authMiddleware } from '../middleware/auth';
 import { AuthenticatedRequest } from '@project-scope-analyzer/shared';
+import lockRouter from './tasks/lock';
 
 const router = Router();
 
@@ -34,6 +35,9 @@ router.delete('/:id', (req, res, next) => taskController.deleteTask(req as Authe
 
 // POST /tasks - Create new task (must be after /:id routes)
 router.post('/', (req, res, next) => taskController.createTask(req as AuthenticatedRequest, res, next));
+
+// Lock routes
+router.use('/', lockRouter);
 
 export default router;
 

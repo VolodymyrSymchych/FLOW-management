@@ -47,12 +47,13 @@ export default function TasksPage() {
   // isLoading = true тільки коли немає кешу (перше завантаження)
   // isFetching = true коли йде рефетч (навіть якщо є кеш)
   const isLoading = projectsLoading || tasksLoading;
+  const isFetching = projectsFetching || tasksFetching;
 
   // Є дані якщо вони вже завантажені (в кеші або отримані)
   const hasData = projects !== undefined && tasks !== undefined;
-  
+
   const [showNewTaskForm, setShowNewTaskForm] = useState(false);
-  
+
   // Показувати skeleton тільки якщо немає даних і завантаження > 200ms
   const shouldShowLoading = useSmartDelayedLoading(isLoading || teamsLoading, hasData, 200);
   const [editingTask, setEditingTask] = useState<any | null>(null);
@@ -358,17 +359,23 @@ export default function TasksPage() {
       {/* Tasks List */}
       <div className="glass-medium rounded-xl border border-white/10 overflow-hidden">
         {filteredTasks.length === 0 ? (
-          <div className="p-12 text-center">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-white/5 flex items-center justify-center">
-              <CheckCircle2 className="w-8 h-8 text-text-tertiary" />
+          isFetching ? (
+            <div className="p-6">
+              <TableSkeleton rows={8} columns={6} />
             </div>
-            <h3 className="text-lg font-medium text-text-primary mb-2">No tasks found</h3>
-            <p className="text-text-secondary">
-              {searchQuery || filterStatus !== 'all'
-                ? "Try adjusting your filters or search query"
-                : "Create a new task to get started"}
-            </p>
-          </div>
+          ) : (
+            <div className="p-12 text-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-white/5 flex items-center justify-center">
+                <CheckCircle2 className="w-8 h-8 text-text-tertiary" />
+              </div>
+              <h3 className="text-lg font-medium text-text-primary mb-2">No tasks found</h3>
+              <p className="text-text-secondary">
+                {searchQuery || filterStatus !== 'all'
+                  ? "Try adjusting your filters or search query"
+                  : "Create a new task to get started"}
+              </p>
+            </div>
+          )
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
@@ -387,7 +394,18 @@ export default function TasksPage() {
                 {filteredTasks.map((task) => (
                   <tr
                     key={task.id}
-                    className="group hover:bg-white/5 transition-colors"
+                    onClick={(e) => {
+                      // Don't trigger if clicking on action buttons
+                      if ((e.target as HTMLElement).closest('button')) return;
+
+                      // Open in new tab if Cmd/Ctrl+Click
+                      if (e.metaKey || e.ctrlKey) {
+                        window.open(`/dashboard/tasks/${task.id}`, '_blank');
+                      } else {
+                        setEditingTask(task);
+                      }
+                    }}
+                    className="group hover:bg-white/5 transition-colors cursor-pointer"
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <button

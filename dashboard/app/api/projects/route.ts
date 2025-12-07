@@ -13,8 +13,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Get team_id from query params
+    const { searchParams } = new URL(request.url);
+    const teamIdParam = searchParams.get('team_id');
+    const teamId = teamIdParam === 'all' ? 'all' : teamIdParam ? parseInt(teamIdParam, 10) : undefined;
+
     // Use project-service microservice
-    const result = await projectService.getProjects();
+    const result = await projectService.getProjects(teamId);
 
     if (result.error) {
       console.error('Project service error:', result.error);

@@ -16,7 +16,11 @@
         ],
         "ios": {
             "supportsTablet": true,
-            "bundleIdentifier": "com.projectscopeanalyzer.app"
+            "bundleIdentifier": "com.projectscopeanalyzer.app",
+            "buildNumber": "1",
+            "infoPlist": {
+                "CFBundleAllowMixedLocalizations": true
+            }
         },
         "android": {
             "adaptiveIcon": {

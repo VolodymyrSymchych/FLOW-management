@@ -20,6 +20,11 @@ export function createApp(): Express {
   app.use(requestLogger);
   app.use(metricsMiddleware);
 
+  // Root path handler - redirect to service info
+  app.get('/', (req, res) => {
+    res.redirect('/api');
+  });
+
   // Health check without /api prefix (for convenience)
   app.get('/health', (req, res) => {
     res.json({
@@ -58,6 +63,15 @@ export function createApp(): Express {
 
   // Routes
   app.use('/api', routes);
+
+  // 404 handler for unmatched routes (must be before error handler)
+  app.use((req, res) => {
+    res.status(404).json({
+      error: 'Not Found',
+      message: `Cannot ${req.method} ${req.path}`,
+      service: config.service.name,
+    });
+  });
 
   // Error handling (must be last)
   app.use(errorHandler);

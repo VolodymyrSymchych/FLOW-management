@@ -87,6 +87,15 @@ export function createApp(): Express {
   // Routes
   app.use('/api', routes);
 
+  // 404 handler for unmatched routes (must be before error handler)
+  app.use((req, res) => {
+    res.status(404).json({
+      error: 'Not Found',
+      message: `Cannot ${req.method} ${req.path}`,
+      service: config.service.name,
+    });
+  });
+
   // Error handling (must be last)
   app.use(errorHandler);
 

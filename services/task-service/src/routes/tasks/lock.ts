@@ -12,10 +12,11 @@ const LOCK_TIMEOUT_MINUTES = 15; // Lock expires after 15 minutes
  * GET /api/tasks/:id/lock
  * Check if task is locked
  */
-router.get('/:id/lock', async (req: AuthenticatedRequest, res) => {
+router.get('/:id/lock', async (req, res) => {
   try {
-    const taskId = parseInt(req.params.id);
-    const userId = req.user!.id;
+    const authenticatedReq = req as AuthenticatedRequest;
+    const taskId = parseInt(authenticatedReq.params.id);
+    const userId = authenticatedReq.user!.id;
 
     const task = await db.query.tasks.findFirst({
       where: eq(tasks.id, taskId),
@@ -55,11 +56,12 @@ router.get('/:id/lock', async (req: AuthenticatedRequest, res) => {
  * POST /api/tasks/:id/lock
  * Acquire lock on task
  */
-router.post('/:id/lock', async (req: AuthenticatedRequest, res) => {
+router.post('/:id/lock', async (req, res) => {
   try {
-    const taskId = parseInt(req.params.id);
-    const userId = req.user!.id;
-    const userEmail = req.user!.email || 'Unknown';
+    const authenticatedReq = req as AuthenticatedRequest;
+    const taskId = parseInt(authenticatedReq.params.id);
+    const userId = authenticatedReq.user!.id;
+    const userEmail = authenticatedReq.user!.email || 'Unknown';
 
     const task = await db.query.tasks.findFirst({
       where: eq(tasks.id, taskId),
@@ -114,10 +116,11 @@ router.post('/:id/lock', async (req: AuthenticatedRequest, res) => {
  * DELETE /api/tasks/:id/lock
  * Release lock on task
  */
-router.delete('/:id/lock', async (req: AuthenticatedRequest, res) => {
+router.delete('/:id/lock', async (req, res) => {
   try {
-    const taskId = parseInt(req.params.id);
-    const userId = req.user!.id;
+    const authenticatedReq = req as AuthenticatedRequest;
+    const taskId = parseInt(authenticatedReq.params.id);
+    const userId = authenticatedReq.user!.id;
 
     // Release lock only if owned by current user
     await db

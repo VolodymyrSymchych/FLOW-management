@@ -19,17 +19,33 @@ function getApp() {
 
 // Export as Vercel serverless function
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const app = getApp();
+  try {
+    const app = getApp();
 
-  // Convert Vercel request/response to Express-compatible format
-  return new Promise((resolve, reject) => {
-    app(req as unknown as Request, res as unknown as Response, (err?: unknown) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(undefined);
-      }
+    // Convert Vercel request/response to Express-compatible format
+    return new Promise<void>((resolve, reject) => {
+      app(req as unknown as Request, res as unknown as Response, (err?: unknown) => {
+        if (err) {
+          if (!res.headersSent) {
+            res.status(500).json({
+              error: 'Internal Server Error',
+              message: err instanceof Error ? err.message : 'Unknown error',
+            });
+          }
+          reject(err);
+        } else {
+          resolve();
+        }
+      });
     });
-  });
+  } catch (error) {
+    if (!res.headersSent) {
+      res.status(500).json({
+        error: 'Internal Server Error',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
+    throw error;
+  }
 }
 

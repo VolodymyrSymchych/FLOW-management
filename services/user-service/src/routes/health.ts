@@ -17,12 +17,17 @@ router.get('/ready', async (req: Request, res: Response) => {
     redis: false,
   };
 
-  // Check database connection
+  // Check database connection with timeout
   try {
     const { pool } = await import('../db');
     const dbPool = pool();
     if (dbPool) {
-      const result = await dbPool.query('SELECT 1');
+      // Use Promise.race to add a timeout
+      const queryPromise = dbPool.query('SELECT 1');
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Database check timeout')), 5000)
+      );
+      const result = await Promise.race([queryPromise, timeoutPromise]) as any;
       checks.database = result && result.rows && result.rows.length > 0;
     } else {
       checks.database = false;
@@ -33,12 +38,17 @@ router.get('/ready', async (req: Request, res: Response) => {
     checks.database = false;
   }
 
-  // Check redis connection
+  // Check redis connection with timeout
   try {
     const { getRedisClient } = await import('@project-scope-analyzer/shared');
     const redis = getRedisClient();
     if (redis) {
-      await redis.ping();
+      // Use Promise.race to add a timeout
+      const pingPromise = redis.ping();
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Redis check timeout')), 3000)
+      );
+      await Promise.race([pingPromise, timeoutPromise]);
       checks.redis = true;
     }
   } catch (error) {

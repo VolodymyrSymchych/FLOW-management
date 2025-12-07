@@ -149,7 +149,7 @@ class ChatServiceClient {
   /**
    * Update chat
    */
-  async updateChat(chatId: number, data: { name?: string }): Promise<{ chat?: any; error?: string }> {
+  async updateChat(chatId: number, userId: number, data: { name?: string }): Promise<{ chat?: any; error?: string }> {
     try {
       const headers = await this.getHeaders();
       const response = await this.client.put(`/api/chats/${chatId}`, data, { headers });
@@ -164,7 +164,7 @@ class ChatServiceClient {
   /**
    * Delete chat
    */
-  async deleteChat(chatId: number): Promise<{ error?: string }> {
+  async deleteChat(chatId: number, userId: number): Promise<{ error?: string }> {
     try {
       const headers = await this.getHeaders();
       await this.client.delete(`/api/chats/${chatId}`, { headers });
@@ -173,6 +173,45 @@ class ChatServiceClient {
       return {
         error: error.response?.data?.error || error.message || 'Failed to delete chat',
       };
+    }
+  }
+
+  /**
+   * Check if user is a member of chat
+   */
+  async isUserMember(chatId: number, userId: number): Promise<boolean> {
+    try {
+      const headers = await this.getHeaders();
+      const response = await this.client.get(`/api/chats/${chatId}/members/${userId}`, { headers });
+      return response.data.isMember === true;
+    } catch (error: any) {
+      // If endpoint doesn't exist, fallback to checking members list
+      try {
+        const members = await this.getChatMembers(chatId);
+        return members.members?.some((m: any) => m.userId === userId) || false;
+      } catch {
+        return false;
+      }
+    }
+  }
+
+  /**
+   * Check if user is an admin of chat
+   */
+  async isUserAdmin(chatId: number, userId: number): Promise<boolean> {
+    try {
+      const headers = await this.getHeaders();
+      const response = await this.client.get(`/api/chats/${chatId}/members/${userId}`, { headers });
+      return response.data.role === 'admin';
+    } catch (error: any) {
+      // If endpoint doesn't exist, fallback to checking members list
+      try {
+        const members = await this.getChatMembers(chatId);
+        const member = members.members?.find((m: any) => m.userId === userId);
+        return member?.role === 'admin' || false;
+      } catch {
+        return false;
+      }
     }
   }
 
@@ -209,7 +248,7 @@ class ChatServiceClient {
   /**
    * Remove member from chat
    */
-  async removeMember(chatId: number, userId: number): Promise<{ error?: string }> {
+  async removeMember(chatId: number, userId: number, requesterUserId?: number): Promise<{ error?: string }> {
     try {
       const headers = await this.getHeaders();
       await this.client.delete(`/api/chats/${chatId}/members/${userId}`, { headers });
@@ -408,4 +447,151 @@ class ChatServiceClient {
   }
 }
 
+// ==================== Message Service Client ====================
+
+class MessageServiceClient {
+  private chatService: ChatServiceClient;
+
+  constructor(chatService: ChatServiceClient) {
+    this.chatService = chatService;
+  }
+
+  /**
+   * Get chat messages
+   */
+  async getChatMessages(chatId: number, userId: number, limit: number = 50): Promise<any[]> {
+    const result = await this.chatService.getChatMessages(chatId, { limit });
+    if (result.error) {
+      throw new Error(result.error);
+    }
+    return result.messages || [];
+  }
+
+  /**
+   * Send message
+   */
+  async sendMessage(
+    data: {
+      chatId: number;
+      content: string;
+      replyToId?: number;
+      messageType?: 'text' | 'file' | 'system';
+      senderId: number;
+    },
+    userId: number
+  ): Promise<any> {
+    const result = await this.chatService.sendMessage({
+      chatId: data.chatId,
+      content: data.content,
+      replyToId: data.replyToId,
+      messageType: data.messageType || 'text',
+    });
+    if (result.error) {
+      throw new Error(result.error);
+    }
+    return result.message;
+  }
+
+  /**
+   * Get message by ID
+   */
+  async getMessageById(messageId: number, userId: number): Promise<any> {
+    const result = await this.chatService.getMessage(messageId);
+    if (result.error) {
+      throw new Error(result.error);
+    }
+    return result.message;
+  }
+
+  /**
+   * Edit message
+   */
+  async editMessage(messageId: number, userId: number, content: string): Promise<any> {
+    const result = await this.chatService.editMessage(messageId, content);
+    if (result.error) {
+      throw new Error(result.error);
+    }
+    return result.message;
+  }
+
+  /**
+   * Delete message
+   */
+  async deleteMessage(messageId: number, userId: number): Promise<void> {
+    const result = await this.chatService.deleteMessage(messageId);
+    if (result.error) {
+      throw new Error(result.error);
+    }
+  }
+
+  /**
+   * Add reaction to message
+   */
+  async addReaction(messageId: number, userId: number, emoji: string): Promise<any> {
+    const result = await this.chatService.addReaction(messageId, emoji);
+    if (result.error) {
+      throw new Error(result.error);
+    }
+    return result.reaction;
+  }
+
+  /**
+   * Remove reaction from message
+   */
+  async removeReaction(messageId: number, userId: number, emoji: string): Promise<void> {
+    const result = await this.chatService.removeReaction(messageId, emoji);
+    if (result.error) {
+      throw new Error(result.error);
+    }
+  }
+
+  /**
+   * Get mentions for user
+   */
+  async getMentionsForUser(userId: number, limit: number = 50): Promise<any[]> {
+    try {
+      const headers = await (this.chatService as any).getHeaders();
+      const client = (this.chatService as any).client;
+      const response = await client.get(`/api/messages/mentions?limit=${limit}`, { headers });
+      return response.data.mentions || [];
+    } catch (error: any) {
+      console.error('Error getting mentions:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Create task from message
+   */
+  async createTaskFromMessage(
+    messageId: number,
+    userId: number,
+    taskData: {
+      title: string;
+      description?: string;
+      projectId?: number;
+      assignee?: number;
+      dueDate?: Date;
+      priority?: string;
+    }
+  ): Promise<any> {
+    try {
+      const headers = await (this.chatService as any).getHeaders();
+      const client = (this.chatService as any).client;
+      const response = await client.post(
+        `/api/messages/${messageId}/create-task`,
+        {
+          ...taskData,
+          dueDate: taskData.dueDate?.toISOString(),
+        },
+        { headers }
+      );
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || error.message || 'Failed to create task from message');
+    }
+  }
+}
+
 export const chatService = new ChatServiceClient();
+export const messageService = new MessageServiceClient(chatService);

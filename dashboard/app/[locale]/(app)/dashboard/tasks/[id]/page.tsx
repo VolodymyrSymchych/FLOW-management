@@ -137,7 +137,7 @@ export default function TaskDetailPage() {
     );
   }
 
-  const isLocked = lockInfo?.isLocked && lockInfo.lockedBy;
+  const isLocked = Boolean(lockInfo?.isLocked && lockInfo.lockedBy);
 
   return (
     <div className="space-y-6">

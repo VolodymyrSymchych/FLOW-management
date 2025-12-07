@@ -5,6 +5,7 @@ import { logger } from '@project-scope-analyzer/shared';
 export interface Project {
   id: number;
   userId: number;
+  teamId: number | null;
   name: string;
   type: string | null;
   industry: string | null;
@@ -25,6 +26,7 @@ export interface Project {
 
 export interface CreateProjectInput {
   name: string;
+  teamId?: number;
   type?: string;
   industry?: string;
   teamSize?: string;
@@ -81,12 +83,34 @@ export class ProjectService {
   }
 
   /**
+   * Get projects by team ID for a user
+   */
+  async getProjectsByTeam(userId: number, teamId: number): Promise<Project[]> {
+    try {
+      const teamProjects = await db()
+        .select()
+        .from(projects)
+        .where(and(
+          eq(projects.userId, userId),
+          eq(projects.teamId, teamId),
+          isNull(projects.deletedAt)
+        ))
+        .orderBy(desc(projects.createdAt));
+
+      return teamProjects.map(this.mapToProject);
+    } catch (error) {
+      logger.error('Error getting team projects', { error, userId, teamId });
+      throw error;
+    }
+  }
+
+  /**
    * Get project by ID
    */
   async getProjectById(projectId: number, userId?: number): Promise<Project | null> {
     try {
       const conditions = [eq(projects.id, projectId), isNull(projects.deletedAt)];
-      
+
       if (userId) {
         conditions.push(eq(projects.userId, userId));
       }
@@ -116,6 +140,7 @@ export class ProjectService {
         .insert(projects)
         .values({
           userId,
+          teamId: input.teamId || null,
           name: input.name,
           type: input.type || null,
           industry: input.industry || null,
@@ -363,6 +388,7 @@ export class ProjectService {
     return {
       id: row.id,
       userId: row.userId,
+      teamId: row.teamId || null,
       name: row.name,
       type: row.type,
       industry: row.industry,

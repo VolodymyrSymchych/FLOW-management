@@ -35,6 +35,7 @@ export class ProjectController {
   /**
    * GET /projects
    * Get all projects for current user
+   * Query params: teamId (optional) - filter by team
    */
   async getProjects(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -43,7 +44,11 @@ export class ProjectController {
       }
 
       const userId = req.userId;
-      const projects = await projectService.getUserProjects(userId);
+      const teamId = req.query.teamId ? parseInt(req.query.teamId as string, 10) : undefined;
+
+      const projects = teamId
+        ? await projectService.getProjectsByTeam(userId, teamId)
+        : await projectService.getUserProjects(userId);
 
       res.json({ projects, total: projects.length });
     } catch (error) {

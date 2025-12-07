@@ -19,6 +19,7 @@ export const users = pgTable('users', {
 export const projects = pgTable('projects', {
   id: serial('id').primaryKey(),
   userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  teamId: integer('team_id'), // Team association (optional)
   name: varchar('name', { length: 255 }).notNull(),
   type: varchar('type', { length: 100 }),
   industry: varchar('industry', { length: 100 }),

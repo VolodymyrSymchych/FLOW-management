@@ -1,6 +1,43 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+
+  // Performance optimizations
+  compress: true, // Enable gzip compression
+  swcMinify: true, // Use SWC for faster minification
+
+  // Image optimization
+  images: {
+    formats: ['image/avif', 'image/webp'], // Modern image formats
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256],
+    minimumCacheTTL: 60 * 60 * 24 * 365, // Cache images for 1 year
+  },
+
+  // Headers for caching
+  async headers() {
+    return [
+      {
+        source: '/:all*(svg|jpg|jpeg|png|gif|ico|webp|avif)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      {
+        source: '/_next/static/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+    ];
+  },
+
   // Transpile AWS SDK packages
   transpilePackages: ['@aws-sdk', '@aws-crypto'],
   webpack: (config, { isServer, dir }) => {

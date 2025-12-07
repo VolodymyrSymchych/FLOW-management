@@ -55,9 +55,19 @@ class TeamServiceClient {
     async getTeams(): Promise<{ teams?: any[]; error?: string }> {
         try {
             const headers = await this.getHeaders();
+            console.log('[Team Service Client] Calling /api/teams');
+            console.log('[Team Service Client] Headers:', JSON.stringify(headers, null, 2));
+            console.log('[Team Service Client] Base URL:', TEAM_SERVICE_URL);
+
             const response = await this.client.get('/api/teams', { headers });
+            console.log('[Team Service Client] Response status:', response.status);
+
             return { teams: response.data.data };
         } catch (error: any) {
+            console.error('[Team Service Client] Error:', error.message);
+            console.error('[Team Service Client] Response data:', error.response?.data);
+            console.error('[Team Service Client] Response status:', error.response?.status);
+
             return {
                 error: error.response?.data?.error || error.message || 'Failed to get teams',
             };

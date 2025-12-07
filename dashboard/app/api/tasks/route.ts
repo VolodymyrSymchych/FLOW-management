@@ -15,13 +15,19 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams;
     const projectId = searchParams.get('project_id');
+    const teamId = searchParams.get('team_id');
 
-    console.log('Fetching tasks for userId:', session.userId, 'projectId:', projectId);
+    console.log('Fetching tasks for userId:', session.userId, 'projectId:', projectId, 'teamId:', teamId);
 
     // Use task-service microservice
-    const result = projectId
-      ? await taskService.getTasks(parseInt(projectId))
-      : await taskService.getTasks();
+    let result;
+    if (projectId) {
+      result = await taskService.getTasks(parseInt(projectId));
+    } else if (teamId && teamId !== 'all') {
+      result = await taskService.getTasksByTeam(parseInt(teamId));
+    } else {
+      result = await taskService.getTasks();
+    }
 
     if (result.error) {
       console.error('Task service error:', result.error);

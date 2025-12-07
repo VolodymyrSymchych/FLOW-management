@@ -10,12 +10,20 @@ export async function authMiddleware(
   try {
     const authHeader = req.headers.authorization;
 
+    // Debug logging
+    console.log('[Auth Middleware] Request to:', req.path);
+    console.log('[Auth Middleware] Authorization header:', authHeader ? 'Present' : 'Missing');
+    console.log('[Auth Middleware] All headers:', JSON.stringify(req.headers, null, 2));
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       throw new UnauthorizedError('Missing or invalid authorization header');
     }
 
     const token = authHeader.substring(7);
+    console.log('[Auth Middleware] Token extracted, length:', token.length);
+
     const payload = await jwtService.verifyToken(token);
+    console.log('[Auth Middleware] Token verified successfully for user:', payload.userId);
 
     req.userId = payload.userId;
     req.user = {
@@ -26,6 +34,7 @@ export async function authMiddleware(
 
     next();
   } catch (error) {
+    console.error('[Auth Middleware] Authentication failed:', error);
     next(error);
   }
 }

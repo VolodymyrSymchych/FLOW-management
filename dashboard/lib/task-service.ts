@@ -28,13 +28,13 @@ class TaskServiceClient {
 
   private async getHeaders(): Promise<Record<string, string>> {
     const headers: Record<string, string> = {};
-    
+
     // Add user JWT token (for user authentication)
     const token = await this.getAuthToken();
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
-    
+
     // Add service API key (for service-to-service authentication, server-side only)
     if (typeof window === 'undefined') {
       const serviceApiKey = process.env.TASK_SERVICE_API_KEY;
@@ -42,7 +42,7 @@ class TaskServiceClient {
         headers['X-Service-API-Key'] = serviceApiKey;
       }
     }
-    
+
     return headers;
   }
 
@@ -58,6 +58,22 @@ class TaskServiceClient {
     } catch (error: any) {
       return {
         error: error.response?.data?.error || error.message || 'Failed to get tasks',
+      };
+    }
+  }
+
+  /**
+   * Get tasks by team ID
+   */
+  async getTasksByTeam(teamId: number): Promise<{ tasks?: any[]; total?: number; error?: string }> {
+    try {
+      const headers = await this.getHeaders();
+      const params = { teamId: teamId.toString() };
+      const response = await this.client.get(`/api/tasks`, { headers, params });
+      return { tasks: response.data.tasks, total: response.data.total };
+    } catch (error: any) {
+      return {
+        error: error.response?.data?.error || error.message || 'Failed to get tasks by team',
       };
     }
   }

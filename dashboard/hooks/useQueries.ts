@@ -164,7 +164,7 @@ export function usePrefetch() {
           const url = teamId && teamId !== 'all'
             ? `/api/tasks?team_id=${teamId}`
             : '/api/tasks';
-          const response = await axios.get(url);
+          const response = await axiosInstance.get(url);
           return response.data.tasks || [];
         },
       });

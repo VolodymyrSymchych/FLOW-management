@@ -2,6 +2,12 @@ import axios from 'axios';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 
+// Create axios instance with credentials enabled
+const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+  withCredentials: true,
+});
+
 export interface ProjectMetadata {
   project_name: string;
   project_type: string;
@@ -64,28 +70,28 @@ export interface Stats {
 export const api = {
   // Health check
   health: async () => {
-    const response = await axios.get(`${API_BASE_URL}/health`);
+    const response = await apiClient.get('/health');
     return response.data;
   },
 
   // Get all projects
   getProjects: async (teamId?: number | 'all'): Promise<{ projects: Project[]; total: number }> => {
     const url = teamId !== undefined
-      ? `${API_BASE_URL}/projects?team_id=${teamId}`
-      : `${API_BASE_URL}/projects`;
-    const response = await axios.get(url);
+      ? `/projects?team_id=${teamId}`
+      : '/projects';
+    const response = await apiClient.get(url);
     return response.data;
   },
 
   // Get specific project
   getProject: async (id: number) => {
-    const response = await axios.get(`${API_BASE_URL}/projects/${id}`);
+    const response = await apiClient.get(`/projects/${id}`);
     return response.data;
   },
 
   // Analyze project
   analyzeProject: async (data: AnalyzeRequest) => {
-    const response = await axios.post(`${API_BASE_URL}/analyze`, data);
+    const response = await apiClient.post('/analyze', data);
     return response.data;
   },
 
@@ -93,7 +99,7 @@ export const api = {
   uploadDocument: async (file: File) => {
     const formData = new FormData();
     formData.append('file', file);
-    const response = await axios.post(`${API_BASE_URL}/upload`, formData, {
+    const response = await apiClient.post('/upload', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -103,13 +109,13 @@ export const api = {
 
   // Get stats
   getStats: async (): Promise<Stats> => {
-    const response = await axios.get(`${API_BASE_URL}/stats`);
+    const response = await apiClient.get('/stats');
     return response.data;
   },
 
   // Get progress
   getProgress: async (projectId: number) => {
-    const response = await axios.get(`${API_BASE_URL}/projects/${projectId}/progress`);
+    const response = await apiClient.get(`/projects/${projectId}/progress`);
     return response.data;
   },
 };

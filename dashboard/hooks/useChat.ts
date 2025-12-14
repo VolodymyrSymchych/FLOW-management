@@ -5,6 +5,10 @@ import { ChatWebSocket, ChatPolling } from '@/lib/websocket';
 import axios from 'axios';
 import { useUser } from './useUser';
 
+const axiosInstance = axios.create({
+  withCredentials: true,
+});
+
 // Fix: Ensure useUser is imported correctly
 
 export interface ChatMessage {
@@ -137,7 +141,7 @@ export function useChat() {
   const fetchChats = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/chat');
+      const response = await axiosInstance.get('/api/chat');
       setChats(response.data.chats || []);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to fetch chats');
@@ -149,7 +153,7 @@ export function useChat() {
   const fetchChat = useCallback(async (chatId: number) => {
     try {
       setLoading(true);
-      const response = await axios.get(`/api/chat?chatId=${chatId}`);
+      const response = await axiosInstance.get(`/api/chat?chatId=${chatId}`);
       setCurrentChat(response.data.chat);
       setMessages(response.data.messages || []);
 
@@ -175,7 +179,7 @@ export function useChat() {
     attachmentIds?: number[]
   ) => {
     try {
-      const response = await axios.post(`/api/chat/${chatId}/messages`, {
+      const response = await axiosInstance.post(`/api/chat/${chatId}/messages`, {
         content,
         messageType,
         replyToId,
@@ -203,7 +207,7 @@ export function useChat() {
 
   const createDirectChat = useCallback(async (recipientId: number) => {
     try {
-      const response = await axios.post('/api/chat', {
+      const response = await axiosInstance.post('/api/chat', {
         action: 'create',
         type: 'direct',
         recipientId,
@@ -217,7 +221,7 @@ export function useChat() {
 
   const addReaction = useCallback(async (messageId: number, emoji: string) => {
     try {
-      const response = await axios.post(`/api/chat/messages/${messageId}/reactions`, {
+      const response = await axiosInstance.post(`/api/chat/messages/${messageId}/reactions`, {
         emoji,
       });
       return response.data.reaction;
@@ -231,7 +235,7 @@ export function useChat() {
 
   const removeReaction = useCallback(async (messageId: number, emoji: string) => {
     try {
-      await axios.delete(`/api/chat/messages/${messageId}/reactions?emoji=${encodeURIComponent(emoji)}`);
+      await axiosInstance.delete(`/api/chat/messages/${messageId}/reactions?emoji=${encodeURIComponent(emoji)}`);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to remove reaction');
       throw err;
@@ -240,7 +244,7 @@ export function useChat() {
 
   const markMessageAsRead = useCallback(async (messageId: number) => {
     try {
-      await axios.post(`/api/chat/messages/${messageId}/read`);
+      await axiosInstance.post(`/api/chat/messages/${messageId}/read`);
     } catch (err: any) {
       // Silently fail - not critical
       console.error('Failed to mark message as read:', err);
@@ -264,4 +268,3 @@ export function useChat() {
     setMessages,
   };
 }
-

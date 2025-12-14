@@ -2,6 +2,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, type Project, type Stats } from '@/lib/api';
 import axios from 'axios';
 
+const axiosInstance = axios.create({
+  withCredentials: true,
+});
+
 // Dashboard Stats Query
 export function useStats() {
   return useQuery({
@@ -55,7 +59,7 @@ export function useTasks(teamId?: number | string) {
       const url = teamId && teamId !== 'all'
         ? `/api/tasks?team_id=${teamId}`
         : '/api/tasks';
-      const response = await axios.get(url);
+      const response = await axiosInstance.get(url);
       return response.data.tasks || [];
     },
     staleTime: 60 * 1000, // 1 хвилина
@@ -73,7 +77,7 @@ export function useInvoices(teamId?: number | string) {
       const url = teamId && teamId !== 'all'
         ? `/api/invoices?team_id=${teamId}`
         : '/api/invoices';
-      const response = await axios.get(url);
+      const response = await axiosInstance.get(url);
       return response.data.invoices || [];
     },
     staleTime: 5 * 60 * 1000,
@@ -85,7 +89,7 @@ export function useTeamMembers(teamId: number) {
   return useQuery({
     queryKey: ['team-members', teamId],
     queryFn: async () => {
-      const response = await axios.get(`/api/teams/${teamId}/members?include_attendance=true`);
+      const response = await axiosInstance.get(`/api/teams/${teamId}/members?include_attendance=true`);
       return response.data.members || [];
     },
     staleTime: 3 * 60 * 1000,
@@ -98,7 +102,7 @@ export function useTeams() {
   return useQuery({
     queryKey: ['teams'],
     queryFn: async () => {
-      const response = await axios.get('/api/teams');
+      const response = await axiosInstance.get('/api/teams');
       return response.data.teams || [];
     },
     staleTime: 10 * 60 * 1000, // Teams не змінюються часто
@@ -160,7 +164,7 @@ export function usePrefetch() {
           const url = teamId && teamId !== 'all'
             ? `/api/tasks?team_id=${teamId}`
             : '/api/tasks';
-          const response = await axios.get(url);
+          const response = await axiosInstance.get(url);
           return response.data.tasks || [];
         },
       });
@@ -173,4 +177,3 @@ export function usePrefetch() {
     },
   };
 }
-

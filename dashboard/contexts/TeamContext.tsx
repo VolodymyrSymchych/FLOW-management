@@ -52,7 +52,9 @@ export function TeamProvider({ children }: { children: ReactNode }) {
     async function loadTeams() {
       try {
         console.log('TeamContext: Loading teams...');
-        const response = await fetch('/api/teams');
+        const response = await fetch('/api/teams', {
+          credentials: 'include',
+        });
         if (response.ok) {
           const data = await response.json();
           const loadedTeams = data.teams || [];

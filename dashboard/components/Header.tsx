@@ -364,11 +364,14 @@ export const Header = memo(function Header() {
                 aria-label="Open user menu"
                 className="flex items-center space-x-3 hover:opacity-80 transition-opacity duration-200"
               >
-                <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-semibold flex-shrink-0">
+                <div
+                  className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-semibold flex-shrink-0"
+                  suppressHydrationWarning
+                >
                   {initials}
                 </div>
                 {user && (
-                  <div className="hidden md:block text-left">
+                  <div className="hidden md:block text-left" suppressHydrationWarning>
                     <div className="text-sm font-semibold text-text-primary">
                       {user.fullName || user.username}
                     </div>

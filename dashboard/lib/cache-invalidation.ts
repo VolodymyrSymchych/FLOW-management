@@ -223,11 +223,9 @@ export async function invalidateOnUpdate(
   // Remove duplicates
   const uniqueKeys = Array.from(new Set(keysToInvalidate));
 
-  // Invalidate all keys
+  // Invalidate all keys in parallel for better performance
   console.log(`[Cache Invalidation] Invalidating ${uniqueKeys.length} keys for ${entity}:${id}`);
-  for (const key of uniqueKeys) {
-    await invalidateCache(key);
-  }
+  await Promise.all(uniqueKeys.map(key => invalidateCache(key)));
 }
 
 /**
@@ -255,9 +253,7 @@ export async function invalidateAllUserCaches(userId: number): Promise<void> {
     getCachePattern(`tasks:user:${userId}:`), // tasks:user:123:project:*
   ];
 
-  for (const key of keysToInvalidate) {
-    await invalidateCache(key);
-  }
+  await Promise.all(keysToInvalidate.map(key => invalidateCache(key)));
 }
 
 /**
@@ -277,9 +273,7 @@ export async function invalidateAllTeamCaches(teamId: number): Promise<void> {
     CacheKeys.timeEntriesByTeam(teamId),
   ];
 
-  for (const key of keysToInvalidate) {
-    await invalidateCache(key);
-  }
+  await Promise.all(keysToInvalidate.map(key => invalidateCache(key)));
 }
 
 /**
@@ -318,9 +312,7 @@ export async function invalidateAllProjectCaches(
     );
   }
 
-  for (const key of keysToInvalidate) {
-    await invalidateCache(key);
-  }
+  await Promise.all(keysToInvalidate.map(key => invalidateCache(key)));
 }
 
 /**
@@ -337,7 +329,5 @@ export async function batchInvalidate(
 ): Promise<void> {
   console.log(`[Cache Invalidation] Batch invalidating ${operations.length} entities`);
 
-  for (const op of operations) {
-    await invalidateOnUpdate(op.entity, op.id, op.userId, op.metadata);
-  }
+  await Promise.all(operations.map(op => invalidateOnUpdate(op.entity, op.id, op.userId, op.metadata)));
 }

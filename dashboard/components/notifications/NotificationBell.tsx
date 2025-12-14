@@ -118,7 +118,10 @@ export function NotificationBell() {
       >
         <Bell className="w-5 h-5 text-text-secondary transition-transform duration-200 hover:rotate-12" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 w-5 h-5 bg-danger rounded-full flex items-center justify-center text-white text-xs font-bold  animate-pulse">
+          <span
+            className="absolute -top-1 -right-1 w-5 h-5 bg-danger rounded-full flex items-center justify-center text-white text-xs font-bold  animate-pulse"
+            suppressHydrationWarning
+          >
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
@@ -161,9 +164,8 @@ export function NotificationBell() {
                   {notifications.map((notification) => (
                     <div
                       key={notification.id}
-                      className={`p-4 hover:bg-white/10 hover:backdrop-blur-sm transition-all duration-200 cursor-pointer ${
-                        !notification.read ? 'bg-primary/5' : ''
-                      }`}
+                      className={`p-4 hover:bg-white/10 hover:backdrop-blur-sm transition-all duration-200 cursor-pointer ${!notification.read ? 'bg-primary/5' : ''
+                        }`}
                       onClick={() => {
                         if (!notification.read) {
                           markAsRead(notification.id);

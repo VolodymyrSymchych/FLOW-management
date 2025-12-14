@@ -37,6 +37,7 @@ export class TaskController {
   /**
    * GET /tasks
    * Get all tasks for current user
+   * Query params: projectId (optional) - filter by project, teamId (optional) - filter by team
    */
   async getTasks(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -46,8 +47,14 @@ export class TaskController {
 
       const userId = req.userId;
       const projectId = req.query.projectId ? parseInt(req.query.projectId as string, 10) : undefined;
+      const teamId = req.query.teamId ? parseInt(req.query.teamId as string, 10) : undefined;
 
-      const tasks = await taskService.getUserTasks(userId, projectId);
+      let tasks;
+      if (teamId) {
+        tasks = await taskService.getTasksByTeam(userId, teamId);
+      } else {
+        tasks = await taskService.getUserTasks(userId, projectId);
+      }
 
       res.json({ tasks, total: tasks.length });
     } catch (error) {

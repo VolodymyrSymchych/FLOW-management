@@ -1,16 +1,28 @@
 import express, { Express } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import { logger, requestLogger, metricsMiddleware, errorHandler } from '@project-scope-analyzer/shared';
+import { logger, httpsRedirect, hstsConfig, requestLogger, metricsMiddleware, errorHandler } from '@project-scope-analyzer/shared';
 import routes from './routes';
 import { config } from './config';
 
 export function createApp(): Express {
   const app = express();
 
-  // Security middleware
-  app.use(helmet());
-  app.use(cors());
+  // HTTPS redirect (must be first)
+  app.use(httpsRedirect);
+
+  // Security middleware with enhanced HSTS
+  app.use(helmet({
+    hsts: hstsConfig,
+  }));
+  app.use(cors({
+    origin: true,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-service-api-key'],
+    exposedHeaders: ['Content-Range', 'X-Content-Range'],
+    maxAge: 86400,
+  }));
 
   // Body parsing
   app.use(express.json());

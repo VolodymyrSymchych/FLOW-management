@@ -17,6 +17,7 @@ export const users = pgTable('users', {
 export const projects = pgTable('projects', {
   id: serial('id').primaryKey(),
   userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  teamId: integer('team_id'), // Team association (optional)
   name: varchar('name', { length: 255 }).notNull(),
   status: varchar('status', { length: 50 }).default('in_progress').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),

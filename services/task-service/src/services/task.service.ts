@@ -1,4 +1,4 @@
-import { db, tasks } from '../db';
+import { db, tasks, projects } from '../db';
 import { eq, and, isNull, desc, or, inArray, sql } from 'drizzle-orm';
 import { logger } from '@project-scope-analyzer/shared';
 
@@ -88,12 +88,38 @@ export class TaskService {
   }
 
   /**
+   * Get tasks by team ID (through project relationship)
+   */
+  async getTasksByTeam(userId: number, teamId: number): Promise<Task[]> {
+    try {
+      const teamTasks = await db
+        .select({
+          task: tasks,
+        })
+        .from(tasks)
+        .innerJoin(projects, eq(tasks.projectId, projects.id))
+        .where(and(
+          eq(tasks.userId, userId),
+          eq(projects.teamId, teamId),
+          isNull(tasks.deletedAt),
+          isNull(projects.deletedAt)
+        ))
+        .orderBy(desc(tasks.createdAt));
+
+      return teamTasks.map(row => this.mapToTask(row.task));
+    } catch (error) {
+      logger.error('Error getting tasks by team', { error, userId, teamId });
+      throw error;
+    }
+  }
+
+  /**
    * Get task by ID
    */
   async getTaskById(taskId: number, userId?: number): Promise<Task | null> {
     try {
       const conditions = [eq(tasks.id, taskId), isNull(tasks.deletedAt)];
-      
+
       if (userId) {
         conditions.push(eq(tasks.userId, userId));
       }
@@ -273,7 +299,7 @@ export class TaskService {
   async getGanttData(userId: number, projectId?: number): Promise<Task[]> {
     try {
       const userTasks = await this.getUserTasks(userId, projectId);
-      
+
       // Filter tasks with dates for Gantt chart
       return userTasks.filter(task => task.startDate || task.dueDate);
     } catch (error) {

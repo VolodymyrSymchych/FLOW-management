@@ -5,6 +5,10 @@ import { ChatWebSocket, ChatPolling } from '@/lib/websocket';
 import axios from 'axios';
 import { useUser } from './useUser';
 
+const axiosInstance = axios.create({
+  withCredentials: true,
+});
+
 // Fix: Ensure useUser is imported correctly
 
 export interface ChatMessage {
@@ -264,4 +268,3 @@ export function useChat() {
     setMessages,
   };
 }
-

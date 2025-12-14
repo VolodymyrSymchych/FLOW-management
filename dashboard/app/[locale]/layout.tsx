@@ -52,7 +52,7 @@ export default async function RootLayout({
   // Preload user data on server before rendering
   const session = await getSession();
   let preloadedUser = null;
-  
+
   if (session) {
     try {
       preloadedUser = await getCachedUser(session.userId);
@@ -63,26 +63,26 @@ export default async function RootLayout({
 
   return (
     <html lang={locale} suppressHydrationWarning>
-      <body className={`${inter.variable} ${poppins.variable} ${spaceGrotesk.variable} font-sans glass-theme bg-background text-text-primary`}>
+      <body className={`${inter.variable} ${poppins.variable} ${spaceGrotesk.variable} font-sans glass-theme bg-background text-text-primary`} suppressHydrationWarning>
         <NextIntlClientProvider messages={messages}>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <QueryProvider>
               <UserProvider initialUser={preloadedUser}>
                 <TeamProvider>
-              {/* Skip to main content link for accessibility */}
-              <a
-                href="#main-content"
-                className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:glass-heavy focus:px-6 focus:py-3 focus:rounded-xl focus:text-text-primary focus:font-medium focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-              >
-                Skip to main content
-              </a>
-              {/* Command Palette - Cmd/Ctrl+K */}
-              <CommandPalette />
-              {/* Global Keyboard Shortcuts */}
-              <KeyboardShortcuts />
-              <ConditionalLayout>
-                {children}
-              </ConditionalLayout>
+                  {/* Skip to main content link for accessibility */}
+                  <a
+                    href="#main-content"
+                    className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:glass-heavy focus:px-6 focus:py-3 focus:rounded-xl focus:text-text-primary focus:font-medium focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                  >
+                    Skip to main content
+                  </a>
+                  {/* Command Palette - Cmd/Ctrl+K */}
+                  <CommandPalette />
+                  {/* Global Keyboard Shortcuts */}
+                  <KeyboardShortcuts />
+                  <ConditionalLayout>
+                    {children}
+                  </ConditionalLayout>
                 </TeamProvider>
               </UserProvider>
             </QueryProvider>

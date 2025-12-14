@@ -102,7 +102,7 @@ export function useTeams() {
   return useQuery({
     queryKey: ['teams'],
     queryFn: async () => {
-      const response = await axios.get('/api/teams');
+      const response = await axiosInstance.get('/api/teams');
       return response.data.teams || [];
     },
     staleTime: 10 * 60 * 1000, // Teams не змінюються часто

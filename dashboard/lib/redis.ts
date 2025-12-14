@@ -118,6 +118,51 @@ export async function cached<T>(
 }
 
 /**
+ * Get data from cache only - returns null if cache miss (no DB fallback)
+ * Use this for Redis-only data loading where DB fallback is not desired
+ * 
+ * @example
+ * ```typescript
+ * const stats = await getFromCacheOnly<Stats>('stats:user:123');
+ * if (!stats) {
+ *   // Handle cache miss - show empty state or trigger refresh
+ * }
+ * ```
+ */
+export async function getFromCacheOnly<T>(key: string): Promise<T | null> {
+  const redis = getRedisClient();
+  if (!redis) {
+    console.log(`[Cache] Redis not available, returning null for key: ${key}`);
+    return null;
+  }
+
+  try {
+    const cached = await redis.get(key);
+    if (!cached) {
+      console.log(`[Cache] Miss (no fallback) for key: ${key}`);
+      return null;
+    }
+
+    // Parse the cached data
+    const parsed = typeof cached === 'string' ? JSON.parse(cached) : cached;
+
+    // Handle CachedData wrapper from cachedWithValidation
+    if (parsed && typeof parsed === 'object' && 'data' in parsed && 'cachedAt' in parsed) {
+      console.log(`[Cache] Hit (cache-only) for key: ${key}`);
+      return parsed.data as T;
+    }
+
+    // Direct cached value
+    console.log(`[Cache] Hit (cache-only) for key: ${key}`);
+    return parsed as T;
+  } catch (error: any) {
+    const errorMessage = error?.message || error?.toString() || 'Unknown cache error';
+    console.error(`[Cache] Error reading cache-only for key: ${key}:`, errorMessage);
+    return null;
+  }
+}
+
+/**
  * Advanced cache wrapper with timestamp validation
  *
  * Validates cached data against database timestamp to ensure freshness
@@ -306,7 +351,7 @@ export async function rateLimit(
       try {
         const upstash = redis as any;
         const count = await upstash.incr(key);
-        
+
         // Set expire only on first increment
         if (count === 1) {
           await upstash.expire(key, window);

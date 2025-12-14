@@ -15,8 +15,33 @@ export function useStats() {
   });
 }
 
+// Dashboard Data Query (Redis-only, no DB fallback)
+// Use this for the main dashboard page for fast loading
+export function useDashboardData(teamId?: number | string) {
+  return useQuery({
+    queryKey: ['dashboard', teamId || 'all'],
+    queryFn: async () => {
+      const url = teamId && teamId !== 'all'
+        ? `/api/dashboard?team_id=${teamId}`
+        : '/api/dashboard';
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error('Failed to load dashboard data');
+      }
+      return response.json();
+    },
+    staleTime: 60 * 1000, // 1 хвилина
+    gcTime: 10 * 60 * 1000, // Зберігати в кеші 10 хвилин
+    refetchInterval: 60 * 1000, // Автоматично оновлювати кожну хвилину
+    refetchOnWindowFocus: true,
+    refetchOnMount: false,
+  });
+}
+
 // Projects Query with team filtering
 export function useProjects(teamId?: number | string) {
+  const queryClient = useQueryClient();
+
   return useQuery({
     queryKey: ['projects', teamId || 'all'],
     queryFn: async () => {
@@ -34,6 +59,9 @@ export function useProjects(teamId?: number | string) {
     refetchInterval: 60 * 1000, // Автоматично оновлювати кожну хвилину
     refetchOnWindowFocus: true,
     refetchOnMount: false,
+    // Показувати попередні дані поки завантажуються нові (при зміні teamId)
+    // Це запобігає показу skeleton при переключенні команд
+    placeholderData: (previousData) => previousData,
   });
 }
 
@@ -62,6 +90,8 @@ export function useTasks(teamId?: number | string) {
     refetchInterval: 60 * 1000, // Автоматично оновлювати кожну хвилину
     refetchOnWindowFocus: true,
     refetchOnMount: false,
+    // Показувати попередні дані поки завантажуються нові
+    placeholderData: (previousData) => previousData,
   });
 }
 

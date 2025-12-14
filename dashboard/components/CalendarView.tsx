@@ -41,43 +41,30 @@ export function CalendarView({ refreshKey = 0 }: CalendarViewProps) {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Single consolidated useEffect for loading tasks
   useEffect(() => {
     // Wait for teams to load before loading tasks
     if (!teamsLoading) {
       loadTasks();
     }
-  }, [teamsLoading]);
-
-  useEffect(() => {
-    // Reload tasks when view changes to ensure fresh data
-    if (!teamsLoading) {
-      loadTasks();
-    }
-  }, [viewMode, teamsLoading]);
-
-  useEffect(() => {
-    // Reload tasks when refreshKey changes (after drag-and-drop)
-    if (refreshKey > 0 && !teamsLoading) {
-      loadTasks();
-    }
-  }, [refreshKey, teamsLoading]);
+  }, [teamsLoading, selectedTeam, viewMode, refreshKey]);
 
   const loadTasks = async () => {
     // Don't load if teams are still loading
     if (teamsLoading) {
       return;
     }
-    
+
     setLoading(true);
     try {
       // Build query params for team filtering
-      const teamId = selectedTeam.type === 'single' && selectedTeam.teamId 
-        ? selectedTeam.teamId 
+      const teamId = selectedTeam.type === 'single' && selectedTeam.teamId
+        ? selectedTeam.teamId
         : 'all';
-      const url = teamId !== 'all' 
+      const url = teamId !== 'all'
         ? `/api/tasks?team_id=${teamId}`
         : '/api/tasks';
-      
+
       const response = await axios.get(url);
       setTasks(response.data.tasks || []);
     } catch (error) {
@@ -120,13 +107,13 @@ export function CalendarView({ refreshKey = 0 }: CalendarViewProps) {
       const monday = new Date(firstDay);
       monday.setDate(firstDay.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
       monday.setHours(0, 0, 0, 0);
-      
+
       const lastDay = new Date(year, month + 1, 0);
       const lastDayOfWeek = lastDay.getDay();
       const sunday = new Date(lastDay);
       sunday.setDate(lastDay.getDate() + (lastDayOfWeek === 0 ? 0 : 7 - lastDayOfWeek));
       sunday.setHours(0, 0, 0, 0);
-      
+
       startDate = monday;
       endDate = sunday;
     }
@@ -140,20 +127,20 @@ export function CalendarView({ refreshKey = 0 }: CalendarViewProps) {
         const taskStartDate = task.startDate || task.start_date;
         const taskDueDate = task.dueDate || task.due_date;
         const taskEndDate = task.endDate || task.end_date;
-        
+
         // If task has start_date and end_date, check if current date is within range
         if (taskStartDate && taskEndDate) {
           const startStr = new Date(taskStartDate).toISOString().split('T')[0];
           const endStr = new Date(taskEndDate).toISOString().split('T')[0];
           return dateStr >= startStr && dateStr <= endStr;
         }
-        
+
         // If task has only due_date, check if it matches
         if (taskDueDate) {
           const taskDateStr = new Date(taskDueDate).toISOString().split('T')[0];
           return taskDateStr === dateStr;
         }
-        
+
         return false;
       });
 
@@ -266,7 +253,7 @@ export function CalendarView({ refreshKey = 0 }: CalendarViewProps) {
         {days.map((day, idx) => {
           const isSelected = selectedDate ? day.date.getTime() === selectedDate.getTime() : false;
           const dateId = `date-${day.date.toISOString().split('T')[0]}`;
-          
+
           return (
             <DroppableDay
               key={idx}
@@ -285,11 +272,11 @@ export function CalendarView({ refreshKey = 0 }: CalendarViewProps) {
           <div className="flex items-center space-x-2 text-sm text-text-secondary">
             <CalendarIcon className="w-4 h-4" />
             <span>
-              Selected: {selectedDate.toLocaleDateString('en-US', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
+              Selected: {selectedDate.toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
               })}
             </span>
           </div>
@@ -321,10 +308,10 @@ function DroppableDay({ dateId, day, isSelected, onDateClick }: DroppableDayProp
         day.isToday
           ? 'border-primary bg-primary/10'
           : isSelected
-          ? 'border-primary/50 bg-primary/5'
-          : isOver
-          ? 'border-success/50 bg-success/10 border-dashed'
-          : 'border-transparent hover:border-white/10 hover:bg-white/5',
+            ? 'border-primary/50 bg-primary/5'
+            : isOver
+              ? 'border-success/50 bg-success/10 border-dashed'
+              : 'border-transparent hover:border-white/10 hover:bg-white/5',
         !day.isCurrentMonth && 'opacity-40'
       )}
     >
@@ -334,8 +321,8 @@ function DroppableDay({ dateId, day, isSelected, onDateClick }: DroppableDayProp
           day.isToday
             ? 'text-primary'
             : day.isCurrentMonth
-            ? 'text-text-primary'
-            : 'text-text-tertiary'
+              ? 'text-text-primary'
+              : 'text-text-tertiary'
         )}
       >
         {day.dayOfMonth}
@@ -346,8 +333,8 @@ function DroppableDay({ dateId, day, isSelected, onDateClick }: DroppableDayProp
             task.priority === 'high'
               ? 'bg-danger/20 text-danger/80 border-danger/30'
               : task.priority === 'low'
-              ? 'bg-primary/20 text-primary/80 border-primary/30'
-              : 'bg-surface-elevated/50 text-text-tertiary border-white/10';
+                ? 'bg-primary/20 text-primary/80 border-primary/30'
+                : 'bg-surface-elevated/50 text-text-tertiary border-white/10';
 
           return (
             <div

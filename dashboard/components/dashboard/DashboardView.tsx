@@ -335,16 +335,31 @@ export default function DashboardView() {
     const [containerWidth, setContainerWidth] = useState(1200);
     const [currentBreakpoint, setCurrentBreakpoint] = useState<string>('xl');
 
-    // React Query for data
+    // React Query for data - з fallback на БД якщо Redis порожній
     const teamId = selectedTeam.type === 'all' ? 'all' : selectedTeam.teamId;
-    const { data: stats, isLoading: statsLoading, isFetching: statsFetching } = useStats();
-    const { data: projects, isLoading: projectsLoading, isFetching: projectsFetching } = useProjects(teamId);
+    const {
+        data: stats,
+        isLoading: statsLoading,
+        isFetching: statsFetching,
+        isPlaceholderData: statsPlaceholder
+    } = useStats();
+    const {
+        data: projects,
+        isLoading: projectsLoading,
+        isFetching: projectsFetching,
+        isPlaceholderData: projectsPlaceholder
+    } = useProjects(teamId);
 
     const cacheManager = useDashboardCache();
 
+    // isLoading = true тільки при першому завантаженні (немає кешу)
+    // isFetching = true при будь-якому запиті (включаючи refetch)
     const isLoading = statsLoading || projectsLoading;
     const isBackgroundFetching = (statsFetching && !statsLoading) || (projectsFetching && !projectsLoading);
-    const hasData = stats !== undefined && projects !== undefined;
+
+    // hasData = true якщо є будь-які дані (навіть старі/placeholder)
+    // Це запобігає показу skeleton при переключенні команд
+    const hasData = stats !== undefined || projects !== undefined;
 
     const [refreshKey, setRefreshKey] = useState(0);
     const shouldShowLoading = useSmartDelayedLoading(isLoading || teamsLoading, hasData, 300);

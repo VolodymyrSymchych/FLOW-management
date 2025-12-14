@@ -13,8 +13,13 @@ export function useDashboardCache() {
         const interval = setInterval(() => {
             // Інвалідувати тільки якщо дані застарілі (більше 1 хвилини)
             queryClient.invalidateQueries({
-                queryKey: ['stats'],
+                queryKey: ['dashboard'],
                 refetchType: 'active', // Рефетчити тільки активні запити
+            });
+
+            queryClient.invalidateQueries({
+                queryKey: ['stats'],
+                refetchType: 'active',
             });
 
             queryClient.invalidateQueries({
@@ -33,6 +38,9 @@ export function useDashboardCache() {
 
     // Функції для ручного оновлення
     return {
+        refreshDashboard: () => {
+            queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+        },
         refreshStats: () => {
             queryClient.invalidateQueries({ queryKey: ['stats'] });
         },
@@ -43,6 +51,7 @@ export function useDashboardCache() {
             queryClient.invalidateQueries({ queryKey: ['tasks'] });
         },
         refreshAll: () => {
+            queryClient.invalidateQueries({ queryKey: ['dashboard'] });
             queryClient.invalidateQueries({ queryKey: ['stats'] });
             queryClient.invalidateQueries({ queryKey: ['projects'] });
             queryClient.invalidateQueries({ queryKey: ['tasks'] });

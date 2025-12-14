@@ -33,12 +33,14 @@ export function TeamProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedTeam, setSelectedTeamState] = useState<TeamSelection>({ type: 'all' });
   const [isHydrated, setIsHydrated] = useState(false);
+  const [teamsLoaded, setTeamsLoaded] = useState(false);
 
   // Load saved selection from localStorage after hydration
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
+        console.log('TeamContext: Restoring selection from localStorage:', saved);
         setSelectedTeamState(JSON.parse(saved));
       }
     } catch (error) {
@@ -58,39 +60,51 @@ export function TeamProvider({ children }: { children: ReactNode }) {
           const loadedTeams = data.teams || [];
           console.log('TeamContext: Loaded teams:', loadedTeams.map(t => ({ id: t.id, name: t.name })));
           setTeams(loadedTeams);
-
-          // Validate selected team after teams are loaded
-          setSelectedTeamState(prev => {
-            console.log('TeamContext: Validating selection:', prev);
-            // If a team is selected but doesn't exist anymore, reset to 'all'
-            if (prev.type === 'single' && prev.teamId) {
-              const teamExists = loadedTeams.some(t => t.id === prev.teamId);
-              if (!teamExists) {
-                console.warn(`TeamContext: Selected team ${prev.teamId} not found, resetting to 'all'`);
-                // Clear invalid selection from localStorage
-                try {
-                  localStorage.removeItem(STORAGE_KEY);
-                } catch (e) {
-                  console.error('Failed to clear invalid team selection:', e);
-                }
-                return { type: 'all' };
-              }
-            }
-            console.log('TeamContext: Selection validated:', prev);
-            return prev;
-          });
         } else {
           console.error('TeamContext: Failed to load teams, status:', response.status);
         }
       } catch (error) {
         console.error('Failed to load teams:', error);
       } finally {
-        setIsLoading(false);
+        setTeamsLoaded(true);
       }
     }
 
     loadTeams();
   }, []);
+
+  // Validate selected team and set isLoading = false ONLY when both hydration and teams are loaded
+  useEffect(() => {
+    if (!isHydrated || !teamsLoaded) {
+      return; // Wait for both
+    }
+
+    console.log('TeamContext: Both hydrated and teams loaded, validating selection...');
+
+    // Validate selected team after both localStorage and teams are loaded
+    setSelectedTeamState(prev => {
+      console.log('TeamContext: Validating selection:', prev, 'against teams:', teams.map(t => t.id));
+      // If a team is selected but doesn't exist anymore, reset to 'all'
+      if (prev.type === 'single' && prev.teamId) {
+        const teamExists = teams.some(t => t.id === prev.teamId);
+        if (!teamExists) {
+          console.warn(`TeamContext: Selected team ${prev.teamId} not found, resetting to 'all'`);
+          // Clear invalid selection from localStorage
+          try {
+            localStorage.removeItem(STORAGE_KEY);
+          } catch (e) {
+            console.error('Failed to clear invalid team selection:', e);
+          }
+          return { type: 'all' };
+        }
+      }
+      console.log('TeamContext: Selection validated:', prev);
+      return prev;
+    });
+
+    // Now we can safely set loading to false
+    setIsLoading(false);
+  }, [isHydrated, teamsLoaded, teams]);
 
   const setSelectedTeam = (selection: TeamSelection) => {
     console.log('TeamContext: Setting selected team:', selection);

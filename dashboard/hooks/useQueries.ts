@@ -59,7 +59,7 @@ export function useTasks(teamId?: number | string) {
       const url = teamId && teamId !== 'all'
         ? `/api/tasks?team_id=${teamId}`
         : '/api/tasks';
-      const response = await axios.get(url);
+      const response = await axiosInstance.get(url);
       return response.data.tasks || [];
     },
     staleTime: 60 * 1000, // 1 хвилина

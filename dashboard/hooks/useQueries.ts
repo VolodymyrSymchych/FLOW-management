@@ -77,7 +77,7 @@ export function useInvoices(teamId?: number | string) {
       const url = teamId && teamId !== 'all'
         ? `/api/invoices?team_id=${teamId}`
         : '/api/invoices';
-      const response = await axios.get(url);
+      const response = await axiosInstance.get(url);
       return response.data.invoices || [];
     },
     staleTime: 5 * 60 * 1000,

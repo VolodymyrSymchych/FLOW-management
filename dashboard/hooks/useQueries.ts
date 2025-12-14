@@ -89,7 +89,7 @@ export function useTeamMembers(teamId: number) {
   return useQuery({
     queryKey: ['team-members', teamId],
     queryFn: async () => {
-      const response = await axios.get(`/api/teams/${teamId}/members?include_attendance=true`);
+      const response = await axiosInstance.get(`/api/teams/${teamId}/members?include_attendance=true`);
       return response.data.members || [];
     },
     staleTime: 3 * 60 * 1000,

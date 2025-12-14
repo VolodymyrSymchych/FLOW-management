@@ -2,6 +2,10 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Project } from '@/types';
 
+const axiosInstance = axios.create({
+  withCredentials: true,
+});
+
 export function useProjects() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(false);
@@ -11,7 +15,7 @@ export function useProjects() {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get('/api/projects');
+      const response = await axiosInstance.get('/api/projects');
       setProjects(response.data.projects || []);
     } catch (err: any) {
       const errorMessage = err.response?.data?.error || err.message || 'Failed to load projects';
@@ -33,4 +37,3 @@ export function useProjects() {
     reload: loadProjects,
   };
 }
-

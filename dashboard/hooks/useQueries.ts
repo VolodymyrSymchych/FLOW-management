@@ -2,6 +2,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, type Project, type Stats } from '@/lib/api';
 import axios from 'axios';
 
+const axiosInstance = axios.create({
+  withCredentials: true,
+});
+
 // Dashboard Stats Query
 export function useStats() {
   return useQuery({
@@ -173,4 +177,3 @@ export function usePrefetch() {
     },
   };
 }
-

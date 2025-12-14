@@ -45,8 +45,9 @@ function SignInForm() {
         throw new Error(data.error || 'Failed to sign in');
       }
 
-      router.push('/dashboard');
-      router.refresh();
+      // Use window.location.href for hard redirect to ensure cookies are properly set
+      // This forces a full page reload which picks up the newly set cookies
+      window.location.href = '/dashboard';
     } catch (err: any) {
       setError(err.message || 'An error occurred');
     } finally {

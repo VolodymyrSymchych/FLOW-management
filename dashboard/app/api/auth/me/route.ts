@@ -10,10 +10,14 @@ const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || '');
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
+  console.log('[/api/auth/me] ========== START ==========');
   try {
     const session = await getSession();
-    
+
+    console.log('[/api/auth/me] Session:', session ? { userId: session.userId, email: session.email } : 'null');
+
     if (!session) {
+      console.log('[/api/auth/me] No session, returning 401');
       return NextResponse.json({ user: null }, { status: 401 });
     }
 
@@ -46,7 +50,7 @@ export async function GET() {
       } catch (error) {
         console.error('Error fetching user from cache/database:', error);
       }
-      
+
       // Final fallback to session data only
       return NextResponse.json({
         user: {
@@ -62,12 +66,16 @@ export async function GET() {
     // Call auth-service to get user info
     try {
       const result = await authService.getMe(token);
-      
+
+      console.log('[/api/auth/me] Auth service result:', JSON.stringify(result, null, 2));
+
       if (result.error || !result.user) {
+        console.log('[/api/auth/me] Auth service failed, using fallback');
         // Fallback to session data if auth-service fails
         // Get full user data from cache/database to include emailVerified
         try {
           const dbUser = await getCachedUser(session.userId);
+          console.log('[/api/auth/me] DB user from cache:', JSON.stringify(dbUser, null, 2));
           if (dbUser) {
             return NextResponse.json({
               user: {
@@ -83,7 +91,7 @@ export async function GET() {
         } catch (error) {
           console.error('Error fetching user from cache/database:', error);
         }
-        
+
         // Final fallback to session data only
         return NextResponse.json({
           user: {
@@ -96,6 +104,7 @@ export async function GET() {
         });
       }
 
+      console.log('[/api/auth/me] Returning auth service user:', JSON.stringify(result.user, null, 2));
       return NextResponse.json({
         user: result.user,
       });
@@ -120,7 +129,7 @@ export async function GET() {
       } catch (dbError) {
         console.error('Error fetching user from cache/database:', dbError);
       }
-      
+
       // Final fallback to session data only
       return NextResponse.json({
         user: {

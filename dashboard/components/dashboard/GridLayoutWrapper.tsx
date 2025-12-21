@@ -7,7 +7,7 @@ interface GridLayoutWrapperProps {
   children: ReactNode;
 }
 
-export function GridLayoutWrapper({ children }: GridLayoutWrapperProps) {
+function GridLayoutWrapper({ children }: GridLayoutWrapperProps) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -20,3 +20,6 @@ export function GridLayoutWrapper({ children }: GridLayoutWrapperProps) {
 
   return <>{children}</>;
 }
+
+export default GridLayoutWrapper;
+export { GridLayoutWrapper };

@@ -28,29 +28,43 @@ import { useSmartDelayedLoading } from '@/hooks/useSmartDelayedLoading';
 import { useStats, useProjects } from '@/hooks/useQueries';
 import { useDashboardCache } from '@/hooks/useDashboardCache';
 import { cn } from '@/lib/utils';
-import { Responsive, WidthProvider, Layout } from 'react-grid-layout';
+import type { Layout } from 'react-grid-layout';
 import { WidgetGallery, WidgetDefinition } from '@/components/WidgetGallery';
-
-const ResponsiveGridLayout = WidthProvider(Responsive);
 import { DashboardSkeleton } from './DashboardSkeleton';
-import 'react-grid-layout/css/styles.css';
-import 'react-resizable/css/styles.css';
 
-// Lazy load heavy components
-const CalendarView = dynamic(() => import('@/components/CalendarView').then(m => ({ default: m.CalendarView })), {
+// Dynamic import of ResponsiveGrid to avoid SSR hydration issues
+const ResponsiveGrid = dynamic(
+    () => import('./ResponsiveGrid').then(mod => mod.ResponsiveGrid),
+    { ssr: false }
+);
+
+// Dynamic import of GridLayoutWrapper to avoid SSR hydration issues
+const GridLayoutWrapper = dynamic(
+    () => import('./GridLayoutWrapper'),
+    {
+        ssr: false,
+        loading: () => <div className="animate-pulse rounded-2xl bg-white/5 min-h-[400px]" />
+    }
+);
+
+// Lazy load heavy components with SSR disabled
+const CalendarView = dynamic(() => import('@/components/CalendarView'), {
     ssr: false,
     loading: () => <div className="glass-medium rounded-2xl p-6 h-full animate-pulse" />
 });
 
-const BudgetTracking = dynamic(() => import('@/components/BudgetTracking').then(m => ({ default: m.BudgetTracking })), {
+const BudgetTracking = dynamic(() => import('@/components/BudgetTracking').then(m => m.BudgetTracking), {
+    ssr: false,
     loading: () => <div className="glass-medium rounded-2xl p-6 h-full animate-pulse" />
 });
 
-const ProgressSection = dynamic(() => import('@/components/ProgressSection').then(m => ({ default: m.ProgressSection })), {
+const ProgressSection = dynamic(() => import('@/components/ProgressSection').then(m => m.ProgressSection), {
+    ssr: false,
     loading: () => <div className="glass-medium rounded-2xl p-6 h-full animate-pulse" />
 });
 
-const UpcomingTasks = dynamic(() => import('@/components/UpcomingTasks').then(m => ({ default: m.UpcomingTasks })), {
+const UpcomingTasks = dynamic(() => import('@/components/UpcomingTasks').then(m => m.UpcomingTasks), {
+    ssr: false,
     loading: () => <div className="glass-medium rounded-2xl p-6 h-full animate-pulse" />
 });
 
@@ -567,9 +581,8 @@ export default function DashboardView() {
         [stats, projects, refreshKey, router]
     );
 
-    // Show skeleton loading state
-    // FIX: Also show loading state if not mounted to prevent hydration errors
-    if (!isMounted || shouldShowLoading) {
+    // Show skeleton loading state only if actually loading data
+    if (shouldShowLoading) {
         return <DashboardSkeleton />;
     }
 
@@ -694,7 +707,7 @@ export default function DashboardView() {
                 )}
             >
                 {/* Grid background pattern */}
-                {isCustomizing && (
+                {isMounted && isCustomizing && (
                     <div
                         className="pointer-events-none absolute inset-0 rounded-[22px] opacity-60"
                         style={{
@@ -706,44 +719,43 @@ export default function DashboardView() {
                     />
                 )}
 
-                {!isMounted ? (
-                    <div className="animate-pulse rounded-2xl bg-white/5 min-h-[400px]" />
-                ) : (layouts['xl']?.length > 0 || Object.values(layouts).some(l => l.length > 0)) ? (
-                    <ResponsiveGridLayout
-                        className="layout"
-                        layouts={layouts}
-                        breakpoints={BREAKPOINTS}
-                        cols={COLS}
-                        rowHeight={ROW_HEIGHT}
-                        // width={containerWidth - 32} // Handled by WidthProvider
-                        onLayoutChange={handleLayoutChange}
-                        onBreakpointChange={handleBreakpointChange}
-                        isDraggable={true}
-                        isResizable={true}
-                        compactType={null}
-                        preventCollision={true}
-                        margin={MARGIN}
-                        draggableHandle=".widget-drag-handle"
-                        useCSSTransforms={true}
-                    >
-                        {(layouts[currentBreakpoint] || []).map((layoutItem) => {
-                            const widget = widgetMap.get(layoutItem.i);
-                            if (!widget) return null;
+                {(layouts['xl']?.length > 0 || Object.values(layouts).some(l => l.length > 0)) ? (
+                    <GridLayoutWrapper>
+                        <ResponsiveGrid
+                            className="layout"
+                            layouts={layouts}
+                            breakpoints={BREAKPOINTS}
+                            cols={COLS}
+                            rowHeight={ROW_HEIGHT}
+                            onLayoutChange={handleLayoutChange}
+                            onBreakpointChange={handleBreakpointChange}
+                            isDraggable={true}
+                            isResizable={true}
+                            compactType={null}
+                            preventCollision={true}
+                            margin={MARGIN}
+                            draggableHandle=".widget-drag-handle"
+                            useCSSTransforms={true}
+                        >
+                            {(layouts[currentBreakpoint] || []).map((layoutItem) => {
+                                const widget = widgetMap.get(layoutItem.i);
+                                if (!widget) return null;
 
-                            return (
-                                <div key={layoutItem.i} className="widget-item">
-                                    <WidgetWrapper
-                                        widgetId={widget.id}
-                                        widgetLabel={widget.label}
-                                        onRemove={handleRemoveWidget}
-                                        isCustomizing={isCustomizing}
-                                    >
-                                        {widget.render(renderContext)}
-                                    </WidgetWrapper>
-                                </div>
-                            );
-                        })}
-                    </ResponsiveGridLayout>
+                                return (
+                                    <div key={layoutItem.i} className="widget-item">
+                                        <WidgetWrapper
+                                            widgetId={widget.id}
+                                            widgetLabel={widget.label}
+                                            onRemove={handleRemoveWidget}
+                                            isCustomizing={isCustomizing}
+                                        >
+                                            {widget.render(renderContext)}
+                                        </WidgetWrapper>
+                                    </div>
+                                );
+                            })}
+                        </ResponsiveGrid>
+                    </GridLayoutWrapper>
                 ) : (
                     <div className="rounded-2xl border border-dashed border-white/10 p-12 text-center">
                         <LayoutGrid className="mx-auto mb-3 h-12 w-12 text-text-tertiary" />

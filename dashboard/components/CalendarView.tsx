@@ -1,11 +1,10 @@
 'use client';
 
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as LucideCalendar } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { cn } from '@/lib/utils';
-import { useDroppable } from '@dnd-kit/core';
-import { useTeam } from '@/contexts/TeamContext';
+import { cn } from '../lib/utils';
+import { useTeam } from '../contexts/TeamContext';
 
 interface Task {
   id: number;
@@ -33,7 +32,76 @@ interface CalendarViewProps {
   refreshKey?: number;
 }
 
-export function CalendarView({ refreshKey = 0 }: CalendarViewProps) {
+interface DroppableDayProps {
+  day: CalendarDay;
+  isSelected: boolean;
+  onDateClick: (date: Date) => void;
+}
+
+function DroppableDay({ day, isSelected, onDateClick }: DroppableDayProps) {
+  return (
+    <div
+      onClick={() => onDateClick(day.date)}
+      className={cn(
+        'min-h-[120px] p-2 rounded-lg border-2 transition-all cursor-pointer',
+        day.isToday
+          ? 'border-primary bg-primary/10'
+          : isSelected
+            ? 'border-primary/50 bg-primary/5'
+            : 'border-transparent hover:border-white/10 hover:bg-white/5',
+        !day.isCurrentMonth && 'opacity-40'
+      )}
+    >
+      <div
+        className={cn(
+          'text-xs mb-2 font-semibold',
+          day.isToday
+            ? 'text-primary'
+            : day.isCurrentMonth
+              ? 'text-text-primary'
+              : 'text-text-tertiary'
+        )}
+      >
+        {day.dayOfMonth}
+      </div>
+      <div className="space-y-1">
+        {day.tasks.slice(0, 3).map((task) => {
+          const priorityColor =
+            task.priority === 'high'
+              ? 'bg-danger/20 text-danger/80 border-danger/30'
+              : task.priority === 'low'
+                ? 'bg-primary/20 text-primary/80 border-primary/30'
+                : 'bg-surface-elevated/50 text-text-tertiary border-white/10';
+
+          return (
+            <div
+              key={task.id}
+              className={cn(
+                'p-1.5 rounded text-xs border glass-light truncate',
+                priorityColor
+              )}
+              title={task.title}
+            >
+              <div className="font-medium truncate">{task.title}</div>
+              {task.assignee && (
+                <div className="text-[10px] opacity-75 mt-0.5">
+                  {task.assignee}
+                </div>
+              )}
+            </div>
+          );
+        })}
+        {day.tasks.length > 3 && (
+          <div className="text-[10px] text-text-tertiary text-center pt-1">
+            +{day.tasks.length - 3} more
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default function CalendarView({ refreshKey = 0 }: CalendarViewProps) {
   const { selectedTeam, isLoading: teamsLoading } = useTeam();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'1week' | '2weeks' | '1month'>('1week');
@@ -252,12 +320,10 @@ export function CalendarView({ refreshKey = 0 }: CalendarViewProps) {
         {/* Calendar days */}
         {days.map((day, idx) => {
           const isSelected = selectedDate ? day.date.getTime() === selectedDate.getTime() : false;
-          const dateId = `date-${day.date.toISOString().split('T')[0]}`;
 
           return (
             <DroppableDay
               key={idx}
-              dateId={dateId}
               day={day}
               isSelected={isSelected}
               onDateClick={handleDateClick}
@@ -270,7 +336,7 @@ export function CalendarView({ refreshKey = 0 }: CalendarViewProps) {
       {selectedDate && (
         <div className="mt-4 pt-4 border-t border-white/10">
           <div className="flex items-center space-x-2 text-sm text-text-secondary">
-            <CalendarIcon className="w-4 h-4" />
+            <LucideCalendar className="w-4 h-4" />
             <span>
               Selected: {selectedDate.toLocaleDateString('en-US', {
                 weekday: 'long',
@@ -287,79 +353,3 @@ export function CalendarView({ refreshKey = 0 }: CalendarViewProps) {
   );
 }
 
-interface DroppableDayProps {
-  dateId: string;
-  day: CalendarDay;
-  isSelected: boolean;
-  onDateClick: (date: Date) => void;
-}
-
-function DroppableDay({ dateId, day, isSelected, onDateClick }: DroppableDayProps) {
-  const { setNodeRef, isOver } = useDroppable({
-    id: dateId,
-  });
-
-  return (
-    <div
-      ref={setNodeRef}
-      onClick={() => onDateClick(day.date)}
-      className={cn(
-        'min-h-[120px] p-2 rounded-lg border-2 transition-all cursor-pointer',
-        day.isToday
-          ? 'border-primary bg-primary/10'
-          : isSelected
-            ? 'border-primary/50 bg-primary/5'
-            : isOver
-              ? 'border-success/50 bg-success/10 border-dashed'
-              : 'border-transparent hover:border-white/10 hover:bg-white/5',
-        !day.isCurrentMonth && 'opacity-40'
-      )}
-    >
-      <div
-        className={cn(
-          'text-xs mb-2 font-semibold',
-          day.isToday
-            ? 'text-primary'
-            : day.isCurrentMonth
-              ? 'text-text-primary'
-              : 'text-text-tertiary'
-        )}
-      >
-        {day.dayOfMonth}
-      </div>
-      <div className="space-y-1">
-        {day.tasks.slice(0, 3).map((task) => {
-          const priorityColor =
-            task.priority === 'high'
-              ? 'bg-danger/20 text-danger/80 border-danger/30'
-              : task.priority === 'low'
-                ? 'bg-primary/20 text-primary/80 border-primary/30'
-                : 'bg-surface-elevated/50 text-text-tertiary border-white/10';
-
-          return (
-            <div
-              key={task.id}
-              className={cn(
-                'p-1.5 rounded text-xs border glass-light truncate',
-                priorityColor
-              )}
-              title={task.title}
-            >
-              <div className="font-medium truncate">{task.title}</div>
-              {task.assignee && (
-                <div className="text-[10px] opacity-75 mt-0.5">
-                  {task.assignee}
-                </div>
-              )}
-            </div>
-          );
-        })}
-        {day.tasks.length > 3 && (
-          <div className="text-[10px] text-text-tertiary text-center pt-1">
-            +{day.tasks.length - 3} more
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}

@@ -48,7 +48,7 @@ const GridLayoutWrapper = dynamic(
 );
 
 // Lazy load heavy components with SSR disabled
-const CalendarView = dynamic(() => import('@/components/CalendarView'), {
+const CalendarView = dynamic(() => import('@/components/CalendarView').then(mod => mod.default), {
     ssr: false,
     loading: () => <div className="glass-medium rounded-2xl p-6 h-full animate-pulse" />
 });

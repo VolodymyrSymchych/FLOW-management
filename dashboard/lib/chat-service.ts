@@ -53,15 +53,24 @@ class ChatServiceClient {
 
   /**
    * Get user's chats
+   * Uses shorter timeout to prevent long skeleton display
    */
   async getUserChats(): Promise<{ chats?: any[]; error?: string }> {
     try {
       const headers = await this.getHeaders();
-      const response = await this.client.get('/api/chats/my', { headers });
+      // Use shorter timeout for list operations to prevent long loading
+      const response = await this.client.get('/api/chats/my', {
+        headers,
+        timeout: 3000, // 3 second timeout for quick response
+      });
       return { chats: response.data.chats };
     } catch (error: any) {
+      // On timeout or error, return empty array for better UX
+      // This prevents skeleton from showing indefinitely
+      console.warn('Failed to load chats (may be offline or slow):', error.message);
       return {
-        error: error.response?.data?.error || error.message || 'Failed to get chats',
+        chats: [], // Return empty array instead of error for UX
+        error: error.code === 'ECONNABORTED' ? 'Connection timeout' : error.message,
       };
     }
   }

@@ -34,13 +34,13 @@ import { DashboardSkeleton } from './DashboardSkeleton';
 
 // Dynamic import of ResponsiveGrid to avoid SSR hydration issues
 const ResponsiveGrid = dynamic(
-    () => import('./ResponsiveGrid').then(mod => mod.ResponsiveGrid),
+    () => import('./ResponsiveGrid').then(mod => ({ default: mod.default || mod.ResponsiveGrid })),
     { ssr: false }
 );
 
 // Dynamic import of GridLayoutWrapper to avoid SSR hydration issues
 const GridLayoutWrapper = dynamic(
-    () => import('./GridLayoutWrapper'),
+    () => import('./GridLayoutWrapper').then(mod => ({ default: mod.default || mod.GridLayoutWrapper })),
     {
         ssr: false,
         loading: () => <div className="animate-pulse rounded-2xl bg-white/5 min-h-[400px]" />
@@ -48,25 +48,37 @@ const GridLayoutWrapper = dynamic(
 );
 
 // Lazy load heavy components with SSR disabled
-const CalendarView = dynamic(() => import('@/components/CalendarView').then(mod => mod.default), {
-    ssr: false,
-    loading: () => <div className="glass-medium rounded-2xl p-6 h-full animate-pulse" />
-});
+const CalendarView = dynamic(
+    () => import('@/components/CalendarView'),
+    {
+        ssr: false,
+        loading: () => <div className="glass-medium rounded-2xl p-6 h-full animate-pulse" />
+    }
+);
 
-const BudgetTracking = dynamic(() => import('@/components/BudgetTracking').then(m => m.BudgetTracking), {
-    ssr: false,
-    loading: () => <div className="glass-medium rounded-2xl p-6 h-full animate-pulse" />
-});
+const BudgetTracking = dynamic(
+    () => import('@/components/BudgetTracking').then(mod => ({ default: mod.default || mod.BudgetTracking })),
+    {
+        ssr: false,
+        loading: () => <div className="glass-medium rounded-2xl p-6 h-full animate-pulse" />
+    }
+);
 
-const ProgressSection = dynamic(() => import('@/components/ProgressSection').then(m => m.ProgressSection), {
-    ssr: false,
-    loading: () => <div className="glass-medium rounded-2xl p-6 h-full animate-pulse" />
-});
+const ProgressSection = dynamic(
+    () => import('@/components/ProgressSection').then(mod => ({ default: mod.default || mod.ProgressSection })),
+    {
+        ssr: false,
+        loading: () => <div className="glass-medium rounded-2xl p-6 h-full animate-pulse" />
+    }
+);
 
-const UpcomingTasks = dynamic(() => import('@/components/UpcomingTasks').then(m => m.UpcomingTasks), {
-    ssr: false,
-    loading: () => <div className="glass-medium rounded-2xl p-6 h-full animate-pulse" />
-});
+const UpcomingTasks = dynamic(
+    () => import('@/components/UpcomingTasks').then(mod => ({ default: mod.default || mod.UpcomingTasks })),
+    {
+        ssr: false,
+        loading: () => <div className="glass-medium rounded-2xl p-6 h-full animate-pulse" />
+    }
+);
 
 // Types
 type WidgetRenderContext = {

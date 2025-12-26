@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Star } from "lucide-react";
+import { memo, useEffect, useState } from "react";
 
 const testimonials = [
     {
@@ -26,7 +27,20 @@ const testimonials = [
 
 const companies = ["Acme Corp", "GlobalTech", "Nebula", "FoxRun", "Circle", "Trio"];
 
-export function SocialProofSection() {
+const SocialProofSection = memo(function SocialProofSection() {
+    const [isHydrated, setIsHydrated] = useState(typeof window !== 'undefined');
+    
+    // #region agent log
+    useEffect(() => {
+        if (!isHydrated) {
+            setIsHydrated(true);
+        }
+        fetch('http://127.0.0.1:7242/ingest/0e0dbcba-8565-423c-afc9-9ff8dcbd2ea3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SocialProof.tsx:35',message:'SocialProofSection hydrated (FIXED)',data:{isHydrated:true,wasAlreadyHydrated:isHydrated},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix-v2',hypothesisId:'F'})}).catch(()=>{});
+    }, [isHydrated]);
+    
+    fetch('http://127.0.0.1:7242/ingest/0e0dbcba-8565-423c-afc9-9ff8dcbd2ea3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SocialProof.tsx:38',message:'SocialProofSection component rendered (FIXED)',data:{testimonialsCount:testimonials.length,isHydrated},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix-v2',hypothesisId:'C'})}).catch(()=>{});
+    // #endregion
+    
     return (
         <section className="py-24 bg-gradient-to-b from-transparent via-black/10 to-black/20 border-y border-white/5">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -37,16 +51,35 @@ export function SocialProofSection() {
                         {testimonials.map((t, index) => (
                             <motion.div
                                 key={index}
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                whileInView={{ opacity: 1, scale: 1 }}
-                                viewport={{ once: true }}
-                                transition={{ delay: index * 0.1 }}
+                                initial={isHydrated ? { opacity: 0, scale: 0.9 } : { opacity: 1, scale: 1 }}
+                                animate={isHydrated ? { opacity: 1, scale: 1 } : {}}
+                                whileInView={isHydrated ? { opacity: 1, scale: 1 } : {}}
+                                viewport={{ 
+                                    once: true
+                                }}
+                                transition={{ delay: isHydrated ? index * 0.1 : 0, duration: 0.3, ease: "easeOut" }}
                                 className="glass-card p-8 rounded-2xl border border-white/10 text-left"
                             >
                                 <div className="flex gap-1 mb-4">
                                     {[1, 2, 3, 4, 5].map(i => (
-                                        <Star key={i} className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                                        <Star 
+                                            key={i} 
+                                            className="w-4 h-4 text-yellow-500 fill-yellow-500"
+                                            style={{ 
+                                                // #region agent log
+                                                opacity: 1,
+                                                transform: 'translateZ(0)',
+                                                backfaceVisibility: 'hidden'
+                                                // #endregion
+                                            }}
+                                        />
                                     ))}
+                                    {/* #region agent log */}
+                                    {(() => {
+                                        fetch('http://127.0.0.1:7242/ingest/0e0dbcba-8565-423c-afc9-9ff8dcbd2ea3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SocialProof.tsx:62',message:'star icons rendering (FIXED)',data:{author:t.author,isHydrated},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix-v2',hypothesisId:'I'})}).catch(()=>{});
+                                        return null;
+                                    })()}
+                                    {/* #endregion */}
                                 </div>
                                 <p className="text-gray-300 mb-6 leading-relaxed">"{t.quote}"</p>
                                 <div className="flex items-center gap-3">
@@ -95,4 +128,6 @@ export function SocialProofSection() {
             </div>
         </section>
     );
-}
+});
+
+export { SocialProofSection };

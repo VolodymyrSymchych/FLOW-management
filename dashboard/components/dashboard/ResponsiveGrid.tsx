@@ -27,6 +27,9 @@ interface ResponsiveGridProps {
     children: React.ReactNode;
 }
 
-export function ResponsiveGrid(props: ResponsiveGridProps) {
+function ResponsiveGrid(props: ResponsiveGridProps) {
     return <ResponsiveGridLayout {...props} />;
 }
+
+export default ResponsiveGrid;
+export { ResponsiveGrid };

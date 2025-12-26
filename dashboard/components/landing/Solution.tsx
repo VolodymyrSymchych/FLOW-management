@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Brain, FileText, PieChart, Layers, Check } from "lucide-react";
-
+import { useEffect, useState } from "react";
 import Link from "next/link";
 
 const features = [
@@ -37,6 +37,20 @@ const features = [
 ];
 
 export function SolutionSection() {
+    const [hasScrolled, setHasScrolled] = useState(false);
+    
+    useEffect(() => {
+        // Only enable animations after user interaction
+        const handleScroll = () => {
+            if (!hasScrolled) {
+                setHasScrolled(true);
+            }
+        };
+        
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, [hasScrolled]);
+    
     return (
         <section id="features" className="py-24 relative bg-gradient-to-b from-transparent via-black/10 to-black/20">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -54,18 +68,27 @@ export function SolutionSection() {
                     {features.map((feature, index) => (
                         <Link key={index} href={`/features/${feature.slug}`} className="block">
                             <motion.div
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                whileInView={{ opacity: 1, scale: 1 }}
-                                whileHover={{ scale: 1.02, y: -5 }}
-                                viewport={{ once: true }}
-                                transition={{ delay: index * 0.1, duration: 0.3 }}
+                                initial={hasScrolled ? { opacity: 0, scale: 0.95 } : { opacity: 1, scale: 1 }}
+                                animate={hasScrolled ? { opacity: 1, scale: 1 } : { opacity: 1, scale: 1 }}
+                                whileInView={hasScrolled ? { opacity: 1, scale: 1 } : {}}
+                                whileHover={hasScrolled ? { scale: 1.02, y: -5 } : {}}
+                                viewport={{ once: true, margin: "-50px" }}
+                                transition={{ delay: hasScrolled ? index * 0.1 : 0, duration: hasScrolled ? 0.3 : 0, ease: "easeOut" }}
                                 className="glass-card group relative h-full overflow-hidden rounded-3xl p-8 border border-white/10 hover:border-white/20 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all cursor-pointer"
                             >
                                 <div className={`absolute top-0 right-0 w-64 h-64 bg-gradient-to-br ${feature.color} opacity-[0.08] blur-[80px] group-hover:opacity-[0.15] transition-opacity duration-500`} />
 
                                 <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${feature.color} p-[1px] mb-6 group-hover:scale-110 transition-transform duration-300`}>
                                     <div className="w-full h-full rounded-2xl bg-black/50 backdrop-blur-sm flex items-center justify-center">
-                                        <feature.icon className="w-7 h-7 text-white" />
+                                        <feature.icon 
+                                            className="w-7 h-7 text-white"
+                                            style={{ 
+                                                // Ensure consistent rendering
+                                                opacity: 1,
+                                                transform: 'translateZ(0)',
+                                                backfaceVisibility: 'hidden'
+                                            }}
+                                        />
                                     </div>
                                 </div>
 
@@ -76,16 +99,7 @@ export function SolutionSection() {
 
                                 <div className="flex items-center text-sm font-medium text-white/60 group-hover:text-white transition-colors w-fit">
                                     Learn more
-                                    <motion.div
-                                        animate={{ x: [0, 5, 0] }}
-                                        transition={{
-                                            duration: 1.5,
-                                            repeat: Infinity,
-                                            ease: "easeInOut"
-                                        }}
-                                    >
-                                        <Check className="w-4 h-4 ml-2" />
-                                    </motion.div>
+                                    <Check className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
                                 </div>
                             </motion.div>
                         </Link>

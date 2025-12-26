@@ -13,7 +13,7 @@ interface BudgetMetrics {
   projectsAtRisk: number;
 }
 
-export function BudgetTracking() {
+function BudgetTracking() {
   const [metrics, setMetrics] = useState<BudgetMetrics | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -146,4 +146,7 @@ export function BudgetTracking() {
     </div>
   );
 }
+
+export default BudgetTracking;
+export { BudgetTracking };
 

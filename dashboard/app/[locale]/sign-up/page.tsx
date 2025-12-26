@@ -1,14 +1,15 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Mail, Lock, User, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, User, AlertCircle, Eye, EyeOff, Info } from 'lucide-react';
 import { Logo } from '@/components/Logo';
 import { EmailVerificationModal } from '@/components/EmailVerificationModal';
 
-export default function SignUpPage() {
+function SignUpForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [formData, setFormData] = useState({
     email: '',
     username: '',
@@ -16,11 +17,38 @@ export default function SignUpPage() {
     confirmPassword: '',
     fullName: '',
   });
+  const [oauthData, setOauthData] = useState<{
+    provider?: string;
+    providerId?: string;
+    avatarUrl?: string;
+  } | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  // Prefill form from URL params (OAuth redirect)
+  useEffect(() => {
+    const email = searchParams.get('email');
+    const fullName = searchParams.get('fullName');
+    const provider = searchParams.get('provider');
+    const providerId = searchParams.get('providerId');
+    const avatarUrl = searchParams.get('avatarUrl');
+
+    if (email) {
+      setFormData(prev => ({
+        ...prev,
+        email,
+        fullName: fullName || prev.fullName,
+        username: email.split('@')[0] || prev.username,
+      }));
+    }
+
+    if (provider && providerId) {
+      setOauthData({ provider, providerId, avatarUrl: avatarUrl || undefined });
+    }
+  }, [searchParams]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -59,6 +87,13 @@ export default function SignUpPage() {
           username: formData.username,
           password: formData.password,
           fullName: formData.fullName,
+          // Include OAuth provider info if available
+          ...(oauthData && {
+            provider: oauthData.provider,
+            providerId: oauthData.providerId,
+            avatarUrl: oauthData.avatarUrl,
+            emailVerified: true, // Email already verified by OAuth
+          }),
         }),
       });
 
@@ -124,6 +159,17 @@ export default function SignUpPage() {
               <div className="flex items-center gap-2 p-4 rounded-lg bg-danger/10 border border-danger/20 text-danger">
                 <AlertCircle className="w-5 h-5 flex-shrink-0" />
                 <p className="text-sm">{error}</p>
+              </div>
+            )}
+
+            {/* OAuth Info Banner */}
+            {oauthData && (
+              <div className="flex items-start gap-2 p-4 rounded-lg bg-primary/10 border border-primary/20 text-text-primary">
+                <Info className="w-5 h-5 flex-shrink-0 text-primary mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium">Обліковий запис {oauthData.provider === 'google' ? 'Google' : 'Microsoft'} знайдено</p>
+                  <p className="text-sm text-text-secondary mt-1">Заповніть форму, щоб створити обліковий запис з вашим email: {formData.email}</p>
+                </div>
               </div>
             )}
 
@@ -325,3 +371,14 @@ export default function SignUpPage() {
   );
 }
 
+export default function SignUpPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen w-full flex items-center justify-center bg-background">
+        <div className="text-text-secondary">Loading...</div>
+      </div>
+    }>
+      <SignUpForm />
+    </Suspense>
+  );
+}

@@ -19,10 +19,11 @@ export async function GET(request: NextRequest) {
 
   const searchParams = request.nextUrl.searchParams;
   const redirectTo = searchParams.get('redirect') || '/';
+  const rememberMe = searchParams.get('rememberMe') === 'true';
 
   // Generate state parameter for CSRF protection
   const state = nanoid(32);
-  
+
   // Store state in cookie (you might want to use Redis for production)
   const response = NextResponse.redirect(
     `https://accounts.google.com/o/oauth2/v2/auth?` +
@@ -43,8 +44,17 @@ export async function GET(request: NextRequest) {
     maxAge: 600, // 10 minutes
     path: '/',
   });
-  
+
   response.cookies.set('oauth_redirect', redirectTo, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 600,
+    path: '/',
+  });
+
+  // Store rememberMe preference for callback
+  response.cookies.set('oauth_remember_me', rememberMe ? 'true' : 'false', {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',

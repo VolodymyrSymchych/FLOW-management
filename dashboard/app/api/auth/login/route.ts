@@ -17,6 +17,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
+    const rememberMe = body.rememberMe === true;
 
     // Call auth-service
     const result = await authService.login({
@@ -66,12 +67,13 @@ export async function POST(request: NextRequest) {
       // Store auth-service token in cookie (for API calls to auth-service)
       const cookieStore = await import('next/headers').then(m => m.cookies());
       const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1';
+      const cookieMaxAge = rememberMe ? 7 * 24 * 60 * 60 : 60 * 60; // 7 days or 1 hour
 
       cookieStore.set('auth_token', result.token, {
         httpOnly: true,
         secure: isProduction,
         sameSite: 'lax',
-        maxAge: 60 * 60, // 1 hour
+        maxAge: cookieMaxAge,
         path: '/',
       });
 
@@ -81,7 +83,7 @@ export async function POST(request: NextRequest) {
         email: payload.email as string,
         username: payload.username as string,
         fullName: result.user.fullName || null,
-      });
+      }, rememberMe);
     } catch (error) {
       console.error('Error creating session:', error);
       // Still return success, but session might not be set

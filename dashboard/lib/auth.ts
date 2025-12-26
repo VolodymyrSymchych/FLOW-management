@@ -15,6 +15,7 @@ const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
 
 // Reduced session duration for better security (1 hour instead of 7 days)
 const SESSION_DURATION = 60 * 60; // 1 hour
+const SESSION_DURATION_REMEMBER_ME = 7 * 24 * 60 * 60; // 7 days
 const REFRESH_THRESHOLD = 15 * 60; // Refresh if token expires in less than 15 minutes
 
 export interface SessionData {
@@ -24,27 +25,30 @@ export interface SessionData {
   fullName?: string | null;
 }
 
-export async function createSession(data: SessionData) {
+export async function createSession(data: SessionData, rememberMe: boolean = false) {
   // Use same issuer as microservices for compatibility
   const JWT_ISSUER = process.env.JWT_ISSUER || 'project-scope-analyzer';
-  
+
+  const sessionDuration = rememberMe ? SESSION_DURATION_REMEMBER_ME : SESSION_DURATION;
+  const expirationTime = rememberMe ? '7d' : '1h';
+
   const token = await new SignJWT({ ...data })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
-    .setExpirationTime('1h') // Reduced from 7d to 1h
+    .setExpirationTime(expirationTime)
     .setIssuer(JWT_ISSUER) // Add issuer claim for microservice compatibility
     .sign(JWT_SECRET);
 
   const cookieStore = await cookies();
-  
+
   // Determine if we're in production (Vercel)
   const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1';
-  
+
   cookieStore.set('session', token, {
     httpOnly: true,
     secure: isProduction, // Use secure cookies in production (Vercel uses HTTPS)
     sameSite: 'lax', // Changed from 'strict' to 'lax' for better compatibility with Vercel
-    maxAge: SESSION_DURATION,
+    maxAge: sessionDuration,
     path: '/',
     // Don't set domain - let browser handle it automatically for better compatibility
   });
@@ -102,7 +106,7 @@ export async function deleteSession() {
 
 export async function requireAuth(request?: NextRequest): Promise<SessionData> {
   const session = await getSession();
-  
+
   if (!session) {
     throw new Error('Unauthorized');
   }

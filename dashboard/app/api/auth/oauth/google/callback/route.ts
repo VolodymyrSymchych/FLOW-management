@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
     if (!user) {
       // Check if user exists by email (account linking)
       const existingUser = await storage.getUserByEmail(email);
-      
+
       if (existingUser) {
         // Link OAuth account to existing user
         user = await storage.updateUser(existingUser.id, {
@@ -104,20 +104,23 @@ export async function GET(request: NextRequest) {
           emailVerified: true,
         });
       } else {
-        // Create new user
-        const username = email.split('@')[0] + '_' + nanoid(6);
-        user = await storage.createUser({
-          email,
-          username,
-          fullName: name || null,
-          avatarUrl: picture || null,
-          provider: 'google',
-          providerId,
-          password: null, // No password for OAuth users
-          emailVerified: true,
-          isActive: true,
-          role: 'user',
-        });
+        // User doesn't exist - redirect to sign-up with prefilled email
+        const signUpUrl = new URL('/sign-up', BASE_URL);
+        signUpUrl.searchParams.set('email', email);
+        signUpUrl.searchParams.set('fullName', name || '');
+        signUpUrl.searchParams.set('provider', 'google');
+        signUpUrl.searchParams.set('providerId', providerId);
+        if (picture) {
+          signUpUrl.searchParams.set('avatarUrl', picture);
+        }
+
+        // Clear OAuth cookies before redirect
+        const response = NextResponse.redirect(signUpUrl);
+        response.cookies.delete('oauth_state');
+        response.cookies.delete('oauth_redirect');
+        response.cookies.delete('oauth_remember_me');
+
+        return response;
       }
     } else {
       // Update user info
@@ -138,7 +141,12 @@ export async function GET(request: NextRequest) {
     // We need to create a token that auth-service can verify
     const { SignJWT, jwtVerify } = await import('jose');
     const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || '');
-    
+
+    // Read rememberMe preference from cookie
+    const rememberMe = request.cookies.get('oauth_remember_me')?.value === 'true';
+    const expirationTime = rememberMe ? '7d' : '1h';
+    const cookieMaxAge = rememberMe ? 7 * 24 * 60 * 60 : 60 * 60; // 7 days or 1 hour
+
     // Create auth-service compatible token
     const authToken = await new SignJWT({
       userId: user.id,
@@ -148,7 +156,7 @@ export async function GET(request: NextRequest) {
     })
       .setProtectedHeader({ alg: 'HS256' })
       .setIssuedAt()
-      .setExpirationTime('1h')
+      .setExpirationTime(expirationTime)
       .setIssuer('project-scope-analyzer')
       .sign(JWT_SECRET);
 
@@ -158,20 +166,21 @@ export async function GET(request: NextRequest) {
       email: user.email,
       username: user.username,
       fullName: user.fullName || null,
-    });
+    }, rememberMe);
 
     // Clear OAuth cookies and set auth_token cookie
     const response = NextResponse.redirect(new URL(redirectTo, BASE_URL));
     response.cookies.delete('oauth_state');
     response.cookies.delete('oauth_redirect');
-    
+    response.cookies.delete('oauth_remember_me');
+
     // Set auth_token cookie for auth-service API calls
     const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1';
     response.cookies.set('auth_token', authToken, {
       httpOnly: true,
       secure: isProduction,
       sameSite: 'lax',
-      maxAge: 60 * 60, // 1 hour
+      maxAge: cookieMaxAge,
       path: '/',
     });
 

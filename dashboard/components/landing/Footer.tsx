@@ -1,6 +1,6 @@
 'use client';
 
-import { Twitter, Github, Linkedin, Heart } from "lucide-react";
+import { Twitter, Github, Linkedin } from "lucide-react";
 import Link from "next/link";
 
 const logo = "/logo.png";
@@ -60,9 +60,6 @@ export function Footer() {
                 <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
                     <p className="text-sm text-gray-500">
                         © 2025 FLOW management. All rights reserved.
-                    </p>
-                    <p className="text-sm text-gray-500 flex items-center gap-1">
-                        Made with <Heart className="w-4 h-4 text-red-500 fill-red-500" /> by Replit
                     </p>
                 </div>
             </div>

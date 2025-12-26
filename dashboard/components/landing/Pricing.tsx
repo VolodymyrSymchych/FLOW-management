@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Check } from "lucide-react";
+import { useEffect, useState } from "react";
 
 const plans = [
     {
@@ -51,6 +52,19 @@ const plans = [
 ];
 
 export function PricingSection() {
+    const [hasScrolled, setHasScrolled] = useState(false);
+    
+    useEffect(() => {
+        const handleScroll = () => {
+            if (!hasScrolled) {
+                setHasScrolled(true);
+            }
+        };
+        
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, [hasScrolled]);
+    
     return (
         <section id="pricing" className="py-24 relative bg-gradient-to-b from-black/20 via-black/10 to-transparent">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -67,10 +81,11 @@ export function PricingSection() {
                     {plans.map((plan, index) => (
                         <motion.div
                             key={index}
-                            initial={{ opacity: 0, y: 30 }}
-                            whileInView={{ opacity: 1, y: 0 }}
+                            initial={hasScrolled ? { opacity: 0, y: 30 } : { opacity: 1, y: 0 }}
+                            animate={hasScrolled ? { opacity: 1, y: 0 } : { opacity: 1, y: 0 }}
+                            whileInView={hasScrolled ? { opacity: 1, y: 0 } : {}}
                             viewport={{ once: true }}
-                            transition={{ delay: index * 0.1 }}
+                            transition={{ delay: hasScrolled ? index * 0.1 : 0, duration: hasScrolled ? 0.3 : 0 }}
                             className={`glass-card relative rounded-3xl p-8 border ${plan.popular
                                 ? "border-indigo-500/50 bg-indigo-500/5"
                                 : "border-white/10"
@@ -95,7 +110,15 @@ export function PricingSection() {
                                 {plan.features.map((feature, i) => (
                                     <div key={i} className="flex items-start gap-3">
                                         <div className="mt-1 w-4 h-4 rounded-full bg-indigo-500/20 flex items-center justify-center flex-shrink-0">
-                                            <Check className="w-3 h-3 text-indigo-400" />
+                                            <Check 
+                                                className="w-3 h-3 text-indigo-400"
+                                                style={{ 
+                                                    // Ensure consistent rendering
+                                                    opacity: 1,
+                                                    transform: 'translateZ(0)',
+                                                    backfaceVisibility: 'hidden'
+                                                }}
+                                            />
                                         </div>
                                         <span className="text-gray-300 text-sm">{feature}</span>
                                     </div>

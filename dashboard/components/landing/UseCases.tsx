@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, useScroll, useTransform } from "framer-motion";
-import { useRef } from "react";
+import { useRef, memo, useEffect, useState } from "react";
 import { Code2, Briefcase, Rocket, Building2, Users, Palette, Globe, Laptop } from "lucide-react";
 
 const useCases = [
@@ -87,11 +87,23 @@ const useCases = [
     }
 ];
 
-export function UseCasesSection() {
+const UseCasesSection = memo(function UseCasesSection() {
+    const [isHydrated, setIsHydrated] = useState(typeof window !== 'undefined');
     const targetRef = useRef<HTMLDivElement>(null);
     const { scrollYProgress } = useScroll({
         target: targetRef,
     });
+    
+    // #region agent log
+    useEffect(() => {
+        if (!isHydrated) {
+            setIsHydrated(true);
+        }
+        fetch('http://127.0.0.1:7242/ingest/0e0dbcba-8565-423c-afc9-9ff8dcbd2ea3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'UseCases.tsx:98',message:'UseCasesSection hydrated (FIXED)',data:{isHydrated:true,wasAlreadyHydrated:isHydrated},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix-v2',hypothesisId:'F'})}).catch(()=>{});
+    }, [isHydrated]);
+    
+    fetch('http://127.0.0.1:7242/ingest/0e0dbcba-8565-423c-afc9-9ff8dcbd2ea3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'UseCases.tsx:101',message:'UseCasesSection component rendered (FIXED)',data:{useCasesCount:useCases.length,isHydrated},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix-v2',hypothesisId:'C'})}).catch(()=>{});
+    // #endregion
 
     // Adjust the range based on how many items and their width
     // We want to scroll from 1% to roughly -75% to show all cards
@@ -119,7 +131,21 @@ export function UseCasesSection() {
                             >
                                 <div className="mb-6">
                                     <div className={`w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mb-4`}>
-                                        <item.icon className={`w-6 h-6 ${item.color}`} />
+                                        {/* #region agent log */}
+                                        {(() => {
+                                            fetch('http://127.0.0.1:7242/ingest/0e0dbcba-8565-423c-afc9-9ff8dcbd2ea3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'UseCases.tsx:134',message:'usecase icon rendering (FIXED)',data:{title:item.title,iconName:item.icon.name,isHydrated},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix-v2',hypothesisId:'I'})}).catch(()=>{});
+                                            return null;
+                                        })()}
+                                        {/* #endregion */}
+                                        <item.icon 
+                                            className={`w-6 h-6 ${item.color}`}
+                                            style={{ 
+                                                // Ensure consistent rendering
+                                                opacity: 1,
+                                                transform: 'translateZ(0)',
+                                                backfaceVisibility: 'hidden'
+                                            }}
+                                        />
                                     </div>
                                     <h3 className="text-2xl font-bold text-white mb-3 group-hover:text-white/90 transition-colors">
                                         {item.title}
@@ -150,4 +176,6 @@ export function UseCasesSection() {
             </div>
         </section>
     );
-}
+});
+
+export { UseCasesSection };

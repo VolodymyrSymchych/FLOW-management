@@ -3,8 +3,8 @@
 import { ChevronLeft, ChevronRight, Calendar as LucideCalendar } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { cn } from '../lib/utils';
-import { useTeam } from '../contexts/TeamContext';
+import { cn } from '@/lib/utils';
+import { useTeam } from '@/contexts/TeamContext';
 
 interface Task {
   id: number;

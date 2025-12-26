@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { TrendingDown, AlertOctagon, DollarSign, Clock, CalendarX, Frown } from "lucide-react";
+import { memo, useEffect, useState } from "react";
 
 const stats = [
     {
@@ -39,6 +40,19 @@ const stats = [
 ];
 
 export function ProblemSection() {
+    const [hasScrolled, setHasScrolled] = useState(false);
+    
+    useEffect(() => {
+        const handleScroll = () => {
+            if (!hasScrolled) {
+                setHasScrolled(true);
+            }
+        };
+        
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, [hasScrolled]);
+    
     return (
         <section className="py-24 relative overflow-hidden bg-gradient-to-b from-transparent to-black/10">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -56,14 +70,23 @@ export function ProblemSection() {
                     {stats.map((stat, index) => (
                         <motion.div
                             key={index}
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
+                            initial={hasScrolled ? { opacity: 0, y: 20 } : { opacity: 1, y: 0 }}
+                            animate={hasScrolled ? { opacity: 1, y: 0 } : { opacity: 1, y: 0 }}
+                            whileInView={hasScrolled ? { opacity: 1, y: 0 } : {}}
                             viewport={{ once: true }}
-                            transition={{ delay: index * 0.1 }}
+                            transition={{ delay: hasScrolled ? index * 0.1 : 0, duration: hasScrolled ? 0.3 : 0, ease: "easeOut" }}
                             className={`glass-card p-6 rounded-2xl border ${stat.border} hover:-translate-y-1 transition-transform duration-300`}
                         >
                             <div className={`w-12 h-12 rounded-xl ${stat.bg} flex items-center justify-center mb-4`}>
-                                <stat.icon className={`w-6 h-6 ${stat.color}`} />
+                                <stat.icon 
+                                    className={`w-6 h-6 ${stat.color}`}
+                                    style={{ 
+                                        // Ensure consistent rendering
+                                        opacity: 1,
+                                        transform: 'translateZ(0)',
+                                        backfaceVisibility: 'hidden'
+                                    }}
+                                />
                             </div>
                             <h3 className={`text-4xl font-bold ${stat.color} mb-2`}>{stat.value}</h3>
                             <p className="text-gray-300 font-medium">{stat.label}</p>

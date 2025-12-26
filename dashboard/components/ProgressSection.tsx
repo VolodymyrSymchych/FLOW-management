@@ -26,7 +26,7 @@ interface ProgressItem {
   color: string;
 }
 
-export function ProgressSection() {
+function ProgressSection() {
   const { selectedTeam, isLoading: teamsLoading } = useTeam();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
@@ -180,3 +180,6 @@ export function ProgressSection() {
     </div>
   );
 }
+
+export default ProgressSection;
+export { ProgressSection };

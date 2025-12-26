@@ -32,7 +32,7 @@ interface TimeEntry {
   clockOut: string | null;
 }
 
-export function UpcomingTasks() {
+function UpcomingTasks() {
   const { selectedTeam, isLoading: teamsLoading } = useTeam();
   const { user } = useUser();
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -502,3 +502,6 @@ function DraggableTask({
     </div>
   );
 }
+
+export default UpcomingTasks;
+export { UpcomingTasks };

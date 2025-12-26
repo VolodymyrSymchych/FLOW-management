@@ -12,6 +12,7 @@ function SignInForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -36,7 +37,7 @@ function SignInForm() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ emailOrUsername: email, password }),
+        body: JSON.stringify({ emailOrUsername: email, password, rememberMe }),
       });
 
       const data = await response.json();
@@ -129,8 +130,19 @@ function SignInForm() {
               </div>
             </div>
 
-            {/* Forgot Password */}
-            <div className="flex items-center justify-end">
+            {/* Remember Me & Forgot Password */}
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-2 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="w-4 h-4 rounded border-border bg-transparent text-primary focus:ring-primary focus:ring-offset-0 cursor-pointer"
+                />
+                <span className="text-sm text-text-secondary group-hover:text-text-primary transition-colors">
+                  Remember me
+                </span>
+              </label>
               <Link
                 href="/forgot-password"
                 className="text-sm text-primary hover:text-primary-dark transition-colors"
@@ -161,7 +173,7 @@ function SignInForm() {
               className="glass-subtle hover:glass-light border border-border rounded-xl p-3 flex items-center justify-center gap-2 transition-scale hover:scale-105 active:scale-95"
               onClick={() => {
                 const currentUrl = window.location.pathname + window.location.search;
-                window.location.href = `/api/auth/oauth/google?redirect=${encodeURIComponent(currentUrl)}`;
+                window.location.href = `/api/auth/oauth/google?redirect=${encodeURIComponent(currentUrl)}&rememberMe=${rememberMe}`;
               }}
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -190,7 +202,7 @@ function SignInForm() {
               className="glass-subtle hover:glass-light border border-border rounded-xl p-3 flex items-center justify-center gap-2 transition-scale hover:scale-105 active:scale-95"
               onClick={() => {
                 const currentUrl = window.location.pathname + window.location.search;
-                window.location.href = `/api/auth/oauth/microsoft?redirect=${encodeURIComponent(currentUrl)}`;
+                window.location.href = `/api/auth/oauth/microsoft?redirect=${encodeURIComponent(currentUrl)}&rememberMe=${rememberMe}`;
               }}
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">

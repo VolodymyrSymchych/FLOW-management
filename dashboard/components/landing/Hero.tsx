@@ -76,7 +76,7 @@ export function Hero({ user }: { user?: any }) {
                         {/* Floating Glass Cards Visualization */}
                         <div className="relative w-full h-[600px]">
                             {/* Main Dashboard Card */}
-                            <div className="glass-card absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] max-w-2xl rounded-2xl p-6 border border-white/10 bg-black/40 backdrop-blur-xl shadow-2xl z-20">
+                            <div className="glass-card absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] max-w-2xl rounded-2xl p-6 border border-white/10 bg-black/40 backdrop-blur-xl shadow-2xl z-20" style={{ left: '-100px', top: '111px' }}>
                                 <div className="flex items-center justify-between mb-6">
                                     <div className="flex items-center gap-3">
                                         <div className="h-10 w-10 rounded-lg bg-indigo-600 flex items-center justify-center">

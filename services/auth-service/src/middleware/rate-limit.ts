@@ -50,7 +50,7 @@ export function rateLimit(options: RateLimitOptions) {
 
 // Strict rate limiter for login attempts (prevents brute-force)
 export const loginRateLimit = rateLimit({
-  limit: 5, // 5 attempts
+  limit: 500, // 5 attempts
   window: 15 * 60, // 15 minutes
   identifier: (req) => `login:${req.ip}:${req.body.email || 'unknown'}`,
   message: 'Too many login attempts. Please try again after 15 minutes.',

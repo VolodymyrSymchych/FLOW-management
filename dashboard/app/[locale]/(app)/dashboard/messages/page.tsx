@@ -1,30 +1,31 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Search, Plus, MessageSquare } from 'lucide-react';
 import { useChat, Chat } from '@/hooks/useChat';
 import { ChatWindow } from '@/components/chat/ChatWindow';
 import { formatDistanceToNow } from 'date-fns';
 import axios from 'axios';
 import { useUser } from '@/hooks/useUser';
+import { useChats, useChatWithMessages, usePrefetch } from '@/hooks/useQueries';
+import { ChatListSkeleton } from '@/components/chat/ChatSkeleton';
 
 export default function MessagesPage() {
   const { user } = useUser();
-  const { chats, fetchChats, fetchChat, currentChat, createDirectChat } = useChat();
+  const { createDirectChat } = useChat();
+  
+  // React Query для оптимального кешування
+  const { data: chats = [], isLoading: chatsLoading, refetch: refetchChats } = useChats();
   const [selectedChatId, setSelectedChatId] = useState<number | null>(null);
+  const { data: chatData } = useChatWithMessages(selectedChatId);
+  const { prefetchChat } = usePrefetch();
+  
   const [searchQuery, setSearchQuery] = useState('');
   const [showNewChatModal, setShowNewChatModal] = useState(false);
   const [newChatRecipient, setNewChatRecipient] = useState('');
 
-  useEffect(() => {
-    fetchChats();
-  }, []);
-
-  useEffect(() => {
-    if (selectedChatId) {
-      fetchChat(selectedChatId);
-    }
-  }, [selectedChatId]);
+  // Отримуємо currentChat з chatData
+  const currentChat = chatData?.chat;
 
   const handleSelectChat = (chatId: number) => {
     setSelectedChatId(chatId);
@@ -47,10 +48,15 @@ export default function MessagesPage() {
       setSelectedChatId(chat.id);
       setShowNewChatModal(false);
       setNewChatRecipient('');
-      fetchChats();
+      refetchChats();
     } catch (error: any) {
       alert(error.response?.data?.error || 'Failed to create chat');
     }
+  };
+
+  // Prefetch chat on hover for instant loading
+  const handleChatHover = (chatId: number) => {
+    prefetchChat(chatId);
   };
 
   const filteredChats = chats.filter(chat => {
@@ -116,7 +122,9 @@ export default function MessagesPage() {
             />
           </div>
           <div className="space-y-2 max-h-[600px] overflow-y-auto">
-            {filteredChats.length === 0 ? (
+            {chatsLoading ? (
+              <ChatListSkeleton count={5} />
+            ) : filteredChats.length === 0 ? (
               <div className="text-center py-8 text-text-secondary">
                 <MessageSquare className="w-12 h-12 mx-auto mb-2 opacity-50" />
                 <p>No conversations yet</p>
@@ -126,6 +134,7 @@ export default function MessagesPage() {
                 <div
                   key={chat.id}
                   onClick={() => handleSelectChat(chat.id)}
+                  onMouseEnter={() => handleChatHover(chat.id)}
                   className={`p-3 rounded-lg cursor-pointer transition-colors ${
                     selectedChatId === chat.id
                       ? 'bg-primary-500/20 border border-primary-500/30'

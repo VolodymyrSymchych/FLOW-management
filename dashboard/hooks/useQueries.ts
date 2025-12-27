@@ -95,7 +95,7 @@ export function useTasks(teamId?: number | string) {
   });
 }
 
-// Invoices Query
+// Invoices Query - optimized for fast loading
 export function useInvoices(teamId?: number | string) {
   return useQuery({
     queryKey: ['invoices', teamId || 'all'],
@@ -106,7 +106,47 @@ export function useInvoices(teamId?: number | string) {
       const response = await axios.get(url);
       return response.data.invoices || [];
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 2 * 60 * 1000, // 2 хвилини
+    gcTime: 10 * 60 * 1000, // Зберігати в кеші 10 хвилин
+    refetchOnWindowFocus: true,
+    refetchOnMount: false,
+    placeholderData: (previousData) => previousData,
+  });
+}
+
+// Chats Query - optimized for fast loading
+export function useChats() {
+  return useQuery({
+    queryKey: ['chats'],
+    queryFn: async () => {
+      const response = await fetch('/api/chat/chats');
+      if (!response.ok) throw new Error('Failed to load chats');
+      const data = await response.json();
+      return data.chats || [];
+    },
+    staleTime: 30 * 1000, // 30 секунд - чати оновлюються часто
+    gcTime: 5 * 60 * 1000, // Зберігати в кеші 5 хвилин
+    refetchOnWindowFocus: true,
+    refetchOnMount: false,
+    placeholderData: (previousData) => previousData,
+  });
+}
+
+// Single Chat Query with messages
+export function useChatWithMessages(chatId: number | null) {
+  return useQuery({
+    queryKey: ['chat', chatId],
+    queryFn: async () => {
+      if (!chatId) return null;
+      const response = await fetch(`/api/chat?chatId=${chatId}`);
+      if (!response.ok) throw new Error('Failed to load chat');
+      return response.json();
+    },
+    staleTime: 15 * 1000, // 15 секунд
+    gcTime: 5 * 60 * 1000,
+    enabled: !!chatId,
+    refetchOnMount: false,
+    placeholderData: (previousData) => previousData,
   });
 }
 
@@ -172,7 +212,6 @@ export function usePrefetch() {
       queryClient.prefetchQuery({
         queryKey: ['projects', teamId || 'all'],
         queryFn: async () => {
-          // Конвертуємо teamId до правильного типу
           const normalizedTeamId = teamId === 'all' || !teamId
             ? 'all'
             : typeof teamId === 'string'
@@ -199,6 +238,39 @@ export function usePrefetch() {
       queryClient.prefetchQuery({
         queryKey: ['stats'],
         queryFn: api.getStats,
+      });
+    },
+    prefetchChats: () => {
+      queryClient.prefetchQuery({
+        queryKey: ['chats'],
+        queryFn: async () => {
+          const response = await fetch('/api/chat/chats');
+          if (!response.ok) throw new Error('Failed to load chats');
+          const data = await response.json();
+          return data.chats || [];
+        },
+      });
+    },
+    prefetchInvoices: (teamId?: number | string) => {
+      queryClient.prefetchQuery({
+        queryKey: ['invoices', teamId || 'all'],
+        queryFn: async () => {
+          const url = teamId && teamId !== 'all'
+            ? `/api/invoices?team_id=${teamId}`
+            : '/api/invoices';
+          const response = await axios.get(url);
+          return response.data.invoices || [];
+        },
+      });
+    },
+    prefetchChat: (chatId: number) => {
+      queryClient.prefetchQuery({
+        queryKey: ['chat', chatId],
+        queryFn: async () => {
+          const response = await fetch(`/api/chat?chatId=${chatId}`);
+          if (!response.ok) throw new Error('Failed to load chat');
+          return response.json();
+        },
       });
     },
   };

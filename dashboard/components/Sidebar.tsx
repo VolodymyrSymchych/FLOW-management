@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils';
 import { Logo } from './Logo';
 import { useSidebar } from './SidebarContext';
 import { memo, useCallback, useEffect } from 'react';
+import { usePrefetch } from '@/hooks/useQueries';
 
 const navigation = [
   { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
@@ -38,22 +39,46 @@ export const Sidebar = memo(function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { isExpanded, setIsExpanded } = useSidebar();
+  const { prefetchChats, prefetchInvoices, prefetchProjects, prefetchTasks, prefetchStats } = usePrefetch();
 
   const toggleSidebar = useCallback(() => {
     setIsExpanded(!isExpanded);
   }, [isExpanded, setIsExpanded]);
 
+  // Prefetch route pages on mount
   useEffect(() => {
     navigation.forEach((item) => {
       if (item.href && item.href !== pathname) {
         try {
           router.prefetch(item.href);
         } catch (error) {
-          // Ignore prefetch errors (e.g., dynamic routes without prefetch support)
+          // Ignore prefetch errors
         }
       }
     });
   }, [router, pathname]);
+
+  // Prefetch data on hover for instant loading
+  const handleNavHover = useCallback((href: string) => {
+    switch (href) {
+      case '/dashboard/chat':
+        prefetchChats();
+        break;
+      case '/dashboard/invoices':
+        prefetchInvoices();
+        break;
+      case '/dashboard/projects':
+        prefetchProjects();
+        break;
+      case '/dashboard/tasks':
+        prefetchTasks();
+        break;
+      case '/dashboard':
+        prefetchStats();
+        prefetchProjects();
+        break;
+    }
+  }, [prefetchChats, prefetchInvoices, prefetchProjects, prefetchTasks, prefetchStats]);
 
   return (
     <aside
@@ -102,6 +127,7 @@ export const Sidebar = memo(function Sidebar() {
               <Link
                 key={item.name}
                 href={item.href}
+                onMouseEnter={() => handleNavHover(item.href)}
                 className={cn(
                   'flex items-center rounded-xl duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] group relative overflow-hidden',
                   isExpanded ? 'px-4 py-3 gap-3' : 'justify-center w-14 h-14 mx-auto',

@@ -4,7 +4,6 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Users, Mail, MoreVertical, UserPlus, Clock, Calendar, ChevronDown, Building2 } from 'lucide-react';
 import axios from 'axios';
-import { useDelayedLoading } from '@/hooks/useDelayedLoading';
 import { TableSkeleton } from '@/components/skeletons';
 
 interface Team {
@@ -38,8 +37,7 @@ function TeamPageContent() {
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // Показувати індикатор завантаження тільки якщо завантаження триває > 200ms
-  const shouldShowLoading = useDelayedLoading(loading, 200);
+  // Показувати skeleton поки loading=true, щоб не показувати "No Teams" до завантаження даних
 
   useEffect(() => {
     loadTeams();
@@ -87,7 +85,7 @@ function TeamPageContent() {
 
   const selectedTeam = teams.find(t => t.id === selectedTeamId);
 
-  if (shouldShowLoading) {
+  if (loading) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">

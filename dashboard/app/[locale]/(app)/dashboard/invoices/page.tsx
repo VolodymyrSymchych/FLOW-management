@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Plus, FileText, DollarSign, Search, Filter, Download, Edit, Trash2, Mail } from 'lucide-react';
 import axios from 'axios';
 import Link from 'next/link';
@@ -8,8 +8,9 @@ import { InvoiceForm } from '@/components/InvoiceForm';
 import { generateInvoicePDF } from '@/lib/invoice-pdf';
 import { DeleteConfirmModal } from '@/components/DeleteConfirmModal';
 import { useTeam } from '@/contexts/TeamContext';
-import { useDelayedLoading } from '@/hooks/useDelayedLoading';
 import { TableSkeleton } from '@/components/skeletons';
+import { useInvoices, useProjects } from '@/hooks/useQueries';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface Invoice {
   id: number;
@@ -32,59 +33,39 @@ interface Project {
 
 export default function InvoicesPage() {
   const { selectedTeam, isLoading: teamsLoading } = useTeam();
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const queryClient = useQueryClient();
   
-  // Показувати індикатор завантаження тільки якщо завантаження триває > 250ms
-  const shouldShowLoading = useDelayedLoading(loading || teamsLoading, 250);
+  // Визначаємо teamId для запитів
+  const teamId = selectedTeam.type === 'single' && selectedTeam.teamId 
+    ? selectedTeam.teamId 
+    : 'all';
+  
+  // React Query для оптимального кешування
+  const { 
+    data: invoices = [], 
+    isLoading: invoicesLoading,
+    refetch: refetchInvoices 
+  } = useInvoices(teamId);
+  
+  const { 
+    data: projects = [], 
+    isLoading: projectsLoading 
+  } = useProjects(teamId);
+  
+  const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [showInvoiceForm, setShowInvoiceForm] = useState(false);
   const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; invoice: Invoice | null }>({
     isOpen: false,
     invoice: null,
   });
-
-  useEffect(() => {
-    // Wait for teams to load before loading data
-    if (!teamsLoading) {
-      loadData();
-    }
-  }, [teamsLoading, selectedTeam]);
-
-  const loadData = async () => {
-    // Don't load if teams are still loading
-    if (teamsLoading) {
-      return;
-    }
-
-    setLoading(true);
-    try {
-      // Build query params for team filtering
-      const teamId = selectedTeam.type === 'single' && selectedTeam.teamId 
-        ? selectedTeam.teamId 
-        : 'all';
-      
-      const invoicesUrl = teamId !== 'all' 
-        ? `/api/invoices?team_id=${teamId}`
-        : '/api/invoices';
-      
-      const projectsUrl = teamId !== 'all' 
-        ? `/api/projects?team_id=${teamId}`
-        : '/api/projects';
-
-      const [invoicesRes, projectsRes] = await Promise.all([
-        axios.get(invoicesUrl),
-        axios.get(projectsUrl),
-      ]);
-      setInvoices(invoicesRes.data.invoices || []);
-      setProjects(projectsRes.data.projects || []);
-    } catch (error) {
-      console.error('Failed to load data:', error);
-    } finally {
-      setLoading(false);
-    }
+  
+  // Показуємо skeleton тільки при першому завантаженні
+  const isLoading = teamsLoading || (invoicesLoading && invoices.length === 0);
+  
+  // Функція для оновлення даних
+  const loadData = () => {
+    refetchInvoices();
   };
 
   const formatCurrency = (cents: number) => {
@@ -191,7 +172,7 @@ export default function InvoicesPage() {
     .reduce((sum, inv) => sum + inv.totalAmount, 0);
 
   // Show loading state while teams are loading or data is loading
-  if (shouldShowLoading) {
+  if (isLoading) {
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between">

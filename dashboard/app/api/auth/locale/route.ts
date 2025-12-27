@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
-import { authService } from '@/lib/auth-service';
 import { invalidateUserCache } from '@/lib/user-cache';
 
 export const dynamic = 'force-dynamic';
@@ -34,8 +33,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid locale' }, { status: 400 });
     }
 
-    // Call auth-service to update locale
-    // Call auth-service to update locale
+    // Call auth-service to update locale in database
     const AUTH_SERVICE_URL = process.env.NEXT_PUBLIC_AUTH_SERVICE_URL || 'http://localhost:3002';
 
     try {
@@ -55,15 +53,21 @@ export async function PATCH(request: NextRequest) {
       console.warn('Backend locale update failed, proceeding with local cookie:', e);
     }
 
-    // Set cookie for middleware (Essential for next-intl)
-    cookieStore.set('NEXT_LOCALE', locale, { path: '/', maxAge: 31536000 });
-
     // Invalidate user cache after locale update
     if (session?.userId) {
       await invalidateUserCache(session.userId);
     }
 
-    return NextResponse.json({ success: true, locale });
+    // Set cookie in response (Essential for next-intl middleware)
+    const response = NextResponse.json({ success: true, locale });
+    response.cookies.set('NEXT_LOCALE', locale, { 
+      path: '/', 
+      maxAge: 31536000, // 1 year
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production'
+    });
+    
+    return response;
   } catch (error: any) {
     console.error('Update locale error:', error);
     return NextResponse.json(

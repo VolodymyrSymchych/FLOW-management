@@ -35,31 +35,35 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Call auth-service to update locale
+    // Call auth-service to update locale
     const AUTH_SERVICE_URL = process.env.NEXT_PUBLIC_AUTH_SERVICE_URL || 'http://localhost:3002';
-    const response = await fetch(`${AUTH_SERVICE_URL}/api/auth/locale`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify({ locale }),
-    });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Auth service locale update error:', errorText);
-      return NextResponse.json(
-        { error: 'Failed to update locale' },
-        { status: response.status }
-      );
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
+
+      await fetch(`${AUTH_SERVICE_URL}/api/auth/locale`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ locale }),
+        signal: controller.signal
+      }).finally(() => clearTimeout(timeoutId));
+    } catch (e) {
+      console.warn('Backend locale update failed, proceeding with local cookie:', e);
     }
 
-    const result = await response.json();
-    
+    // Set cookie for middleware (Essential for next-intl)
+    cookieStore.set('NEXT_LOCALE', locale, { path: '/', maxAge: 31536000 });
+
     // Invalidate user cache after locale update
-    await invalidateUserCache(session.userId);
-    
-    return NextResponse.json(result);
+    if (session?.userId) {
+      await invalidateUserCache(session.userId);
+    }
+
+    return NextResponse.json({ success: true, locale });
   } catch (error: any) {
     console.error('Update locale error:', error);
     return NextResponse.json(

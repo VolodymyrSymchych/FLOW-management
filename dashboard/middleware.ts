@@ -76,21 +76,61 @@ const protectedRoutes = [
 // Public routes that authenticated users shouldn't access
 const authRoutes = ['/sign-in', '/sign-up'];
 
+// Create a function that determines locale from cookie or URL
+function getLocale(request: NextRequest): string {
+  // First, check cookie
+  const cookieLocale = request.cookies.get('NEXT_LOCALE')?.value;
+  if (cookieLocale && ['en', 'uk'].includes(cookieLocale)) {
+    return cookieLocale;
+  }
+
+  // Fall back to URL
+  const pathname = request.nextUrl.pathname;
+  const localeMatch = pathname.match(/^\/(en|uk)(\/|$)/);
+  if (localeMatch) {
+    return localeMatch[1];
+  }
+
+  // Default to English
+  return 'en';
+}
+
 const intlMiddleware = createMiddleware({
   // A list of all locales that are supported
   locales: ['en', 'uk'],
 
   // Used when no locale matches
-  defaultLocale: 'en'
+  defaultLocale: 'en',
+
+  // Determine locale from cookie first, then URL
+  localePrefix: 'always',
+
+  // Use custom locale detection
+  localeDetection: false
 });
 
 export async function middleware(request: NextRequest) {
   try {
-    // 1. Run next-intl middleware first to handle locale prefixes
+    // 1. Check for locale cookie and redirect if needed
+    const localeFromCookie = request.cookies.get('NEXT_LOCALE')?.value;
+    const { pathname } = request.nextUrl;
+
+    // If we have a locale cookie and the URL doesn't match it, redirect to the correct locale
+    if (localeFromCookie && ['en', 'uk'].includes(localeFromCookie)) {
+      const currentLocaleMatch = pathname.match(/^\/(en|uk)(\/|$)/);
+      const currentLocale = currentLocaleMatch ? currentLocaleMatch[1] : null;
+
+      if (currentLocale && currentLocale !== localeFromCookie) {
+        // URL has a different locale than cookie - redirect to cookie locale
+        const newPathname = pathname.replace(/^\/(en|uk)/, `/${localeFromCookie}`);
+        return NextResponse.redirect(new URL(newPathname, request.url));
+      }
+    }
+
+    // 2. Run next-intl middleware to handle locale prefixes
     const response = intlMiddleware(request);
 
-    // 2. Check authentication
-    const { pathname } = request.nextUrl;
+    // 3. Check authentication
 
     // Remove locale prefix to check routes
     const pathnameWithoutLocale = pathname.replace(/^\/(en|uk)/, '');

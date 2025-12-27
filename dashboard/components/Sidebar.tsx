@@ -14,8 +14,8 @@ import {
   Receipt,
   MessageSquare,
 } from 'lucide-react';
-import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { Link } from '@/i18n/routing';
 import { cn } from '@/lib/utils';
 import { Logo } from './Logo';
 import { useSidebar } from './SidebarContext';

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { User, Bell, CreditCard, Shield, Trash2, Save, Globe } from 'lucide-react';
 import { useUser } from '@/hooks/useUser';
 import { useRouter, usePathname } from 'next/navigation';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import axios from 'axios';
 import { useDelayedLoading } from '@/hooks/useDelayedLoading';
 import { SettingsSkeleton } from '@/components/skeletons';
@@ -22,7 +22,8 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('profile');
   const { user, loading } = useUser();
   const router = useRouter();
-  
+  const t = useTranslations('Settings');
+
   // Показувати індикатор завантаження тільки якщо завантаження триває > 150ms
   const shouldShowLoading = useDelayedLoading(loading, 150);
   const pathname = usePathname();
@@ -35,9 +36,14 @@ export default function SettingsPage() {
   const firstName = nameParts[0] || '';
   const lastName = nameParts.slice(1).join(' ') || '';
 
+  console.log('Settings Debug: Render', { currentLocale, selectedLocale, isSaving, isUpdatingLocale });
+
   const handleSaveSettings = async () => {
+    console.log('Settings Debug: handleSaveSettings called', { currentLocale, selectedLocale });
+
     // Check if locale has changed
     if (selectedLocale === currentLocale) {
+      console.log('Settings Debug: Locale unchanged, skipping save');
       return; // Nothing to save
     }
 
@@ -45,13 +51,24 @@ export default function SettingsPage() {
     setIsUpdatingLocale(true);
 
     try {
+      console.log('Settings Debug: Starting save...');
       // Update locale in database
       await axios.patch('/api/auth/locale', { locale: selectedLocale }, {
         withCredentials: true,
       });
 
       // Replace current locale in pathname with new locale
-      const newPathname = pathname.replace(`/${currentLocale}`, `/${selectedLocale}`);
+      let newPathname = pathname;
+      const localePrefix = `/${currentLocale}`;
+
+      if (pathname.startsWith(localePrefix)) {
+        newPathname = pathname.replace(localePrefix, `/${selectedLocale}`);
+      } else {
+        // Path doesn't start with current locale (e.g. implied default en), so prepend new locale
+        newPathname = `/${selectedLocale}${pathname}`;
+      }
+
+      console.log('Settings Debug:', { currentLocale, selectedLocale, pathname, newPathname });
 
       // Force full page reload to apply new locale
       window.location.href = newPathname;
@@ -70,18 +87,18 @@ export default function SettingsPage() {
   ];
 
   const tabs = [
-    { id: 'profile', label: 'Profile', icon: User },
-    { id: 'notifications', label: 'Notifications', icon: Bell },
-    { id: 'billing', label: 'Billing', icon: CreditCard },
-    { id: 'security', label: 'Security', icon: Shield },
+    { id: 'profile', label: t('profile'), icon: User },
+    { id: 'notifications', label: t('notifications'), icon: Bell },
+    { id: 'billing', label: t('billing'), icon: CreditCard },
+    { id: 'security', label: t('security'), icon: Shield },
   ];
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-text-primary">Settings</h1>
+        <h1 className="text-3xl font-bold text-text-primary">{t('title')}</h1>
         <p className="text-text-secondary mt-1">
-          Manage your account settings and preferences
+          {t('subtitle')}
         </p>
       </div>
 
@@ -91,11 +108,10 @@ export default function SettingsPage() {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`px-4 py-3 flex items-center gap-2 border-b-2 transition-colors ${
-              activeTab === tab.id
-                ? 'border-[#8098F9] text-[#8098F9]'
-                : 'border-transparent text-text-secondary hover:text-text-primary'
-            }`}
+            className={`px-4 py-3 flex items-center gap-2 border-b-2 transition-colors ${activeTab === tab.id
+              ? 'border-[#8098F9] text-[#8098F9]'
+              : 'border-transparent text-text-secondary hover:text-text-primary'
+              }`}
           >
             <tab.icon className="w-4 h-4" />
             <span className="font-medium">{tab.label}</span>
@@ -107,13 +123,13 @@ export default function SettingsPage() {
       {activeTab === 'profile' && (
         <div className="glass-medium rounded-2xl p-6">
           <h2 className="text-xl font-semibold text-text-primary mb-6">
-            Profile Information
+            {t('profileInfo')}
           </h2>
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-text-secondary mb-2">
-                  First Name
+                  {t('firstName')}
                 </label>
                 <input
                   type="text"
@@ -125,7 +141,7 @@ export default function SettingsPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-text-secondary mb-2">
-                  Last Name
+                  {t('lastName')}
                 </label>
                 <input
                   type="text"
@@ -138,7 +154,7 @@ export default function SettingsPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-text-secondary mb-2">
-                Email
+                {t('email')}
               </label>
               <input
                 type="email"
@@ -149,15 +165,15 @@ export default function SettingsPage() {
               />
               <div className="mt-2 flex items-center gap-2">
                 {user?.emailVerified ? (
-                  <span className="text-sm text-green-500">✓ Verified</span>
+                  <span className="text-sm text-green-500">✓ {t('verified')}</span>
                 ) : (
-                  <span className="text-sm text-warning">⚠️ Not verified</span>
+                  <span className="text-sm text-warning">⚠️ {t('notVerified')}</span>
                 )}
               </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-text-secondary mb-2">
-                Username
+                {t('username')}
               </label>
               <input
                 type="text"
@@ -169,10 +185,10 @@ export default function SettingsPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-text-secondary mb-2">
-                Bio
+                {t('bio')}
               </label>
               <textarea
-                placeholder="Tell us about yourself..."
+                placeholder={t('bioPlaceholder')}
                 rows={4}
                 className="w-full px-4 py-3 rounded-lg glass-input text-text-primary placeholder:text-text-tertiary"
               />
@@ -180,11 +196,15 @@ export default function SettingsPage() {
             <div>
               <label className="block text-sm font-medium text-text-secondary mb-2">
                 <Globe className="w-4 h-4 inline mr-2" />
-                Language / Мова
+                {t('language')}
               </label>
               <select
+                data-testid="language-select"
                 value={selectedLocale}
-                onChange={(e) => setSelectedLocale(e.target.value)}
+                onChange={(e) => {
+                  console.log('Settings Debug: Select changed to', e.target.value);
+                  setSelectedLocale(e.target.value);
+                }}
                 disabled={isUpdatingLocale}
                 className="w-full px-4 py-3 rounded-lg glass-input text-text-primary cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -197,12 +217,13 @@ export default function SettingsPage() {
             </div>
             <div className="flex justify-end">
               <button
+                data-testid="save-settings-btn"
                 onClick={handleSaveSettings}
                 disabled={isSaving || selectedLocale === currentLocale}
                 className="flex items-center space-x-2 px-6 py-3 glass-button text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Save className="w-4 h-4" />
-                <span>{isSaving ? 'Saving...' : 'Save Changes'}</span>
+                <span>{isSaving ? t('saving') : t('saveChanges')}</span>
               </button>
             </div>
           </div>
@@ -213,14 +234,14 @@ export default function SettingsPage() {
       {activeTab === 'notifications' && (
         <div className="glass-medium rounded-2xl p-6">
           <h2 className="text-xl font-semibold text-text-primary mb-6">
-            Notification Preferences
+            {t('notificationPreferences')}
           </h2>
           <div className="space-y-4">
             {[
-              { label: 'Email notifications', description: 'Receive email updates about your projects' },
-              { label: 'Project updates', description: 'Get notified when projects are updated' },
-              { label: 'Task assignments', description: 'Notifications when tasks are assigned to you' },
-              { label: 'Weekly reports', description: 'Receive weekly project summary reports' },
+              { label: t('emailNotifications'), description: t('emailNotificationsDesc') },
+              { label: t('projectUpdates'), description: t('projectUpdatesDesc') },
+              { label: t('taskAssignments'), description: t('taskAssignmentsDesc') },
+              { label: t('weeklyReports'), description: t('weeklyReportsDesc') },
             ].map((item, idx) => (
               <div
                 key={idx}
@@ -246,32 +267,32 @@ export default function SettingsPage() {
         <div className="space-y-6">
           <div className="glass-medium rounded-2xl p-6">
             <h2 className="text-xl font-semibold text-text-primary mb-6">
-              Current Plan
+              {t('currentPlan')}
             </h2>
             <div className="p-6 rounded-xl glass-light border border-[#8098F9]/20">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h3 className="text-2xl font-bold text-text-primary mb-1">Pro Plan</h3>
-                  <p className="text-text-secondary">$29/month</p>
+                  <h3 className="text-2xl font-bold text-text-primary mb-1">{t('proPlan')}</h3>
+                  <p className="text-text-secondary">$29{t('perMonth')}</p>
                 </div>
-                <button 
+                <button
                   onClick={() => window.location.href = '/payment'}
                   className="px-4 py-2 glass-button text-white rounded-lg transition-all font-medium"
                 >
-                  Change Plan
+                  {t('changePlan')}
                 </button>
               </div>
               <div className="space-y-2 text-sm text-text-primary">
-                <p>✓ Unlimited projects</p>
-                <p>✓ Unlimited analyses</p>
-                <p>✓ Priority support</p>
+                <p>✓ {t('unlimitedProjects')}</p>
+                <p>✓ {t('unlimitedAnalyses')}</p>
+                <p>✓ {t('prioritySupport')}</p>
               </div>
             </div>
           </div>
 
           <div className="glass-medium rounded-2xl p-6">
             <h2 className="text-xl font-semibold text-text-primary mb-6">
-              Payment Method
+              {t('paymentMethod')}
             </h2>
             <div className="p-4 rounded-lg glass-light flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -280,14 +301,14 @@ export default function SettingsPage() {
                 </div>
                 <div>
                   <p className="font-medium text-text-primary">•••• •••• •••• 4242</p>
-                  <p className="text-sm text-text-secondary">Expires 12/25</p>
+                  <p className="text-sm text-text-secondary">{t('expires')} 12/25</p>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={() => window.location.href = '/settings/payment-methods'}
                 className="px-4 py-2 text-sm font-medium text-text-primary glass-subtle hover:glass-light rounded-lg transition-all"
               >
-                Update
+                {t('update')}
               </button>
             </div>
           </div>
@@ -299,12 +320,12 @@ export default function SettingsPage() {
         <div className="space-y-6">
           <div className="glass-medium rounded-2xl p-6">
             <h2 className="text-xl font-semibold text-text-primary mb-6">
-              Change Password
+              {t('changePassword')}
             </h2>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-text-secondary mb-2">
-                  Current Password
+                  {t('currentPassword')}
                 </label>
                 <input
                   type="password"
@@ -313,7 +334,7 @@ export default function SettingsPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-text-secondary mb-2">
-                  New Password
+                  {t('newPassword')}
                 </label>
                 <input
                   type="password"
@@ -322,7 +343,7 @@ export default function SettingsPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-text-secondary mb-2">
-                  Confirm New Password
+                  {t('confirmPassword')}
                 </label>
                 <input
                   type="password"
@@ -330,22 +351,22 @@ export default function SettingsPage() {
                 />
               </div>
               <button className="px-6 py-3 glass-button text-white rounded-lg font-medium">
-                Update Password
+                {t('updatePassword')}
               </button>
             </div>
           </div>
 
           <div className="glass-medium rounded-2xl p-6">
             <h2 className="text-xl font-semibold text-red-400 mb-4">
-              Danger Zone
+              {t('dangerZone')}
             </h2>
             <div className="p-4 rounded-lg glass-light border border-red-500/20">
               <p className="text-sm text-text-primary mb-4">
-                Once you delete your account, there is no going back. Please be certain.
+                {t('deleteAccountWarning')}
               </p>
               <button className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-all">
                 <Trash2 className="w-4 h-4" />
-                <span>Delete Account</span>
+                <span>{t('deleteAccount')}</span>
               </button>
             </div>
           </div>

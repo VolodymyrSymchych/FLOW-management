@@ -47,7 +47,7 @@ export default async function RootLayout({
   params: { locale: string };
 }) {
   setRequestLocale(locale);
-  const messages = await getMessages();
+  const messages = await getMessages({ locale });
 
   // Preload user data on server before rendering
   const session = await getSession();
@@ -64,7 +64,7 @@ export default async function RootLayout({
   return (
     <html lang={locale} suppressHydrationWarning>
       <body className={`${inter.variable} ${poppins.variable} ${spaceGrotesk.variable} font-sans glass-theme bg-background text-text-primary`} suppressHydrationWarning>
-        <NextIntlClientProvider messages={messages}>
+        <NextIntlClientProvider messages={messages} locale={locale}>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <QueryProvider>
               <UserProvider initialUser={preloadedUser}>

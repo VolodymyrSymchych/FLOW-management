@@ -58,13 +58,15 @@ export function TeamProvider({ children }: { children: ReactNode }) {
         if (response.ok) {
           const data = await response.json();
           const loadedTeams = data.teams || [];
-          console.log('TeamContext: Loaded teams:', loadedTeams.map(t => ({ id: t.id, name: t.name })));
+          console.log('TeamContext: Loaded teams:', loadedTeams.map((t: Team) => ({ id: t.id, name: t.name })));
           setTeams(loadedTeams);
         } else {
           console.error('TeamContext: Failed to load teams, status:', response.status);
+          setTeams([]); // Ensure empty array on error response
         }
       } catch (error) {
         console.error('Failed to load teams:', error);
+        setTeams([]); // Ensure empty array on network error
       } finally {
         setTeamsLoaded(true);
       }

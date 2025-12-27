@@ -14,6 +14,7 @@ import { useSmartDelayedLoading } from '@/hooks/useSmartDelayedLoading';
 import { CardGridSkeleton } from '@/components/skeletons';
 import { useProjects } from '@/hooks/useQueries';
 import { useQueryClient } from '@tanstack/react-query';
+import { useTranslations } from 'next-intl';
 
 type FilterType = 'all' | 'status' | 'risk_level' | 'type' | 'industry';
 
@@ -21,6 +22,7 @@ export default function ProjectsPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { selectedTeam, isLoading: teamsLoading } = useTeam();
+  const t = useTranslations('Projects');
   
   // React Query - автоматичне кешування
   const teamId = selectedTeam.type === 'all' ? 'all' : selectedTeam.teamId;
@@ -112,13 +114,13 @@ export default function ProjectsPage() {
         <div>
           <h1 className="text-xl font-bold text-text-primary">
             {selectedTeam.type === 'single' && selectedTeam.teamId
-              ? 'Team Projects'
-              : 'All Projects'}
+              ? t('teamProjects')
+              : t('allProjects')}
           </h1>
           <p className="text-sm text-text-secondary mt-0.5">
             {selectedTeam.type === 'single' && selectedTeam.teamId
-              ? `Projects for selected team`
-              : 'Manage and analyze your project scope documents'}
+              ? t('teamProjectsDescription')
+              : t('manageProjects')}
           </p>
         </div>
         <button
@@ -126,7 +128,7 @@ export default function ProjectsPage() {
           className="glass-button flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-semibold"
         >
           <Plus className="w-4 h-4" />
-          <span>New Analysis</span>
+          <span>{t('newAnalysis')}</span>
         </button>
       </div>
 
@@ -137,7 +139,7 @@ export default function ProjectsPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary pointer-events-none" />
             <input
               type="text"
-              placeholder="Search projects..."
+              placeholder={t('searchProjects')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-3 py-2 text-sm rounded-lg glass-medium border border-white/10 focus:outline-none focus:border-primary/50 text-text-primary placeholder:text-text-tertiary transition-all"
@@ -152,7 +154,7 @@ export default function ProjectsPage() {
             )}
           >
             <Filter className="w-4 h-4 text-text-secondary" />
-            <span className="text-sm text-text-primary">Filters</span>
+            <span className="text-sm text-text-primary">{t('filters')}</span>
             {hasActiveFilter && (
               <span className="w-1.5 h-1.5 rounded-full bg-primary"></span>
             )}
@@ -163,14 +165,14 @@ export default function ProjectsPage() {
         {showFilters && (
           <div className="glass-medium rounded-lg p-3 border border-white/10">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-xs font-semibold text-text-primary">Filter Projects</h3>
+              <h3 className="text-xs font-semibold text-text-primary">{t('filterProjects')}</h3>
               {hasActiveFilter && (
                 <button
                   onClick={clearFilters}
                   className="text-[10px] text-text-tertiary hover:text-text-primary flex items-center space-x-1"
                 >
                   <X className="w-3 h-3" />
-                  <span>Clear</span>
+                  <span>{t('clear')}</span>
                 </button>
               )}
             </div>
@@ -178,7 +180,7 @@ export default function ProjectsPage() {
               {/* Filter Type Selector */}
               <div>
                 <label className="block text-[10px] font-medium text-text-tertiary mb-1.5">
-                  Filter By
+                  {t('filterBy')}
                 </label>
                 <select
                   value={filterType}
@@ -188,11 +190,11 @@ export default function ProjectsPage() {
                   }}
                   className="w-full px-2.5 py-1.5 rounded-lg glass-input border border-white/10 text-text-primary text-xs focus:outline-none focus:border-primary/50"
                 >
-                  <option value="all">All Projects</option>
-                  <option value="status">Status</option>
-                  <option value="risk_level">Risk Level</option>
-                  <option value="type">Type</option>
-                  <option value="industry">Industry</option>
+                  <option value="all">{t('allProjectsFilter')}</option>
+                  <option value="status">{t('status')}</option>
+                  <option value="risk_level">{t('riskLevel')}</option>
+                  <option value="type">{t('type')}</option>
+                  <option value="industry">{t('industry')}</option>
                 </select>
               </div>
 
@@ -200,10 +202,10 @@ export default function ProjectsPage() {
               {filterType !== 'all' && (
                 <div>
                   <label className="block text-[10px] font-medium text-text-tertiary mb-1.5">
-                    {filterType === 'status' && 'Status'}
-                    {filterType === 'risk_level' && 'Risk Level'}
-                    {filterType === 'type' && 'Type'}
-                    {filterType === 'industry' && 'Industry'}
+                    {filterType === 'status' && t('status')}
+                    {filterType === 'risk_level' && t('riskLevel')}
+                    {filterType === 'type' && t('type')}
+                    {filterType === 'industry' && t('industry')}
                   </label>
                   <select
                     value={filterValue}
@@ -230,7 +232,7 @@ export default function ProjectsPage() {
             {hasActiveFilter && (
               <div className="mt-3 pt-3 border-t border-white/10">
                 <p className="text-[10px] text-text-tertiary">
-                  Showing {filteredProjects.length} of {projects.length} projects
+                  {t('showing')} {filteredProjects.length} {t('of')} {projects.length} {t('projects')}
                 </p>
               </div>
             )}
@@ -256,8 +258,8 @@ export default function ProjectsPage() {
         <div className="text-center py-8 glass-medium rounded-xl border border-white/10">
           <p className="text-sm text-text-secondary">
             {searchQuery || hasActiveFilter
-              ? 'No projects match your filters.'
-              : 'No projects yet.'}
+              ? t('noProjectsMatch')
+              : t('noProjects')}
           </p>
           {(searchQuery || hasActiveFilter) && (
             <button
@@ -267,7 +269,7 @@ export default function ProjectsPage() {
               }}
               className="mt-3 px-3 py-1.5 text-xs glass-light hover:glass-medium rounded-lg transition-all"
             >
-              Clear all filters
+              {t('clearAllFilters')}
             </button>
           )}
         </div>

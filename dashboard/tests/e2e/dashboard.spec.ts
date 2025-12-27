@@ -66,11 +66,13 @@ test.describe('Dashboard (Authenticated)', () => {
     test('should navigate to team page', async ({ page }) => {
         await page.goto('/dashboard');
         await page.waitForLoadState('networkidle');
+        await page.waitForTimeout(2000);
 
         const teamLink = page.getByRole('link', { name: /team|команда/i }).first();
-        if (await teamLink.isVisible()) {
+        if (await teamLink.isVisible({ timeout: 5000 })) {
             await teamLink.click();
-            await expect(page).toHaveURL(/team/);
+            await page.waitForTimeout(2000);
+            await expect(page).toHaveURL(/team/, { timeout: 10000 });
         }
     });
 

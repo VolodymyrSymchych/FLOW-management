@@ -150,20 +150,25 @@ export function useChatWithMessages(chatId: number | null) {
   });
 }
 
-// Team Members Query
+// Team Members Query - optimized for fast loading
 export function useTeamMembers(teamId: number) {
   return useQuery({
     queryKey: ['team-members', teamId],
     queryFn: async () => {
       const response = await axios.get(`/api/teams/${teamId}/members?include_attendance=true`);
-      return response.data.members || [];
+      const members = (response.data.members || []).filter((m: any) => m.user);
+      return members;
     },
-    staleTime: 3 * 60 * 1000,
-    enabled: !!teamId,
+    staleTime: 2 * 60 * 1000, // 2 хвилини
+    gcTime: 10 * 60 * 1000, // Зберігати в кеші 10 хвилин
+    enabled: !!teamId && teamId > 0,
+    refetchOnWindowFocus: true,
+    refetchOnMount: false,
+    placeholderData: (previousData) => previousData,
   });
 }
 
-// Teams Query
+// Teams Query - optimized for fast loading
 export function useTeams() {
   return useQuery({
     queryKey: ['teams'],
@@ -171,7 +176,11 @@ export function useTeams() {
       const response = await axios.get('/api/teams');
       return response.data.teams || [];
     },
-    staleTime: 10 * 60 * 1000, // Teams не змінюються часто
+    staleTime: 5 * 60 * 1000, // 5 хвилин
+    gcTime: 30 * 60 * 1000, // Зберігати в кеші 30 хвилин
+    refetchOnWindowFocus: true,
+    refetchOnMount: false,
+    placeholderData: (previousData) => previousData,
   });
 }
 
@@ -270,6 +279,26 @@ export function usePrefetch() {
           const response = await fetch(`/api/chat?chatId=${chatId}`);
           if (!response.ok) throw new Error('Failed to load chat');
           return response.json();
+        },
+      });
+    },
+    prefetchTeams: () => {
+      queryClient.prefetchQuery({
+        queryKey: ['teams'],
+        queryFn: async () => {
+          const response = await axios.get('/api/teams');
+          return response.data.teams || [];
+        },
+      });
+    },
+    prefetchTeamMembers: (teamId: number) => {
+      if (!teamId || teamId <= 0) return;
+      queryClient.prefetchQuery({
+        queryKey: ['team-members', teamId],
+        queryFn: async () => {
+          const response = await axios.get(`/api/teams/${teamId}/members?include_attendance=true`);
+          const members = (response.data.members || []).filter((m: any) => m.user);
+          return members;
         },
       });
     },

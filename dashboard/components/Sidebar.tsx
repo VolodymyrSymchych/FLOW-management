@@ -39,7 +39,7 @@ export const Sidebar = memo(function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { isExpanded, setIsExpanded } = useSidebar();
-  const { prefetchChats, prefetchInvoices, prefetchProjects, prefetchTasks, prefetchStats } = usePrefetch();
+  const { prefetchChats, prefetchInvoices, prefetchProjects, prefetchTasks, prefetchStats, prefetchTeams } = usePrefetch();
 
   const toggleSidebar = useCallback(() => {
     setIsExpanded(!isExpanded);
@@ -73,12 +73,15 @@ export const Sidebar = memo(function Sidebar() {
       case '/dashboard/tasks':
         prefetchTasks();
         break;
+      case '/dashboard/team':
+        prefetchTeams();
+        break;
       case '/dashboard':
         prefetchStats();
         prefetchProjects();
         break;
     }
-  }, [prefetchChats, prefetchInvoices, prefetchProjects, prefetchTasks, prefetchStats]);
+  }, [prefetchChats, prefetchInvoices, prefetchProjects, prefetchTasks, prefetchStats, prefetchTeams]);
 
   return (
     <aside

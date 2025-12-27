@@ -2,15 +2,8 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Users, Mail, MoreVertical, UserPlus, Clock, Calendar, ChevronDown, Building2 } from 'lucide-react';
-import axios from 'axios';
-import { TableSkeleton } from '@/components/skeletons';
-
-interface Team {
-  id: number;
-  name: string;
-  description?: string | null;
-}
+import { Users, Mail, MoreVertical, UserPlus, Clock, Calendar, Building2 } from 'lucide-react';
+import { useTeams, useTeamMembers } from '@/hooks/useQueries';
 
 interface TeamMember {
   id: number;
@@ -29,76 +22,100 @@ interface TeamMember {
   };
 }
 
+// Skeleton для members
+function MembersSkeleton() {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {[1,2,3,4,5,6].map((i) => (
+        <div key={i} className="glass-medium rounded-2xl p-6 animate-pulse">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center space-x-3">
+              <div className="w-14 h-14 rounded-full bg-white/10" />
+              <div className="space-y-2">
+                <div className="h-4 w-24 bg-white/10 rounded" />
+                <div className="h-3 w-16 bg-white/10 rounded" />
+              </div>
+            </div>
+          </div>
+          <div className="h-3 w-40 bg-white/10 rounded mb-4" />
+          <div className="space-y-2 mb-4">
+            <div className="h-3 w-full bg-white/10 rounded" />
+            <div className="h-3 w-full bg-white/10 rounded" />
+          </div>
+          <div className="h-8 w-full bg-white/10 rounded" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Skeleton для всієї сторінки
+function PageSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="space-y-2">
+          <div className="h-10 w-48 bg-white/10 rounded animate-pulse" />
+          <div className="h-4 w-64 bg-white/10 rounded animate-pulse" />
+        </div>
+        <div className="h-10 w-32 bg-white/10 rounded animate-pulse" />
+      </div>
+      <div className="glass-medium rounded-xl p-4 border border-white/10">
+        <div className="h-4 w-24 bg-white/10 rounded animate-pulse mb-2" />
+        <div className="h-10 w-64 bg-white/10 rounded animate-pulse" />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {[1,2,3].map(i => (
+          <div key={i} className="glass-medium rounded-2xl p-6 animate-pulse">
+            <div className="flex items-center space-x-3">
+              <div className="w-12 h-12 rounded-xl bg-white/10" />
+              <div className="space-y-2">
+                <div className="h-3 w-20 bg-white/10 rounded" />
+                <div className="h-6 w-12 bg-white/10 rounded" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <MembersSkeleton />
+    </div>
+  );
+}
+
 function TeamPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [teams, setTeams] = useState<Team[]>([]);
   const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
-  const [members, setMembers] = useState<TeamMember[]>([]);
-  const [loading, setLoading] = useState(true);
   
-  // Показувати skeleton поки loading=true, щоб не показувати "No Teams" до завантаження даних
+  // React Query для teams - кешовано, миттєве при повторному відвідуванні
+  const { data: teams = [], isLoading: teamsLoading } = useTeams();
+  
+  // React Query для members - кешовано по teamId
+  const { 
+    data: members = [], 
+    isLoading: membersLoading,
+    isFetching: membersFetching 
+  } = useTeamMembers(selectedTeamId || 0);
 
-  useEffect(() => {
-    loadTeams();
-  }, []);
-
+  // Встановити selectedTeamId з URL або перший team
   useEffect(() => {
     const teamIdParam = searchParams.get('teamId');
     if (teamIdParam) {
       setSelectedTeamId(Number(teamIdParam));
-    } else if (teams.length > 0) {
+    } else if (teams.length > 0 && !selectedTeamId) {
       setSelectedTeamId(teams[0].id);
     }
-  }, [searchParams, teams]);
+  }, [searchParams, teams, selectedTeamId]);
 
-  useEffect(() => {
-    if (selectedTeamId) {
-      loadTeamMembers(selectedTeamId);
-    }
-  }, [selectedTeamId]);
-
-  const loadTeams = async () => {
-    try {
-      const response = await axios.get('/api/teams');
-      setTeams(response.data.teams || []);
-      if (response.data.teams && response.data.teams.length > 0 && !searchParams.get('teamId')) {
-        setSelectedTeamId(response.data.teams[0].id);
-      }
-    } catch (error) {
-      console.error('Failed to load teams:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadTeamMembers = async (teamId: number) => {
-    try {
-      // Optimized: Get all members with attendance in one request
-      const response = await axios.get(`/api/teams/${teamId}/members?include_attendance=true`);
-      const members = (response.data.members || []).filter((m: any) => m.user);
-      setMembers(members);
-    } catch (error) {
-      console.error('Failed to load team members:', error);
-    }
-  };
-
-  const selectedTeam = teams.find(t => t.id === selectedTeamId);
-
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="space-y-2">
-            <div className="h-10 w-48 bg-white/10 rounded animate-pulse" />
-            <div className="h-4 w-64 bg-white/10 rounded animate-pulse" />
-          </div>
-          <div className="h-10 w-32 bg-white/10 rounded animate-pulse" />
-        </div>
-        <TableSkeleton rows={8} columns={5} />
-      </div>
-    );
+  // Показуємо skeleton тільки при першому завантаженні (немає кешу)
+  const isInitialLoading = teamsLoading && teams.length === 0;
+  
+  if (isInitialLoading) {
+    return <PageSkeleton />;
   }
+
+  // Показуємо skeleton для members тільки при першому завантаженні цієї команди
+  const showMembersSkeleton = membersLoading && members.length === 0 && selectedTeamId;
 
   return (
     <div className="space-y-6">
@@ -121,6 +138,9 @@ function TeamPageContent() {
           <label className="block text-sm font-medium text-text-primary mb-2 flex items-center gap-2">
             <Building2 className="w-4 h-4" />
             Select Team
+            {membersFetching && !membersLoading && (
+              <span className="ml-2 w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+            )}
           </label>
           <select
             value={selectedTeamId || ''}
@@ -152,7 +172,7 @@ function TeamPageContent() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="glass-medium rounded-2xl p-6">
               <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 rounded-xl glass-light flex items-center justify-center ">
+                <div className="w-12 h-12 rounded-xl glass-light flex items-center justify-center">
                   <Users className="w-6 h-6 text-[#8098F9]" />
                 </div>
                 <div>
@@ -164,13 +184,13 @@ function TeamPageContent() {
 
             <div className="glass-medium rounded-2xl p-6">
               <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 rounded-xl glass-light flex items-center justify-center ">
+                <div className="w-12 h-12 rounded-xl glass-light flex items-center justify-center">
                   <Clock className="w-6 h-6 text-[#00D66B]" />
                 </div>
                 <div>
                   <p className="text-sm text-text-secondary">Total Hours Today</p>
                   <p className="text-2xl font-bold text-text-primary">
-                    {members.reduce((sum, m) => sum + (m.attendance?.todayHours || 0), 0).toFixed(1)}h
+                    {members.reduce((sum: number, m: TeamMember) => sum + (m.attendance?.todayHours || 0), 0).toFixed(1)}h
                   </p>
                 </div>
               </div>
@@ -178,13 +198,13 @@ function TeamPageContent() {
 
             <div className="glass-medium rounded-2xl p-6">
               <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 rounded-xl glass-light flex items-center justify-center ">
+                <div className="w-12 h-12 rounded-xl glass-light flex items-center justify-center">
                   <Calendar className="w-6 h-6 text-purple-400" />
                 </div>
                 <div>
                   <p className="text-sm text-text-secondary">This Week</p>
                   <p className="text-2xl font-bold text-text-primary">
-                    {members.reduce((sum, m) => sum + (m.attendance?.weekHours || 0), 0).toFixed(1)}h
+                    {members.reduce((sum: number, m: TeamMember) => sum + (m.attendance?.weekHours || 0), 0).toFixed(1)}h
                   </p>
                 </div>
               </div>
@@ -192,7 +212,9 @@ function TeamPageContent() {
           </div>
 
           {/* Team Members Grid */}
-          {members.length === 0 ? (
+          {showMembersSkeleton ? (
+            <MembersSkeleton />
+          ) : members.length === 0 ? (
             <div className="glass-medium rounded-2xl p-12 text-center">
               <Users className="w-16 h-16 text-text-tertiary mx-auto mb-4 opacity-50" />
               <h3 className="text-xl font-semibold text-text-primary mb-2">No Members</h3>
@@ -200,7 +222,7 @@ function TeamPageContent() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {members.map((member) => {
+              {members.map((member: TeamMember) => {
                 const user = member.user;
                 if (!user) return null;
 
@@ -213,7 +235,7 @@ function TeamPageContent() {
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center space-x-3">
                         <div className="relative">
-                          <div className="w-14 h-14 rounded-full bg-[#8098F9] flex items-center justify-center text-white font-semibold text-lg ">
+                          <div className="w-14 h-14 rounded-full bg-[#8098F9] flex items-center justify-center text-white font-semibold text-lg">
                             {initials}
                           </div>
                         </div>
@@ -270,11 +292,7 @@ function TeamPageContent() {
 
 export default function TeamPage() {
   return (
-    <Suspense fallback={
-      <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    }>
+    <Suspense fallback={<PageSkeleton />}>
       <TeamPageContent />
     </Suspense>
   );

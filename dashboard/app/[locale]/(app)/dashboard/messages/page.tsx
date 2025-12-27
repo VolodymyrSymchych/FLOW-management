@@ -123,7 +123,7 @@ export default function MessagesPage() {
           </div>
           <div className="space-y-2 max-h-[600px] overflow-y-auto">
             {chatsLoading ? (
-              <ChatListSkeleton count={5} />
+              <ChatListSkeleton />
             ) : filteredChats.length === 0 ? (
               <div className="text-center py-8 text-text-secondary">
                 <MessageSquare className="w-12 h-12 mx-auto mb-2 opacity-50" />

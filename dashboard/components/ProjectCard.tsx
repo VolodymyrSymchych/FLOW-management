@@ -22,6 +22,7 @@ export function ProjectCard({ id, name, team, status, risk_level, score, isOwner
 
   return (
     <div
+      data-testid="project-card"
       className="glass-light glass-hover rounded-xl p-4 cursor-pointer"
       onClick={onClick}
     >

@@ -1,0 +1,794 @@
+
+> project-scope-analyzer-dashboard@1.0.0 test:e2e
+> playwright test
+
+
+Running 218 tests using 5 workers
+
+  ✓    4 [chromium] › tests/e2e/auth.spec.ts:39:9 › Authentication Flow › should display sign up page (6.0s)
+  ✓    2 [chromium] › tests/e2e/auth.spec.ts:10:9 › Authentication Flow › should display login page (6.1s)
+  ✓    1 [chromium] › tests/e2e/auth.spec.ts:47:9 › Authentication Flow › should show validation errors on invalid sign up (6.2s)
+  ✓    3 [chromium] › tests/e2e/auth.spec.ts:33:9 › Authentication Flow › should navigate to sign up page (9.2s)
+[WebServer] Auth service login error: {
+[WebServer]   status: [33m401[39m,
+[WebServer]   statusText: [32m'Unauthorized'[39m,
+[WebServer]   error: {
+[WebServer]     error: {
+[WebServer]       message: [32m'Invalid credentials'[39m,
+[WebServer]       code: [32m'UNAUTHORIZED'[39m,
+[WebServer]       statusCode: [33m401[39m
+[WebServer]     }
+[WebServer]   },
+[WebServer]   url: [32m'https://flow-auth-service.vercel.app/api/auth/login'[39m
+[WebServer] }
+[WebServer] Login failed: {
+[WebServer]   error: [32m'Invalid credentials'[39m,
+[WebServer]   success: [33mfalse[39m,
+[WebServer]   hasToken: [33mfalse[39m,
+[WebServer]   hasUser: [33mfalse[39m
+[WebServer] }
+  ✘    5 [chromium] › tests/e2e/auth.spec.ts:20:9 › Authentication Flow › should show validation errors on invalid login (11.2s)
+  ✓    6 [chromium] › tests/e2e/auth.spec.ts:67:9 › Authentication Flow › should display forgot password page (5.3s)
+  ✓    7 [chromium] › tests/e2e/auth.spec.ts:61:9 › Authentication Flow › should navigate to forgot password page (5.8s)
+[WebServer] (node:51476) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+[WebServer] (Use `node --trace-deprecation ...` to show where the warning was created)
+  ✘    9 [chromium] › tests/e2e/chat-detailed.spec.ts:29:9 › Chat Page - Detailed Tests › should display message input field (1.2m)
+  ✘   11 [chromium] › tests/e2e/chat-detailed.spec.ts:64:9 › Chat Page - Detailed Tests › should allow typing in message input (1.1m)
+  ✘   10 [chromium] › tests/e2e/chat-detailed.spec.ts:51:9 › Chat Page - Detailed Tests › should display chat history or empty state (1.2m)
+  ✘   12 [chromium] › tests/e2e/chat-detailed.spec.ts:40:9 › Chat Page - Detailed Tests › should display send button (1.1m)
+  ✘    8 [chromium] › tests/e2e/chat-detailed.spec.ts:22:9 › Chat Page - Detailed Tests › should display chat page header (1.2m)
+[WebServer] Failed to load chats (may be offline or slow): timeout of 3000ms exceeded
+[WebServer] Failed to load chats (may be offline or slow): timeout of 3000ms exceeded
+[WebServer] Failed to load chats (may be offline or slow): timeout of 3000ms exceeded
+[WebServer] Failed to load chats (may be offline or slow): timeout of 3000ms exceeded
+[WebServer] Failed to load chats (may be offline or slow): timeout of 3000ms exceeded
+[WebServer] Failed to load chats (may be offline or slow): timeout of 3000ms exceeded
+[WebServer] Failed to load chats (may be offline or slow): timeout of 3000ms exceeded
+[WebServer] Failed to load chats (may be offline or slow): timeout of 3000ms exceeded
+[WebServer] Failed to load chats (may be offline or slow): timeout of 3000ms exceeded
+[WebServer] Failed to load chats (may be offline or slow): timeout of 3000ms exceeded
+  ✓   14 [chromium] › tests/e2e/chat-detailed.spec.ts:74:9 › Chat Page - Detailed Tests › should clear input after sending message (11.5s)
+  ✓   15 [chromium] › tests/e2e/chat-detailed.spec.ts:112:9 › Chat Page - Detailed Tests › should display new chat or clear button (12.9s)
+  ✓   13 [chromium] › tests/e2e/chat-detailed.spec.ts:119:9 › Chat Page - Detailed Tests › should display chat sidebar with history if available (13.0s)
+  ✓   17 [chromium] › tests/e2e/chat-detailed.spec.ts:88:9 › Chat Page - Detailed Tests › should display AI responses (13.1s)
+  ✓   16 [chromium] › tests/e2e/chat-detailed.spec.ts:105:9 › Chat Page - Detailed Tests › should display message timestamps (13.5s)
+  ✓   18 [chromium] › tests/e2e/chat-detailed.spec.ts:126:9 › Chat Page - Detailed Tests › should display suggested prompts or examples (9.7s)
+  ✓   20 [chromium] › tests/e2e/chat-detailed.spec.ts:147:9 › Chat Page - Detailed Tests › should display model selector if available (8.9s)
+  ✓   22 [chromium] › tests/e2e/chat-detailed.spec.ts:169:9 › Chat Page - Detailed Tests › should display scroll to bottom button when scrolled up (8.7s)
+  ✓   19 [chromium] › tests/e2e/chat-detailed.spec.ts:133:9 › Chat Page - Detailed Tests › should handle Enter key to send message (10.0s)
+  ✓   21 [chromium] › tests/e2e/chat-detailed.spec.ts:154:9 › Chat Page - Detailed Tests › should display copy button on messages (10.1s)
+  ✓   23 [chromium] › tests/e2e/chat-detailed.spec.ts:184:9 › Chat Page - Detailed Tests › should show typing indicator when AI is responding (7.4s)
+  ✓   25 [chromium] › tests/e2e/chat-detailed.spec.ts:217:9 › Chat Page - Detailed Tests › should handle file upload if available (7.1s)
+  ✓   26 [chromium] › tests/e2e/chat-detailed.spec.ts:224:9 › Chat Page - Detailed Tests › should display context selection if available (7.9s)
+  ✓   24 [chromium] › tests/e2e/chat-detailed.spec.ts:202:9 › Chat Page - Detailed Tests › should display regenerate button on AI responses (9.5s)
+  ✓   27 [chromium] › tests/e2e/dashboard-detailed.spec.ts:15:9 › Dashboard - Detailed Tests › should display all stat cards (8.3s)
+  ✓   29 [chromium] › tests/e2e/dashboard-detailed.spec.ts:39:9 › Dashboard - Detailed Tests › should allow customization mode toggle (5.3s)
+  ✓   28 [chromium] › tests/e2e/dashboard-detailed.spec.ts:31:9 › Dashboard - Detailed Tests › should display recent projects section (7.1s)
+  ✓   30 [chromium] › tests/e2e/dashboard-detailed.spec.ts:55:9 › Dashboard - Detailed Tests › should display widget gallery when in edit mode (5.5s)
+  ✓   31 [chromium] › tests/e2e/dashboard-detailed.spec.ts:71:9 › Dashboard - Detailed Tests › should show calendar widget if available (6.6s)
+  ✓   32 [chromium] › tests/e2e/dashboard-detailed.spec.ts:82:9 › Dashboard - Detailed Tests › should show upcoming tasks widget if available (6.9s)
+  ✓   34 [chromium] › tests/e2e/dashboard-detailed.spec.ts:102:9 › Dashboard - Detailed Tests › should allow resetting dashboard layout (4.4s)
+  ✓   33 [chromium] › tests/e2e/dashboard-detailed.spec.ts:92:9 › Dashboard - Detailed Tests › should show budget tracking widget if available (6.2s)
+  ✓   35 [chromium] › tests/e2e/dashboard-detailed.spec.ts:118:9 › Dashboard - Detailed Tests › should navigate to projects when clicking project card (9.2s)
+  ✓   38 [chromium] › tests/e2e/dashboard.spec.ts:23:9 › Dashboard (Authenticated) › should display dashboard after login (7.5s)
+  ✓   36 [chromium] › tests/e2e/dashboard-detailed.spec.ts:136:9 › Dashboard - Detailed Tests › should display team selector if user has teams (9.5s)
+  ✓   37 [chromium] › tests/e2e/dashboard-detailed.spec.ts:145:9 › Dashboard - Detailed Tests › should handle real-time updates (11.8s)
+  ✓   39 [chromium] › tests/e2e/dashboard.spec.ts:34:9 › Dashboard (Authenticated) › should display sidebar navigation (10.0s)
+  ✓   41 [chromium] › tests/e2e/dashboard.spec.ts:55:9 › Dashboard (Authenticated) › should navigate to tasks page (9.9s)
+  ✓   40 [chromium] › tests/e2e/dashboard.spec.ts:43:9 › Dashboard (Authenticated) › should navigate to projects page (13.8s)
+  ✓   43 [chromium] › tests/e2e/dashboard.spec.ts:79:9 › Dashboard (Authenticated) › should be able to logout (10.4s)
+  ✓   44 [chromium] › tests/e2e/documentation-detailed.spec.ts:19:9 › Documentation Page - Detailed Tests › should display documentation page header (11.0s)
+  ✓   42 [chromium] › tests/e2e/dashboard.spec.ts:66:9 › Dashboard (Authenticated) › should navigate to team page (17.6s)
+  ✓   45 [chromium] › tests/e2e/documentation-detailed.spec.ts:24:9 › Documentation Page - Detailed Tests › should display create document button (9.8s)
+  ✓   46 [chromium] › tests/e2e/documentation-detailed.spec.ts:31:9 › Documentation Page - Detailed Tests › should display documents list or empty state (12.8s)
+  ✓   48 [chromium] › tests/e2e/documentation-detailed.spec.ts:48:9 › Documentation Page - Detailed Tests › should filter documents by category or type (15.7s)
+  ✓   47 [chromium] › tests/e2e/documentation-detailed.spec.ts:41:9 › Documentation Page - Detailed Tests › should display search for documents (17.3s)
+  ✓   50 [chromium] › tests/e2e/documentation-detailed.spec.ts:65:9 › Documentation Page - Detailed Tests › should display document descriptions or preview (11.7s)
+  ✓   49 [chromium] › tests/e2e/documentation-detailed.spec.ts:55:9 › Documentation Page - Detailed Tests › should display document titles (13.7s)
+  ✓   51 [chromium] › tests/e2e/documentation-detailed.spec.ts:75:9 › Documentation Page - Detailed Tests › should display document metadata (date, author, etc) (7.8s)
+  ✓   53 [chromium] › tests/e2e/documentation-detailed.spec.ts:92:9 › Documentation Page - Detailed Tests › should display edit button on documents (6.5s)
+  ✓   52 [chromium] › tests/e2e/documentation-detailed.spec.ts:82:9 › Documentation Page - Detailed Tests › should navigate to document when clicking document card (6.6s)
+  ✓   55 [chromium] › tests/e2e/documentation-detailed.spec.ts:106:9 › Documentation Page - Detailed Tests › should open create document modal when clicking create button (6.4s)
+  ✓   54 [chromium] › tests/e2e/documentation-detailed.spec.ts:99:9 › Documentation Page - Detailed Tests › should display delete button on documents (6.7s)
+  ✓   56 [chromium] › tests/e2e/documentation-detailed.spec.ts:119:9 › Documentation Page - Detailed Tests › should display title input in document creation form (6.4s)
+  ✓   58 [chromium] › tests/e2e/documentation-detailed.spec.ts:145:9 › Documentation Page - Detailed Tests › should display category selector in document form (8.4s)
+  ✓   57 [chromium] › tests/e2e/documentation-detailed.spec.ts:132:9 › Documentation Page - Detailed Tests › should display content editor in document creation form (8.5s)
+  ✓   60 [chromium] › tests/e2e/documentation-detailed.spec.ts:171:9 › Documentation Page - Detailed Tests › should display document categories sidebar if available (7.4s)
+  ✓   61 [chromium] › tests/e2e/documentation-detailed.spec.ts:178:9 › Documentation Page - Detailed Tests › should display sort options (6.9s)
+  ✓   59 [chromium] › tests/e2e/documentation-detailed.spec.ts:158:9 › Documentation Page - Detailed Tests › should display tags input if available (8.6s)
+  ✓   62 [chromium] › tests/e2e/documentation-detailed.spec.ts:185:9 › Documentation Page - Detailed Tests › should display view mode toggle (grid/list) (6.6s)
+  ✓   63 [chromium] › tests/e2e/documentation-detailed.spec.ts:198:9 › Documentation Page - Detailed Tests › should show share button for documents (6.6s)
+  ✓   64 [chromium] › tests/e2e/documentation-detailed.spec.ts:205:9 › Documentation Page - Detailed Tests › should show export/download button for documents (6.6s)
+  ✓   65 [chromium] › tests/e2e/documentation-detailed.spec.ts:212:9 › Documentation Page - Detailed Tests › should display document status if applicable (6.7s)
+  ✓   66 [chromium] › tests/e2e/documentation-detailed.spec.ts:219:9 › Documentation Page - Detailed Tests › should filter documents when searching (7.0s)
+[WebServer] Warning: Invalid hook call. Hooks can only be called inside of the body of a function component. This could happen for one of the following reasons:
+[WebServer] 1. You might have mismatching versions of React and the renderer (such as React DOM)
+[WebServer] 2. You might be breaking the Rules of Hooks
+[WebServer] 3. You might have more than one copy of React in the same app
+[WebServer] See https://reactjs.org/link/invalid-hook-call for tips about how to debug and fix this problem.
+[WebServer] Warning: Invalid hook call. Hooks can only be called inside of the body of a function component. This could happen for one of the following reasons:
+[WebServer] 1. You might have mismatching versions of React and the renderer (such as React DOM)
+[WebServer] 2. You might be breaking the Rules of Hooks
+[WebServer] 3. You might have more than one copy of React in the same app
+[WebServer] See https://reactjs.org/link/invalid-hook-call for tips about how to debug and fix this problem.
+[WebServer] Warning: Invalid hook call. Hooks can only be called inside of the body of a function component. This could happen for one of the following reasons:
+[WebServer] 1. You might have mismatching versions of React and the renderer (such as React DOM)
+[WebServer] 2. You might be breaking the Rules of Hooks
+[WebServer] 3. You might have more than one copy of React in the same app
+[WebServer] See https://reactjs.org/link/invalid-hook-call for tips about how to debug and fix this problem.
+[WebServer] Warning: Invalid hook call. Hooks can only be called inside of the body of a function component. This could happen for one of the following reasons:
+[WebServer] 1. You might have mismatching versions of React and the renderer (such as React DOM)
+[WebServer] 2. You might be breaking the Rules of Hooks
+[WebServer] 3. You might have more than one copy of React in the same app
+[WebServer] See https://reactjs.org/link/invalid-hook-call for tips about how to debug and fix this problem.
+[WebServer] Warning: Invalid hook call. Hooks can only be called inside of the body of a function component. This could happen for one of the following reasons:
+[WebServer] 1. You might have mismatching versions of React and the renderer (such as React DOM)
+[WebServer] 2. You might be breaking the Rules of Hooks
+[WebServer] 3. You might have more than one copy of React in the same app
+[WebServer] See https://reactjs.org/link/invalid-hook-call for tips about how to debug and fix this problem.
+[WebServer] TypeError: Cannot read properties of null (reading 'useContext')
+[WebServer]     at t.useContext [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:162242[90m)[39m
+[WebServer]     at usePathname (webpack-internal:///(ssr)/./node_modules/[4mnext[24m/dist/client/components/navigation.js:121:34)
+[WebServer]     at ErrorBoundary (webpack-internal:///(ssr)/./node_modules/[4mnext[24m/dist/client/components/error-boundary.js:159:50)
+[WebServer]     at au [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:10446[90m)[39m
+[WebServer]     at [90m/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:15122
+[WebServer]     at aw [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:16908[90m)[39m
+[WebServer]     at a_ [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:49776[90m)[39m
+[WebServer]     at ab [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:11808[90m)[39m
+[WebServer]     at [90m/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[WebServer]     at aw [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:16908[90m)[39m
+[WebServer]     at aw [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:46505[90m)[39m
+[WebServer]     at a_ [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:49776[90m)[39m
+[WebServer]     at ab [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:11808[90m)[39m
+[WebServer]     at [90m/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[WebServer]     at aw [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:16908[90m)[39m
+[WebServer]     at a_ [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:49776[90m)[39m
+[WebServer]     at [90m/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:58612
+[WebServer]     at [90m/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:59270
+[WebServer]     at aN [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:59278[90m)[39m
+[WebServer]     at Timeout._onTimeout [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:6939[90m)[39m
+[WebServer] [90m    at listOnTimeout (node:internal/timers:608:17)[39m
+[WebServer] [90m    at process.processTimers (node:internal/timers:543:7)[39m
+[WebServer] Warning: Invalid hook call. Hooks can only be called inside of the body of a function component. This could happen for one of the following reasons:
+[WebServer] 1. You might have mismatching versions of React and the renderer (such as React DOM)
+[WebServer] 2. You might be breaking the Rules of Hooks
+[WebServer] 3. You might have more than one copy of React in the same app
+[WebServer] See https://reactjs.org/link/invalid-hook-call for tips about how to debug and fix this problem.
+[WebServer] TypeError: Cannot read properties of null (reading 'useContext')
+[WebServer]     at t.useContext [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:162242[90m)[39m
+[WebServer]     at usePathname (webpack-internal:///(ssr)/./node_modules/[4mnext[24m/dist/client/components/navigation.js:121:34)
+[WebServer]     at ErrorBoundary (webpack-internal:///(ssr)/./node_modules/[4mnext[24m/dist/client/components/error-boundary.js:159:50)
+[WebServer]     at au [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:10446[90m)[39m
+[WebServer]     at [90m/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:15122
+[WebServer]     at aw [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:16908[90m)[39m
+[WebServer]     at a_ [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:49776[90m)[39m
+[WebServer]     at ab [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:11808[90m)[39m
+[WebServer]     at [90m/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[WebServer]     at aw [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:16908[90m)[39m
+[WebServer]     at aw [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:46505[90m)[39m
+[WebServer]     at a_ [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:49776[90m)[39m
+[WebServer]     at ab [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:11808[90m)[39m
+[WebServer]     at [90m/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[WebServer]     at aw [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:16908[90m)[39m
+[WebServer]     at a_ [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:49776[90m)[39m
+[WebServer]     at [90m/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:58612
+[WebServer]     at [90m/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:59270
+[WebServer]     at aN [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:59278[90m)[39m
+[WebServer]     at Timeout._onTimeout [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:6939[90m)[39m
+[WebServer] [90m    at listOnTimeout (node:internal/timers:608:17)[39m
+[WebServer] [90m    at process.processTimers (node:internal/timers:543:7)[39m
+[WebServer]  [31m[1m⨯[22m[39m Internal error: TypeError: Cannot read properties of null (reading 'useContext')
+[WebServer]     at t.useContext (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:162242)
+[WebServer]     at Script (./node_modules/next/dist/client/script.js:173:87)
+[WebServer]     at au (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:10446)
+[WebServer]     at /Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:15122
+[WebServer]     at aw (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[WebServer]     at aw (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:46505)
+[WebServer]     at a_ (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[WebServer]     at aj (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:53793)
+[WebServer]     at aC (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:52874)
+[WebServer]     at a_ (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:50095)
+[WebServer]     at aj (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:53793)
+[WebServer]     at /Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:42336
+[WebServer]     at aw (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:42822)
+[WebServer]     at a_ (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[WebServer]     at aj (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:53793)
+[WebServer]     at /Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:42336
+[WebServer]     at aw (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:42822)
+[WebServer]     at a_ (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[WebServer]     at a_ (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:50067)
+[WebServer]     at /Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:58612
+[WebServer]     at /Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:59270
+[WebServer]     at aN (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:59278)
+[WebServer]     at Timeout._onTimeout (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:6939)
+[WebServer]     at listOnTimeout (node:internal/timers:608:17)
+[WebServer]     at process.processTimers (node:internal/timers:543:7)
+[WebServer] digest: "757845410"
+[WebServer]  [31m[1m⨯[22m[39m Internal error: TypeError: Cannot read properties of null (reading 'useContext')
+[WebServer]     at t.useContext (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:162242)
+[WebServer]     at Script (./node_modules/next/dist/client/script.js:173:87)
+[WebServer]     at au (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:10446)
+[WebServer]     at /Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:15122
+[WebServer]     at aw (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[WebServer]     at aw (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:46505)
+[WebServer]     at a_ (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[WebServer]     at aj (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:53793)
+[WebServer]     at aC (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:52874)
+[WebServer]     at a_ (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:50095)
+[WebServer]     at aj (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:53793)
+[WebServer]     at /Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:42336
+[WebServer]     at aw (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:42822)
+[WebServer]     at a_ (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[WebServer]     at aj (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:53793)
+[WebServer]     at /Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:42336
+[WebServer]     at aw (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:42822)
+[WebServer]     at a_ (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[WebServer]     at a_ (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:50067)
+[WebServer]     at /Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:58612
+[WebServer]     at /Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:59270
+[WebServer]     at aN (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:59278)
+[WebServer]     at Timeout._onTimeout (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:6939)
+[WebServer]     at listOnTimeout (node:internal/timers:608:17)
+[WebServer]     at process.processTimers (node:internal/timers:543:7)
+[WebServer] digest: "757845410"
+[WebServer]  [31m[1m⨯[22m[39m Internal error: TypeError: Cannot read properties of null (reading 'useContext')
+[WebServer]     at t.useContext (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:162242)
+[WebServer]     at IntlProvider (./node_modules/use-intl/dist/esm/development/react.js:33:72)
+[WebServer]     at au (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:10446)
+[WebServer]     at /Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:15122
+[WebServer]     at aw (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[WebServer]     at a_ (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[WebServer]     at ab (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11808)
+[WebServer]     at /Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[WebServer]     at aw (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[WebServer]     at aw (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:46505)
+[WebServer]     at a_ (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[WebServer]     at a_ (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:50067)
+[WebServer]     at /Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:58612
+[WebServer]     at /Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:59270
+[WebServer]     at aN (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:59278)
+[WebServer]     at Timeout._onTimeout (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:6939)
+[WebServer]     at listOnTimeout (node:internal/timers:608:17)
+[WebServer]     at process.processTimers (node:internal/timers:543:7)
+[WebServer] digest: "1642965844"
+[WebServer]  [31m[1m⨯[22m[39m Internal error: TypeError: Cannot read properties of null (reading 'useContext')
+[WebServer]     at t.useContext (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:162242)
+[WebServer]     at IntlProvider (./node_modules/use-intl/dist/esm/development/react.js:33:72)
+[WebServer]     at au (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:10446)
+[WebServer]     at /Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:15122
+[WebServer]     at aw (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[WebServer]     at a_ (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[WebServer]     at ab (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11808)
+[WebServer]     at /Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[WebServer]     at aw (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[WebServer]     at aw (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:46505)
+[WebServer]     at a_ (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[WebServer]     at a_ (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:50067)
+[WebServer]     at /Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:58612
+[WebServer]     at /Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:59270
+[WebServer]     at aN (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:59278)
+[WebServer]     at Timeout._onTimeout (/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:6939)
+[WebServer]     at listOnTimeout (node:internal/timers:608:17)
+[WebServer]     at process.processTimers (node:internal/timers:543:7)
+[WebServer] digest: "1642965844"
+[WebServer]  [31m[1m⨯[22m[39m TypeError: Cannot read properties of null (reading 'useContext')
+[WebServer]     at t.useContext [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:162242[90m)[39m
+[WebServer]     at usePathname (webpack-internal:///(ssr)/./node_modules/[4mnext[24m/dist/client/components/navigation.js:121:34)
+[WebServer]     at ErrorBoundary (webpack-internal:///(ssr)/./node_modules/[4mnext[24m/dist/client/components/error-boundary.js:159:50)
+[WebServer]     at au [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:10446[90m)[39m
+[WebServer]     at [90m/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:15122
+[WebServer]     at aw [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:16908[90m)[39m
+[WebServer]     at a_ [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:49776[90m)[39m
+[WebServer]     at ab [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:11808[90m)[39m
+[WebServer]     at [90m/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[WebServer]     at aw [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:16908[90m)[39m
+[WebServer]     at aw [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:46505[90m)[39m
+[WebServer]     at a_ [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:49776[90m)[39m
+[WebServer]     at ab [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:11808[90m)[39m
+[WebServer]     at [90m/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[WebServer]     at aw [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:16908[90m)[39m
+[WebServer]     at a_ [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:49776[90m)[39m
+[WebServer]     at [90m/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:58612
+[WebServer]     at [90m/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:59270
+[WebServer]     at aN [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:59278[90m)[39m
+[WebServer]     at Timeout._onTimeout [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:6939[90m)[39m
+[WebServer] [90m    at listOnTimeout (node:internal/timers:608:17)[39m
+[WebServer] [90m    at process.processTimers (node:internal/timers:543:7)[39m {
+[WebServer]   page: [32m'/en/dashboard/invoices'[39m
+[WebServer] }
+[WebServer]  [31m[1m⨯[22m[39m TypeError: Cannot read properties of null (reading 'useContext')
+[WebServer]     at t.useContext [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:162242[90m)[39m
+[WebServer]     at usePathname (webpack-internal:///(ssr)/./node_modules/[4mnext[24m/dist/client/components/navigation.js:121:34)
+[WebServer]     at ErrorBoundary (webpack-internal:///(ssr)/./node_modules/[4mnext[24m/dist/client/components/error-boundary.js:159:50)
+[WebServer]     at au [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:10446[90m)[39m
+[WebServer]     at [90m/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:15122
+[WebServer]     at aw [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:16908[90m)[39m
+[WebServer]     at a_ [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:49776[90m)[39m
+[WebServer]     at ab [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:11808[90m)[39m
+[WebServer]     at [90m/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[WebServer]     at aw [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:16908[90m)[39m
+[WebServer]     at aw [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:46505[90m)[39m
+[WebServer]     at a_ [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:49776[90m)[39m
+[WebServer]     at ab [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:11808[90m)[39m
+[WebServer]     at [90m/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[WebServer]     at aw [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:16908[90m)[39m
+[WebServer]     at a_ [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:49776[90m)[39m
+[WebServer]     at [90m/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:58612
+[WebServer]     at [90m/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:59270
+[WebServer]     at aN [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:59278[90m)[39m
+[WebServer]     at Timeout._onTimeout [90m(/Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/[39mnode_modules/[4mnext[24m/dist/compiled/next-server/app-page.runtime.dev.js:35:6939[90m)[39m
+[WebServer] [90m    at listOnTimeout (node:internal/timers:608:17)[39m
+[WebServer] [90m    at process.processTimers (node:internal/timers:543:7)[39m {
+[WebServer]   page: [32m'/en/dashboard/invoices'[39m
+[WebServer] }
+[WebServer]  [33m[1m⚠[22m[39m Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+  ✓   69 [chromium] › tests/e2e/invoices-detailed.spec.ts:24:9 › Invoices Page - Detailed Tests › should display create invoice button (17.4s)
+  ✓   67 [chromium] › tests/e2e/documentation-detailed.spec.ts:231:9 › Documentation Page - Detailed Tests › should validate required fields in document creation form (18.4s)
+  ✓   70 [chromium] › tests/e2e/invoices-detailed.spec.ts:31:9 › Invoices Page - Detailed Tests › should display invoices list or empty state (18.9s)
+  ✓   71 [chromium] › tests/e2e/invoices-detailed.spec.ts:41:9 › Invoices Page - Detailed Tests › should display invoice number column (17.9s)
+  ✘   68 [chromium] › tests/e2e/invoices-detailed.spec.ts:19:9 › Invoices Page - Detailed Tests › should display invoices page header (22.8s)
+  ✓   73 [chromium] › tests/e2e/invoices-detailed.spec.ts:55:9 › Invoices Page - Detailed Tests › should display amount column (7.1s)
+  ✓   72 [chromium] › tests/e2e/invoices-detailed.spec.ts:48:9 › Invoices Page - Detailed Tests › should display client/customer column (7.9s)
+  ✓   75 [chromium] › tests/e2e/invoices-detailed.spec.ts:69:9 › Invoices Page - Detailed Tests › should display due date column (6.9s)
+  ✓   74 [chromium] › tests/e2e/invoices-detailed.spec.ts:62:9 › Invoices Page - Detailed Tests › should display status column (7.3s)
+  ✓   76 [chromium] › tests/e2e/invoices-detailed.spec.ts:76:9 › Invoices Page - Detailed Tests › should display actions column with buttons (6.5s)
+  ✓   77 [chromium] › tests/e2e/invoices-detailed.spec.ts:86:9 › Invoices Page - Detailed Tests › should open create invoice modal when clicking create button (7.1s)
+  ✓   78 [chromium] › tests/e2e/invoices-detailed.spec.ts:99:9 › Invoices Page - Detailed Tests › should display client input in invoice form (8.1s)
+  ✓   79 [chromium] › tests/e2e/invoices-detailed.spec.ts:112:9 › Invoices Page - Detailed Tests › should display invoice items section in form (7.4s)
+  ✓   80 [chromium] › tests/e2e/invoices-detailed.spec.ts:125:9 › Invoices Page - Detailed Tests › should allow adding invoice items (7.5s)
+  ✓   81 [chromium] › tests/e2e/invoices-detailed.spec.ts:138:9 › Invoices Page - Detailed Tests › should display total amount in form (7.0s)
+  ✓   82 [chromium] › tests/e2e/invoices-detailed.spec.ts:151:9 › Invoices Page - Detailed Tests › should display due date picker in form (7.7s)
+  ✓   84 [chromium] › tests/e2e/invoices-detailed.spec.ts:174:9 › Invoices Page - Detailed Tests › should display view button on invoice rows (8.0s)
+  ✓   85 [chromium] › tests/e2e/invoices-detailed.spec.ts:181:9 › Invoices Page - Detailed Tests › should display edit button on invoice rows (7.7s)
+  ✓   83 [chromium] › tests/e2e/invoices-detailed.spec.ts:164:9 › Invoices Page - Detailed Tests › should navigate to invoice details when clicking invoice row (9.3s)
+  ✓   86 [chromium] › tests/e2e/invoices-detailed.spec.ts:188:9 › Invoices Page - Detailed Tests › should display delete button on invoice rows (7.2s)
+  ✓   87 [chromium] › tests/e2e/invoices-detailed.spec.ts:195:9 › Invoices Page - Detailed Tests › should display send/share button on invoice rows (6.2s)
+  ✓   89 [chromium] › tests/e2e/invoices-detailed.spec.ts:209:9 › Invoices Page - Detailed Tests › should filter invoices by status (6.6s)
+  ✓   88 [chromium] › tests/e2e/invoices-detailed.spec.ts:202:9 › Invoices Page - Detailed Tests › should display download/PDF button on invoice rows (6.8s)
+  ✓   90 [chromium] › tests/e2e/invoices-detailed.spec.ts:216:9 › Invoices Page - Detailed Tests › should display search for invoices (6.0s)
+  ✓   91 [chromium] › tests/e2e/invoices-detailed.spec.ts:223:9 › Invoices Page - Detailed Tests › should display status badges with correct colors (5.9s)
+  ✓   92 [chromium] › tests/e2e/invoices-detailed.spec.ts:231:9 › Invoices Page - Detailed Tests › should display tax input in invoice form (6.4s)
+  ✓   93 [chromium] › tests/e2e/invoices-detailed.spec.ts:244:9 › Invoices Page - Detailed Tests › should display notes/description field in form (8.0s)
+  ✓   97 [chromium] › tests/e2e/landing.spec.ts:4:9 › Landing Page › should load landing page (5.6s)
+  ✓   98 [chromium] › tests/e2e/landing.spec.ts:11:9 › Landing Page › should have navigation links (5.0s)
+  ✓   99 [chromium] › tests/e2e/landing.spec.ts:25:9 › Landing Page › should be responsive (3.9s)
+  ✓   95 [chromium] › tests/e2e/invoices-detailed.spec.ts:277:9 › Invoices Page - Detailed Tests › should display summary statistics if available (14.1s)
+  ✓   94 [chromium] › tests/e2e/invoices-detailed.spec.ts:257:9 › Invoices Page - Detailed Tests › should validate required fields in invoice form (15.6s)
+  ✓   96 [chromium] › tests/e2e/invoices-detailed.spec.ts:284:9 › Invoices Page - Detailed Tests › should display pagination if many invoices (15.4s)
+  ✓  100 [chromium] › tests/e2e/landing.spec.ts:37:9 › Landing Page › should navigate to sign in page (8.3s)
+BROWSER LOG: TeamContext: Loading teams...
+BROWSER LOG: TeamContext: Loading teams...
+BROWSER LOG: %c[Vercel Speed Insights]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+BROWSER LOG: %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+BROWSER LOG: %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {route: /[locale]/dashboard, path: /en/dashboard}
+BROWSER LOG: %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {route: /[locale]/dashboard, path: /en/dashboard}
+BROWSER LOG: %c[Vercel Web Analytics]%c [pageview] http://localhost:3001/en/dashboard color: rgb(120, 120, 120) color: inherit {o: http://localhost:3001/en/dashboard, sv: 0.1.3, sdkn: @vercel/analytics/next, sdkv: 1.5.0, ts: 1766839071778}
+BROWSER LOG: %c[Vercel Web Analytics]%c [pageview] http://localhost:3001/en/dashboard color: rgb(120, 120, 120) color: inherit {o: http://localhost:3001/en/dashboard, sv: 0.1.3, sdkn: @vercel/analytics/next, sdkv: 1.5.0, ts: 1766839071778}
+BROWSER LOG: Image with src "http://localhost:3001/logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+BROWSER LOG: [Fast Refresh] rebuilding
+BROWSER LOG: [Fast Refresh] done in 7556ms
+BROWSER LOG: TeamContext: Loaded teams: [Object]
+BROWSER LOG: TeamContext: Both hydrated and teams loaded, validating selection...
+BROWSER LOG: TeamContext: Validating selection: {type: all} against teams: [1]
+BROWSER LOG: TeamContext: Selection validated: {type: all}
+BROWSER LOG: TeamContext: Validating selection: {type: all} against teams: [1]
+BROWSER LOG: TeamContext: Selection validated: {type: all}
+BROWSER LOG: UpcomingTasks: Loading tasks with URL: /api/tasks Selected team: {type: all}
+BROWSER LOG: TeamContext: Loaded teams: [Object]
+BROWSER LOG: TeamContext: Both hydrated and teams loaded, validating selection...
+BROWSER LOG: TeamContext: Validating selection: {type: all} against teams: [1]
+BROWSER LOG: TeamContext: Selection validated: {type: all}
+BROWSER LOG: TeamContext: Validating selection: {type: all} against teams: [1]
+BROWSER LOG: TeamContext: Selection validated: {type: all}
+BROWSER LOG: %c[Vercel Speed Insights]%c [vitals] color: rgb(120, 120, 120) color: inherit {speed: 4g, metrics: Array(3), scriptVersion: 0.1.3, sdkName: @vercel/speed-insights/next, sdkVersion: 1.2.0}
+BROWSER LOG: %c[Vercel Speed Insights]%c [vitals] color: rgb(120, 120, 120) color: inherit {speed: 4g, metrics: Array(1), scriptVersion: 0.1.3, sdkName: @vercel/speed-insights/next, sdkVersion: 1.2.0}
+  ✓  104 [chromium] › tests/e2e/navigation.spec.ts:47:9 › Navigation Flow › should verify header elements (21.9s)
+BROWSER LOG: %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold
+BROWSER LOG: TeamContext: Loading teams...
+BROWSER LOG: TeamContext: Loading teams...
+BROWSER LOG: Settings Debug: Render {currentLocale: en, selectedLocale: en, isSaving: false, isUpdatingLocale: false}
+BROWSER LOG: Settings Debug: Render {currentLocale: en, selectedLocale: en, isSaving: false, isUpdatingLocale: false}
+BROWSER LOG: Image with src "http://localhost:3001/logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+BROWSER LOG: %c[Vercel Speed Insights]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+BROWSER LOG: %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+BROWSER LOG: %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {route: /[locale]/dashboard/settings, path: /en/dashboard/settings}
+BROWSER LOG: %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {route: /[locale]/dashboard/settings, path: /en/dashboard/settings}
+BROWSER LOG: %c[Vercel Web Analytics]%c [pageview] http://localhost:3001/en/dashboard/settings color: rgb(120, 120, 120) color: inherit {o: http://localhost:3001/en/dashboard/settings, sv: 0.1.3, sdkn: @vercel/analytics/next, sdkv: 1.5.0, ts: 1766839085891}
+BROWSER LOG: %c[Vercel Web Analytics]%c [pageview] http://localhost:3001/en/dashboard/settings color: rgb(120, 120, 120) color: inherit {o: http://localhost:3001/en/dashboard/settings, sv: 0.1.3, sdkn: @vercel/analytics/next, sdkv: 1.5.0, ts: 1766839085891}
+  ✓  105 [chromium] › tests/e2e/navigation.spec.ts:60:9 › Navigation Flow › should toggle sidebar (19.6s)
+BROWSER LOG: TeamContext: Loaded teams: [Object]
+BROWSER LOG: TeamContext: Both hydrated and teams loaded, validating selection...
+BROWSER LOG: TeamContext: Validating selection: {type: all} against teams: [1]
+BROWSER LOG: TeamContext: Selection validated: {type: all}
+BROWSER LOG: TeamContext: Validating selection: {type: all} against teams: [1]
+BROWSER LOG: TeamContext: Selection validated: {type: all}
+BROWSER LOG: TeamContext: Loaded teams: [Object]
+BROWSER LOG: TeamContext: Both hydrated and teams loaded, validating selection...
+BROWSER LOG: TeamContext: Validating selection: {type: all} against teams: [1]
+BROWSER LOG: TeamContext: Selection validated: {type: all}
+BROWSER LOG: TeamContext: Validating selection: {type: all} against teams: [1]
+BROWSER LOG: TeamContext: Selection validated: {type: all}
+  ✘  103 [chromium] › tests/e2e/navigation.spec.ts:20:9 › Navigation Flow › should verify sidebar navigation links (28.4s)
+BROWSER LOG: Settings Debug: Select changed to uk
+BROWSER LOG: Settings Debug: Render {currentLocale: en, selectedLocale: uk, isSaving: false, isUpdatingLocale: false}
+BROWSER LOG: Settings Debug: Render {currentLocale: en, selectedLocale: uk, isSaving: false, isUpdatingLocale: false}
+BROWSER LOG: Settings Debug: Render {currentLocale: en, selectedLocale: uk, isSaving: false, isUpdatingLocale: false}
+BROWSER LOG: Settings Debug: Render {currentLocale: en, selectedLocale: uk, isSaving: false, isUpdatingLocale: false}
+BROWSER LOG: Settings Debug: handleSaveSettings called {currentLocale: en, selectedLocale: uk}
+BROWSER LOG: Settings Debug: Starting save...
+BROWSER LOG: Settings Debug: Render {currentLocale: en, selectedLocale: uk, isSaving: true, isUpdatingLocale: true}
+BROWSER LOG: Settings Debug: Render {currentLocale: en, selectedLocale: uk, isSaving: true, isUpdatingLocale: true}
+BROWSER LOG: Settings Debug: {currentLocale: en, selectedLocale: uk, pathname: /en/dashboard/settings, newPathname: /uk/dashboard/settings}
+BROWSER LOG: %c[Vercel Speed Insights]%c [vitals] color: rgb(120, 120, 120) color: inherit {speed: 4g, metrics: Array(5), scriptVersion: 0.1.3, sdkName: @vercel/speed-insights/next, sdkVersion: 1.2.0}
+BROWSER LOG: %c[Vercel Speed Insights]%c [vitals] color: rgb(120, 120, 120) color: inherit {speed: 4g, metrics: Array(1), scriptVersion: 0.1.3, sdkName: @vercel/speed-insights/next, sdkVersion: 1.2.0}
+BROWSER LOG: %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold
+BROWSER LOG: TeamContext: Loading teams...
+BROWSER LOG: TeamContext: Loading teams...
+BROWSER LOG: Settings Debug: Render {currentLocale: uk, selectedLocale: uk, isSaving: false, isUpdatingLocale: false}
+BROWSER LOG: Settings Debug: Render {currentLocale: uk, selectedLocale: uk, isSaving: false, isUpdatingLocale: false}
+BROWSER LOG: %c[Vercel Speed Insights]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+BROWSER LOG: %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+BROWSER LOG: %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {route: /[locale]/dashboard/settings, path: /uk/dashboard/settings}
+BROWSER LOG: %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {route: /[locale]/dashboard/settings, path: /uk/dashboard/settings}
+BROWSER LOG: %c[Vercel Web Analytics]%c [pageview] http://localhost:3001/uk/dashboard/settings color: rgb(120, 120, 120) color: inherit {o: http://localhost:3001/uk/dashboard/settings, sv: 0.1.3, sdkn: @vercel/analytics/next, sdkv: 1.5.0, ts: 1766839099722}
+BROWSER LOG: %c[Vercel Web Analytics]%c [pageview] http://localhost:3001/uk/dashboard/settings color: rgb(120, 120, 120) color: inherit {o: http://localhost:3001/uk/dashboard/settings, sv: 0.1.3, sdkn: @vercel/analytics/next, sdkv: 1.5.0, ts: 1766839099722}
+BROWSER LOG: Image with src "http://localhost:3001/logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+BROWSER LOG: TeamContext: Loaded teams: [Object]
+BROWSER LOG: TeamContext: Both hydrated and teams loaded, validating selection...
+BROWSER LOG: TeamContext: Validating selection: {type: all} against teams: [1]
+BROWSER LOG: TeamContext: Selection validated: {type: all}
+BROWSER LOG: TeamContext: Validating selection: {type: all} against teams: [1]
+BROWSER LOG: TeamContext: Selection validated: {type: all}
+Projects Page Interactive Time: 125ms
+BROWSER LOG: TeamContext: Loaded teams: [Object]
+BROWSER LOG: TeamContext: Both hydrated and teams loaded, validating selection...
+BROWSER LOG: TeamContext: Validating selection: {type: all} against teams: [1]
+BROWSER LOG: TeamContext: Selection validated: {type: all}
+BROWSER LOG: TeamContext: Validating selection: {type: all} against teams: [1]
+BROWSER LOG: TeamContext: Selection validated: {type: all}
+Dashboard Load Time: 1637ms
+  ✓  107 [chromium] › tests/e2e/performance.spec.ts:33:9 › Performance Tests › should load projects list and data quickly (14.0s)
+  ✓  106 [chromium] › tests/e2e/performance.spec.ts:15:9 › Performance Tests › should load dashboard within acceptable time (15.8s)
+  ✓  101 [chromium] › tests/e2e/localization.spec.ts:14:9 › Localization (i18n) Tests › should switch language to Ukrainian (43.3s)
+  ✓  102 [chromium] › tests/e2e/localization.spec.ts:58:9 › Localization (i18n) Tests › should switch language back to English (42.9s)
+Tasks Page Interactive Time: 206ms
+  ✓  108 [chromium] › tests/e2e/performance.spec.ts:52:9 › Performance Tests › should load tasks list quickly (15.5s)
+  ✓  109 [chromium] › tests/e2e/profile.spec.ts:19:9 › Profile Feature › should display profile information (20.6s)
+  ✓  110 [chromium] › tests/e2e/profile.spec.ts:29:9 › Profile Feature › should allow editing profile (20.6s)
+  ✓  112 [chromium] › tests/e2e/projects-detailed.spec.ts:23:9 › Projects Page - Detailed Tests › should display "New Analysis" button (21.3s)
+  ✓  111 [chromium] › tests/e2e/projects-detailed.spec.ts:18:9 › Projects Page - Detailed Tests › should display page header with title and description (22.0s)
+  ✓  113 [chromium] › tests/e2e/projects-detailed.spec.ts:28:9 › Projects Page - Detailed Tests › should navigate to new project page when clicking "New Analysis" (23.2s)
+  ✓  114 [chromium] › tests/e2e/projects-detailed.spec.ts:35:9 › Projects Page - Detailed Tests › should display search input (10.9s)
+  ✓  115 [chromium] › tests/e2e/projects-detailed.spec.ts:40:9 › Projects Page - Detailed Tests › should filter projects when typing in search (11.5s)
+  ✓  116 [chromium] › tests/e2e/projects-detailed.spec.ts:54:9 › Projects Page - Detailed Tests › should display filters button (8.8s)
+  ✓  117 [chromium] › tests/e2e/projects-detailed.spec.ts:59:9 › Projects Page - Detailed Tests › should toggle filters panel when clicking filters button (8.9s)
+  ✓  118 [chromium] › tests/e2e/projects-detailed.spec.ts:71:9 › Projects Page - Detailed Tests › should display filter options when filters are opened (7.5s)
+  ✓  119 [chromium] › tests/e2e/projects-detailed.spec.ts:83:9 › Projects Page - Detailed Tests › should show clear filters button when filter is active (6.2s)
+  ✓  121 [chromium] › tests/e2e/projects-detailed.spec.ts:118:9 › Projects Page - Detailed Tests › should display project count if projects exist (8.5s)
+  ✘  122 [chromium] › tests/e2e/projects-detailed.spec.ts:132:9 › Projects Page - Detailed Tests › should navigate to project details when clicking a project card (8.4s)
+  ✓  123 [chromium] › tests/e2e/projects-detailed.spec.ts:145:9 › Projects Page - Detailed Tests › should show delete button on project cards (5.8s)
+  ✓  120 [chromium] › tests/e2e/projects-detailed.spec.ts:102:9 › Projects Page - Detailed Tests › should display project cards if projects exist (10.8s)
+  ✓  124 [chromium] › tests/e2e/projects-detailed.spec.ts:163:9 › Projects Page - Detailed Tests › should show delete confirmation modal when deleting project (5.9s)
+  ✓  125 [chromium] › tests/e2e/projects-detailed.spec.ts:192:9 › Projects Page - Detailed Tests › should display team selector if user has teams (5.7s)
+  ✓  129 [chromium] › tests/e2e/projects-detailed.spec.ts:269:9 › Projects Page - Detailed Tests › should persist team selection across page refreshes (5.7s)
+  ✓  126 [chromium] › tests/e2e/projects-detailed.spec.ts:239:9 › Projects Page - Detailed Tests › should show empty state when no projects match filters (7.3s)
+  ✓  128 [chromium] › tests/e2e/projects-detailed.spec.ts:254:9 › Projects Page - Detailed Tests › should clear search when clearing input (6.9s)
+  ✓  130 [chromium] › tests/e2e/projects.spec.ts:19:9 › Projects Feature › should display projects list (6.4s)
+  ✓  127 [chromium] › tests/e2e/projects-detailed.spec.ts:200:9 › Projects Page - Detailed Tests › should filter projects by status (12.0s)
+  ✓  132 [chromium] › tests/e2e/projects.spec.ts:42:9 › Projects Feature › should validate project creation form (7.8s)
+  ✓  131 [chromium] › tests/e2e/projects.spec.ts:25:9 › Projects Feature › should open create project modal (8.7s)
+  ✓  133 [chromium] › tests/e2e/settings-detailed.spec.ts:18:9 › Settings Page - Detailed Tests › should display settings page header (8.3s)
+  ✓  134 [chromium] › tests/e2e/settings-detailed.spec.ts:23:9 › Settings Page - Detailed Tests › should display all settings tabs (6.1s)
+  ✓  135 [chromium] › tests/e2e/settings-detailed.spec.ts:34:9 › Settings Page - Detailed Tests › should display Profile tab by default (5.8s)
+  ✓  136 [chromium] › tests/e2e/settings-detailed.spec.ts:48:9 › Settings Page - Detailed Tests › should switch to Notifications tab when clicked (5.8s)
+  ✓  137 [chromium] › tests/e2e/settings-detailed.spec.ts:62:9 › Settings Page - Detailed Tests › should switch to Billing tab when clicked (5.8s)
+  ✓  138 [chromium] › tests/e2e/settings-detailed.spec.ts:76:9 › Settings Page - Detailed Tests › should switch to Security tab when clicked (5.5s)
+  ✓  139 [chromium] › tests/e2e/settings-detailed.spec.ts:90:9 › Settings Page - Detailed Tests › should display user profile information (4.9s)
+  ✓  140 [chromium] › tests/e2e/settings-detailed.spec.ts:98:9 › Settings Page - Detailed Tests › should display username field (4.4s)
+  ✓  141 [chromium] › tests/e2e/settings-detailed.spec.ts:105:9 › Settings Page - Detailed Tests › should display first name and last name fields (4.7s)
+  ✓  142 [chromium] › tests/e2e/settings-detailed.spec.ts:117:9 › Settings Page - Detailed Tests › should display language selector (5.1s)
+  ✓  143 [chromium] › tests/e2e/settings-detailed.spec.ts:122:9 › Settings Page - Detailed Tests › should have English and Ukrainian language options (5.2s)
+  ✓  144 [chromium] › tests/e2e/settings-detailed.spec.ts:132:9 › Settings Page - Detailed Tests › should display Save button (5.7s)
+  ✓  145 [chromium] › tests/e2e/settings-detailed.spec.ts:137:9 › Settings Page - Detailed Tests › should disable Save button when no changes made (5.4s)
+  ✓  146 [chromium] › tests/e2e/settings-detailed.spec.ts:143:9 › Settings Page - Detailed Tests › should enable Save button when language is changed (9.6s)
+  ✓  148 [chromium] › tests/e2e/settings-detailed.spec.ts:171:9 › Settings Page - Detailed Tests › should display email notifications toggle (9.8s)
+  ✓  147 [chromium] › tests/e2e/settings-detailed.spec.ts:157:9 › Settings Page - Detailed Tests › should display notification preferences in Notifications tab (9.9s)
+  ✓  149 [chromium] › tests/e2e/settings-detailed.spec.ts:184:9 › Settings Page - Detailed Tests › should display current plan in Billing tab (10.0s)
+  ✓  150 [chromium] › tests/e2e/settings-detailed.spec.ts:197:9 › Settings Page - Detailed Tests › should display payment method in Billing tab (10.4s)
+  ✓  151 [chromium] › tests/e2e/settings-detailed.spec.ts:210:9 › Settings Page - Detailed Tests › should display "Change Plan" button in Billing tab (5.7s)
+  ✓  153 [chromium] › tests/e2e/settings-detailed.spec.ts:239:9 › Settings Page - Detailed Tests › should display password change form in Security tab (6.1s)
+  ✓  154 [chromium] › tests/e2e/settings-detailed.spec.ts:252:9 › Settings Page - Detailed Tests › should display current password field (9.0s)
+  ✓  155 [chromium] › tests/e2e/settings-detailed.spec.ts:266:9 › Settings Page - Detailed Tests › should display new password field (10.5s)
+  ✓  156 [chromium] › tests/e2e/settings-detailed.spec.ts:279:9 › Settings Page - Detailed Tests › should display confirm password field (12.1s)
+  ✓  152 [chromium] › tests/e2e/settings-detailed.spec.ts:223:9 › Settings Page - Detailed Tests › should navigate to payment page when clicking Change Plan (17.3s)
+  ✓  157 [chromium] › tests/e2e/settings-detailed.spec.ts:292:9 › Settings Page - Detailed Tests › should display Danger Zone in Security tab (11.3s)
+  ✓  158 [chromium] › tests/e2e/settings-detailed.spec.ts:305:9 › Settings Page - Detailed Tests › should display Delete Account button (8.6s)
+  ✓  159 [chromium] › tests/e2e/settings-detailed.spec.ts:318:9 › Settings Page - Detailed Tests › should display bio/description textarea (7.3s)
+  ✓  160 [chromium] › tests/e2e/settings-detailed.spec.ts:325:9 › Settings Page - Detailed Tests › should display verification status for email (6.5s)
+  ✓  162 [chromium] › tests/e2e/settings-detailed.spec.ts:350:9 › Settings Page - Detailed Tests › should display Update Password button in Security tab (7.8s)
+  ✓  161 [chromium] › tests/e2e/settings-detailed.spec.ts:332:9 › Settings Page - Detailed Tests › should toggle notification checkbox when clicked (8.0s)
+  ✓  163 [chromium] › tests/e2e/tasks-detailed.spec.ts:19:9 › Tasks Page - Detailed Tests › should display page header (10.4s)
+  ✓  164 [chromium] › tests/e2e/tasks-detailed.spec.ts:24:9 › Tasks Page - Detailed Tests › should display "Add Task" or "New Task" button (11.9s)
+  ✓  165 [chromium] › tests/e2e/tasks-detailed.spec.ts:29:9 › Tasks Page - Detailed Tests › should open task creation form when clicking "Add Task" (11.3s)
+  ✓  167 [chromium] › tests/e2e/tasks-detailed.spec.ts:52:9 › Tasks Page - Detailed Tests › should display project selector in task form (12.6s)
+  ✓  166 [chromium] › tests/e2e/tasks-detailed.spec.ts:41:9 › Tasks Page - Detailed Tests › should display task title input in creation form (14.0s)
+  ✓  168 [chromium] › tests/e2e/tasks-detailed.spec.ts:63:9 › Tasks Page - Detailed Tests › should display priority selector in task form (12.8s)
+  ✓  169 [chromium] › tests/e2e/tasks-detailed.spec.ts:74:9 › Tasks Page - Detailed Tests › should display due date picker in task form (13.0s)
+  ✓  170 [chromium] › tests/e2e/tasks-detailed.spec.ts:85:9 › Tasks Page - Detailed Tests › should close task form when clicking cancel (12.5s)
+  ✓  171 [chromium] › tests/e2e/tasks-detailed.spec.ts:103:9 › Tasks Page - Detailed Tests › should display search input for tasks (9.2s)
+  ✓  172 [chromium] › tests/e2e/tasks-detailed.spec.ts:110:9 › Tasks Page - Detailed Tests › should display status filter dropdown (8.5s)
+  ✓  173 [chromium] › tests/e2e/tasks-detailed.spec.ts:117:9 › Tasks Page - Detailed Tests › should filter tasks by status (9.3s)
+  ✓  174 [chromium] › tests/e2e/tasks-detailed.spec.ts:130:9 › Tasks Page - Detailed Tests › should display sort button (9.0s)
+  ✓  175 [chromium] › tests/e2e/tasks-detailed.spec.ts:137:9 › Tasks Page - Detailed Tests › should display task list or table (10.7s)
+  ✓  176 [chromium] › tests/e2e/tasks-detailed.spec.ts:150:9 › Tasks Page - Detailed Tests › should display task title in task list (11.3s)
+  ✓  177 [chromium] › tests/e2e/tasks-detailed.spec.ts:160:9 › Tasks Page - Detailed Tests › should display task status indicator (12.5s)
+  ✓  178 [chromium] › tests/e2e/tasks-detailed.spec.ts:169:9 › Tasks Page - Detailed Tests › should display task priority indicator (12.6s)
+  ✓  179 [chromium] › tests/e2e/tasks-detailed.spec.ts:178:9 › Tasks Page - Detailed Tests › should display edit button on task rows (11.6s)
+  ✓  180 [chromium] › tests/e2e/tasks-detailed.spec.ts:190:9 › Tasks Page - Detailed Tests › should open edit modal when clicking edit button (11.7s)
+  ✓  181 [chromium] › tests/e2e/tasks-detailed.spec.ts:205:9 › Tasks Page - Detailed Tests › should display delete button on task rows (11.4s)
+  ✓  182 [chromium] › tests/e2e/tasks-detailed.spec.ts:214:9 › Tasks Page - Detailed Tests › should show delete confirmation when clicking delete (11.7s)
+  ✓  183 [chromium] › tests/e2e/tasks-detailed.spec.ts:235:9 › Tasks Page - Detailed Tests › should filter tasks by search query (8.1s)
+  ✓  184 [chromium] › tests/e2e/tasks-detailed.spec.ts:247:9 › Tasks Page - Detailed Tests › should display due date for tasks (9.2s)
+  ✓  185 [chromium] › tests/e2e/tasks-detailed.spec.ts:256:9 › Tasks Page - Detailed Tests › should toggle task status when clicking status badge (12.9s)
+  ✓  186 [chromium] › tests/e2e/tasks-detailed.spec.ts:271:9 › Tasks Page - Detailed Tests › should validate required fields in task creation form (14.2s)
+  ✓  189 [chromium] › tests/e2e/tasks.spec.ts:19:9 › Tasks Feature › should display tasks page elements (13.9s)
+  ✓  188 [chromium] › tests/e2e/tasks-detailed.spec.ts:301:9 › Tasks Page - Detailed Tests › should sort tasks when clicking sort button (16.2s)
+  ✓  187 [chromium] › tests/e2e/tasks-detailed.spec.ts:290:9 › Tasks Page - Detailed Tests › should display assignee field in task form (17.0s)
+  ✓  190 [chromium] › tests/e2e/tasks.spec.ts:32:9 › Tasks Feature › should open add task modal (9.9s)
+  ✓  191 [chromium] › tests/e2e/team-detailed.spec.ts:19:9 › Team Page - Detailed Tests › should display team page header (26.9s)
+  ✓  195 [chromium] › tests/e2e/team-detailed.spec.ts:57:9 › Team Page - Detailed Tests › should display member email column/field (20.4s)
+  ✓  192 [chromium] › tests/e2e/team-detailed.spec.ts:24:9 › Team Page - Detailed Tests › should display invite member button (24.3s)
+  ✓  194 [chromium] › tests/e2e/team-detailed.spec.ts:50:9 › Team Page - Detailed Tests › should display member name column/field (24.0s)
+  ✓  193 [chromium] › tests/e2e/team-detailed.spec.ts:31:9 › Team Page - Detailed Tests › should display team members list or empty state (27.5s)
+  ✓  196 [chromium] › tests/e2e/team-detailed.spec.ts:64:9 › Team Page - Detailed Tests › should display member role column/field (10.8s)
+  ✓  197 [chromium] › tests/e2e/team-detailed.spec.ts:71:9 › Team Page - Detailed Tests › should display member status (active/pending) (10.5s)
+  ✓  198 [chromium] › tests/e2e/team-detailed.spec.ts:78:9 › Team Page - Detailed Tests › should open invite modal when clicking invite button (11.6s)
+  ✓  199 [chromium] › tests/e2e/team-detailed.spec.ts:91:9 › Team Page - Detailed Tests › should display email input in invite modal (11.7s)
+  ✓  200 [chromium] › tests/e2e/team-detailed.spec.ts:104:9 › Team Page - Detailed Tests › should display role selector in invite modal (10.3s)
+  ✓  201 [chromium] › tests/e2e/team-detailed.spec.ts:117:9 › Team Page - Detailed Tests › should display action buttons for each member (6.9s)
+  ✓  202 [chromium] › tests/e2e/team-detailed.spec.ts:127:9 › Team Page - Detailed Tests › should display edit/change role button (7.8s)
+  ✓  203 [chromium] › tests/e2e/team-detailed.spec.ts:134:9 › Team Page - Detailed Tests › should display remove member button (7.8s)
+  ✓  204 [chromium] › tests/e2e/team-detailed.spec.ts:141:9 › Team Page - Detailed Tests › should show confirmation when removing member (8.4s)
+  ✓  205 [chromium] › tests/e2e/team-detailed.spec.ts:160:9 › Team Page - Detailed Tests › should display member avatar or initials (7.5s)
+  ✓  206 [chromium] › tests/e2e/team-detailed.spec.ts:167:9 › Team Page - Detailed Tests › should display team statistics if available (7.7s)
+  ✓  207 [chromium] › tests/e2e/team-detailed.spec.ts:174:9 › Team Page - Detailed Tests › should display search for team members (7.8s)
+  ✓  208 [chromium] › tests/e2e/team-detailed.spec.ts:181:9 › Team Page - Detailed Tests › should filter members by role (8.1s)
+  ✓  209 [chromium] › tests/e2e/team-detailed.spec.ts:188:9 › Team Page - Detailed Tests › should display pending invitations section (7.9s)
+  ✓  210 [chromium] › tests/e2e/team-detailed.spec.ts:195:9 › Team Page - Detailed Tests › should allow resending invitation (7.6s)
+  ✓  211 [chromium] › tests/e2e/team-detailed.spec.ts:202:9 › Team Page - Detailed Tests › should allow cancelling pending invitation (7.2s)
+  ✓  212 [chromium] › tests/e2e/team-detailed.spec.ts:209:9 › Team Page - Detailed Tests › should display member joined date (7.7s)
+  ✓  213 [chromium] › tests/e2e/team-detailed.spec.ts:216:9 › Team Page - Detailed Tests › should display member last active time (7.1s)
+  ✓  214 [chromium] › tests/e2e/team-detailed.spec.ts:223:9 › Team Page - Detailed Tests › should validate email format in invite form (8.1s)
+  ✓  215 [chromium] › tests/e2e/team-detailed.spec.ts:246:9 › Team Page - Detailed Tests › should close invite modal when clicking cancel (8.7s)
+  ✓  216 [chromium] › tests/e2e/team-detailed.spec.ts:265:9 › Team Page - Detailed Tests › should display team settings button if user is owner/admin (7.0s)
+  ✓  217 [chromium] › tests/e2e/team-detailed.spec.ts:272:9 › Team Page - Detailed Tests › should display role badges with correct styling (6.5s)
+  ✓  218 [chromium] › tests/e2e/team-detailed.spec.ts:283:9 › Team Page - Detailed Tests › should display copy invite link button (6.2s)
+
+
+  1) [chromium] › tests/e2e/auth.spec.ts:20:9 › Authentication Flow › should show validation errors on invalid login 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: locator('.text-danger, .text-red-500')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 5000ms[22m
+    [2m  - waiting for locator('.text-danger, .text-red-500')[22m
+
+
+      28 |         // Expect generic error message (adjust based on actual backend response)
+      29 |         // The UI shows <div className="text-danger">...</div>
+    > 30 |         await expect(page.locator('.text-danger, .text-red-500')).toBeVisible();
+         |                                                                   ^
+      31 |     });
+      32 |
+      33 |     test('should navigate to sign up page', async ({ page }) => {
+        at /Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/tests/e2e/auth.spec.ts:30:67
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/auth-Authentication-Flow-s-d5ada-ion-errors-on-invalid-login-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/auth-Authentication-Flow-s-d5ada-ion-errors-on-invalid-login-chromium/error-context.md
+
+  2) [chromium] › tests/e2e/chat-detailed.spec.ts:22:9 › Chat Page - Detailed Tests › should display chat page header 
+
+    [31mTest timeout of 60000ms exceeded while running "beforeEach" hook.[39m
+
+      4 |     test.skip(() => !process.env.TEST_USER_EMAIL || !process.env.TEST_USER_PASSWORD, 'Requires test credentials');
+      5 |
+    > 6 |     test.beforeEach(async ({ page }, testInfo) => {
+        |          ^
+      7 |         // Increase timeout for beforeEach due to slow chat API
+      8 |         testInfo.setTimeout(60000);
+      9 |
+        at /Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/tests/e2e/chat-detailed.spec.ts:6:10
+
+    TimeoutError: page.waitForLoadState: Timeout 45000ms exceeded.
+
+      16 |         // Navigate to chat page - may be slow due to chat service
+      17 |         await page.goto('/dashboard/chat', { timeout: 45000 });
+    > 18 |         await page.waitForLoadState('networkidle', { timeout: 45000 });
+         |                    ^
+      19 |         await page.waitForTimeout(3000);
+      20 |     });
+      21 |
+        at /Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/tests/e2e/chat-detailed.spec.ts:18:20
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/chat-detailed-Chat-Page----fbecc-ld-display-chat-page-header-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/chat-detailed-Chat-Page----fbecc-ld-display-chat-page-header-chromium/error-context.md
+
+  3) [chromium] › tests/e2e/chat-detailed.spec.ts:29:9 › Chat Page - Detailed Tests › should display message input field 
+
+    TimeoutError: page.waitForLoadState: Timeout 45000ms exceeded.
+
+      16 |         // Navigate to chat page - may be slow due to chat service
+      17 |         await page.goto('/dashboard/chat', { timeout: 45000 });
+    > 18 |         await page.waitForLoadState('networkidle', { timeout: 45000 });
+         |                    ^
+      19 |         await page.waitForTimeout(3000);
+      20 |     });
+      21 |
+        at /Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/tests/e2e/chat-detailed.spec.ts:18:20
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/chat-detailed-Chat-Page----b0641-display-message-input-field-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/chat-detailed-Chat-Page----b0641-display-message-input-field-chromium/error-context.md
+
+  4) [chromium] › tests/e2e/chat-detailed.spec.ts:40:9 › Chat Page - Detailed Tests › should display send button 
+
+    TimeoutError: page.waitForLoadState: Timeout 45000ms exceeded.
+
+      16 |         // Navigate to chat page - may be slow due to chat service
+      17 |         await page.goto('/dashboard/chat', { timeout: 45000 });
+    > 18 |         await page.waitForLoadState('networkidle', { timeout: 45000 });
+         |                    ^
+      19 |         await page.waitForTimeout(3000);
+      20 |     });
+      21 |
+        at /Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/tests/e2e/chat-detailed.spec.ts:18:20
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/chat-detailed-Chat-Page----b19ba--should-display-send-button-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/chat-detailed-Chat-Page----b19ba--should-display-send-button-chromium/error-context.md
+
+  5) [chromium] › tests/e2e/chat-detailed.spec.ts:51:9 › Chat Page - Detailed Tests › should display chat history or empty state 
+
+    TimeoutError: page.waitForLoadState: Timeout 45000ms exceeded.
+
+      16 |         // Navigate to chat page - may be slow due to chat service
+      17 |         await page.goto('/dashboard/chat', { timeout: 45000 });
+    > 18 |         await page.waitForLoadState('networkidle', { timeout: 45000 });
+         |                    ^
+      19 |         await page.waitForTimeout(3000);
+      20 |     });
+      21 |
+        at /Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/tests/e2e/chat-detailed.spec.ts:18:20
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/chat-detailed-Chat-Page----2e5a4-chat-history-or-empty-state-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/chat-detailed-Chat-Page----2e5a4-chat-history-or-empty-state-chromium/error-context.md
+
+  6) [chromium] › tests/e2e/chat-detailed.spec.ts:64:9 › Chat Page - Detailed Tests › should allow typing in message input 
+
+    TimeoutError: page.waitForLoadState: Timeout 45000ms exceeded.
+
+      16 |         // Navigate to chat page - may be slow due to chat service
+      17 |         await page.goto('/dashboard/chat', { timeout: 45000 });
+    > 18 |         await page.waitForLoadState('networkidle', { timeout: 45000 });
+         |                    ^
+      19 |         await page.waitForTimeout(3000);
+      20 |     });
+      21 |
+        at /Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/tests/e2e/chat-detailed.spec.ts:18:20
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/chat-detailed-Chat-Page----9fb12-low-typing-in-message-input-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/chat-detailed-Chat-Page----9fb12-low-typing-in-message-input-chromium/error-context.md
+
+  7) [chromium] › tests/e2e/invoices-detailed.spec.ts:19:9 › Invoices Page - Detailed Tests › should display invoices page header 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: locator('h1, h2').filter({ hasText: /Invoices|Рахунки/i }).first()
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 5000ms[22m
+    [2m  - waiting for locator('h1, h2').filter({ hasText: /Invoices|Рахунки/i }).first()[22m
+
+
+      19 |     test('should display invoices page header', async ({ page }) => {
+      20 |         const header = page.locator('h1, h2').filter({ hasText: /Invoices|Рахунки/i });
+    > 21 |         await expect(header.first()).toBeVisible();
+         |                                      ^
+      22 |     });
+      23 |
+      24 |     test('should display create invoice button', async ({ page }) => {
+        at /Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/tests/e2e/invoices-detailed.spec.ts:21:38
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/invoices-detailed-Invoices-4285f-isplay-invoices-page-header-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/invoices-detailed-Invoices-4285f-isplay-invoices-page-header-chromium/error-context.md
+
+  8) [chromium] › tests/e2e/navigation.spec.ts:20:9 › Navigation Flow › should verify sidebar navigation links 
+
+    Error: [2mexpect([22m[31mpage[39m[2m).[22mtoHaveURL[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Expected pattern: [32m/projects/[39m
+    Received string:  [31m"http://localhost:3001/en/dashboard"[39m
+    Timeout: 5000ms
+
+    Call log:
+    [2m  - Expect "toHaveURL" with timeout 5000ms[22m
+    [2m    8 × unexpected value "http://localhost:3001/en/dashboard"[22m
+
+
+      30 |         await expect(projectsLink).toBeVisible();
+      31 |         await projectsLink.click();
+    > 32 |         await expect(page).toHaveURL(/projects/);
+         |                            ^
+      33 |
+      34 |         // Check Tasks link
+      35 |         const tasksLink = page.locator('aside nav a[href*="tasks"]').first();
+        at /Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/tests/e2e/navigation.spec.ts:32:28
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/navigation-Navigation-Flow-dcf94-fy-sidebar-navigation-links-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/navigation-Navigation-Flow-dcf94-fy-sidebar-navigation-links-chromium/error-context.md
+
+  9) [chromium] › tests/e2e/projects-detailed.spec.ts:132:9 › Projects Page - Detailed Tests › should navigate to project details when clicking a project card 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoMatch[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected pattern: [32m/projects\/\d+|projects/[39m
+    Received string:  [31m"http://localhost:3001/en/dashboard/tasks"[39m
+
+      139 |             await page.waitForTimeout(1000);
+      140 |             // Should navigate to project details
+    > 141 |             expect(page.url()).toMatch(/projects\/\d+|projects/);
+          |                                ^
+      142 |         }
+      143 |     });
+      144 |
+        at /Users/symchychpc/RiderProjects/Project Scope Analyzer/dashboard/tests/e2e/projects-detailed.spec.ts:141:32
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/projects-detailed-Projects-75573-hen-clicking-a-project-card-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/projects-detailed-Projects-75573-hen-clicking-a-project-card-chromium/error-context.md
+
+  9 failed
+    [chromium] › tests/e2e/auth.spec.ts:20:9 › Authentication Flow › should show validation errors on invalid login 
+    [chromium] › tests/e2e/chat-detailed.spec.ts:22:9 › Chat Page - Detailed Tests › should display chat page header 
+    [chromium] › tests/e2e/chat-detailed.spec.ts:29:9 › Chat Page - Detailed Tests › should display message input field 
+    [chromium] › tests/e2e/chat-detailed.spec.ts:40:9 › Chat Page - Detailed Tests › should display send button 
+    [chromium] › tests/e2e/chat-detailed.spec.ts:51:9 › Chat Page - Detailed Tests › should display chat history or empty state 
+    [chromium] › tests/e2e/chat-detailed.spec.ts:64:9 › Chat Page - Detailed Tests › should allow typing in message input 
+    [chromium] › tests/e2e/invoices-detailed.spec.ts:19:9 › Invoices Page - Detailed Tests › should display invoices page header 
+    [chromium] › tests/e2e/navigation.spec.ts:20:9 › Navigation Flow › should verify sidebar navigation links 
+    [chromium] › tests/e2e/projects-detailed.spec.ts:132:9 › Projects Page - Detailed Tests › should navigate to project details when clicking a project card 
+  209 passed (8.8m)
+
+  Serving HTML report at http://localhost:9323. Press Ctrl+C to quit.

@@ -14,16 +14,19 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
+  timeout: 60000, // Increase global test timeout to 60 seconds
   reporter: [
     ['html', { outputFolder: 'playwright-report' }],
     ['list'],
   ],
 
   use: {
-    baseURL: 'http://localhost:3001',
+    baseURL: process.env.TEST_BASE_URL || 'http://localhost:3001',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'on-first-retry',
+    actionTimeout: 15000, // Increase action timeout to 15 seconds
+    navigationTimeout: 30000, // Increase navigation timeout to 30 seconds
   },
 
   projects: [
@@ -42,8 +45,8 @@ export default defineConfig({
     // },
   ],
 
-  /* Start dev server before tests */
-  webServer: {
+  /* Start dev server before tests - skip for production testing */
+  webServer: process.env.TEST_BASE_URL ? undefined : {
     command: 'npm run dev',
     url: 'http://localhost:3001',
     reuseExistingServer: !process.env.CI,

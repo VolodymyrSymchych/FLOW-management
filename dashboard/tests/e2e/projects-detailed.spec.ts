@@ -132,13 +132,17 @@ test.describe('Projects Page - Detailed Tests', () => {
     test('should navigate to project details when clicking a project card', async ({ page }) => {
         await page.waitForTimeout(2000);
 
-        const projectCard = page.locator('[data-testid="project-card"], .glass-medium').filter({ hasText: /Project|Проект/i }).first();
+        const projectCard = page.locator('[data-testid="project-card"]').first();
 
         if (await projectCard.isVisible({ timeout: 3000 })) {
+            // Get current URL to verify we're on projects page
+            const currentUrl = page.url();
+            expect(currentUrl).toContain('/projects');
+
             await projectCard.click();
             await page.waitForTimeout(1000);
             // Should navigate to project details
-            expect(page.url()).toMatch(/projects\/\d+|projects/);
+            expect(page.url()).toMatch(/projects\/\d+/);
         }
     });
 

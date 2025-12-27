@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react';
 import { Clock, Calendar, Play, Square, Download } from 'lucide-react';
 import axios from 'axios';
 import { useTeam } from '@/contexts/TeamContext';
-import { useDelayedLoading } from '@/hooks/useDelayedLoading';
 import { TableSkeleton } from '@/components/skeletons';
+import { useAttendance, useTasks } from '@/hooks/useQueries';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface Task {
   id: number;
@@ -24,94 +25,76 @@ interface TimeEntry {
   notes?: string | null;
 }
 
+// Skeleton для всієї сторінки
+function PageSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="space-y-2">
+          <div className="h-10 w-48 bg-white/10 rounded animate-pulse" />
+          <div className="h-4 w-64 bg-white/10 rounded animate-pulse" />
+        </div>
+        <div className="h-10 w-32 bg-white/10 rounded animate-pulse" />
+      </div>
+      <div className="glass-medium rounded-2xl p-8 border border-white/10">
+        <div className="h-24 bg-white/10 rounded animate-pulse" />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {[1,2,3].map(i => (
+          <div key={i} className="glass-medium rounded-2xl p-6 animate-pulse">
+            <div className="flex items-center space-x-3">
+              <div className="w-12 h-12 rounded-xl bg-white/10" />
+              <div className="space-y-2">
+                <div className="h-3 w-16 bg-white/10 rounded" />
+                <div className="h-6 w-20 bg-white/10 rounded" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <TableSkeleton rows={6} columns={4} />
+    </div>
+  );
+}
+
 export default function AttendancePage() {
   const { selectedTeam, isLoading: teamsLoading } = useTeam();
+  const queryClient = useQueryClient();
+  
+  const teamId = selectedTeam.type === 'single' && selectedTeam.teamId 
+    ? selectedTeam.teamId 
+    : 'all';
+  
+  // React Query для оптимального кешування
+  const { 
+    data: timeEntries = [], 
+    isLoading: entriesLoading,
+    refetch: refetchEntries 
+  } = useAttendance(teamId);
+  
+  const { 
+    data: tasks = [], 
+    isLoading: tasksLoading 
+  } = useTasks(teamId);
+  
   const [view, setView] = useState<'daily' | 'weekly' | 'monthly'>('daily');
   const [isClockedIn, setIsClockedIn] = useState(false);
   const [currentSession, setCurrentSession] = useState<TimeEntry | null>(null);
   const [selectedTaskId, setSelectedTaskId] = useState<string>('');
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  
-  // Показувати індикатор завантаження тільки якщо завантаження триває > 200ms
-  const shouldShowLoading = useDelayedLoading(loading || teamsLoading, 200);
 
+  // Перевіряємо активну сесію
   useEffect(() => {
-    // Wait for teams to load before loading data
-    if (!teamsLoading) {
-      loadTasks();
-      loadTimeEntries();
-      checkActiveSession();
-    }
-  }, [teamsLoading, selectedTeam]);
-
-  const loadTasks = async () => {
-    // Don't load if teams are still loading
-    if (teamsLoading) {
-      return;
-    }
-
-    try {
-      // Build query params for team filtering
-      const teamId = selectedTeam.type === 'single' && selectedTeam.teamId 
-        ? selectedTeam.teamId 
-        : 'all';
-      const url = teamId !== 'all' 
-        ? `/api/tasks?team_id=${teamId}`
-        : '/api/tasks';
-      
-      const response = await axios.get(url);
-      setTasks(response.data.tasks || []);
-    } catch (error) {
-      console.error('Failed to load tasks:', error);
-    }
-  };
-
-  const loadTimeEntries = async () => {
-    // Don't load if teams are still loading
-    if (teamsLoading) {
-      return;
-    }
-
-    setLoading(true);
-    try {
-      // Build query params for team filtering
-      const teamId = selectedTeam.type === 'single' && selectedTeam.teamId 
-        ? selectedTeam.teamId 
-        : 'all';
-      const url = teamId !== 'all' 
-        ? `/api/attendance?team_id=${teamId}`
-        : '/api/attendance';
-      
-      const response = await axios.get(url);
-      setTimeEntries(response.data.entries || []);
-    } catch (error) {
-      console.error('Failed to load time entries:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const checkActiveSession = async () => {
-    // Don't check if teams are still loading
-    if (teamsLoading) {
-      return;
-    }
-
-    try {
-      // Always check current user's active session (not filtered by team)
-      const response = await axios.get('/api/attendance');
-      const entries = response.data.entries || [];
-      const activeEntry = entries.find((e: TimeEntry) => !e.clockOut);
+    if (!teamsLoading && timeEntries.length > 0) {
+      const activeEntry = timeEntries.find((e: TimeEntry) => !e.clockOut);
       if (activeEntry) {
         setIsClockedIn(true);
         setCurrentSession(activeEntry);
       }
-    } catch (error) {
-      console.error('Failed to check active session:', error);
     }
-  };
+  }, [teamsLoading, timeEntries]);
+
+  // Показуємо skeleton тільки при першому завантаженні
+  const isLoading = teamsLoading || (entriesLoading && timeEntries.length === 0);
 
   const handleClockInOut = async () => {
     if (isClockedIn) {
@@ -123,7 +106,7 @@ export default function AttendancePage() {
         setIsClockedIn(false);
         setCurrentSession(null);
         setSelectedTaskId('');
-        loadTimeEntries();
+        refetchEntries();
       } catch (error) {
         console.error('Failed to clock out:', error);
         alert('Failed to clock out. Please try again.');
@@ -136,7 +119,7 @@ export default function AttendancePage() {
       }
       try {
         const taskId = parseInt(selectedTaskId);
-        const selectedTask = tasks.find(t => t.id === taskId);
+        const selectedTask = tasks.find((t: Task) => t.id === taskId);
         const response = await axios.post('/api/attendance', {
           task_id: taskId,
           project_id: selectedTask?.projectId || null,
@@ -144,7 +127,7 @@ export default function AttendancePage() {
         });
         setIsClockedIn(true);
         setCurrentSession(response.data.timeEntry);
-        loadTimeEntries();
+        refetchEntries();
       } catch (error) {
         console.error('Failed to clock in:', error);
         alert('Failed to clock in. Please try again.');
@@ -167,19 +150,14 @@ export default function AttendancePage() {
   };
 
   const today = new Date().toISOString().split('T')[0];
-  const todayEntries = timeEntries.filter(e => 
+  const todayEntries = timeEntries.filter((e: TimeEntry) => 
     new Date(e.clockIn).toISOString().split('T')[0] === today
   );
-  const totalHoursToday = todayEntries.reduce((sum, e) => sum + (e.duration || 0), 0);
-  const totalHoursWeek = timeEntries.reduce((sum, e) => sum + (e.duration || 0), 0);
+  const totalHoursToday = todayEntries.reduce((sum: number, e: TimeEntry) => sum + (e.duration || 0), 0);
+  const totalHoursWeek = timeEntries.reduce((sum: number, e: TimeEntry) => sum + (e.duration || 0), 0);
 
-  // Show loading state while teams are loading or data is loading
-  if (teamsLoading || loading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
+  if (isLoading) {
+    return <PageSkeleton />;
   }
 
   return (
@@ -212,7 +190,7 @@ export default function AttendancePage() {
                 className="w-full px-4 py-3 rounded-lg glass-medium border border-white/10 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="">Choose a task...</option>
-                {tasks.map((task) => (
+                {tasks.map((task: Task) => (
                   <option key={task.id} value={task.id}>
                     {task.title}
                   </option>
@@ -236,8 +214,8 @@ export default function AttendancePage() {
               disabled={!isClockedIn && !selectedTaskId}
               className={`flex items-center space-x-3 px-8 py-4 rounded-xl text-white font-semibold text-lg transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed ${
                 isClockedIn
-                  ? 'bg-red-500/80 hover:bg-red-500 '
-                  : 'bg-[#00D66B]/80 hover:bg-[#00D66B] '
+                  ? 'bg-red-500/80 hover:bg-red-500'
+                  : 'bg-[#00D66B]/80 hover:bg-[#00D66B]'
               }`}
             >
               {isClockedIn ? (
@@ -353,8 +331,8 @@ export default function AttendancePage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-white/10">
-              {timeEntries.map((entry) => {
-                const task = tasks.find(t => t.id === entry.taskId);
+              {timeEntries.map((entry: TimeEntry) => {
+                const task = tasks.find((t: Task) => t.id === entry.taskId);
                 return (
                   <tr key={entry.id} className="hover:bg-white/5 transition-colors">
                     <td className="px-6 py-4">

@@ -198,6 +198,44 @@ export function useChatMessages(chatId: number) {
   });
 }
 
+// Attendance/Time Entries Query
+export function useAttendance(teamId?: number | string) {
+  return useQuery({
+    queryKey: ['attendance', teamId || 'all'],
+    queryFn: async () => {
+      const url = teamId && teamId !== 'all'
+        ? `/api/attendance?team_id=${teamId}`
+        : '/api/attendance';
+      const response = await axios.get(url);
+      return response.data.entries || [];
+    },
+    staleTime: 60 * 1000, // 1 хвилина
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: false,
+    placeholderData: (previousData) => previousData,
+  });
+}
+
+// Reports/Documentation Query
+export function useReports(teamId?: number | string) {
+  return useQuery({
+    queryKey: ['reports', teamId || 'all'],
+    queryFn: async () => {
+      const url = teamId && teamId !== 'all'
+        ? `/api/reports?team_id=${teamId}`
+        : '/api/reports';
+      const response = await axios.get(url);
+      return response.data.reports || [];
+    },
+    staleTime: 5 * 60 * 1000, // 5 хвилин
+    gcTime: 15 * 60 * 1000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: false,
+    placeholderData: (previousData) => previousData,
+  });
+}
+
 // Chat Members Query
 export function useChatMembers(chatId: number) {
   return useQuery({
@@ -299,6 +337,30 @@ export function usePrefetch() {
           const response = await axios.get(`/api/teams/${teamId}/members?include_attendance=true`);
           const members = (response.data.members || []).filter((m: any) => m.user);
           return members;
+        },
+      });
+    },
+    prefetchAttendance: (teamId?: number | string) => {
+      queryClient.prefetchQuery({
+        queryKey: ['attendance', teamId || 'all'],
+        queryFn: async () => {
+          const url = teamId && teamId !== 'all'
+            ? `/api/attendance?team_id=${teamId}`
+            : '/api/attendance';
+          const response = await axios.get(url);
+          return response.data.entries || [];
+        },
+      });
+    },
+    prefetchReports: (teamId?: number | string) => {
+      queryClient.prefetchQuery({
+        queryKey: ['reports', teamId || 'all'],
+        queryFn: async () => {
+          const url = teamId && teamId !== 'all'
+            ? `/api/reports?team_id=${teamId}`
+            : '/api/reports';
+          const response = await axios.get(url);
+          return response.data.reports || [];
         },
       });
     },

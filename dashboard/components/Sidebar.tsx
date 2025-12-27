@@ -39,7 +39,7 @@ export const Sidebar = memo(function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { isExpanded, setIsExpanded } = useSidebar();
-  const { prefetchChats, prefetchInvoices, prefetchProjects, prefetchTasks, prefetchStats, prefetchTeams } = usePrefetch();
+  const { prefetchChats, prefetchInvoices, prefetchProjects, prefetchTasks, prefetchStats, prefetchTeams, prefetchAttendance, prefetchReports } = usePrefetch();
 
   const toggleSidebar = useCallback(() => {
     setIsExpanded(!isExpanded);
@@ -72,16 +72,24 @@ export const Sidebar = memo(function Sidebar() {
         break;
       case '/dashboard/tasks':
         prefetchTasks();
+        prefetchProjects(); // Tasks потребує projects для dropdown
         break;
       case '/dashboard/team':
         prefetchTeams();
+        break;
+      case '/dashboard/attendance':
+        prefetchAttendance();
+        prefetchTasks(); // Attendance потребує tasks
+        break;
+      case '/dashboard/documentation':
+        prefetchReports();
         break;
       case '/dashboard':
         prefetchStats();
         prefetchProjects();
         break;
     }
-  }, [prefetchChats, prefetchInvoices, prefetchProjects, prefetchTasks, prefetchStats, prefetchTeams]);
+  }, [prefetchChats, prefetchInvoices, prefetchProjects, prefetchTasks, prefetchStats, prefetchTeams, prefetchAttendance, prefetchReports]);
 
   return (
     <aside

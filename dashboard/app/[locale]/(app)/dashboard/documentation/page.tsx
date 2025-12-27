@@ -1,14 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Plus, FileText, Download, Edit, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { generateReportPDF } from '@/lib/report-pdf';
-import { Loader } from '@/components/Loader';
 import { useTeam } from '@/contexts/TeamContext';
-import { useDelayedLoading } from '@/hooks/useDelayedLoading';
 import { ListSkeleton } from '@/components/skeletons';
+import { useReports } from '@/hooks/useQueries';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface Report {
   id: number;
@@ -30,46 +30,40 @@ interface Report {
   };
 }
 
+// Skeleton для сторінки
+function PageSkeleton() {
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="space-y-2">
+          <div className="h-10 w-64 bg-white/10 rounded animate-pulse" />
+          <div className="h-4 w-96 bg-white/10 rounded animate-pulse" />
+        </div>
+        <div className="h-10 w-32 bg-white/10 rounded animate-pulse" />
+      </div>
+      <ListSkeleton items={8} />
+    </div>
+  );
+}
+
 export default function DocumentationPage() {
   const { selectedTeam, isLoading: teamsLoading } = useTeam();
   const router = useRouter();
-  const [reports, setReports] = useState<Report[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   
-  // Показувати індикатор завантаження тільки якщо завантаження триває > 200ms
-  const shouldShowLoading = useDelayedLoading(loading || teamsLoading, 200);
+  const teamId = selectedTeam.type === 'single' && selectedTeam.teamId 
+    ? selectedTeam.teamId 
+    : 'all';
+  
+  // React Query для оптимального кешування
+  const { 
+    data: reports = [], 
+    isLoading: reportsLoading,
+    refetch: refetchReports 
+  } = useReports(teamId);
 
-  useEffect(() => {
-    // Wait for teams to load before loading data
-    if (!teamsLoading) {
-      loadReports();
-    }
-  }, [teamsLoading, selectedTeam]);
-
-  const loadReports = async () => {
-    // Don't load if teams are still loading
-    if (teamsLoading) {
-      return;
-    }
-
-    setLoading(true);
-    try {
-      // Build query params for team filtering (filter by projects in team)
-      const teamId = selectedTeam.type === 'single' && selectedTeam.teamId 
-        ? selectedTeam.teamId 
-        : 'all';
-      const url = teamId !== 'all' 
-        ? `/api/reports?team_id=${teamId}`
-        : '/api/reports';
-      
-      const response = await axios.get(url);
-      setReports(response.data.reports || []);
-    } catch (error) {
-      console.error('Failed to load documentation:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Показуємо skeleton тільки при першому завантаженні
+  const isLoading = teamsLoading || (reportsLoading && reports.length === 0);
 
   const handleDelete = async (reportId: number, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -79,7 +73,7 @@ export default function DocumentationPage() {
 
     try {
       await axios.delete(`/api/reports/${reportId}`);
-      loadReports();
+      await queryClient.invalidateQueries({ queryKey: ['reports'] });
     } catch (error) {
       console.error('Failed to delete document:', error);
       alert('Failed to delete document. Please try again.');
@@ -126,20 +120,8 @@ export default function DocumentationPage() {
     });
   };
 
-  // Show loading state while teams are loading or data is loading
-  if (shouldShowLoading) {
-    return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="space-y-2">
-            <div className="h-10 w-64 bg-white/10 rounded animate-pulse" />
-            <div className="h-4 w-96 bg-white/10 rounded animate-pulse" />
-          </div>
-          <div className="h-10 w-32 bg-white/10 rounded animate-pulse" />
-        </div>
-        <ListSkeleton items={8} />
-      </div>
-    );
+  if (isLoading) {
+    return <PageSkeleton />;
   }
 
   return (
@@ -163,7 +145,7 @@ export default function DocumentationPage() {
 
       {/* Reports Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {reports.map((report) => (
+        {reports.map((report: Report) => (
           <div
             key={report.id}
             className="glass-medium glass-hover rounded-lg p-4 cursor-pointer group"

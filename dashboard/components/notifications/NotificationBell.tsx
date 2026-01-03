@@ -135,14 +135,14 @@ export function NotificationBell() {
           />
           <div
             ref={dropdownRef}
-            className="fixed w-96 max-h-[600px] rounded-2xl border border-white/10  z-[10000] overflow-hidden bg-[#0a0d14]/80 backdrop-blur-xl backdrop-saturate-150 animate-fadeIn"
+            className="fixed w-96 max-h-[600px] rounded-2xl border border-white/10 z-[10000] overflow-hidden glass-heavy animate-fadeIn"
             style={{
               top: `${dropdownPosition.top}px`,
               right: `${dropdownPosition.right}px`
             }}
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-white/10 bg-white/5">
+            <div className="flex items-center justify-between p-4 border-b border-white/20 glass-light">
               <h3 className="font-semibold text-text-primary">Notifications</h3>
               <button
                 onClick={() => setShowNotifications(false)}
@@ -164,7 +164,7 @@ export function NotificationBell() {
                   {notifications.map((notification) => (
                     <div
                       key={notification.id}
-                      className={`p-4 hover:bg-white/10 hover:backdrop-blur-sm transition-all duration-200 cursor-pointer ${!notification.read ? 'bg-primary/5' : ''
+                      className={`p-4 hover:glass-medium transition-all duration-200 cursor-pointer ${!notification.read ? 'bg-primary/5' : ''
                         }`}
                       onClick={() => {
                         if (!notification.read) {
@@ -206,7 +206,7 @@ export function NotificationBell() {
 
             {/* Footer */}
             {notifications.length > 0 && (
-              <div className="p-3 border-t border-white/10 bg-white/5">
+              <div className="p-3 border-t border-white/20 glass-light">
                 <button
                   onClick={() => {
                     notifications.forEach((n) => {

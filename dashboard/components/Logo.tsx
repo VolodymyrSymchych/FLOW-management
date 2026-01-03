@@ -15,9 +15,9 @@ export function Logo({ variant = 'default', className = '' }: LogoProps) {
   const logoSize = variant === 'compact' ? 48 : variant === 'icon' ? 56 : variant === 'default' ? 112 : 48;
 
   // Auth pages should link to home, authenticated pages link to dashboard
-  const authPages = ['/sign-in', '/sign-up', '/verify', '/forgot-password'];
-  const isAuthPage = authPages.includes(pathname);
-  const linkHref = isAuthPage ? '/' : '/';
+  const authPages = ['/sign-in', '/sign-up', '/verify', '/forgot-password', '/reset-password', '/verify-email'];
+  const isAuthPage = authPages.some(page => pathname.includes(page));
+  const linkHref = isAuthPage ? '/' : '/dashboard';
 
   const logoContent = (
     <>

@@ -157,7 +157,7 @@ function SignInForm() {
               disabled={loading}
               className="glass-button w-full py-3 rounded-xl font-semibold text-white hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Signing in...' : 'Sign In'}
+              {loading ? 'Logging in...' : 'Log In'}
             </button>
           </form>
 

@@ -33,7 +33,7 @@ export function Navbar({ user }: { user?: any }) {
                             ) : (
                                 <>
                                     <Link href="/sign-in" className="rounded-full bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm transition-all hover:bg-white/20">
-                                        Sign In
+                                        Log In
                                     </Link>
                                     <Link href="/sign-up" className="glass-button rounded-full px-5 py-2 text-sm font-medium text-white">
                                         Get Started
@@ -73,7 +73,7 @@ export function Navbar({ user }: { user?: any }) {
                             ) : (
                                 <>
                                     <Link href="/sign-in" className="w-full block text-center rounded-md bg-white/10 px-4 py-2 text-sm font-medium text-white hover:bg-white/20">
-                                        Sign In
+                                        Log In
                                     </Link>
                                     <Link href="/sign-up" className="glass-button w-full block text-center rounded-md px-4 py-2 text-sm font-medium text-white">
                                         Get Started

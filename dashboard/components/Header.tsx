@@ -207,145 +207,144 @@ export const Header = memo(function Header() {
     <>
       <header className="sticky top-0 z-40 glass-medium border-b border-white/10">
         <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 py-4 gap-4">
-          {/* Center - Unified Horizontal Scroll Area: Team Selection + Tabs */}
+          {/* Team Selector - Outside scroll container */}
+          <div className="relative flex-shrink-0">
+            <button
+              ref={teamsButtonRef}
+              onClick={() => !teamsLoading && setShowTeamsDropdown(!showTeamsDropdown)}
+              aria-expanded={showTeamsDropdown}
+              aria-haspopup="true"
+              aria-label="Open teams menu"
+              disabled={teamsLoading}
+              className="flex items-center space-x-2 glass-light px-3 py-1.5 rounded-lg hover:glass-medium duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+            >
+              <span className="text-sm font-medium text-text-primary max-w-[120px] truncate">
+                {teamsLoading
+                  ? 'Loading...'
+                  : selectedTeam.type === 'all'
+                    ? 'All Teams'
+                    : teams.find(t => t.id === selectedTeam.teamId)?.name || 'Select Team'
+                }
+              </span>
+              <ChevronDown
+                className={`w-4 h-4 text-text-primary transition-transform duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] ${showTeamsDropdown ? 'rotate-180' : ''
+                  }`}
+              />
+            </button>
+
+            {showTeamsDropdown && !teamsLoading && mounted && createPortal(
+              <>
+                <div
+                  className="fixed inset-0 z-[9998]"
+                  onClick={() => setShowTeamsDropdown(false)}
+                />
+                <div
+                  ref={teamsDropdownRef}
+                  className="fixed w-56 rounded-xl border border-white/10  z-[10000] glass-heavy overflow-hidden animate-fadeIn"
+                  style={{
+                    top: `${teamsDropdownPosition.top}px`,
+                    left: `${teamsDropdownPosition.left}px`
+                  }}
+                >
+                  <div className="p-2">
+                    {/* All Teams Option */}
+                    <button
+                      onClick={() => {
+                        setSelectedTeam({ type: 'all' });
+                        setShowTeamsDropdown(false);
+                      }}
+                      className={`w-full text-left px-3 py-2 rounded-lg hover:bg-white/10 hover:backdrop-blur-sm text-text-primary transition-all duration-200 ${selectedTeam.type === 'all' ? 'bg-white/10' : ''
+                        }`}
+                    >
+                      <div className="font-medium text-sm">All Teams</div>
+                      <div className="text-xs text-text-tertiary">View all team data</div>
+                    </button>
+
+                    <div className="h-px bg-white/10 my-2" />
+
+                    <div className="px-3 py-2 text-xs text-text-tertiary uppercase tracking-wider font-medium">
+                      My Teams
+                    </div>
+                    <button
+                      onClick={() => {
+                        setShowTeamsDropdown(false);
+                        setShowCreateTeamModal(true);
+                      }}
+                      className="w-full text-left px-3 py-2 rounded-lg hover:bg-white/10 hover:backdrop-blur-sm text-text-primary transition-all duration-200 flex items-center gap-2"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <div>
+                        <div className="font-medium text-sm">Create Team</div>
+                        <div className="text-xs text-text-tertiary">Add a new team</div>
+                      </div>
+                    </button>
+                    {teams.length === 0 ? (
+                      <div className="px-3 py-2 text-xs text-text-tertiary">
+                        No teams yet
+                      </div>
+                    ) : (
+                      teams.map((team) => (
+                        <button
+                          key={team.id}
+                          onClick={() => {
+                            setSelectedTeam({ type: 'single', teamId: team.id });
+                            setShowTeamsDropdown(false);
+                          }}
+                          className={`w-full text-left px-3 py-2 rounded-lg hover:bg-white/10 hover:backdrop-blur-sm text-text-primary transition-all duration-200 ${selectedTeam.type === 'single' && selectedTeam.teamId === team.id ? 'bg-white/10' : ''
+                            }`}
+                        >
+                          <div className="font-medium text-sm">{team.name}</div>
+                          {team.description && (
+                            <div className="text-xs text-text-tertiary">{team.description}</div>
+                          )}
+                        </button>
+                      ))
+                    )}
+                    <div className="px-3 py-2 mt-2 text-xs text-text-tertiary uppercase tracking-wider font-medium border-t border-white/10">
+                      Friends
+                    </div>
+                    {friends.length === 0 ? (
+                      <div className="px-3 py-2 text-xs text-text-tertiary">
+                        No friends yet
+                      </div>
+                    ) : (
+                      friends.slice(0, 5).map((friendship) => {
+                        const friend = friendship.friend || { id: friendship.senderId === user?.id ? friendship.receiverId : friendship.senderId };
+                        return (
+                          <button
+                            key={friendship.id}
+                            onClick={() => {
+                              setShowTeamsDropdown(false);
+                              router.push(`/profile/${friend.id}`);
+                            }}
+                            className="w-full text-left px-3 py-2 rounded-lg hover:bg-white/10 hover:backdrop-blur-sm text-text-primary transition-all duration-200"
+                          >
+                            <div className="font-medium text-sm">{friend.fullName || friend.username || `Friend #${friend.id}`}</div>
+                            {friend.email && (
+                              <div className="text-xs text-text-tertiary">{friend.email}</div>
+                            )}
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              </>,
+              document.body
+            )}
+          </div>
+
+          {/* Divider */}
+          <div className="h-6 w-px bg-white/10 flex-shrink-0" />
+
+          {/* Tabs scroll container */}
           <div
             className="flex-1 flex items-center gap-3 overflow-x-auto no-scrollbar"
             style={{
-              maskImage: 'linear-gradient(to right, transparent, black 10px, black calc(100% - 10px), transparent)',
-              WebkitMaskImage: 'linear-gradient(to right, transparent, black 10px, black calc(100% - 10px), transparent)'
+              maskImage: 'linear-gradient(to right, black, black calc(100% - 60px), transparent)',
+              WebkitMaskImage: 'linear-gradient(to right, black, black calc(100% - 60px), transparent)'
             }}
           >
-            {/* Team Selector - Inline */}
-            <div className="relative flex-shrink-0">
-              <button
-                ref={teamsButtonRef}
-                onClick={() => !teamsLoading && setShowTeamsDropdown(!showTeamsDropdown)}
-                aria-expanded={showTeamsDropdown}
-                aria-haspopup="true"
-                aria-label="Open teams menu"
-                disabled={teamsLoading}
-                className="flex items-center space-x-2 glass-light px-3 py-1.5 rounded-lg hover:glass-medium duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-              >
-                <span className="text-sm font-medium text-text-primary max-w-[120px] truncate">
-                  {teamsLoading
-                    ? 'Loading...'
-                    : selectedTeam.type === 'all'
-                      ? 'All Teams'
-                      : teams.find(t => t.id === selectedTeam.teamId)?.name || 'Select Team'
-                  }
-                </span>
-                <ChevronDown
-                  className={`w-4 h-4 text-text-primary transition-transform duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] ${showTeamsDropdown ? 'rotate-180' : ''
-                    }`}
-                />
-              </button>
-
-              {showTeamsDropdown && !teamsLoading && mounted && createPortal(
-                <>
-                  <div
-                    className="fixed inset-0 z-[9998]"
-                    onClick={() => setShowTeamsDropdown(false)}
-                  />
-                  <div
-                    ref={teamsDropdownRef}
-                    className="fixed w-56 rounded-xl border border-white/10  z-[10000] glass-heavy overflow-hidden animate-fadeIn"
-                    style={{
-                      top: `${teamsDropdownPosition.top}px`,
-                      left: `${teamsDropdownPosition.left}px`
-                    }}
-                  >
-                    <div className="p-2">
-                      {/* All Teams Option */}
-                      <button
-                        onClick={() => {
-                          setSelectedTeam({ type: 'all' });
-                          setShowTeamsDropdown(false);
-                        }}
-                        className={`w-full text-left px-3 py-2 rounded-lg hover:bg-white/10 hover:backdrop-blur-sm text-text-primary transition-all duration-200 ${selectedTeam.type === 'all' ? 'bg-white/10' : ''
-                          }`}
-                      >
-                        <div className="font-medium text-sm">All Teams</div>
-                        <div className="text-xs text-text-tertiary">View all team data</div>
-                      </button>
-
-                      <div className="h-px bg-white/10 my-2" />
-
-                      <div className="px-3 py-2 text-xs text-text-tertiary uppercase tracking-wider font-medium">
-                        My Teams
-                      </div>
-                      <button
-                        onClick={() => {
-                          setShowTeamsDropdown(false);
-                          setShowCreateTeamModal(true);
-                        }}
-                        className="w-full text-left px-3 py-2 rounded-lg hover:bg-white/10 hover:backdrop-blur-sm text-text-primary transition-all duration-200 flex items-center gap-2"
-                      >
-                        <Plus className="w-4 h-4" />
-                        <div>
-                          <div className="font-medium text-sm">Create Team</div>
-                          <div className="text-xs text-text-tertiary">Add a new team</div>
-                        </div>
-                      </button>
-                      {teams.length === 0 ? (
-                        <div className="px-3 py-2 text-xs text-text-tertiary">
-                          No teams yet
-                        </div>
-                      ) : (
-                        teams.map((team) => (
-                          <button
-                            key={team.id}
-                            onClick={() => {
-                              setSelectedTeam({ type: 'single', teamId: team.id });
-                              setShowTeamsDropdown(false);
-                            }}
-                            className={`w-full text-left px-3 py-2 rounded-lg hover:bg-white/10 hover:backdrop-blur-sm text-text-primary transition-all duration-200 ${selectedTeam.type === 'single' && selectedTeam.teamId === team.id ? 'bg-white/10' : ''
-                              }`}
-                          >
-                            <div className="font-medium text-sm">{team.name}</div>
-                            {team.description && (
-                              <div className="text-xs text-text-tertiary">{team.description}</div>
-                            )}
-                          </button>
-                        ))
-                      )}
-                      <div className="px-3 py-2 mt-2 text-xs text-text-tertiary uppercase tracking-wider font-medium border-t border-white/10">
-                        Friends
-                      </div>
-                      {friends.length === 0 ? (
-                        <div className="px-3 py-2 text-xs text-text-tertiary">
-                          No friends yet
-                        </div>
-                      ) : (
-                        friends.slice(0, 5).map((friendship) => {
-                          const friend = friendship.friend || { id: friendship.senderId === user?.id ? friendship.receiverId : friendship.senderId };
-                          return (
-                            <button
-                              key={friendship.id}
-                              onClick={() => {
-                                setShowTeamsDropdown(false);
-                                router.push(`/profile/${friend.id}`);
-                              }}
-                              className="w-full text-left px-3 py-2 rounded-lg hover:bg-white/10 hover:backdrop-blur-sm text-text-primary transition-all duration-200"
-                            >
-                              <div className="font-medium text-sm">{friend.fullName || friend.username || `Friend #${friend.id}`}</div>
-                              {friend.email && (
-                                <div className="text-xs text-text-tertiary">{friend.email}</div>
-                              )}
-                            </button>
-                          );
-                        })
-                      )}
-                    </div>
-                  </div>
-                </>,
-                document.body
-              )}
-            </div>
-
-            {/* Divider */}
-            <div className="h-6 w-px bg-white/10 flex-shrink-0" />
-
-            {/* Tabs - Integrated directly */}
             <TabBar />
           </div>
 

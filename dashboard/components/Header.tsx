@@ -8,6 +8,7 @@ import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
 import { useTeam } from '@/contexts/TeamContext';
 import { useUser } from '@/hooks/useUser';
+import { TabBar } from './TabBar';
 
 interface Team {
   id: number;
@@ -205,11 +206,17 @@ export const Header = memo(function Header() {
   return (
     <>
       <header className="sticky top-0 z-40 glass-medium border-b border-white/10">
-        <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 py-4">
-          {/* Left section */}
-          <div className="flex items-center space-x-8">
-            {/* All Teams Dropdown */}
-            <div className="relative">
+        <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 py-4 gap-4">
+          {/* Center - Unified Horizontal Scroll Area: Team Selection + Tabs */}
+          <div
+            className="flex-1 flex items-center gap-3 overflow-x-auto no-scrollbar"
+            style={{
+              maskImage: 'linear-gradient(to right, transparent, black 10px, black calc(100% - 10px), transparent)',
+              WebkitMaskImage: 'linear-gradient(to right, transparent, black 10px, black calc(100% - 10px), transparent)'
+            }}
+          >
+            {/* Team Selector - Inline */}
+            <div className="relative flex-shrink-0">
               <button
                 ref={teamsButtonRef}
                 onClick={() => !teamsLoading && setShowTeamsDropdown(!showTeamsDropdown)}
@@ -219,7 +226,7 @@ export const Header = memo(function Header() {
                 disabled={teamsLoading}
                 className="flex items-center space-x-2 glass-light px-3 py-1.5 rounded-lg hover:glass-medium duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
-                <span className="text-sm font-medium text-text-primary">
+                <span className="text-sm font-medium text-text-primary max-w-[120px] truncate">
                   {teamsLoading
                     ? 'Loading...'
                     : selectedTeam.type === 'all'
@@ -334,12 +341,18 @@ export const Header = memo(function Header() {
                 document.body
               )}
             </div>
+
+            {/* Divider */}
+            <div className="h-6 w-px bg-white/10 flex-shrink-0" />
+
+            {/* Tabs - Integrated directly */}
+            <TabBar />
           </div>
 
           {/* Right section */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-4 flex-shrink-0">
             {/* Search */}
-            <div className="relative flex items-center">
+            <div className="relative flex items-center hidden md:flex">
               <div className="absolute left-3 flex items-center h-full pointer-events-none">
                 <Search className="w-4 h-4 text-text-tertiary" />
               </div>
@@ -347,14 +360,14 @@ export const Header = memo(function Header() {
                 type="text"
                 placeholder="Search"
                 aria-label="Search projects and tasks"
-                className="glass-medium border border-white/10 pl-10 pr-4 py-2 rounded-lg text-text-primary placeholder:text-text-tertiary text-sm w-32 sm:w-48 md:w-64 focus:border-primary/50 focus:outline-none transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]"
+                className="glass-medium border border-white/10 pl-10 pr-4 py-2 rounded-lg text-text-primary placeholder:text-text-tertiary text-sm w-32 focus:w-48 focus:border-primary/50 focus:outline-none transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]"
               />
             </div>
 
             {/* Notifications */}
             <NotificationBell />
 
-            {/* User profile dropdown */}
+            {/* User profile dropdown - Avatar only */}
             <div className="relative pl-4 border-l border-white/10">
               <button
                 ref={userButtonRef}
@@ -362,26 +375,14 @@ export const Header = memo(function Header() {
                 aria-expanded={showUserDropdown}
                 aria-haspopup="true"
                 aria-label="Open user menu"
-                className="flex items-center space-x-3 hover:opacity-80 transition-opacity duration-200"
+                className="hover:opacity-80 transition-opacity duration-200"
               >
                 <div
-                  className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-semibold flex-shrink-0"
+                  className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-white font-semibold flex-shrink-0"
                   suppressHydrationWarning
                 >
                   {initials}
                 </div>
-                {user && (
-                  <div className="hidden md:block text-left" suppressHydrationWarning>
-                    <div className="text-sm font-semibold text-text-primary">
-                      {user.fullName || user.username}
-                    </div>
-                    <div className="text-xs text-text-tertiary">{user.email}</div>
-                  </div>
-                )}
-                <ChevronDown
-                  className={`w-4 h-4 text-text-secondary transition-transform duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] flex-shrink-0 ${showUserDropdown ? 'rotate-180' : ''
-                    }`}
-                />
               </button>
 
               {showUserDropdown && mounted && createPortal(
@@ -408,15 +409,7 @@ export const Header = memo(function Header() {
                       </div>
 
                       {/* Menu Items */}
-                      <button
-                        onClick={() => {
-                          setShowUserDropdown(false);
-                          router.push('/dashboard/settings');
-                        }}
-                        className="w-full text-left px-3 py-2 rounded-lg hover:bg-white/10 hover:backdrop-blur-sm text-text-primary transition-all duration-200 mt-2"
-                      >
-                        ⚙️ Settings
-                      </button>
+
                       <button
                         onClick={() => {
                           setShowUserDropdown(false);

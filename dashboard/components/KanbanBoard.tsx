@@ -619,8 +619,8 @@ function SortableTaskCard({ task, onStatusChange, getPriorityColor, onEdit, onDe
                     )}
                     {task.assignee && (
                         <div className="flex items-center space-x-1">
-                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-xs font-semibold">
-                                {task.assignee}
+                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-[10px] font-bold" title={task.assignee}>
+                                {task.assignee.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
                             </div>
                         </div>
                     )}

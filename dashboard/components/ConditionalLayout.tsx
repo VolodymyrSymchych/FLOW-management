@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { SidebarProvider } from '@/components/SidebarContext';
+import { TabProvider } from '@/contexts/TabContext';
 import { Sidebar } from '@/components/Sidebar';
 import { Header } from '@/components/Header';
 import { MainContent } from '@/components/MainContent';
@@ -42,15 +43,17 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
     return (
       <ErrorBoundary>
         <SidebarProvider>
-          <div className="flex h-screen relative overflow-hidden w-full max-w-full">
-            <Sidebar />
-            <MainContent>
-              <Header />
-              <div id="main-content" className="h-full overflow-y-auto w-full max-w-full min-w-0" role="main" aria-label="Main content">
-                {children}
-              </div>
-            </MainContent>
-          </div>
+          <TabProvider>
+            <div className="flex h-screen relative overflow-hidden w-full max-w-full">
+              <Sidebar />
+              <MainContent>
+                <Header />
+                <div id="main-content" className="h-full overflow-y-auto w-full max-w-full min-w-0" role="main" aria-label="Main content">
+                  {children}
+                </div>
+              </MainContent>
+            </div>
+          </TabProvider>
         </SidebarProvider>
       </ErrorBoundary>
     );
@@ -64,20 +67,22 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
   return (
     <ErrorBoundary>
       <SidebarProvider>
-        <div className="flex h-screen relative overflow-hidden">
-          <Sidebar />
-          <MainContent>
-            <Header />
-            <div
-              id="main-content"
-              className={`${isNoPaddingPage ? '' : 'p-8'} h-full flex flex-col overflow-y-auto min-h-0`}
-              role="main"
-              aria-label="Main content"
-            >
-              {children}
-            </div>
-          </MainContent>
-        </div>
+        <TabProvider>
+          <div className="flex h-screen relative overflow-hidden">
+            <Sidebar />
+            <MainContent>
+              <Header />
+              <div
+                id="main-content"
+                className={`${isNoPaddingPage ? '' : 'p-8'} h-full flex flex-col overflow-y-auto min-h-0`}
+                role="main"
+                aria-label="Main content"
+              >
+                {children}
+              </div>
+            </MainContent>
+          </div>
+        </TabProvider>
       </SidebarProvider>
     </ErrorBoundary>
   );

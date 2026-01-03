@@ -32,7 +32,6 @@ const navigation = [
   { name: 'Attendance', href: '/dashboard/attendance', icon: Clock },
   { name: 'Documentation', href: '/dashboard/documentation', icon: FileText },
   { name: 'Team', href: '/dashboard/team', icon: Users },
-  { name: 'Settings', href: '/dashboard/settings', icon: Settings },
 ];
 
 export const Sidebar = memo(function Sidebar() {
@@ -60,6 +59,8 @@ export const Sidebar = memo(function Sidebar() {
 
   // Prefetch data on hover for instant loading
   const handleNavHover = useCallback((href: string) => {
+    if (href === pathname) return;
+
     switch (href) {
       case '/dashboard/chat':
         prefetchChats();
@@ -168,6 +169,32 @@ export const Sidebar = memo(function Sidebar() {
             );
           })}
         </nav>
+
+        {/* Settings - Bottom */}
+        <div className="px-3 mt-auto">
+          <Link
+            href="/dashboard/settings"
+            onMouseEnter={() => handleNavHover('/dashboard/settings')}
+            className={cn(
+              'flex items-center rounded-xl duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] group relative overflow-hidden',
+              isExpanded ? 'px-4 py-3 gap-3' : 'justify-center w-14 h-14 mx-auto',
+              pathname === '/dashboard/settings'
+                ? 'glass-light text-white border border-primary/40 scale-105'
+                : 'text-white/60 hover:glass-subtle hover:text-white hover:scale-105 active:scale-95'
+            )}
+            title={!isExpanded ? 'Settings' : undefined}
+          >
+            <Settings className={cn(
+              'flex-shrink-0 relative z-10 transition-all duration-200',
+              isExpanded ? 'w-5 h-5' : 'w-6 h-6'
+            )} />
+            {isExpanded && (
+              <span className="font-medium text-sm whitespace-nowrap relative z-10">
+                Settings
+              </span>
+            )}
+          </Link>
+        </div>
       </div>
     </aside>
   );

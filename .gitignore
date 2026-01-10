@@ -39,6 +39,10 @@ env/
 services/**/.env
 services/**/.env.local
 
+# Node modules
+node_modules/
+**/node_modules/
+
 # Reports
 reports/
 !dashboard/app/reports/

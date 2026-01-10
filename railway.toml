@@ -1,0 +1,16 @@
+# Railway Configuration for Dashboard (Next.js Frontend)
+# This is the main service configuration
+
+[build]
+builder = "NIXPACKS"
+buildCommand = "npm install && npm run build"
+
+[deploy]
+startCommand = "npm start"
+healthcheckPath = "/"
+healthcheckTimeout = 300
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
+
+[environments]
+# Production environment variables will be set in Railway dashboard

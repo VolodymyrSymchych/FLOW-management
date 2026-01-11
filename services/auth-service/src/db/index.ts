@@ -44,9 +44,10 @@ function getDbInstance(): NodePgDatabase<typeof schema> {
 
 export const db = new Proxy({} as NodePgDatabase<typeof schema>, {
   get(target, prop) {
-    return (getDbInstance() as any)[prop];
+    return (getDbInstance() as unknown as Record<string, unknown>)[prop as string];
   },
 });
+
 
 export * from './schema';
 

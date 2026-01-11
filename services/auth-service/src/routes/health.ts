@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { logger } from '@project-scope-analyzer/shared';
 
 const router = Router();
 
@@ -29,7 +30,7 @@ router.get('/ready', async (req: Request, res: Response) => {
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    console.error('Database check error:', message);
+    logger.error('Database check error', { error: message });
     checks.database = false;
   }
 

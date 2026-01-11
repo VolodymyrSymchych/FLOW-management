@@ -1,4 +1,4 @@
-import { UnauthorizedError } from '@project-scope-analyzer/shared';
+import { UnauthorizedError, logger } from '@project-scope-analyzer/shared';
 
 export interface GoogleUser {
     sub: string;
@@ -21,19 +21,19 @@ export async function verifyGoogleToken(token: string): Promise<GoogleUser> {
             throw new Error(`Google token validation failed: ${response.statusText}`);
         }
 
-        const data = await response.json() as any;
+        const data = await response.json() as Record<string, unknown>;
 
         // Check if token is expired or audience is wrong if needed, 
         // but google's endpoint returns error for invalid tokens usually.
 
         return {
-            sub: data.sub,
-            email: data.email,
-            name: data.name,
-            picture: data.picture
+            sub: String(data.sub || ''),
+            email: String(data.email || ''),
+            name: String(data.name || ''),
+            picture: String(data.picture || '')
         };
     } catch (error) {
-        console.error('Verify Google Token Error:', error);
+        logger.error('Verify Google Token Error', { error });
         throw new UnauthorizedError('Invalid Google token');
     }
 }
@@ -48,15 +48,15 @@ export async function verifyMicrosoftToken(token: string): Promise<MicrosoftUser
             throw new Error(`Microsoft token validation failed: ${response.statusText}`);
         }
 
-        const data = await response.json() as any;
+        const data = await response.json() as Record<string, unknown>;
 
         return {
-            id: data.id,
-            userPrincipalName: data.userPrincipalName || data.mail, // Sometimes mail is used
-            displayName: data.displayName
+            id: String(data.id || ''),
+            userPrincipalName: String((data.userPrincipalName || data.mail) || ''),
+            displayName: String(data.displayName || '')
         };
     } catch (error) {
-        console.error('Verify Microsoft Token Error:', error);
+        logger.error('Verify Microsoft Token Error', { error });
         throw new UnauthorizedError('Invalid Microsoft token');
     }
 }

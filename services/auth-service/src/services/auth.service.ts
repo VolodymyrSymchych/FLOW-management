@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs';
 import { eq, and } from 'drizzle-orm';
 import { db, users, emailVerifications, type User, type InsertUser } from '../db';
 import { logger } from '@project-scope-analyzer/shared';
-import { NotFoundError, ValidationError, ConflictError, UnauthorizedError } from '@project-scope-analyzer/shared';
+import { NotFoundError, ValidationError, ConflictError } from '@project-scope-analyzer/shared';
 import IORedis from 'ioredis';
 
 // Type for Redis client (supports both ioredis and Upstash wrapper)

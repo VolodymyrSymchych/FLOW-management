@@ -1,73 +1,73 @@
 import { logger } from '@project-scope-analyzer/shared';
 
 interface SendEmailOptions {
-    to: string;
-    subject: string;
-    html: string;
+  to: string;
+  subject: string;
+  html: string;
 }
 
 export class EmailService {
-    private apiKey: string;
-    private fromEmail: string;
+  private apiKey: string;
+  private fromEmail: string;
 
-    constructor() {
-        this.apiKey = process.env.RESEND_API_KEY || '';
-        this.fromEmail = process.env.EMAIL_FROM || 'Flow Management <onboarding@resend.dev>';
+  constructor() {
+    this.apiKey = process.env.RESEND_API_KEY || '';
+    this.fromEmail = process.env.EMAIL_FROM || 'Flow Management <onboarding@resend.dev>';
 
-        if (!this.apiKey) {
-            logger.warn('RESEND_API_KEY is not set in auth-service. Emails will be logged to console only.');
-        }
+    if (!this.apiKey) {
+      logger.warn('RESEND_API_KEY is not set in auth-service. Emails will be logged to console only.');
+    }
+  }
+
+  async sendEmail({ to, subject, html }: SendEmailOptions): Promise<void> {
+    if (!this.apiKey) {
+      logger.info('📧 [MOCK EMAIL] 📧');
+      logger.info(`To: ${to}`);
+      logger.info(`Subject: ${subject}`);
+      logger.info('--------------------------------------------------');
+      return;
     }
 
-    async sendEmail({ to, subject, html }: SendEmailOptions): Promise<void> {
-        if (!this.apiKey) {
-            logger.info('📧 [MOCK EMAIL] 📧');
-            logger.info(`To: ${to}`);
-            logger.info(`Subject: ${subject}`);
-            logger.info('--------------------------------------------------');
-            return;
-        }
+    try {
+      const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.apiKey}`,
+        },
+        body: JSON.stringify({
+          from: this.fromEmail,
+          to: [to],
+          subject,
+          html,
+        }),
+      });
 
-        try {
-            const response = await fetch('https://api.resend.com/emails', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.apiKey}`,
-                },
-                body: JSON.stringify({
-                    from: this.fromEmail,
-                    to: [to],
-                    subject,
-                    html,
-                }),
-            });
+      if (!response.ok) {
+        const errorData = await response.json() as { message?: string };
+        logger.error('Resend API error', {
+          status: response.status,
+          errorData,
+          to
+        });
+        throw new Error(errorData.message || 'Failed to send email via Resend');
+      }
 
-            if (!response.ok) {
-                const errorData = await response.json() as { message?: string };
-                logger.error('Resend API error', {
-                    status: response.status,
-                    errorData,
-                    to
-                });
-                throw new Error(errorData.message || 'Failed to send email via Resend');
-            }
-
-            const data = await response.json() as { id: string };
-            logger.info('Email sent successfully', { id: data.id, to });
-        } catch (error: any) {
-            logger.error('Failed to send email', {
-                error: error.message || error,
-                to
-            });
-            throw error;
-        }
+      const data = await response.json() as { id: string };
+      logger.info('Email sent successfully', { id: data.id, to });
+    } catch (error: unknown) {
+      logger.error('Failed to send email', {
+        error: error instanceof Error ? error.message : String(error),
+        to
+      });
+      throw error;
     }
+  }
 
-    async sendVerificationEmail(email: string, token: string, name: string): Promise<void> {
-        const verificationUrl = `${process.env.APP_URL || 'http://localhost:3000'}/verify-email?token=${token}`;
+  async sendVerificationEmail(email: string, token: string, name: string): Promise<void> {
+    const verificationUrl = `${process.env.APP_URL || 'http://localhost:3000'}/verify-email?token=${token}`;
 
-        const html = `
+    const html = `
 <!DOCTYPE html>
 <html lang="uk">
 <head>
@@ -121,17 +121,17 @@ export class EmailService {
 </html>
         `;
 
-        await this.sendEmail({
-            to: email,
-            subject: 'Підтвердження Email - Flow Management',
-            html,
-        });
-    }
+    await this.sendEmail({
+      to: email,
+      subject: 'Підтвердження Email - Flow Management',
+      html,
+    });
+  }
 
-    async sendPasswordResetEmail(email: string, name: string, token: string): Promise<void> {
-        const resetUrl = `${process.env.APP_URL || 'http://localhost:3000'}/reset-password?token=${token}`;
+  async sendPasswordResetEmail(email: string, name: string, token: string): Promise<void> {
+    const resetUrl = `${process.env.APP_URL || 'http://localhost:3000'}/reset-password?token=${token}`;
 
-        const html = `
+    const html = `
 <!DOCTYPE html>
 <html lang="uk">
 <head>
@@ -186,12 +186,12 @@ export class EmailService {
 </html>
         `;
 
-        await this.sendEmail({
-            to: email,
-            subject: 'Відновлення паролю - Flow Management',
-            html,
-        });
-    }
+    await this.sendEmail({
+      to: email,
+      subject: 'Відновлення паролю - Flow Management',
+      html,
+    });
+  }
 }
 
 export const emailService = new EmailService();

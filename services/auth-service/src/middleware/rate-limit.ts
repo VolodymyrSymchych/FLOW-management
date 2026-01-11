@@ -8,7 +8,7 @@ interface RateLimitOptions {
   message?: string;
 }
 
-export function rateLimit(options: RateLimitOptions) {
+export function rateLimit(options: RateLimitOptions): (req: Request, res: Response, next: NextFunction) => Promise<void> {
   const { limit, window, identifier, message } = options;
 
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {

@@ -59,7 +59,7 @@ export class AuthController {
       const verificationToken = await authService.createEmailVerification(user.id, user.email);
 
       // Publish verification requested event
-      // @ts-ignore - Event type mismatch due to shared lib version
+      // @ts-expect-error - Event type mismatch due to shared lib version
       publishEvent({
         type: 'user.verification_requested',
         email: user.email,
@@ -353,7 +353,7 @@ export class AuthController {
       const verificationToken = await authService.createEmailVerification(user.id, user.email);
 
       // Publish verification resend event
-      // @ts-ignore - Event type mismatch due to shared lib version
+      // @ts-expect-error - Event type mismatch due to shared lib version
       publishEvent({
         type: 'user.verification_resend',
         email: user.email,
@@ -437,7 +437,7 @@ export class AuthController {
         const token = await authService.createPasswordResetToken(user.email, redis);
 
         // Publish password reset requested event
-        // @ts-ignore - Event type mismatch due to shared lib version
+        // @ts-expect-error - Event type mismatch due to shared lib version
         publishEvent({
           type: 'user.password_reset_requested',
           email: user.email,
@@ -484,7 +484,7 @@ export class AuthController {
       const user = await authService.resetPassword(token, password, redis);
 
       // Publish password reset success event
-      // @ts-ignore - Event type mismatch due to shared lib version
+      // @ts-expect-error - Event type mismatch due to shared lib version
       publishEvent({
         type: 'user.password_changed',
         userId: user.id,

@@ -2,6 +2,8 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import * as schema from './schema';
 import { config } from '../config';
+import { logger } from '@project-scope-analyzer/shared';
+
 
 // Lazy initialization for serverless environments
 let pool: Pool | null = null;

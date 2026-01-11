@@ -1,4 +1,6 @@
 import { Router, Request, Response } from 'express';
+import { logger } from '@project-scope-analyzer/shared';
+
 import { pool } from '../db';
 
 const router = Router();

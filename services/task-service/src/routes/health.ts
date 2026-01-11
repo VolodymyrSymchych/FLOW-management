@@ -1,4 +1,6 @@
 import { Router, Request, Response } from 'express';
+import { logger } from '@project-scope-analyzer/shared';
+
 
 const router = Router();
 
@@ -22,13 +24,13 @@ router.get('/ready', async (req: Request, res: Response) => {
     const { pool } = await import('../db');
     if (pool) {
       const result = await pool.query('SELECT 1');
-      checks.database = result && result.rows && result.rows.length > 0;
+      checks.database = !!(result && result.rows && result.rows.length > 0);
     } else {
       checks.database = false;
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    console.error('Database check error:', message);
+    logger.error('Database check error', { error: message });
     checks.database = false;
   }
 

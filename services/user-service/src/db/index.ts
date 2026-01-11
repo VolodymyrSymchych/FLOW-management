@@ -2,6 +2,7 @@ import { drizzle, NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import * as schema from './schema';
 import { config } from '../config';
+import { logger } from '@project-scope-analyzer/shared';
 
 // Lazy initialization for serverless environments
 let poolInstance: Pool | null = null;
@@ -39,7 +40,7 @@ function getPool(): Pool {
 
     // Handle pool errors gracefully
     poolInstance.on('error', (err) => {
-      console.error('Unexpected database pool error:', err);
+      logger.error('Unexpected database pool error', { error: err });
     });
   }
   return poolInstance;
@@ -58,7 +59,7 @@ function getDbInstance(): NodePgDatabase<typeof schema> {
 
 export const db = new Proxy({} as NodePgDatabase<typeof schema>, {
   get(target, prop) {
-    return (getDbInstance() as any)[prop];
+    return (getDbInstance() as unknown as Record<string, unknown>)[prop as string];
   },
 });
 

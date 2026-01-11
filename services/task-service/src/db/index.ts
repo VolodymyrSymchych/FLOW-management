@@ -2,6 +2,8 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import * as schema from './schema';
 import { config } from '../config';
+import { logger } from '@project-scope-analyzer/shared';
+
 
 // Support both DATABASE_URL (for Neon/serverless) and individual DB config
 let pool: Pool;

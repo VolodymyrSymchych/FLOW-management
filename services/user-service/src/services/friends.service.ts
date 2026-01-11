@@ -1,4 +1,4 @@
-import { db, friendships, users } from '../db';
+import { db, friendships } from '../db';
 import { eq, and, or } from 'drizzle-orm';
 import { logger } from '@project-scope-analyzer/shared';
 

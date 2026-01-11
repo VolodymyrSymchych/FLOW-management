@@ -37,7 +37,7 @@ export class ProjectController {
    * Get all projects for current user
    * Query params: teamId (optional) - filter by team
    */
-  async getProjects(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  async getProjects(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
     try {
       if (!req.userId) {
         throw new ForbiddenError('Unauthorized');
@@ -60,7 +60,7 @@ export class ProjectController {
    * GET /projects/:id
    * Get project by ID
    */
-  async getProject(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  async getProject(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
     try {
       if (!req.userId) {
         throw new ForbiddenError('Unauthorized');
@@ -88,7 +88,7 @@ export class ProjectController {
    * POST /projects
    * Create a new project
    */
-  async createProject(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  async createProject(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
     try {
       if (!req.userId) {
         throw new ForbiddenError('Unauthorized');
@@ -114,7 +114,7 @@ export class ProjectController {
    * PUT /projects/:id
    * Update project
    */
-  async updateProject(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  async updateProject(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
     try {
       if (!req.userId) {
         throw new ForbiddenError('Unauthorized');
@@ -149,7 +149,7 @@ export class ProjectController {
    * DELETE /projects/:id
    * Delete project (soft delete)
    */
-  async deleteProject(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  async deleteProject(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
     try {
       if (!req.userId) {
         throw new ForbiddenError('Unauthorized');
@@ -177,7 +177,7 @@ export class ProjectController {
    * GET /projects/:id/stats
    * Get project statistics
    */
-  async getProjectStats(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  async getProjectStats(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
     try {
       if (!req.userId) {
         throw new ForbiddenError('Unauthorized');
@@ -196,7 +196,7 @@ export class ProjectController {
    * GET /projects/templates
    * Get all project templates
    */
-  async getTemplates(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async getTemplates(req: Request, res: Response, _next: NextFunction): Promise<void> {
     try {
       const isPublic = req.query.public === 'true' ? true : req.query.public === 'false' ? false : undefined;
       const templates = await projectService.getTemplates(isPublic);
@@ -211,7 +211,7 @@ export class ProjectController {
    * GET /projects/templates/:id
    * Get template by ID
    */
-  async getTemplate(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async getTemplate(req: Request, res: Response, _next: NextFunction): Promise<void> {
     try {
       const templateId = parseInt(req.params.id, 10);
       if (isNaN(templateId)) {
@@ -233,7 +233,7 @@ export class ProjectController {
    * POST /projects/from-template
    * Create project from template
    */
-  async createFromTemplate(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  async createFromTemplate(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
     try {
       if (!req.userId) {
         throw new ForbiddenError('Unauthorized');

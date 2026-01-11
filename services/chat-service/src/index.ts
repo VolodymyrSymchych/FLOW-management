@@ -2,13 +2,13 @@ import { logger } from '@project-scope-analyzer/shared';
 import { startServer } from './app';
 import { config } from './config';
 
-async function main() {
+async function main(): Promise<void> {
   try {
     // Start server
     await startServer();
 
     // Graceful shutdown
-    const shutdown = async () => {
+    const shutdown = async (): Promise<void> => {
       logger.info('Shutting down gracefully');
       process.exit(0);
     };

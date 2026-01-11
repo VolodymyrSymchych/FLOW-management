@@ -5,7 +5,7 @@ import { config } from './config';
 
 export let eventBus: IEventBus | null = null;
 
-async function main() {
+async function main(): Promise<void> {
   try {
     // Initialize event bus
     eventBus = createEventBus(config.service.name, config.eventBus.type);
@@ -17,7 +17,7 @@ async function main() {
     await startServer();
 
     // Graceful shutdown
-    const shutdown = async () => {
+    const shutdown = async (): Promise<void> => {
       logger.info('Shutting down gracefully');
       if (eventBus) {
         await eventBus.disconnect();

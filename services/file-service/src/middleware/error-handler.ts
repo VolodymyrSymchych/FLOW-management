@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { AppError, getErrorResponse, isAppError } from '@project-scope-analyzer/shared';
+import { AppError as _AppError, getErrorResponse, isAppError } from '@project-scope-analyzer/shared';
 import { logger } from '@project-scope-analyzer/shared';
 import { recordHttpRequest } from '@project-scope-analyzer/shared';
 

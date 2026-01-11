@@ -6,7 +6,7 @@ export class TeamController {
   /**
    * Get all teams for current user
    */
-  async getTeams(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  async getTeams(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
     try {
       const userId = req.userId;
       if (!userId) {
@@ -23,7 +23,7 @@ export class TeamController {
   /**
    * Get team by ID
    */
-  async getTeamById(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  async getTeamById(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
     try {
       const teamId = parseInt(req.params.id);
       const userId = req.userId;
@@ -38,7 +38,7 @@ export class TeamController {
   /**
    * Create new team
    */
-  async createTeam(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  async createTeam(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
     try {
       const userId = req.userId;
       if (!userId) {
@@ -66,7 +66,7 @@ export class TeamController {
   /**
    * Update team
    */
-  async updateTeam(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  async updateTeam(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
     try {
       const teamId = parseInt(req.params.id);
       const userId = req.userId;
@@ -90,7 +90,7 @@ export class TeamController {
   /**
    * Delete team
    */
-  async deleteTeam(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  async deleteTeam(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
     try {
       const teamId = parseInt(req.params.id);
       const userId = req.userId;
@@ -108,7 +108,7 @@ export class TeamController {
   /**
    * Get team members
    */
-  async getTeamMembers(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  async getTeamMembers(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
     try {
       const teamId = parseInt(req.params.id);
       const userId = req.userId;
@@ -123,7 +123,7 @@ export class TeamController {
   /**
    * Add team member
    */
-  async addTeamMember(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  async addTeamMember(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
     try {
       const teamId = parseInt(req.params.id);
       const userId = req.userId;
@@ -153,7 +153,7 @@ export class TeamController {
   /**
    * Remove team member
    */
-  async removeTeamMember(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  async removeTeamMember(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
     try {
       const teamId = parseInt(req.params.id);
       const memberUserId = parseInt(req.params.userId);
@@ -172,7 +172,7 @@ export class TeamController {
   /**
    * Update team member role
    */
-  async updateMemberRole(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  async updateMemberRole(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
     try {
       const teamId = parseInt(req.params.id);
       const memberUserId = parseInt(req.params.userId);

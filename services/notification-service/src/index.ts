@@ -4,7 +4,7 @@ import { config } from './config';
 
 import { startEventConsumer } from './event-consumer';
 
-async function main() {
+async function main(): Promise<void> {
   try {
     // Start server
     await startServer();
@@ -13,7 +13,7 @@ async function main() {
     await startEventConsumer();
 
     // Graceful shutdown
-    const shutdown = async () => {
+    const shutdown = async (): Promise<void> => {
       logger.info('Shutting down gracefully');
       process.exit(0);
     };

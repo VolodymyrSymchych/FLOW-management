@@ -3,7 +3,7 @@ import { AuthenticatedRequest } from '../types/express';
 import { getBeams, getUserBeamsId } from '../utils/beams';
 import { z } from 'zod';
 
-const beamsAuthSchema = z.object({
+const _beamsAuthSchema = z.object({
   userId: z.string().optional(),
 });
 

@@ -1,6 +1,6 @@
 import { Response, NextFunction } from 'express';
 import { jwtService } from '../services/jwt.service';
-import { UnauthorizedError, AuthenticatedRequest } from '@project-scope-analyzer/shared';
+import { AuthenticatedRequest } from '@project-scope-analyzer/shared';
 
 export async function authMiddleware(
   req: AuthenticatedRequest,

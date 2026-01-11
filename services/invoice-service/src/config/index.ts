@@ -45,9 +45,7 @@ if (!process.env.DATABASE_URL && (!config.database.name || !config.database.user
 }
 
 if (!config.jwt.secret) {
-  console.warn('Warning: JWT_SECRET is not set. Authentication middleware will not work properly.');
 }
 
 if (!config.stripe.secretKey && config.service.env === 'production') {
-  console.warn('Warning: STRIPE_SECRET_KEY is not set. Payment functionality will not work.');
 }

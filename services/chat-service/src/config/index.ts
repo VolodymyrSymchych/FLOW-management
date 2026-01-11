@@ -51,13 +51,10 @@ if (!process.env.DATABASE_URL && (!config.database.name || !config.database.user
 }
 
 if (!config.jwt.secret) {
-  console.warn('Warning: JWT_SECRET is not set. Authentication middleware will not work properly.');
 }
 
 if (!config.pusher.appId || !config.pusher.key || !config.pusher.secret) {
-  console.warn('Warning: Pusher credentials not configured. Real-time features will not work.');
 }
 
 if (!config.beams.instanceId || !config.beams.secretKey) {
-  console.warn('Warning: Pusher Beams credentials not configured. Push notifications will not work.');
 }

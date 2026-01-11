@@ -114,7 +114,7 @@ export class InvoiceController {
       throw new ValidationError('Invalid invoice ID');
     }
 
-    const updates: any = { ...validated };
+    const updates: Record<string, unknown> = { ...validated };
     if (validated.dueDate) {
       updates.dueDate = new Date(validated.dueDate);
     }

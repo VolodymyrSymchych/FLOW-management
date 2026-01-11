@@ -3,8 +3,8 @@ import { nanoid } from 'nanoid';
 import { eq, and } from 'drizzle-orm';
 import { db, users, emailVerifications, type User, type InsertUser } from '../db';
 import { logger, RedisWrapper } from '@project-scope-analyzer/shared';
-import { NotFoundError, ValidationError, ConflictError, UnauthorizedError } from '@project-scope-analyzer/shared';
-import Redis from 'ioredis';
+import { NotFoundError, ValidationError, ConflictError } from '@project-scope-analyzer/shared';
+
 
 export class AuthService {
   async getUserById(id: number): Promise<User | null> {
@@ -141,7 +141,7 @@ export class AuthService {
     return user;
   }
 
-  async checkAccountLockout(email: string, redis: Redis | RedisWrapper | null): Promise<{ locked: boolean; remainingTime?: number }> {
+  async checkAccountLockout(email: string, redis: RedisWrapper | null): Promise<{ locked: boolean; remainingTime?: number }> {
     if (!redis) return { locked: false };
 
     try {
@@ -161,7 +161,7 @@ export class AuthService {
     }
   }
 
-  async recordFailedLogin(email: string, redis: Redis | RedisWrapper | null): Promise<void> {
+  async recordFailedLogin(email: string, redis: RedisWrapper | null): Promise<void> {
     if (!redis) return;
 
     try {
@@ -177,7 +177,7 @@ export class AuthService {
     }
   }
 
-  async clearFailedLogins(email: string, redis: Redis | RedisWrapper | null): Promise<void> {
+  async clearFailedLogins(email: string, redis: RedisWrapper | null): Promise<void> {
     if (!redis) return;
 
     try {

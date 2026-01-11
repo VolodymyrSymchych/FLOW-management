@@ -1,3 +1,4 @@
+
 import { Router, Request, Response } from 'express';
 
 const router = Router();
@@ -27,14 +28,12 @@ router.get('/ready', async (req: Request, res: Response) => {
       const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => reject(new Error('Database check timeout')), 5000)
       );
-      const result = await Promise.race([queryPromise, timeoutPromise]) as any;
-      checks.database = result && result.rows && result.rows.length > 0;
+      const result = await Promise.race([queryPromise, timeoutPromise]) as { rows?: unknown[] };
+      checks.database = !!(result && result.rows && result.rows.length > 0);
     } else {
       checks.database = false;
     }
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    console.error('Database check error:', message);
     checks.database = false;
   }
 

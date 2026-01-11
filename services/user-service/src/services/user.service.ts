@@ -1,5 +1,5 @@
 import { db, users } from '../db';
-import { eq, and, or, sql, like, ilike } from 'drizzle-orm';
+import { eq, and, or, sql } from 'drizzle-orm';
 import { logger } from '@project-scope-analyzer/shared';
 
 export interface UserProfile {
@@ -116,7 +116,7 @@ export class UserService {
   async searchUsers(query: string, excludeUserId?: number, limit: number = 10): Promise<UserProfile[]> {
     try {
       const searchTerm = `%${query.trim().toLowerCase()}%`;
-      
+
       const conditions = [
         eq(users.isActive, true),
         or(
@@ -169,7 +169,7 @@ export class UserService {
    */
   async updateUserProfile(userId: number, input: UpdateUserProfileInput): Promise<UserProfile | null> {
     try {
-      const updateData: any = {
+      const updateData: Record<string, unknown> = {
         updatedAt: new Date(),
       };
 

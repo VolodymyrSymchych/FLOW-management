@@ -1,4 +1,4 @@
-name: CI
+name: CI/CD Pipeline
 
 on:
   push:
@@ -7,94 +7,234 @@ on:
     branches: [main, develop]
 
 jobs:
-  lint-and-test:
+  # Lint all microservices
+  lint-services:
+    name: Lint ${{ matrix.service }}
     runs-on: ubuntu-latest
     
     strategy:
+      fail-fast: false
       matrix:
-        service: [shared]
-        # Add services as they are created:
-        # service: [shared, auth-service, user-service]
+        service: 
+          - auth-service
+          - user-service
+          - project-service
+          - task-service
+          - team-service
+          - chat-service
+          - invoice-service
+          - notification-service
+          - file-service
     
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
       
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: ${{ matrix.service }}/package-lock.json
+          cache-dependency-path: services/${{ matrix.service }}/package-lock.json
       
       - name: Install dependencies
-        working-directory: ${{ matrix.service }}
+        working-directory: services/${{ matrix.service }}
         run: npm ci
       
-      - name: Lint
-        working-directory: ${{ matrix.service }}
-        run: npm run lint || true
-      
-      - name: Build
-        working-directory: ${{ matrix.service }}
-        run: npm run build
-      
-      - name: Test
-        working-directory: ${{ matrix.service }}
-        run: npm test || true
+      - name: Run linter
+        working-directory: services/${{ matrix.service }}
+        run: npm run lint
 
-  docker-build:
+  # Test all microservices
+  test-services:
+    name: Test ${{ matrix.service }}
     runs-on: ubuntu-latest
-    needs: lint-and-test
     
     strategy:
+      fail-fast: false
       matrix:
-        service: [auth-service, user-service, project-service, task-service]
-        # Only build Docker images for actual microservices, not for shared library
+        service: 
+          - auth-service
+          - user-service
+          - project-service
+          - task-service
+          - team-service
+          - chat-service
+          - invoice-service
+          - notification-service
+          - file-service
     
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
       
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      
-      - name: Check if Dockerfile exists
-        id: dockerfile-check
-        run: |
-          if [ -f "services/${{ matrix.service }}/Dockerfile" ]; then
-            echo "has_dockerfile=true" >> $GITHUB_OUTPUT
-          else
-            echo "has_dockerfile=false" >> $GITHUB_OUTPUT
-          fi
-      
-      - name: Check if Docker credentials are available
-        id: docker-check
-        if: steps.dockerfile-check.outputs.has_dockerfile == 'true'
-        run: |
-          if [ -z "${{ secrets.DOCKER_USERNAME }}" ] || [ -z "${{ secrets.DOCKER_PASSWORD }}" ]; then
-            echo "has_credentials=false" >> $GITHUB_OUTPUT
-          else
-            echo "has_credentials=true" >> $GITHUB_OUTPUT
-          fi
-      
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-        if: |
-          steps.dockerfile-check.outputs.has_dockerfile == 'true' &&
-          github.event_name != 'pull_request' &&
-          steps.docker-check.outputs.has_credentials == 'true'
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: services/${{ matrix.service }}/package-lock.json
       
-      - name: Build Docker image
-        uses: docker/build-push-action@v5
-        if: steps.dockerfile-check.outputs.has_dockerfile == 'true'
+      - name: Install dependencies
+        working-directory: services/${{ matrix.service }}
+        run: npm ci
+      
+      - name: Run tests with coverage
+        working-directory: services/${{ matrix.service }}
+        run: npm test -- --coverage --passWithNoTests
+      
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        if: always()
         with:
-          context: ./services/${{ matrix.service }}
-          push: ${{ github.event_name != 'pull_request' && steps.docker-check.outputs.has_credentials == 'true' }}
-          tags: |
-            ${{ steps.docker-check.outputs.has_credentials == 'true' && format('{0}/{1}:latest', secrets.DOCKER_USERNAME, matrix.service) || format('{0}:local', matrix.service) }}
-            ${{ steps.docker-check.outputs.has_credentials == 'true' && format('{0}/{1}:{2}', secrets.DOCKER_USERNAME, matrix.service, github.sha) || format('{0}:{1}', matrix.service, github.sha) }}
-          cache-from: ${{ steps.docker-check.outputs.has_credentials == 'true' && format('type=registry,ref={0}/{1}:buildcache', secrets.DOCKER_USERNAME, matrix.service) || 'type=local,src=/tmp/.buildx-cache' }}
-          cache-to: ${{ steps.docker-check.outputs.has_credentials == 'true' && format('type=registry,ref={0}/{1}:buildcache,mode=max', secrets.DOCKER_USERNAME, matrix.service) || 'type=local,dest=/tmp/.buildx-cache,mode=max' }}
+          files: ./services/${{ matrix.service }}/coverage/coverage-final.json
+          flags: ${{ matrix.service }}
+          name: ${{ matrix.service }}
+          fail_ci_if_error: false
+
+  # Build all microservices
+  build-services:
+    name: Build ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    needs: [lint-services, test-services]
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        service: 
+          - auth-service
+          - user-service
+          - project-service
+          - task-service
+          - team-service
+          - chat-service
+          - invoice-service
+          - notification-service
+          - file-service
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: services/${{ matrix.service }}/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: services/${{ matrix.service }}
+        run: npm ci
+      
+      - name: Build
+        working-directory: services/${{ matrix.service }}
+        run: npm run build
+
+  # Lint and test dashboard
+  test-dashboard:
+    name: Test Dashboard
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: dashboard/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: dashboard
+        run: npm ci
+      
+      - name: Run linter
+        working-directory: dashboard
+        run: npm run lint
+      
+      - name: Build dashboard
+        working-directory: dashboard
+        run: npm run build
+        env:
+          SKIP_ENV_VALIDATION: true
+
+  # E2E tests for dashboard
+  e2e-tests:
+    name: E2E Tests (Dashboard)
+    runs-on: ubuntu-latest
+    needs: [test-services]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: dashboard/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: dashboard
+        run: npm ci
+      
+      - name: Install Playwright Browsers
+        working-directory: dashboard
+        run: npx playwright install --with-deps chromium
+      
+      - name: Run E2E Tests
+        working-directory: dashboard
+        run: npm run test:e2e
+        env:
+          CI: true
+      
+      - name: Upload Playwright Report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: playwright-report
+          path: dashboard/playwright-report/
+          retention-days: 30
+      
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: playwright-results
+          path: dashboard/test-results/
+          retention-days: 30
+
+  # Summary job - all checks must pass
+  ci-success:
+    name: CI Success
+    runs-on: ubuntu-latest
+    needs: 
+      - lint-services
+      - test-services
+      - build-services
+      - test-dashboard
+      - e2e-tests
+    if: always()
+    
+    steps:
+      - name: Check all jobs status
+        run: |
+          if [ "${{ needs.lint-services.result }}" != "success" ] || \
+             [ "${{ needs.test-services.result }}" != "success" ] || \
+             [ "${{ needs.build-services.result }}" != "success" ] || \
+             [ "${{ needs.test-dashboard.result }}" != "success" ] || \
+             [ "${{ needs.e2e-tests.result }}" != "success" ]; then
+            echo "One or more jobs failed!"
+            exit 1
+          fi
+          echo "All CI jobs passed successfully!"
+      
+      - name: Post status to PR
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "✅ All checks passed! Ready to merge."
 

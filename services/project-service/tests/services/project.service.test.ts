@@ -383,7 +383,7 @@ describe('ProjectService', () => {
             const result = await projectService.getTemplateById(1);
 
             expect(result).not.toBeNull();
-            expect(result.name).toBe('Template 1');
+            expect(result?.name).toBe('Template 1');
         });
 
         it('should return null when not found', async () => {

@@ -16,7 +16,7 @@ export class TeamController {
       const teams = await teamService.getUserTeams(userId);
       res.json({ success: true, data: teams });
     } catch (error) {
-      next(error);
+      _next(error);
     }
   }
 
@@ -31,7 +31,7 @@ export class TeamController {
       const team = await teamService.getTeamById(teamId, userId);
       res.json({ success: true, data: team });
     } catch (error) {
-      next(error);
+      _next(error);
     }
   }
 
@@ -59,7 +59,7 @@ export class TeamController {
 
       res.status(201).json({ success: true, data: team });
     } catch (error) {
-      next(error);
+      _next(error);
     }
   }
 
@@ -83,7 +83,7 @@ export class TeamController {
 
       res.json({ success: true, data: team });
     } catch (error) {
-      next(error);
+      _next(error);
     }
   }
 
@@ -101,7 +101,7 @@ export class TeamController {
       await teamService.deleteTeam(teamId, userId);
       res.json({ success: true, message: 'Team deleted successfully' });
     } catch (error) {
-      next(error);
+      _next(error);
     }
   }
 
@@ -116,7 +116,7 @@ export class TeamController {
       const members = await teamService.getTeamMembers(teamId, userId);
       res.json({ success: true, data: members });
     } catch (error) {
-      next(error);
+      _next(error);
     }
   }
 
@@ -146,7 +146,7 @@ export class TeamController {
 
       res.status(201).json({ success: true, data: member });
     } catch (error) {
-      next(error);
+      _next(error);
     }
   }
 
@@ -165,7 +165,7 @@ export class TeamController {
       await teamService.removeTeamMember(teamId, userId, memberUserId);
       res.json({ success: true, message: 'Team member removed successfully' });
     } catch (error) {
-      next(error);
+      _next(error);
     }
   }
 
@@ -196,7 +196,7 @@ export class TeamController {
 
       res.json({ success: true, data: member });
     } catch (error) {
-      next(error);
+      _next(error);
     }
   }
 }

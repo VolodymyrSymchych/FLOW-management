@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, RequestHandler } from 'express';
 import { authMiddleware } from '../middleware/auth';
 import { teamController } from '../controllers/team.controller';
 import { AuthenticatedRequest } from '@project-scope-analyzer/shared';

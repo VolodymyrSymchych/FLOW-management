@@ -10,6 +10,6 @@ export function metricsMiddleware(req: Request, res: Response, _next: NextFuncti
     recordHttpRequest(req.method, route, res.statusCode, duration);
   });
 
-  next();
+  _next();
 }
 

@@ -17,7 +17,7 @@ export function rateLimit(options: RateLimitOptions): (req: Request, res: Respon
       const redis = getRedisClient();
       if (!redis) {
         // If Redis is not available, allow the request
-        next();
+        _next();
         return;
       }
 
@@ -40,9 +40,9 @@ export function rateLimit(options: RateLimitOptions): (req: Request, res: Respon
         throw new RateLimitError(message || 'Rate limit exceeded');
       }
 
-      next();
+      _next();
     } catch (error) {
-      next(error);
+      _next(error);
     }
   };
 }

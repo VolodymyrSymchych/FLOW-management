@@ -52,7 +52,7 @@ export class ProjectController {
 
       res.json({ projects, total: projects.length });
     } catch (error) {
-      next(error);
+      _next(error);
     }
   }
 
@@ -80,7 +80,7 @@ export class ProjectController {
 
       res.json({ project });
     } catch (error) {
-      next(error);
+      _next(error);
     }
   }
 
@@ -106,7 +106,7 @@ export class ProjectController {
 
       res.status(201).json({ project });
     } catch (error) {
-      next(error);
+      _next(error);
     }
   }
 
@@ -141,7 +141,7 @@ export class ProjectController {
 
       res.json({ project });
     } catch (error) {
-      next(error);
+      _next(error);
     }
   }
 
@@ -169,7 +169,7 @@ export class ProjectController {
 
       res.json({ success: true });
     } catch (error) {
-      next(error);
+      _next(error);
     }
   }
 
@@ -188,7 +188,7 @@ export class ProjectController {
 
       res.json({ stats });
     } catch (error) {
-      next(error);
+      _next(error);
     }
   }
 
@@ -203,7 +203,7 @@ export class ProjectController {
 
       res.json({ templates });
     } catch (error) {
-      next(error);
+      _next(error);
     }
   }
 
@@ -225,7 +225,7 @@ export class ProjectController {
 
       res.json({ template });
     } catch (error) {
-      next(error);
+      _next(error);
     }
   }
 
@@ -254,7 +254,7 @@ export class ProjectController {
 
       res.status(201).json({ project });
     } catch (error) {
-      next(error);
+      _next(error);
     }
   }
 }

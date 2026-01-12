@@ -19,8 +19,17 @@ export const config = {
     jwtSecret: process.env.JWT_SECRET || 'your-secret-key',
     serviceApiKey: process.env.FILE_SERVICE_API_KEY || '',
   },
+  jwt: {
+    secret: process.env.JWT_SECRET || 'your-secret-key',
+    expiresIn: '7d',
+    issuer: 'file-service',
+  },
   cors: {
     allowedOrigins: (process.env.ALLOWED_ORIGINS || 'http://localhost:3000,http://localhost:3001').split(','),
     credentials: true,
+  },
+  eventBus: {
+    url: process.env.RABBITMQ_URL || 'amqp://localhost',
+    type: 'rabbitmq' as const,
   },
 };

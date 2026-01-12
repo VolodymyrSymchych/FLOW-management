@@ -1,11 +1,11 @@
 import { Response, NextFunction } from 'express';
 import { jwtService } from '../services/jwt.service';
-import { AuthenticatedRequest } from '@project-scope-analyzer/shared';
+import { AuthenticatedRequest, UnauthorizedError } from '@project-scope-analyzer/shared';
 
 export async function authMiddleware(
   req: AuthenticatedRequest,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ): Promise<void> {
   try {
     const authHeader = req.headers.authorization;
@@ -24,9 +24,9 @@ export async function authMiddleware(
       role: payload.role || 'user',
     };
 
-    next();
+    _next();
   } catch (error) {
-    next(error);
+    _next(error);
   }
 }
 
@@ -34,7 +34,7 @@ export async function authMiddleware(
 export async function optionalAuthMiddleware(
   req: AuthenticatedRequest,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ): Promise<void> {
   try {
     const authHeader = req.headers.authorization;
@@ -54,9 +54,9 @@ export async function optionalAuthMiddleware(
       }
     }
 
-    next();
+    _next();
   } catch (error) {
-    next(error);
+    _next(error);
   }
 }
 

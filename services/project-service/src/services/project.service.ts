@@ -353,17 +353,17 @@ export class ProjectService {
         throw new Error('Template not found');
       }
 
-      const templateData = template.templateData;
+      const templateData = template.templateData as Record<string, unknown>;
       const projectInput: CreateProjectInput = {
-        name: overrides?.name || templateData.name || 'New Project',
-        type: overrides?.type || templateData.type,
-        industry: overrides?.industry || templateData.industry,
-        teamSize: overrides?.teamSize || templateData.teamSize,
-        timeline: overrides?.timeline || templateData.timeline,
-        budget: overrides?.budget || templateData.budget,
-        startDate: overrides?.startDate || (templateData.startDate ? new Date(templateData.startDate) : undefined),
-        endDate: overrides?.endDate || (templateData.endDate ? new Date(templateData.endDate) : undefined),
-        document: overrides?.document || templateData.document,
+        name: overrides?.name || (templateData.name as string) || 'New Project',
+        type: overrides?.type || (templateData.type as string),
+        industry: overrides?.industry || (templateData.industry as string),
+        teamSize: overrides?.teamSize || (templateData.teamSize as string),
+        timeline: overrides?.timeline || (templateData.timeline as string),
+        budget: overrides?.budget || (templateData.budget as number),
+        startDate: overrides?.startDate || (templateData.startDate ? new Date(templateData.startDate as string) : undefined),
+        endDate: overrides?.endDate || (templateData.endDate ? new Date(templateData.endDate as string) : undefined),
+        document: overrides?.document || (templateData.document as string),
       };
 
       const project = await this.createProject(userId, projectInput);
@@ -386,25 +386,25 @@ export class ProjectService {
 
   private mapToProject(row: Record<string, unknown>): Project {
     return {
-      id: row.id,
-      userId: row.userId,
-      teamId: row.teamId || null,
-      name: row.name,
-      type: row.type,
-      industry: row.industry,
-      teamSize: row.teamSize,
-      timeline: row.timeline,
-      budget: row.budget,
-      startDate: row.startDate,
-      endDate: row.endDate,
-      score: row.score || 0,
-      riskLevel: row.riskLevel,
-      status: row.status,
-      document: row.document,
-      analysisData: row.analysisData,
-      createdAt: row.createdAt,
-      updatedAt: row.updatedAt,
-      deletedAt: row.deletedAt,
+      id: row.id as number,
+      userId: row.userId as number,
+      teamId: (row.teamId as number) || null,
+      name: row.name as string,
+      type: row.type as string | null,
+      industry: row.industry as string | null,
+      teamSize: row.teamSize as string | null,
+      timeline: row.timeline as string | null,
+      budget: row.budget as number | null,
+      startDate: row.startDate as Date | null,
+      endDate: row.endDate as Date | null,
+      score: (row.score as number) || 0,
+      riskLevel: row.riskLevel as string | null,
+      status: row.status as string,
+      document: row.document as string | null,
+      analysisData: row.analysisData as string | null,
+      createdAt: row.createdAt as Date,
+      updatedAt: row.updatedAt as Date,
+      deletedAt: row.deletedAt as Date | null,
     };
   }
 }

@@ -1,4 +1,3 @@
-import { Request } from 'express';
 
 declare global {
     namespace Express {
@@ -9,7 +8,7 @@ declare global {
             user?: {
                 userId?: string | number;
                 // Additional fields can be added as needed.
-                [key: string]: any;
+                [key: string]: unknown;
             };
         }
     }

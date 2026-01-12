@@ -42,7 +42,7 @@ router.get('/ready', async (req: Request, res: Response) => {
       await redis.ping();
       checks.redis = true;
     }
-  } catch (error) {
+  } catch {
     checks.redis = false;
   }
 

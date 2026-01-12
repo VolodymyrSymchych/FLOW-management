@@ -8,7 +8,7 @@ router.get('/metrics', async (req: Request, res: Response) => {
     res.set('Content-Type', register.contentType);
     const metrics = await register.metrics();
     res.end(metrics);
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: 'Failed to collect metrics' });
   }
 });

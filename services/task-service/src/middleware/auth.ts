@@ -1,6 +1,6 @@
 import { Response, NextFunction } from 'express';
 import { jwtService } from '../services/jwt.service';
-import { AuthenticatedRequest } from '@project-scope-analyzer/shared';
+import { AuthenticatedRequest, UnauthorizedError } from '@project-scope-analyzer/shared';
 
 export async function authMiddleware(
   req: AuthenticatedRequest,
@@ -49,7 +49,7 @@ export async function optionalAuthMiddleware(
           email: payload.email,
           role: payload.role || 'user',
         };
-      } catch (error) {
+      } catch {
         // Ignore invalid tokens in optional auth
       }
     }

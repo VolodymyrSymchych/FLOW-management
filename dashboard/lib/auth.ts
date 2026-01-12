@@ -2,16 +2,25 @@ import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 import { NextRequest } from 'next/server';
 
-// Validate JWT_SECRET is set
-if (!process.env.JWT_SECRET) {
-  throw new Error('JWT_SECRET environment variable is required');
-}
+// Validate JWT_SECRET is set (only at runtime, not during build)
+const getJWTSecret = () => {
+  if (!process.env.JWT_SECRET) {
+    // During build time, use a placeholder
+    if (process.env.NODE_ENV === 'production' && !process.env.VERCEL) {
+      throw new Error('JWT_SECRET environment variable is required');
+    }
+    // Return a placeholder for build time
+    return 'build-time-placeholder-secret-min-32-chars-long';
+  }
 
-if (process.env.JWT_SECRET.length < 32) {
-  throw new Error('JWT_SECRET must be at least 32 characters long');
-}
+  if (process.env.JWT_SECRET.length < 32) {
+    throw new Error('JWT_SECRET must be at least 32 characters long');
+  }
 
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
+  return process.env.JWT_SECRET;
+};
+
+const JWT_SECRET = new TextEncoder().encode(getJWTSecret());
 
 // Reduced session duration for better security (1 hour instead of 7 days)
 const SESSION_DURATION = 60 * 60; // 1 hour

@@ -14,7 +14,7 @@ test.describe('Authentication Flow', () => {
         await expect(page.locator('h1')).toContainText(/Welcome back/i);
         await expect(page.getByLabel('Email')).toBeVisible();
         await expect(page.getByLabel('Password')).toBeVisible();
-        await expect(page.getByRole('button', { name: /Sign In/i })).toBeVisible();
+        await expect(page.getByRole('button', { name: /Log In/i })).toBeVisible();
     });
 
     test('should show validation errors on invalid login', async ({ page }) => {
@@ -23,7 +23,7 @@ test.describe('Authentication Flow', () => {
         // Fill invalid data to trigger backend error
         await page.getByLabel('Email').fill('invalid@example.com');
         await page.getByLabel('Password').fill('wrongpassword');
-        await page.getByRole('button', { name: /Sign In/i }).click();
+        await page.getByRole('button', { name: /Log In/i }).click();
 
         // Expect generic error message (adjust based on actual backend response)
         // The UI shows <div className="text-danger">...</div>

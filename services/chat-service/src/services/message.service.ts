@@ -1,5 +1,5 @@
-import { db, chatMessages, messageReactions, chatMembers, ChatMessage, InsertChatMessage, MessageReaction, InsertMessageReaction } from '../db';
-import { eq, desc, and, sql, lt, gt, ne } from 'drizzle-orm';
+import { db, chatMessages, messageReactions, chatMembers, ChatMessage, InsertChatMessage, MessageReaction } from '../db';
+import { eq, desc, and, sql, lt, gt, ne, inArray } from 'drizzle-orm';
 import { NotFoundError, ValidationError, ForbiddenError } from '@project-scope-analyzer/shared';
 import { chatService } from './chat.service';
 import { triggerChatEvent, PusherEvent } from '../utils/pusher';
@@ -45,7 +45,7 @@ export class MessageService {
 
     // Send notifications to mentioned users
     if (mentions.length > 0) {
-      await this.sendMentionNotifications(message, mentions, senderId);
+      // await this.sendMentionNotifications(message, mentions, senderId);
     }
 
     return message;
@@ -69,16 +69,16 @@ export class MessageService {
 
   // Send notifications to mentioned users
   private async sendMentionNotifications(
-    message: ChatMessage,
-    mentionedUserIds: number[],
-    senderId: number
+    // message: ChatMessage,
+    // mentionedUserIds: number[],
+    // senderId: number
   ): Promise<void> {
     try {
       // TODO: Send in-app notifications to mentioned users
       // This can be integrated with notification-service
-      console.log(`Sending mention notifications to users: ${mentionedUserIds.join(', ')}`);
+      // console.log(`Sending mention notifications to users: ${mentionedUserIds.join(', ')}`);
     } catch (error) {
-      console.error('Failed to send mention notifications:', error);
+      // console.error('Failed to send mention notifications:', error);
     }
   }
 
@@ -305,7 +305,7 @@ export class MessageService {
   async createTaskFromMessage(
     messageId: number,
     userId: number,
-    taskData: {
+    _taskData: {
       title: string;
       description?: string;
       projectId?: number;
@@ -363,7 +363,8 @@ export class MessageService {
       .where(
         and(
           sql`${chatMessages.mentions} IS NOT NULL`,
-          sql`${chatMessages.deletedAt} IS NULL`
+          sql`${chatMessages.deletedAt} IS NULL`,
+          inArray(chatMessages.chatId, chatIds)
         )
       )
       .orderBy(desc(chatMessages.createdAt))
@@ -415,7 +416,7 @@ export class MessageService {
       });
     } catch (error) {
       // Log error but don't throw - push notifications are not critical
-      console.error('Failed to send push notification:', error);
+      // console.error('Failed to send push notification:', error);
     }
   }
 }

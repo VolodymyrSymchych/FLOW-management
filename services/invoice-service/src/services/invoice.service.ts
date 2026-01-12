@@ -1,5 +1,5 @@
 import { db, invoices, Invoice, InsertInvoice, invoicePayments, InvoicePayment, InsertInvoicePayment } from '../db';
-import { eq, desc, and, sql, gte, lte, or } from 'drizzle-orm';
+import { eq, desc, and, sql, lte } from 'drizzle-orm';
 import { NotFoundError, ValidationError } from '@project-scope-analyzer/shared';
 
 
@@ -21,7 +21,7 @@ export class InvoiceService {
   }
 
   // Calculate tax and total
-  calculateAmounts(amount: number, taxRate: number) {
+  calculateAmounts(amount: number, taxRate: number): { taxAmount: number; totalAmount: number } {
     const taxAmount = Math.round((amount * taxRate) / 100);
     const totalAmount = amount + taxAmount;
     return { taxAmount, totalAmount };
@@ -218,7 +218,7 @@ export class InvoiceService {
   }
 
   // Get invoice statistics
-  async getInvoiceStats(projectId: number) {
+  async getInvoiceStats(projectId: number): Promise<{ status: string | null; count: number; total: number }[]> {
     const stats = await db
       .select({
         status: invoices.status,

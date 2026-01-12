@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import { fileService } from '../services/file.service';
 import { AuthenticatedRequest } from '@project-scope-analyzer/shared';
 import multer from 'multer';
@@ -32,7 +32,7 @@ class FileController {
      */
     uploadMiddleware = upload.single('file');
 
-    async uploadFile(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
+    async uploadFile(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
         try {
             const file = req.file;
             const { projectId, taskId } = req.body;
@@ -70,7 +70,7 @@ class FileController {
     /**
      * Get files
      */
-    async getFiles(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
+    async getFiles(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
         try {
             const { projectId, taskId } = req.query;
 
@@ -88,7 +88,7 @@ class FileController {
     /**
      * Get file by ID
      */
-    async getFile(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
+    async getFile(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
         try {
             const fileId = parseInt(req.params.id);
             const file = await fileService.getFile(fileId);
@@ -101,7 +101,7 @@ class FileController {
     /**
      * Download file
      */
-    async downloadFile(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
+    async downloadFile(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
         try {
             const fileId = parseInt(req.params.id);
             const url = await fileService.getDownloadUrl(fileId);
@@ -114,7 +114,7 @@ class FileController {
     /**
      * Delete file
      */
-    async deleteFile(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
+    async deleteFile(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
         try {
             const fileId = parseInt(req.params.id);
             const userId = req.userId!;
@@ -129,7 +129,7 @@ class FileController {
     /**
      * Create file version
      */
-    async createVersion(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
+    async createVersion(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
         try {
             const parentFileId = parseInt(req.params.id);
             const file = req.file;
@@ -166,7 +166,7 @@ class FileController {
     /**
      * Get file versions
      */
-    async getVersions(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
+    async getVersions(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
         try {
             const fileId = parseInt(req.params.id);
             const versions = await fileService.getVersions(fileId);
@@ -179,7 +179,7 @@ class FileController {
     /**
      * Update file metadata
      */
-    async updateMetadata(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
+    async updateMetadata(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
         try {
             const fileId = parseInt(req.params.id);
             const userId = req.userId!;

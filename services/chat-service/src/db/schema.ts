@@ -1,4 +1,4 @@
-import { pgTable, serial, text, varchar, integer, timestamp, boolean } from 'drizzle-orm/pg-core';
+import { pgTable, serial, text, varchar, integer, timestamp, boolean, unique } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 // Users table (read-only, managed by auth-service/user-service)
@@ -59,13 +59,14 @@ export const chatMembers = pgTable('chat_members', {
 }));
 
 // Chat Messages table
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const chatMessages: any = pgTable('chat_messages', {
   id: serial('id').primaryKey(),
   chatId: integer('chat_id').notNull().references(() => chats.id, { onDelete: 'cascade' }),
   senderId: integer('sender_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   content: text('content').notNull(),
   messageType: varchar('message_type', { length: 50 }).default('text').notNull(), // 'text', 'file', 'system'
-  replyToId: integer('reply_to_id').references((): any => chatMessages.id, { onDelete: 'set null' }),
+  replyToId: integer('reply_to_id').references(() => chatMessages.id, { onDelete: 'set null' }),
   metadata: text('metadata'), // JSON string for additional data (file info, etc.)
   readBy: text('read_by'), // JSON array of user IDs who read the message
   editedAt: timestamp('edited_at'),

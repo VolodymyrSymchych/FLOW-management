@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { taskService, UpdateTaskInput } from '../services/task.service';
 import { ValidationError, NotFoundError, ForbiddenError, AuthenticatedRequest } from '@project-scope-analyzer/shared';

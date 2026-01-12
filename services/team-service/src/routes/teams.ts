@@ -6,7 +6,7 @@ import { AuthenticatedRequest } from '@project-scope-analyzer/shared';
 const router = Router();
 
 // All routes require authentication
-router.use(authMiddleware as any);
+router.use(authMiddleware as unknown as RequestHandler);
 
 // Team CRUD operations
 router.get('/', (req, res, next) => teamController.getTeams(req as AuthenticatedRequest, res, next));

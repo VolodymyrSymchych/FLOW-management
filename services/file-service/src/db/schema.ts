@@ -31,6 +31,7 @@ export const tasks = pgTable('tasks', {
 });
 
 // File Attachments table (managed by file-service)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const fileAttachments: any = pgTable('file_attachments', {
     id: serial('id').primaryKey(),
     projectId: integer('project_id').references(() => projects.id, { onDelete: 'cascade' }),
@@ -41,7 +42,7 @@ export const fileAttachments: any = pgTable('file_attachments', {
     r2Key: text('r2_key').notNull(), // R2 storage key
     uploadedBy: integer('uploaded_by').notNull().references(() => users.id, { onDelete: 'cascade' }),
     version: integer('version').default(1).notNull(),
-    parentFileId: integer('parent_file_id').references((): any => fileAttachments.id, { onDelete: 'set null' }),
+    parentFileId: integer('parent_file_id').references(() => fileAttachments.id, { onDelete: 'set null' }),
     deletedAt: timestamp('deleted_at'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),

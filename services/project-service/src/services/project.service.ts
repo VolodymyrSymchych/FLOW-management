@@ -166,7 +166,7 @@ export class ProjectService {
    */
   async updateProject(projectId: number, userId: number, input: UpdateProjectInput): Promise<Project | null> {
     try {
-      const updateData: any = {
+      const updateData: Record<string, unknown> = {
         updatedAt: new Date(),
       };
 
@@ -276,7 +276,7 @@ export class ProjectService {
   /**
    * Get all project templates
    */
-  async getTemplates(isPublic?: boolean): Promise<any[]> {
+  async getTemplates(isPublic?: boolean): Promise<Record<string, unknown>[]> {
     try {
       const conditions = [];
       if (isPublic !== undefined) {
@@ -310,7 +310,7 @@ export class ProjectService {
   /**
    * Get template by ID
    */
-  async getTemplateById(templateId: number): Promise<any | null> {
+  async getTemplateById(templateId: number): Promise<Record<string, unknown> | null> {
     try {
       const [template] = await db()
         .select()
@@ -384,7 +384,7 @@ export class ProjectService {
     }
   }
 
-  private mapToProject(row: any): Project {
+  private mapToProject(row: Record<string, unknown>): Project {
     return {
       id: row.id,
       userId: row.userId,

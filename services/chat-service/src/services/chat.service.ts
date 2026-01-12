@@ -1,6 +1,6 @@
-import { db, chats, chatMembers, chatMessages, messageReactions, Chat, InsertChat, ChatMember, InsertChatMember, ChatMessage, InsertChatMessage } from '../db';
-import { eq, desc, and, sql, or, inArray } from 'drizzle-orm';
-import { NotFoundError, ValidationError, ForbiddenError } from '@project-scope-analyzer/shared';
+import { db, chats, chatMembers, Chat, InsertChat, ChatMember } from '../db';
+import { eq, desc, and, inArray } from 'drizzle-orm';
+import { NotFoundError, ForbiddenError } from '@project-scope-analyzer/shared';
 import { triggerChatEvent, PusherEvent } from '../utils/pusher';
 
 export class ChatService {

@@ -57,10 +57,12 @@ export class EmailService {
 
       const data = await response.json() as { id: string };
       logger.info('Email sent successfully', { id: data.id, to });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorStack = error instanceof Error ? error.stack : undefined;
       logger.error('Failed to send email', {
-        error: error.message || error,
-        errorStack: error.stack,
+        error: errorMessage,
+        errorStack,
         to
       });
       throw error;

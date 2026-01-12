@@ -5,6 +5,7 @@ import { config } from '../config';
 import { logger } from '@project-scope-analyzer/shared';
 
 
+
 // Lazy initialization for serverless environments
 let pool: Pool | null = null;
 let db: ReturnType<typeof drizzle> | null = null;
@@ -13,7 +14,7 @@ function getPool(): Pool {
   if (!pool) {
     if (process.env.DATABASE_URL) {
       // Use connection string (Neon, etc.)
-      console.log('Initializing new database pool...');
+      logger.info('Initializing new database pool...');
       pool = new Pool({
         connectionString: process.env.DATABASE_URL,
         max: 1, // Only 1 connection for serverless
@@ -41,7 +42,7 @@ function getPool(): Pool {
 
     // Handle connection errors gracefully
     pool.on('error', (err) => {
-      console.error('Unexpected database error:', err);
+      logger.error('Unexpected database error:', err);
       // Reset pool on error to allow retry
       pool = null;
       db = null;
@@ -49,13 +50,13 @@ function getPool(): Pool {
 
     // Log successful connection
     pool.on('connect', () => {
-      console.log('Database connection established');
+      logger.info('Database connection established');
     });
   }
   return pool;
 }
 
-function getDb() {
+function getDb(): ReturnType<typeof drizzle> {
   if (!db) {
     db = drizzle(getPool(), { schema });
   }

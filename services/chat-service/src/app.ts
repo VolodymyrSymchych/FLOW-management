@@ -95,7 +95,7 @@ export function createApp(): Express {
   });
 
   // 404 handler for all other routes
-  app.use((req, res, next) => {
+  app.use((req, res) => {
     res.status(404).json({
       error: 'Not Found',
       message: `Route ${req.method} ${req.path} not found`,

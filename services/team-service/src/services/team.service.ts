@@ -1,6 +1,6 @@
 import { eq, and, sql } from 'drizzle-orm';
 import { db } from '../db';
-import { teams, teamMembers, teamProjects, Team, InsertTeam, TeamMember, InsertTeamMember } from '../db/schema';
+import { teams, teamMembers, Team, InsertTeam, TeamMember } from '../db/schema';
 import { NotFoundError, ForbiddenError, ValidationError } from '@project-scope-analyzer/shared';
 import { logger } from '@project-scope-analyzer/shared';
 

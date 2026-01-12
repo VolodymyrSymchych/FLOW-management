@@ -6,7 +6,7 @@ import { AuthenticatedRequest } from '@project-scope-analyzer/shared';
 const router = Router();
 
 // All routes require authentication
-router.use(authMiddleware as any);
+router.use(authMiddleware as import('express').RequestHandler);
 
 // File operations
 router.post(

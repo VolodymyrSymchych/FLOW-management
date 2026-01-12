@@ -12,7 +12,7 @@ const pusherAuthSchema = z.object({
 
 export class PusherController {
   // Pusher auth endpoint
-  async auth(req: AuthenticatedRequest, res: Response) {
+  async auth(req: AuthenticatedRequest, res: Response): Promise<void> {
     const user = req.user!;
     const { socket_id, channel_name } = pusherAuthSchema.parse(req.body);
 

@@ -43,7 +43,7 @@ const recordPaymentSchema = z.object({
 
 export class InvoiceController {
   // Create invoice
-  async createInvoice(req: AuthenticatedRequest, res: Response) {
+  async createInvoice(req: AuthenticatedRequest, res: Response): Promise<void> {
     const validated = createInvoiceSchema.parse(req.body);
 
     const invoice = await invoiceService.createInvoice({
@@ -56,7 +56,7 @@ export class InvoiceController {
   }
 
   // Get invoice by ID
-  async getInvoice(req: AuthenticatedRequest, res: Response) {
+  async getInvoice(req: AuthenticatedRequest, res: Response): Promise<void> {
     const id = parseInt(req.params.id);
 
     if (isNaN(id)) {
@@ -69,7 +69,7 @@ export class InvoiceController {
   }
 
   // Get invoice by invoice number
-  async getInvoiceByNumber(req: AuthenticatedRequest, res: Response) {
+  async getInvoiceByNumber(req: AuthenticatedRequest, res: Response): Promise<void> {
     const { invoiceNumber } = req.params;
     const invoice = await invoiceService.getInvoiceByNumber(invoiceNumber);
 
@@ -77,7 +77,7 @@ export class InvoiceController {
   }
 
   // Get public invoice by token
-  async getPublicInvoice(req: AuthenticatedRequest, res: Response) {
+  async getPublicInvoice(req: AuthenticatedRequest, res: Response): Promise<void> {
     const { token } = req.params;
     const invoice = await invoiceService.getInvoiceByToken(token);
 
@@ -85,7 +85,7 @@ export class InvoiceController {
   }
 
   // Get project invoices
-  async getProjectInvoices(req: AuthenticatedRequest, res: Response) {
+  async getProjectInvoices(req: AuthenticatedRequest, res: Response): Promise<void> {
     const projectId = parseInt(req.params.projectId);
     const limit = parseInt(req.query.limit as string) || 50;
     const offset = parseInt(req.query.offset as string) || 0;
@@ -106,7 +106,7 @@ export class InvoiceController {
   }
 
   // Update invoice
-  async updateInvoice(req: AuthenticatedRequest, res: Response) {
+  async updateInvoice(req: AuthenticatedRequest, res: Response): Promise<void> {
     const id = parseInt(req.params.id);
     const validated = updateInvoiceSchema.parse(req.body);
 
@@ -128,7 +128,7 @@ export class InvoiceController {
   }
 
   // Mark as sent
-  async markAsSent(req: AuthenticatedRequest, res: Response) {
+  async markAsSent(req: AuthenticatedRequest, res: Response): Promise<void> {
     const id = parseInt(req.params.id);
 
     if (isNaN(id)) {
@@ -141,7 +141,7 @@ export class InvoiceController {
   }
 
   // Mark as paid
-  async markAsPaid(req: AuthenticatedRequest, res: Response) {
+  async markAsPaid(req: AuthenticatedRequest, res: Response): Promise<void> {
     const id = parseInt(req.params.id);
     const paidDate = req.body.paidDate ? new Date(req.body.paidDate) : undefined;
 
@@ -155,7 +155,7 @@ export class InvoiceController {
   }
 
   // Cancel invoice
-  async cancelInvoice(req: AuthenticatedRequest, res: Response) {
+  async cancelInvoice(req: AuthenticatedRequest, res: Response): Promise<void> {
     const id = parseInt(req.params.id);
 
     if (isNaN(id)) {
@@ -168,7 +168,7 @@ export class InvoiceController {
   }
 
   // Generate share link
-  async generateShareLink(req: AuthenticatedRequest, res: Response) {
+  async generateShareLink(req: AuthenticatedRequest, res: Response): Promise<void> {
     const id = parseInt(req.params.id);
     const expiresInDays = parseInt(req.body.expiresInDays) || 30;
 
@@ -182,7 +182,7 @@ export class InvoiceController {
   }
 
   // Delete invoice
-  async deleteInvoice(req: AuthenticatedRequest, res: Response) {
+  async deleteInvoice(req: AuthenticatedRequest, res: Response): Promise<void> {
     const id = parseInt(req.params.id);
 
     if (isNaN(id)) {
@@ -195,7 +195,7 @@ export class InvoiceController {
   }
 
   // Get overdue invoices
-  async getOverdueInvoices(req: AuthenticatedRequest, res: Response) {
+  async getOverdueInvoices(req: AuthenticatedRequest, res: Response): Promise<void> {
     const projectId = req.query.projectId ? parseInt(req.query.projectId as string) : undefined;
 
     const invoices = await invoiceService.getOverdueInvoices(projectId);
@@ -204,7 +204,7 @@ export class InvoiceController {
   }
 
   // Get invoice statistics
-  async getInvoiceStats(req: AuthenticatedRequest, res: Response) {
+  async getInvoiceStats(req: AuthenticatedRequest, res: Response): Promise<void> {
     const projectId = parseInt(req.params.projectId);
 
     if (isNaN(projectId)) {
@@ -217,7 +217,7 @@ export class InvoiceController {
   }
 
   // Record payment
-  async recordPayment(req: AuthenticatedRequest, res: Response) {
+  async recordPayment(req: AuthenticatedRequest, res: Response): Promise<void> {
     const invoiceId = parseInt(req.params.id);
     const validated = recordPaymentSchema.parse(req.body);
 
@@ -234,7 +234,7 @@ export class InvoiceController {
   }
 
   // Get invoice payments
-  async getInvoicePayments(req: AuthenticatedRequest, res: Response) {
+  async getInvoicePayments(req: AuthenticatedRequest, res: Response): Promise<void> {
     const invoiceId = parseInt(req.params.id);
 
     if (isNaN(invoiceId)) {

@@ -20,6 +20,7 @@ export function requestLogger(req: Request, res: Response, next: NextFunction): 
 }
 
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
     interface Request {
       startTime?: number;

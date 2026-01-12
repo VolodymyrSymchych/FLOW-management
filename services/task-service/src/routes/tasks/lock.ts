@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { db } from '../../db';
 import { tasks } from '../../db/schema';
 import { eq, and } from 'drizzle-orm';
-import { AuthenticatedRequest } from '@project-scope-analyzer/shared';
+import { AuthenticatedRequest, logger } from '@project-scope-analyzer/shared';
 
 const router = Router();
 
@@ -46,9 +46,10 @@ router.get('/:id/lock', async (req, res) => {
       lockedAt: isLocked ? task.lockedAt : null,
       canEdit: !isLocked,
     });
-  } catch (error: any) {
-    console.error('Check lock error:', error);
-    res.status(500).json({ error: error.message || 'Failed to check lock' });
+  } catch (error: unknown) {
+    logger.error('Check lock error:', { error });
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    res.status(500).json({ error: message || 'Failed to check lock' });
   }
 });
 
@@ -106,9 +107,10 @@ router.post('/:id/lock', async (req, res) => {
       lockedBy: userId,
       lockedAt: now,
     });
-  } catch (error: any) {
-    console.error('Acquire lock error:', error);
-    res.status(500).json({ error: error.message || 'Failed to acquire lock' });
+  } catch (error: unknown) {
+    logger.error('Acquire lock error:', { error });
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    res.status(500).json({ error: message || 'Failed to acquire lock' });
   }
 });
 
@@ -138,9 +140,10 @@ router.delete('/:id/lock', async (req, res) => {
       );
 
     res.json({ success: true });
-  } catch (error: any) {
-    console.error('Release lock error:', error);
-    res.status(500).json({ error: error.message || 'Failed to release lock' });
+  } catch (error: unknown) {
+    logger.error('Release lock error:', { error });
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    res.status(500).json({ error: message || 'Failed to release lock' });
   }
 });
 

@@ -61,9 +61,10 @@ export class R2Service {
 
             logger.info('File uploaded to R2', { key, size: file.length });
             return { key, url };
-        } catch (error: any) {
-            logger.error('Error uploading file to R2', { error: error.message });
-            throw new Error(`Failed to upload file: ${error.message}`);
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            logger.error('Error uploading file to R2', { error: errorMessage });
+            throw new Error(`Failed to upload file: ${errorMessage}`);
         }
     }
 
@@ -83,9 +84,10 @@ export class R2Service {
 
             await s3Client.send(command);
             logger.info('File deleted from R2', { key });
-        } catch (error: any) {
-            logger.error('Error deleting file from R2', { error: error.message, key });
-            throw new Error(`Failed to delete file: ${error.message}`);
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            logger.error('Error deleting file from R2', { error: errorMessage, key });
+            throw new Error(`Failed to delete file: ${errorMessage}`);
         }
     }
 
@@ -112,9 +114,10 @@ export class R2Service {
 
             const url = await getSignedUrl(s3Client, command, { expiresIn });
             return url;
-        } catch (error: any) {
-            logger.error('Error generating signed URL', { error: error.message, key });
-            throw new Error(`Failed to generate download URL: ${error.message}`);
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            logger.error('Error generating signed URL', { error: errorMessage, key });
+            throw new Error(`Failed to generate download URL: ${errorMessage}`);
         }
     }
 

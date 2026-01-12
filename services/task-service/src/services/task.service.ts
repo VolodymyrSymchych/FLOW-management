@@ -1,5 +1,5 @@
 import { db, tasks, projects } from '../db';
-import { eq, and, isNull, desc, or, inArray, sql } from 'drizzle-orm';
+import { eq, and, isNull, desc, inArray } from 'drizzle-orm';
 import { logger } from '@project-scope-analyzer/shared';
 
 export interface Task {
@@ -198,7 +198,7 @@ export class TaskService {
    */
   async updateTask(taskId: number, userId: number, input: UpdateTaskInput): Promise<Task | null> {
     try {
-      const updateData: any = {
+      const updateData: Partial<Task> = {
         updatedAt: new Date(),
       };
 
@@ -308,7 +308,7 @@ export class TaskService {
     }
   }
 
-  private mapToTask(row: any): Task {
+  private mapToTask(row: typeof tasks.$inferSelect): Task {
     return {
       id: row.id,
       projectId: row.projectId,

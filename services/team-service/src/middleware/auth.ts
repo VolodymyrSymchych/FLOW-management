@@ -1,6 +1,6 @@
 import { Response, NextFunction } from 'express';
 import { jwtService } from '../services/jwt.service';
-import { AuthenticatedRequest } from '@project-scope-analyzer/shared';
+import { AuthenticatedRequest, UnauthorizedError, logger } from '@project-scope-analyzer/shared';
 
 export async function authMiddleware(
   req: AuthenticatedRequest,
@@ -11,19 +11,18 @@ export async function authMiddleware(
     const authHeader = req.headers.authorization;
 
     // Debug logging
-    console.log('[Auth Middleware] Request to:', req.path);
-    console.log('[Auth Middleware] Authorization header:', authHeader ? 'Present' : 'Missing');
-    console.log('[Auth Middleware] All headers:', JSON.stringify(req.headers, null, 2));
+    logger.debug('[Auth Middleware] Request to:', { path: req.path });
+    logger.debug('[Auth Middleware] Authorization header:', { present: !!authHeader });
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       throw new UnauthorizedError('Missing or invalid authorization header');
     }
 
     const token = authHeader.substring(7);
-    console.log('[Auth Middleware] Token extracted, length:', token.length);
+    logger.debug('[Auth Middleware] Token extracted', { length: token.length });
 
     const payload = await jwtService.verifyToken(token);
-    console.log('[Auth Middleware] Token verified successfully for user:', payload.userId);
+    logger.debug('[Auth Middleware] Token verified successfully', { userId: payload.userId });
 
     req.userId = payload.userId;
     req.user = {
@@ -34,7 +33,7 @@ export async function authMiddleware(
 
     next();
   } catch (error) {
-    console.error('[Auth Middleware] Authentication failed:', error);
+    logger.error('[Auth Middleware] Authentication failed', { error });
     next(error);
   }
 }

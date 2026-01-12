@@ -7,7 +7,7 @@ import lockRouter from './tasks/lock';
 const router = Router();
 
 // All routes require authentication
-router.use(authMiddleware as any);
+router.use(authMiddleware as import('express').RequestHandler);
 
 // GET /tasks/gantt - Get Gantt chart data (must be before /:id routes)
 router.get('/gantt', (req, res, next) => taskController.getGanttData(req as AuthenticatedRequest, res, next));

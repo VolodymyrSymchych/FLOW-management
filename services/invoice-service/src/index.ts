@@ -1,6 +1,5 @@
 import { logger } from '@project-scope-analyzer/shared';
 import { startServer } from './app';
-import { config } from './config';
 
 async function main(): Promise<void> {
   try {

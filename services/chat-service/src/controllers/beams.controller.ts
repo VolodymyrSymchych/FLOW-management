@@ -9,7 +9,7 @@ const _beamsAuthSchema = z.object({
 
 export class BeamsController {
   // Beams user authentication endpoint
-  async auth(req: AuthenticatedRequest, res: Response) {
+  async auth(req: AuthenticatedRequest, res: Response): Promise<void> {
     const user = req.user!;
 
     // Convert user ID to Beams format

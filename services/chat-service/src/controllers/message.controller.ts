@@ -32,7 +32,7 @@ const createTaskFromMessageSchema = z.object({
 
 export class MessageController {
   // Send message
-  async sendMessage(req: AuthenticatedRequest, res: Response) {
+  async sendMessage(req: AuthenticatedRequest, res: Response): Promise<void> {
     const userId = req.user!.userId;
     const validated = sendMessageSchema.parse(req.body);
 
@@ -42,7 +42,7 @@ export class MessageController {
   }
 
   // Get chat messages
-  async getChatMessages(req: AuthenticatedRequest, res: Response) {
+  async getChatMessages(req: AuthenticatedRequest, res: Response): Promise<void> {
     const userId = req.user!.userId;
     const chatId = parseInt(req.params.chatId);
     const limit = parseInt(req.query.limit as string) || 50;
@@ -58,7 +58,7 @@ export class MessageController {
   }
 
   // Get message by ID
-  async getMessage(req: AuthenticatedRequest, res: Response) {
+  async getMessage(req: AuthenticatedRequest, res: Response): Promise<void> {
     const userId = req.user!.userId;
     const id = parseInt(req.params.id);
 
@@ -72,7 +72,7 @@ export class MessageController {
   }
 
   // Edit message
-  async editMessage(req: AuthenticatedRequest, res: Response) {
+  async editMessage(req: AuthenticatedRequest, res: Response): Promise<void> {
     const userId = req.user!.userId;
     const id = parseInt(req.params.id);
     const { content } = editMessageSchema.parse(req.body);
@@ -87,7 +87,7 @@ export class MessageController {
   }
 
   // Delete message
-  async deleteMessage(req: AuthenticatedRequest, res: Response) {
+  async deleteMessage(req: AuthenticatedRequest, res: Response): Promise<void> {
     const userId = req.user!.userId;
     const id = parseInt(req.params.id);
 
@@ -101,7 +101,7 @@ export class MessageController {
   }
 
   // Mark message as read
-  async markAsRead(req: AuthenticatedRequest, res: Response) {
+  async markAsRead(req: AuthenticatedRequest, res: Response): Promise<void> {
     const userId = req.user!.userId;
     const id = parseInt(req.params.id);
 
@@ -115,7 +115,7 @@ export class MessageController {
   }
 
   // Mark chat as read
-  async markChatAsRead(req: AuthenticatedRequest, res: Response) {
+  async markChatAsRead(req: AuthenticatedRequest, res: Response): Promise<void> {
     const userId = req.user!.userId;
     const chatId = parseInt(req.params.chatId);
 
@@ -129,7 +129,7 @@ export class MessageController {
   }
 
   // Get unread count
-  async getUnreadCount(req: AuthenticatedRequest, res: Response) {
+  async getUnreadCount(req: AuthenticatedRequest, res: Response): Promise<void> {
     const userId = req.user!.userId;
     const chatId = parseInt(req.params.chatId);
 
@@ -143,7 +143,7 @@ export class MessageController {
   }
 
   // Add reaction
-  async addReaction(req: AuthenticatedRequest, res: Response) {
+  async addReaction(req: AuthenticatedRequest, res: Response): Promise<void> {
     const userId = req.user!.userId;
     const messageId = parseInt(req.params.id);
     const { emoji } = addReactionSchema.parse(req.body);
@@ -158,7 +158,7 @@ export class MessageController {
   }
 
   // Remove reaction
-  async removeReaction(req: AuthenticatedRequest, res: Response) {
+  async removeReaction(req: AuthenticatedRequest, res: Response): Promise<void> {
     const userId = req.user!.userId;
     const messageId = parseInt(req.params.id);
     const emoji = req.params.emoji;
@@ -173,7 +173,7 @@ export class MessageController {
   }
 
   // Get message reactions
-  async getMessageReactions(req: AuthenticatedRequest, res: Response) {
+  async getMessageReactions(req: AuthenticatedRequest, res: Response): Promise<void> {
     const messageId = parseInt(req.params.id);
 
     if (isNaN(messageId)) {
@@ -186,7 +186,7 @@ export class MessageController {
   }
 
   // Create task from message
-  async createTaskFromMessage(req: AuthenticatedRequest, res: Response) {
+  async createTaskFromMessage(req: AuthenticatedRequest, res: Response): Promise<void> {
     const userId = req.user!.userId;
     const messageId = parseInt(req.params.id);
     const validated = createTaskFromMessageSchema.parse(req.body);
@@ -206,7 +206,7 @@ export class MessageController {
   }
 
   // Get mentions for user
-  async getMentions(req: AuthenticatedRequest, res: Response) {
+  async getMentions(req: AuthenticatedRequest, res: Response): Promise<void> {
     const userId = req.user!.userId;
     const limit = parseInt(req.query.limit as string) || 50;
 

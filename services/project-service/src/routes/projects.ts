@@ -6,7 +6,7 @@ import { AuthenticatedRequest } from '@project-scope-analyzer/shared';
 const router = Router();
 
 // All routes require authentication
-router.use(authMiddleware as any);
+router.use(authMiddleware as unknown as RequestHandler);
 
 // Specific routes must come before parameterized routes
 // GET /projects/stats - Get project statistics

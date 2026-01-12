@@ -9,7 +9,7 @@ export interface JWTPayload {
   email: string;
   username: string;
   role?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export class JWTService {

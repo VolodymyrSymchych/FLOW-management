@@ -1,4 +1,4 @@
-import { db, fileAttachments, FileAttachment, InsertFileAttachment } from '../db';
+import { db, fileAttachments, FileAttachment } from '../db';
 import { eq, and, isNull, desc } from 'drizzle-orm';
 import { r2Service } from './r2.service';
 import { logger, NotFoundError, ForbiddenError, ValidationError } from '@project-scope-analyzer/shared';
@@ -25,7 +25,7 @@ export class FileService {
         const folder = projectId ? `projects/${projectId}` : `tasks/${taskId}`;
 
         // Upload to R2
-        const { key, url } = await r2Service.uploadFile(fileBuffer, fileName, fileType, folder);
+        const { key } = await r2Service.uploadFile(fileBuffer, fileName, fileType, folder);
 
         // Create database record
         const [file] = await db
@@ -137,7 +137,7 @@ export class FileService {
             : `tasks/${parentFile.taskId}`;
 
         // Upload to R2
-        const { key, url } = await r2Service.uploadFile(fileBuffer, fileName, fileType, folder);
+        const { key } = await r2Service.uploadFile(fileBuffer, fileName, fileType, folder);
 
         // Create new version
         const [newVersion] = await db

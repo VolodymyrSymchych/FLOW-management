@@ -1,4 +1,5 @@
 import dotenv from 'dotenv';
+import { logger } from '@project-scope-analyzer/shared';
 
 dotenv.config();
 
@@ -47,6 +48,6 @@ if (!config.database.name || !config.database.user || !config.database.password)
 }
 
 if (!config.jwt.secret) {
-  console.warn('Warning: JWT_SECRET is not set. Authentication middleware will not work properly.');
+  logger.warn('JWT_SECRET is not set. Authentication middleware will not work properly.');
 }
 

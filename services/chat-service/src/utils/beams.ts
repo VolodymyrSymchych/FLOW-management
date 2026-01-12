@@ -22,7 +22,7 @@ export function getBeams(): PushNotifications {
         return { publishId: 'mock' };
       },
       generateToken: () => ({ token: 'mock', expiresIn: 3600 }),
-    } as any;
+    } as unknown as PushNotifications;
     return beamsInstance;
   }
 
@@ -41,7 +41,7 @@ export async function sendPushToUsers(
   notification: {
     title: string;
     body: string;
-    data?: Record<string, any>;
+    data?: Record<string, unknown>;
     deep_link?: string;
   }
 ): Promise<void> {
@@ -90,7 +90,7 @@ export async function sendPushToInterest(
   notification: {
     title: string;
     body: string;
-    data?: Record<string, any>;
+    data?: Record<string, unknown>;
     deep_link?: string;
   }
 ): Promise<void> {

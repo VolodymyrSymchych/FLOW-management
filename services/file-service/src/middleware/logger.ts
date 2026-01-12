@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { logger } from '@project-scope-analyzer/shared';
 
-export function requestLogger(req: Request, res: Response, _next: NextFunction): void {
+export function requestLogger(req: Request, res: Response, next: NextFunction): void {
   req.startTime = Date.now();
 
   res.on('finish', () => {
@@ -20,6 +20,7 @@ export function requestLogger(req: Request, res: Response, _next: NextFunction):
 }
 
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
     interface Request {
       startTime?: number;

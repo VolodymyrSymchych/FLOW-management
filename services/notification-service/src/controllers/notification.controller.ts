@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { notificationService } from '../services/notification.service';
 import { AuthenticatedRequest } from '../types/express';
 import { z } from 'zod';
@@ -27,7 +27,7 @@ const updatePreferencesSchema = z.object({
 
 export class NotificationController {
   // Get all notifications for the authenticated user
-  async getNotifications(req: AuthenticatedRequest, res: Response) {
+  async getNotifications(req: AuthenticatedRequest, res: Response): Promise<void> {
     const userId = req.user!.userId;
     const limit = parseInt(req.query.limit as string) || 50;
     const offset = parseInt(req.query.offset as string) || 0;
@@ -42,7 +42,7 @@ export class NotificationController {
   }
 
   // Get unread notifications
-  async getUnreadNotifications(req: AuthenticatedRequest, res: Response) {
+  async getUnreadNotifications(req: AuthenticatedRequest, res: Response): Promise<void> {
     const userId = req.user!.userId;
     const notifications = await notificationService.getUnreadNotifications(userId);
 
@@ -50,7 +50,7 @@ export class NotificationController {
   }
 
   // Get unread count
-  async getUnreadCount(req: AuthenticatedRequest, res: Response) {
+  async getUnreadCount(req: AuthenticatedRequest, res: Response): Promise<void> {
     const userId = req.user!.userId;
     const count = await notificationService.getUnreadCount(userId);
 
@@ -58,7 +58,7 @@ export class NotificationController {
   }
 
   // Get notification by ID
-  async getNotificationById(req: AuthenticatedRequest, res: Response) {
+  async getNotificationById(req: AuthenticatedRequest, res: Response): Promise<void> {
     const userId = req.user!.userId;
     const id = parseInt(req.params.id);
 
@@ -72,7 +72,7 @@ export class NotificationController {
   }
 
   // Create notification (internal or admin use)
-  async createNotification(req: AuthenticatedRequest, res: Response) {
+  async createNotification(req: AuthenticatedRequest, res: Response): Promise<void> {
     const validated = createNotificationSchema.parse(req.body);
 
     // If userId not provided in body, use authenticated user's ID
@@ -87,7 +87,7 @@ export class NotificationController {
   }
 
   // Mark notification as read
-  async markAsRead(req: AuthenticatedRequest, res: Response) {
+  async markAsRead(req: AuthenticatedRequest, res: Response): Promise<void> {
     const userId = req.user!.userId;
     const id = parseInt(req.params.id);
 
@@ -101,7 +101,7 @@ export class NotificationController {
   }
 
   // Mark all notifications as read
-  async markAllAsRead(req: AuthenticatedRequest, res: Response) {
+  async markAllAsRead(req: AuthenticatedRequest, res: Response): Promise<void> {
     const userId = req.user!.userId;
     const count = await notificationService.markAllAsRead(userId);
 
@@ -109,7 +109,7 @@ export class NotificationController {
   }
 
   // Delete notification
-  async deleteNotification(req: AuthenticatedRequest, res: Response) {
+  async deleteNotification(req: AuthenticatedRequest, res: Response): Promise<void> {
     const userId = req.user!.userId;
     const id = parseInt(req.params.id);
 
@@ -123,7 +123,7 @@ export class NotificationController {
   }
 
   // Delete all read notifications
-  async deleteReadNotifications(req: AuthenticatedRequest, res: Response) {
+  async deleteReadNotifications(req: AuthenticatedRequest, res: Response): Promise<void> {
     const userId = req.user!.userId;
     const count = await notificationService.deleteReadNotifications(userId);
 
@@ -131,7 +131,7 @@ export class NotificationController {
   }
 
   // Get user notification preferences
-  async getPreferences(req: AuthenticatedRequest, res: Response) {
+  async getPreferences(req: AuthenticatedRequest, res: Response): Promise<void> {
     const userId = req.user!.userId;
     const preferences = await notificationService.getUserPreferences(userId);
 
@@ -139,7 +139,7 @@ export class NotificationController {
   }
 
   // Update user notification preferences
-  async updatePreferences(req: AuthenticatedRequest, res: Response) {
+  async updatePreferences(req: AuthenticatedRequest, res: Response): Promise<void> {
     const userId = req.user!.userId;
     const validated = updatePreferencesSchema.parse(req.body);
 

@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { AppError, getErrorResponse, isAppError } from '@project-scope-analyzer/shared';
+import { getErrorResponse, isAppError } from '@project-scope-analyzer/shared';
 import { logger } from '@project-scope-analyzer/shared';
 import { recordHttpRequest } from '@project-scope-analyzer/shared';
 
@@ -7,7 +7,7 @@ export function errorHandler(
   error: Error,
   req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ): void {
   const start = req.startTime || Date.now();
   const duration = (Date.now() - start) / 1000;

@@ -50,11 +50,5 @@ if (!process.env.DATABASE_URL && (!config.database.name || !config.database.user
   throw new Error('Database configuration is incomplete. Either set DATABASE_URL or DB_NAME, DB_USER, and DB_PASSWORD.');
 }
 
-if (!config.jwt.secret) {
-}
 
-if (!config.pusher.appId || !config.pusher.key || !config.pusher.secret) {
-}
 
-if (!config.beams.instanceId || !config.beams.secretKey) {
-}

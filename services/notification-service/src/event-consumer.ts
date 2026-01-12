@@ -40,7 +40,7 @@ async function connectWithRetry(bus: IEventBus): Promise<void> {
     throw new Error(`Failed to connect to event bus after ${MAX_RETRIES} attempts`);
 }
 
-export async function startEventConsumer() {
+export async function startEventConsumer(): Promise<void> {
     try {
         const bus = createEventBus(config.service.name, config.eventBus.type as 'redis' | 'rabbitmq');
         await connectWithRetry(bus);

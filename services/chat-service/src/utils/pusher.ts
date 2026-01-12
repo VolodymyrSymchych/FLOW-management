@@ -17,7 +17,7 @@ export function getPusher(): Pusher {
         logger.debug('Mock Pusher trigger called (Pusher not configured)');
       },
       authorizeChannel: () => ({}),
-    } as any;
+    } as unknown as Pusher;
     return pusherInstance;
   }
 
@@ -58,14 +58,14 @@ export function getUserPresenceChannel(userId: number): string {
 export async function triggerChatEvent(
   chatId: number,
   event: PusherEvent,
-  data: any
+  data: unknown
 ): Promise<void> {
   try {
     const pusher = getPusher();
     const channel = getChatChannel(chatId);
 
     await pusher.trigger(channel, event, {
-      ...data,
+      ...(data as Record<string, unknown>),
       timestamp: new Date().toISOString(),
     });
 
@@ -82,7 +82,7 @@ export function authenticatePusherChannel(
   channelName: string,
   userId: number,
   userInfo?: { name: string; avatar?: string }
-) {
+): Pusher.AuthResponse {
   const pusher = getPusher();
 
   // For presence channels

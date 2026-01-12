@@ -48,6 +48,3 @@ if (!process.env.DATABASE_URL && (!config.database.name || !config.database.user
   // In serverless, don't throw during config load - let it fail on first request
 }
 
-if (!config.jwt.secret) {
-}
-

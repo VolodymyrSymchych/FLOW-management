@@ -3,7 +3,7 @@ import { createEventBus } from '@project-scope-analyzer/shared';
 import { startServer } from './app';
 import { config } from './config';
 
-async function main() {
+async function main(): Promise<void> {
   try {
     // Initialize event bus
     const eventBus = createEventBus(config.service.name, config.eventBus.type);

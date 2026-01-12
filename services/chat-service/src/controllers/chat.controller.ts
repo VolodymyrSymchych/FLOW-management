@@ -28,7 +28,7 @@ const findDirectChatSchema = z.object({
 
 export class ChatController {
   // Create chat
-  async createChat(req: AuthenticatedRequest, res: Response) {
+  async createChat(req: AuthenticatedRequest, res: Response): Promise<void> {
     const userId = req.user!.userId;
     const validated = createChatSchema.parse(req.body);
 
@@ -47,7 +47,7 @@ export class ChatController {
   }
 
   // Get chat by ID
-  async getChat(req: AuthenticatedRequest, res: Response) {
+  async getChat(req: AuthenticatedRequest, res: Response): Promise<void> {
     const userId = req.user!.userId;
     const id = parseInt(req.params.id);
 
@@ -67,7 +67,7 @@ export class ChatController {
   }
 
   // Get user's chats
-  async getUserChats(req: AuthenticatedRequest, res: Response) {
+  async getUserChats(req: AuthenticatedRequest, res: Response): Promise<void> {
     const userId = req.user!.userId;
     const chats = await chatService.getUserChats(userId);
 
@@ -75,7 +75,7 @@ export class ChatController {
   }
 
   // Get project chats
-  async getProjectChats(req: AuthenticatedRequest, res: Response) {
+  async getProjectChats(req: AuthenticatedRequest, res: Response): Promise<void> {
     const projectId = parseInt(req.params.projectId);
 
     if (isNaN(projectId)) {
@@ -88,7 +88,7 @@ export class ChatController {
   }
 
   // Get team chats
-  async getTeamChats(req: AuthenticatedRequest, res: Response) {
+  async getTeamChats(req: AuthenticatedRequest, res: Response): Promise<void> {
     const teamId = parseInt(req.params.teamId);
 
     if (isNaN(teamId)) {
@@ -101,7 +101,7 @@ export class ChatController {
   }
 
   // Find or create direct chat
-  async findOrCreateDirectChat(req: AuthenticatedRequest, res: Response) {
+  async findOrCreateDirectChat(req: AuthenticatedRequest, res: Response): Promise<void> {
     const userId = req.user!.userId;
     const { userId: otherUserId } = findDirectChatSchema.parse(req.body);
 
@@ -111,7 +111,7 @@ export class ChatController {
   }
 
   // Get chat members
-  async getChatMembers(req: AuthenticatedRequest, res: Response) {
+  async getChatMembers(req: AuthenticatedRequest, res: Response): Promise<void> {
     const userId = req.user!.userId;
     const chatId = parseInt(req.params.id);
 
@@ -131,8 +131,8 @@ export class ChatController {
   }
 
   // Add member to chat
-  async addMember(req: AuthenticatedRequest, res: Response) {
-    const requesterId = req.user!.userId;
+  async addMember(req: AuthenticatedRequest, res: Response): Promise<void> {
+
     const chatId = parseInt(req.params.id);
     const validated = addMemberSchema.parse(req.body);
 
@@ -146,7 +146,7 @@ export class ChatController {
   }
 
   // Remove member from chat
-  async removeMember(req: AuthenticatedRequest, res: Response) {
+  async removeMember(req: AuthenticatedRequest, res: Response): Promise<void> {
     const requesterId = req.user!.userId;
     const chatId = parseInt(req.params.id);
     const userId = parseInt(req.params.userId);
@@ -161,7 +161,7 @@ export class ChatController {
   }
 
   // Update chat
-  async updateChat(req: AuthenticatedRequest, res: Response) {
+  async updateChat(req: AuthenticatedRequest, res: Response): Promise<void> {
     const userId = req.user!.userId;
     const id = parseInt(req.params.id);
     const validated = updateChatSchema.parse(req.body);
@@ -176,7 +176,7 @@ export class ChatController {
   }
 
   // Delete chat
-  async deleteChat(req: AuthenticatedRequest, res: Response) {
+  async deleteChat(req: AuthenticatedRequest, res: Response): Promise<void> {
     const userId = req.user!.userId;
     const id = parseInt(req.params.id);
 

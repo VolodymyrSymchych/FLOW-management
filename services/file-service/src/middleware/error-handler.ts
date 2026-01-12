@@ -7,7 +7,7 @@ export function errorHandler(
   error: Error,
   req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ): void {
   const start = req.startTime || Date.now();
   const duration = (Date.now() - start) / 1000;

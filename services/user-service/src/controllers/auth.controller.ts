@@ -115,7 +115,7 @@ export class AuthController {
 
       // Check account lockout
       const redis = getRedisClient();
-      const lockoutStatus = await authService.checkAccountLockout(user.email, redis as any);
+      const lockoutStatus = await authService.checkAccountLockout(user.email, redis as RedisWrapper | null);
       if (lockoutStatus.locked) {
         const minutes = Math.ceil((lockoutStatus.remainingTime || 0) / 60);
         res.status(429).json({
@@ -130,12 +130,12 @@ export class AuthController {
 
       const isPasswordValid = await authService.verifyPassword(user, password);
       if (!isPasswordValid) {
-        await authService.recordFailedLogin(user.email, redis as any);
+        await authService.recordFailedLogin(user.email, redis as RedisWrapper | null);
         throw new UnauthorizedError('Invalid credentials');
       }
 
       // Clear failed login attempts
-      await authService.clearFailedLogins(user.email, redis as any);
+      await authService.clearFailedLogins(user.email, redis as RedisWrapper | null);
 
       if (!user.isActive) {
         throw new ForbiddenError('Account is disabled');

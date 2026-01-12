@@ -2,9 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { storage } from '../../../../../../../server/storage';
 import Stripe from 'stripe';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2025-10-29.clover',
-});
+// Lazy-load Stripe to allow builds without STRIPE_SECRET_KEY
+let _stripe: Stripe | null = null;
+function getStripe(): Stripe {
+  if (!_stripe) {
+    _stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder', {
+      apiVersion: '2025-10-29.clover',
+    });
+  }
+  return _stripe;
+}
 
 export const dynamic = 'force-dynamic';
 
@@ -33,6 +40,7 @@ export async function POST(
     }
 
     // Create Stripe Checkout Session
+    const stripe = getStripe();
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [

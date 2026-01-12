@@ -2,9 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { storage } from '../../../../../server/storage';
 import Stripe from 'stripe';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2025-10-29.clover',
-});
+// Lazy-load Stripe to allow builds without STRIPE_SECRET_KEY
+let _stripe: Stripe | null = null;
+function getStripe(): Stripe {
+  if (!_stripe) {
+    _stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder', {
+      apiVersion: '2025-10-29.clover',
+    });
+  }
+  return _stripe;
+}
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
@@ -25,6 +32,7 @@ export async function POST(request: NextRequest) {
     let event: Stripe.Event;
 
     try {
+      const stripe = getStripe();
       event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
     } catch (err: any) {
       console.error('Webhook signature verification failed:', err.message);

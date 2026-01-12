@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { authService } from '../services/auth.service';
 import { jwtService } from '../services/jwt.service';
-import { ValidationError, UnauthorizedError, ForbiddenError, getRedisClient, AuthenticatedRequest } from '@project-scope-analyzer/shared';
+import { ValidationError, UnauthorizedError, ForbiddenError, getRedisClient, AuthenticatedRequest, RedisWrapper } from '@project-scope-analyzer/shared';
 import { eventBus } from '../index';
 import { logger } from '@project-scope-analyzer/shared';
 

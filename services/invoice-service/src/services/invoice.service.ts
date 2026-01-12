@@ -6,11 +6,12 @@ import { NotFoundError, ValidationError } from '@project-scope-analyzer/shared';
 export class InvoiceService {
   // Generate unique invoice number
   async generateInvoiceNumber(): Promise<string> {
-    const { nanoid } = await import('nanoid');
+    const { customAlphabet } = await import('nanoid');
+    const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ', 6);
     const date = new Date();
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
-    const random = nanoid(6).toUpperCase();
+    const random = nanoid();
     return `INV-${year}${month}-${random}`;
   }
 

@@ -4,6 +4,7 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { ArrowRight, PlayCircle, CheckCircle2, BarChart3, Clock, AlertTriangle } from "lucide-react";
 import Link from "next/link";
+import { WaitlistForm } from "./WaitlistForm";
 
 export function Hero({ user }: { user?: any }) {
     return (
@@ -38,33 +39,54 @@ export function Hero({ user }: { user?: any }) {
                             AI-powered project management that helps you catch risks early, bill accurately, and deliver on time.
                         </p>
 
-                        <div className="flex flex-wrap gap-4">
-                            {user ? (
-                                <Link href="/dashboard" className="glass-button px-8 py-4 rounded-full text-white font-semibold flex items-center gap-2 text-lg group">
-                                    Let's get to work
-                                    <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
-                                </Link>
-                            ) : (
-                                <Link href="/sign-up" className="glass-button px-8 py-4 rounded-full text-white font-semibold flex items-center gap-2 text-lg group">
-                                    Start for Free
-                                    <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
-                                </Link>
-                            )}
+                        {user ? (
+                            <>
+                                <div className="flex flex-wrap gap-4">
+                                    <Link href="/dashboard" className="glass-button px-8 py-4 rounded-full text-white font-semibold flex items-center gap-2 text-lg group">
+                                        Let's get to work
+                                        <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+                                    </Link>
 
-                            <button className="px-8 py-4 rounded-full text-white font-medium flex items-center gap-2 hover:bg-white/5 transition-colors border border-white/10">
-                                <PlayCircle className="w-5 h-5" />
-                                Watch Demo
-                            </button>
-                        </div>
+                                    <button className="px-8 py-4 rounded-full text-white font-medium flex items-center gap-2 hover:bg-white/5 transition-colors border border-white/10">
+                                        <PlayCircle className="w-5 h-5" />
+                                        Watch Demo
+                                    </button>
+                                </div>
 
-                        <div className="mt-10 flex items-center gap-4 text-sm text-gray-400">
-                            <div className="flex -space-x-2">
-                                {[1, 2, 3, 4].map(i => (
-                                    <div key={i} className="w-8 h-8 rounded-full border-2 border-background bg-gray-800" />
-                                ))}
-                            </div>
-                            <p>Trusted by 500+ top development teams</p>
-                        </div>
+                                <div className="mt-10 flex items-center gap-4 text-sm text-gray-400">
+                                    <div className="flex -space-x-2">
+                                        {[1, 2, 3, 4].map(i => (
+                                            <div key={i} className="w-8 h-8 rounded-full border-2 border-background bg-gray-800" />
+                                        ))}
+                                    </div>
+                                    <p>Trusted by 500+ top development teams</p>
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <WaitlistForm className="max-w-2xl" />
+
+                                <div className="mt-8 flex flex-col sm:flex-row gap-4">
+                                    <Link href="/sign-up" className="text-gray-400 hover:text-white transition-colors text-sm flex items-center gap-2">
+                                        Already have access?
+                                        <span className="text-indigo-400 font-medium">Sign up now →</span>
+                                    </Link>
+                                    <button className="text-gray-400 hover:text-white transition-colors text-sm flex items-center gap-2">
+                                        <PlayCircle className="w-4 h-4" />
+                                        Watch Demo
+                                    </button>
+                                </div>
+
+                                <div className="mt-8 flex items-center gap-4 text-sm text-gray-400">
+                                    <div className="flex -space-x-2">
+                                        {[1, 2, 3, 4].map(i => (
+                                            <div key={i} className="w-8 h-8 rounded-full border-2 border-background bg-gray-800" />
+                                        ))}
+                                    </div>
+                                    <p>Join 500+ teams on the waitlist</p>
+                                </div>
+                            </>
+                        )}
                     </motion.div>
 
                     <motion.div

@@ -4,6 +4,8 @@ import helmet from 'helmet';
 import { logger, httpsRedirect, hstsConfig, requestLogger, metricsMiddleware, errorHandler } from '@project-scope-analyzer/shared';
 import routes from './routes';
 import { config } from './config';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './swagger';
 
 export function createApp(): Express {
   const app = express();
@@ -45,6 +47,32 @@ export function createApp(): Express {
   app.use(metricsMiddleware);
 
   // Simple health check without database (for Vercel health checks)
+  /**
+   * @swagger
+   * /health:
+   *   get:
+   *     summary: Health check (simple)
+   *     tags: [Health]
+   *     responses:
+   *       200:
+   *         description: Service is healthy
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 status:
+   *                   type: string
+   *                   example: healthy
+   *                 timestamp:
+   *                   type: string
+   *                 service:
+   *                   type: string
+   *                 env:
+   *                   type: string
+   *                 hasDatabase:
+   *                   type: boolean
+   */
   app.get('/health', (req, res) => {
     res.json({
       status: 'healthy',
@@ -54,6 +82,9 @@ export function createApp(): Express {
       hasDatabase: !!process.env.DATABASE_URL,
     });
   });
+
+  // Swagger Documentation
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
   // Root endpoint
   app.get('/', (req, res) => {

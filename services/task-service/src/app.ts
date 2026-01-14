@@ -4,6 +4,8 @@ import helmet from 'helmet';
 import { logger, httpsRedirect, hstsConfig, requestLogger, metricsMiddleware, errorHandler } from '@project-scope-analyzer/shared';
 import routes from './routes';
 import { config } from './config';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './swagger';
 
 export function createApp(): Express {
   const app = express();
@@ -45,13 +47,42 @@ export function createApp(): Express {
   app.use(metricsMiddleware);
 
   // Health check without /api prefix (for convenience)
+  /**
+   * @swagger
+   * /health:
+   *   get:
+   *     summary: Health check (simple)
+   *     tags: [Health]
+   *     responses:
+   *       200:
+   *         description: Service is healthy
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 status:
+   *                   type: string
+   *                   example: healthy
+   *                 timestamp:
+   *                   type: string
+   *                 service:
+   *                   type: string
+   */
   app.get('/health', (req, res) => {
     res.json({
       status: 'healthy',
       timestamp: new Date().toISOString(),
       service: config.service.name,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ...(config as any).service.env && { env: (config as any).service.env },
     });
   });
+
+
+
+  // Swagger Documentation
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
   // Root endpoint - service info
   app.get('/', (req, res) => {

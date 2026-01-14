@@ -4,6 +4,8 @@ import helmet from 'helmet';
 import { logger, httpsRedirect, hstsConfig, requestLogger, metricsMiddleware, errorHandler } from '@project-scope-analyzer/shared';
 import routes from './routes';
 import { config } from './config';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './swagger';
 
 export function createApp(): Express {
   const app = express();
@@ -45,6 +47,9 @@ export function createApp(): Express {
       service: config.service.name,
     });
   });
+
+  // Swagger Documentation
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
   // Service info endpoint (not on root to avoid conflicts with frontend)
   app.get('/api', (req, res) => {

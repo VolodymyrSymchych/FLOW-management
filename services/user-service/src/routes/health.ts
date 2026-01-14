@@ -3,6 +3,28 @@ import { Router, Request, Response } from 'express';
 
 const router = Router();
 
+/**
+ * @swagger
+ * /health:
+ *   get:
+ *     summary: Health check (simple)
+ *     tags: [Health]
+ *     responses:
+ *       200:
+ *         description: Service is healthy
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: healthy
+ *                 timestamp:
+ *                   type: string
+ *                 service:
+ *                   type: string
+ */
 router.get('/health', (req: Request, res: Response) => {
   res.json({
     status: 'healthy',
@@ -11,6 +33,33 @@ router.get('/health', (req: Request, res: Response) => {
   });
 });
 
+/**
+ * @swagger
+ * /ready:
+ *   get:
+ *     summary: Readiness check (dependencies)
+ *     tags: [Health]
+ *     responses:
+ *       200:
+ *         description: Service is ready
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: ready
+ *                 checks:
+ *                   type: object
+ *                   properties:
+ *                     database:
+ *                       type: boolean
+ *                     redis:
+ *                       type: boolean
+ *       503:
+ *         description: Service is not ready
+ */
 router.get('/ready', async (req: Request, res: Response) => {
   // Add readiness checks here (database, redis, etc.)
   const checks: Record<string, boolean> = {

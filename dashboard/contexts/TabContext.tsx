@@ -13,6 +13,9 @@ import {
     FileText,
     Users,
     Settings,
+    TrendingDown,
+    Plug,
+    Trophy,
     LucideIcon
 } from 'lucide-react';
 
@@ -44,6 +47,10 @@ const getTabInfo = (pathname: string): { label: string; icon?: LucideIcon } => {
     if (pathname === '/dashboard/documentation') return { label: 'Documentation', icon: FileText };
     if (pathname === '/dashboard/team') return { label: 'Team', icon: Users };
     if (pathname === '/dashboard/settings') return { label: 'Settings', icon: Settings };
+    if (pathname === '/dashboard/analytics') return { label: 'Analytics', icon: BarChart3 };
+    if (pathname === '/dashboard/burndown') return { label: 'Burndown', icon: TrendingDown };
+    if (pathname === '/dashboard/integrations') return { label: 'Integrations', icon: Plug };
+    if (pathname === '/dashboard/achievements') return { label: 'Achievements', icon: Trophy };
 
     // Dynamic routes or other pages
     if (pathname.startsWith('/dashboard/projects/')) return { label: 'Project Details', icon: FolderKanban };

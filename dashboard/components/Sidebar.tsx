@@ -13,6 +13,9 @@ import {
   ChevronRight,
   Receipt,
   MessageSquare,
+  TrendingDown,
+  Plug,
+  Trophy,
 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Link } from '@/i18n/routing';
@@ -28,6 +31,10 @@ const navigation = [
   { name: 'Chat', href: '/dashboard/chat', icon: MessageSquare },
   { name: 'Invoices', href: '/dashboard/invoices', icon: Receipt },
   { name: 'Charts', href: '/dashboard/charts', icon: BarChart3 },
+  { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
+  { name: 'Burndown', href: '/dashboard/burndown', icon: TrendingDown },
+  { name: 'Integrations', href: '/dashboard/integrations', icon: Plug },
+  { name: 'Achievements', href: '/dashboard/achievements', icon: Trophy },
   { name: 'Tasks', href: '/dashboard/tasks', icon: CheckSquare },
   { name: 'Attendance', href: '/dashboard/attendance', icon: Clock },
   { name: 'Documentation', href: '/dashboard/documentation', icon: FileText },

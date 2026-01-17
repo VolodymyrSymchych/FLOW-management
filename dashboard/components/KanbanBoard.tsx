@@ -38,6 +38,31 @@ interface Project {
     name: string;
 }
 
+// Progress Bar Component
+interface ProgressBarProps {
+    percentage: number;
+    className?: string;
+}
+
+function ProgressBar({ percentage, className = '' }: ProgressBarProps) {
+    const clampedPercentage = Math.min(100, Math.max(0, percentage));
+
+    return (
+        <div className={`space-y-1 ${className}`}>
+            <div className="flex items-center justify-between">
+                <span className="text-xs text-text-tertiary">Progress</span>
+                <span className="text-xs font-semibold text-text-secondary">{clampedPercentage}%</span>
+            </div>
+            <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+                <div
+                    className="h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all duration-500 ease-out"
+                    style={{ width: `${clampedPercentage}%` }}
+                />
+            </div>
+        </div>
+    );
+}
+
 export function KanbanBoard() {
     const { selectedTeam, isLoading: teamsLoading } = useTeam();
     const [tasks, setTasks] = useState<any[]>([]);
@@ -58,7 +83,8 @@ export function KanbanBoard() {
         assignee: '',
         due_date: '',
         priority: 'medium' as 'low' | 'medium' | 'high',
-        status: 'todo' as 'todo' | 'in_progress' | 'done'
+        status: 'todo' as 'todo' | 'in_progress' | 'done',
+        completion_percentage: 0
     });
 
     const sensors = useSensors(
@@ -139,7 +165,8 @@ export function KanbanBoard() {
                 assignee: '',
                 due_date: '',
                 priority: 'medium',
-                status: 'todo'
+                status: 'todo',
+                completion_percentage: 0
             });
             setShowNewTaskForm(false);
             loadTasks();
@@ -605,6 +632,12 @@ function SortableTaskCard({ task, onStatusChange, getPriorityColor, onEdit, onDe
                         </p>
                     </div>
                 )}
+
+                {/* Progress Bar */}
+                <ProgressBar
+                    percentage={task.completion_percentage || 0}
+                    className="pt-1"
+                />
 
                 {/* Draggable area - metadata */}
                 <div

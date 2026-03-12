@@ -93,13 +93,9 @@ export async function cached<T>(
       if ('setex' in redis && typeof redis.setex === 'function') {
         // IORedis - use setex
         await (redis as any).setex(key, ttl, JSON.stringify(data));
-      } else if ('expire' in redis && typeof redis.expire === 'function') {
-        // Upstash Redis - use set + expire separately
-        await redis.set(key, JSON.stringify(data));
-        await (redis as any).expire(key, ttl);
       } else {
-        // Fallback - just set without TTL
-        await redis.set(key, JSON.stringify(data));
+        // Upstash Redis - use set with ex option (single round-trip)
+        await (redis as any).set(key, JSON.stringify(data), { ex: ttl });
       }
     } catch (setError: any) {
       // If set fails, log but don't fail the request
@@ -261,13 +257,9 @@ export async function cachedWithValidation<T>(
       if ('setex' in redis && typeof redis.setex === 'function') {
         // IORedis - use setex
         await (redis as any).setex(key, ttl, serialized);
-      } else if ('expire' in redis && typeof redis.expire === 'function') {
-        // Upstash Redis - use set + expire separately
-        await redis.set(key, serialized);
-        await (redis as any).expire(key, ttl);
       } else {
-        // Fallback - just set without TTL
-        await redis.set(key, serialized);
+        // Upstash Redis - use set with ex option (single round-trip)
+        await (redis as any).set(key, serialized, { ex: ttl });
       }
       console.log(`[Cache] Stored for key: ${key} with TTL: ${ttl}s`);
     } catch (setError: any) {

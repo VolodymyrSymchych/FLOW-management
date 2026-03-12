@@ -15,6 +15,7 @@ export * from './utils/errors';
 export * from './utils/metrics';
 export * from './utils/https-redirect';
 export * from './utils/redis';
+export * from './src/pagination';
 
 // Export middleware
 export * from './middleware/error-handler';

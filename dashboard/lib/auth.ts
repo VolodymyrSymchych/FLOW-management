@@ -23,6 +23,11 @@ const SESSION_DURATION = 60 * 60; // 1 hour
 const SESSION_DURATION_REMEMBER_ME = 7 * 24 * 60 * 60; // 7 days
 const REFRESH_THRESHOLD = 15 * 60; // Refresh if token expires in less than 15 minutes
 
+// Short-lived in-memory cache to avoid repeated jwtVerify() for parallel requests
+// (e.g. 5-10 API routes firing simultaneously on page load)
+const SESSION_CACHE_TTL_MS = 5_000; // 5 seconds
+const sessionCache = new Map<string, { data: SessionData; expiresAt: number }>();
+
 export interface SessionData {
   userId: number;
   email: string;
@@ -69,6 +74,14 @@ export async function getSession(autoRefresh: boolean = true): Promise<SessionDa
     return null;
   }
 
+  // Check in-memory cache first to avoid redundant jwtVerify() calls
+  // for parallel API requests hitting the server simultaneously
+  const cacheKey = token.slice(-32); // Use last 32 chars as key (avoids storing sensitive data)
+  const cached = sessionCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.data;
+  }
+
   try {
     const JWT_ISSUER = process.env.JWT_ISSUER || 'project-scope-analyzer';
     const { payload } = await jwtVerify(token, JWT_SECRET, {
@@ -85,6 +98,17 @@ export async function getSession(autoRefresh: boolean = true): Promise<SessionDa
       username: payload.username as string,
       fullName: payload.fullName as string | null | undefined,
     };
+
+    // Store in in-memory cache
+    sessionCache.set(cacheKey, { data: sessionData, expiresAt: Date.now() + SESSION_CACHE_TTL_MS });
+
+    // Periodically clean up expired entries to avoid memory leaks
+    if (sessionCache.size > 500) {
+      const now = Date.now();
+      for (const [k, v] of sessionCache) {
+        if (v.expiresAt <= now) sessionCache.delete(k);
+      }
+    }
 
     // Auto-refresh token if it's close to expiration (silent refresh)
     if (autoRefresh && payload.exp) {

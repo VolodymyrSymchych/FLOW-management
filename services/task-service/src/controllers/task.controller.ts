@@ -37,7 +37,11 @@ export class TaskController {
   /**
    * GET /tasks
    * Get all tasks for current user
-   * Query params: projectId (optional) - filter by project, teamId (optional) - filter by team
+   * Query params: 
+   *   - projectId (optional) - filter by project
+   *   - teamId (optional) - filter by team
+   *   - limit (optional) - items per page (default: 50, max: 100)
+   *   - offset (optional) - items to skip (default: 0)
    */
   async getTasks(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -48,15 +52,32 @@ export class TaskController {
       const userId = req.userId;
       const projectId = req.query.projectId ? parseInt(req.query.projectId as string, 10) : undefined;
       const teamId = req.query.teamId ? parseInt(req.query.teamId as string, 10) : undefined;
+      const limit = Math.min(parseInt(req.query.limit as string || '50', 10), 100);
+      const offset = parseInt(req.query.offset as string || '0', 10);
 
-      let tasks;
       if (teamId) {
-        tasks = await taskService.getTasksByTeam(userId, teamId);
+        const result = await taskService.getTasksByTeam(userId, teamId, limit, offset);
+        res.json({
+          tasks: result.tasks,
+          total: result.total,
+          pagination: {
+            limit,
+            offset,
+            hasMore: offset + limit < result.total,
+          },
+        });
       } else {
-        tasks = await taskService.getUserTasks(userId, projectId);
+        const result = await taskService.getUserTasks(userId, projectId, limit, offset);
+        res.json({
+          tasks: result.tasks,
+          total: result.total,
+          pagination: {
+            limit,
+            offset,
+            hasMore: offset + limit < result.total,
+          },
+        });
       }
-
-      res.json({ tasks, total: tasks.length });
     } catch (error) {
       next(error);
     }
@@ -135,14 +156,8 @@ export class TaskController {
         throw new ValidationError('Invalid task ID');
       }
 
-      // Verify task exists and user has access
       const userId = req.userId;
-      const task = await taskService.getTaskById(taskId, userId);
-      if (!task) {
-        throw new NotFoundError('Task not found');
-      }
-
-      const dependencies = await taskService.getDependencies(taskId);
+      const dependencies = await taskService.getDependencies(taskId, userId);
 
       res.json({ dependencies, total: dependencies.length });
     } catch (error) {

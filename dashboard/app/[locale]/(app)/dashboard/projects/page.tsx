@@ -1,284 +1,216 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Plus, Filter, Search, X } from 'lucide-react';
-import { ProjectCard } from '@/components/ProjectCard';
-import { api, Project } from '@/lib/api';
-import { useRouter } from 'next/navigation';
-import { cn } from '@/lib/utils';
-import { Loader } from '@/components/Loader';
+import { useMemo, useState } from 'react';
+import { Plus, Trash2, CheckSquare, Clock, AlertCircle } from 'lucide-react';
 import axios from 'axios';
+import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { DeleteConfirmModal } from '@/components/DeleteConfirmModal';
 import { useTeam } from '@/contexts/TeamContext';
 import { useSmartDelayedLoading } from '@/hooks/useSmartDelayedLoading';
-import { CardGridSkeleton } from '@/components/skeletons';
-import { useProjects } from '@/hooks/useQueries';
-import { useQueryClient } from '@tanstack/react-query';
-import { useTranslations } from 'next-intl';
+import { useProjects, useTasks, usePrefetch } from '@/hooks/useQueries';
+import type { Project } from '@/lib/api';
 
-type FilterType = 'all' | 'status' | 'risk_level' | 'type' | 'industry';
+function colorAt(index: number) {
+  return ['#E8753A', '#B83232', '#2E5DA8', '#3D7A5A', '#6941C6', '#B8870A'][index % 6];
+}
+
+function initials(value: string) {
+  return value
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+function progress(project: Project, totalTasks: number) {
+  if (typeof project.score === 'number' && project.score > 0) return Math.min(100, project.score);
+  if (!totalTasks) return 0;
+  return Math.min(100, Math.round((totalTasks / Math.max(totalTasks + 3, 1)) * 100));
+}
 
 export default function ProjectsPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { selectedTeam, isLoading: teamsLoading } = useTeam();
-  const t = useTranslations('Projects');
-  
-  // React Query - автоматичне кешування
+  const { selectedTeam, teams, isLoading: teamsLoading } = useTeam();
   const teamId = selectedTeam.type === 'all' ? 'all' : selectedTeam.teamId;
-  const {
-    data: projects = [],
-    isLoading,
-    isFetching
-  } = useProjects(teamId);
+  const { data: projects = [], isLoading } = useProjects(teamId);
+  const { data: tasks = [] } = useTasks(teamId);
+  const { prefetchProject } = usePrefetch();
 
-  // Є дані якщо вони вже завантажені (в кеші або отримані)
-  const hasData = projects !== undefined && projects.length >= 0;
-  
-  const [searchQuery, setSearchQuery] = useState('');
-  
-  // Показувати skeleton тільки якщо немає даних і завантаження > 250ms
-  const shouldShowLoading = useSmartDelayedLoading(isLoading || teamsLoading, hasData, 250);
-  const [showFilters, setShowFilters] = useState(false);
-  const [filterType, setFilterType] = useState<FilterType>('all');
-  const [filterValue, setFilterValue] = useState<string>('all');
-  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; project: Project | null }>({
-    isOpen: false,
-    project: null,
-  });
+  const [teamFilter, setTeamFilter] = useState<'all' | string>('all');
+  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; project: Project | null }>({ isOpen: false, project: null });
 
-  // React Query автоматично перезавантажує при зміні teamId
+  const shouldShowLoading = useSmartDelayedLoading(isLoading || teamsLoading, projects.length > 0, 250);
 
-  const deleteProject = async (projectId: number, e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent navigation
-    const project = projects.find(p => p.id === projectId);
-    if (project) {
-      setDeleteModal({ isOpen: true, project });
-    }
-  };
+  const filteredProjects = useMemo(() => {
+    return projects.filter((project) => {
+      if (teamFilter === 'all') return true;
+      return (project.industry || '').toLowerCase().includes(teamFilter.toLowerCase()) || (project.type || '').toLowerCase().includes(teamFilter.toLowerCase());
+    });
+  }, [projects, teamFilter]);
+
+  const activeProjects = filteredProjects.filter((project) => project.status !== 'done').length;
+  const openTasks = tasks.filter((t: { status: string }) => t.status !== 'done').length;
+  const overdue = tasks.filter((t: { status: string; due_date?: string }) => t.status !== 'done' && t.due_date && new Date(t.due_date) < new Date()).length;
+  const averageProgress = filteredProjects.length
+    ? Math.round(filteredProjects.reduce((sum, project) => sum + progress(project, tasks.filter((t: { project_id: number }) => t.project_id === project.id).length), 0) / filteredProjects.length)
+    : 0;
+
+  const filterPills = ['All teams', ...teams.slice(0, 3).map((team) => team.name)];
+  const teamPillColors = ['#E8753A', '#2E5DA8', '#3D7A5A', '#6941C6'];
+  const teamBgColors = ['#FDF1EB', '#EBF0F9', '#EAF2ED', '#F4F0FF'];
 
   const confirmDelete = async () => {
     if (!deleteModal.project) return;
-
     try {
       await axios.delete(`/api/projects/${deleteModal.project.id}`);
       setDeleteModal({ isOpen: false, project: null });
-      
-      // Invalidate та рефетч проектів з React Query
       await queryClient.invalidateQueries({ queryKey: ['projects'] });
-      await queryClient.invalidateQueries({ queryKey: ['stats'] }); // Оновити статистику теж
-    } catch (error: any) {
-      console.error('Failed to delete project:', error);
-      alert(error.response?.data?.error || 'Failed to delete project. Please try again.');
+      await queryClient.invalidateQueries({ queryKey: ['stats'] });
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: string } } };
+      alert(err.response?.data?.error || 'Failed to delete project');
     }
   };
 
-  // Get unique values for filter options
-  const statuses = Array.from(new Set(projects.map(p => p.status).filter(Boolean)));
-  const riskLevels = Array.from(new Set(projects.map(p => p.risk_level).filter(Boolean)));
-  const types = Array.from(new Set(projects.map(p => p.type).filter(Boolean)));
-  const industries = Array.from(new Set(projects.map(p => p.industry).filter(Boolean)));
+  if (shouldShowLoading) {
+    return <div style={{ padding: 24, fontSize: 14, color: 'var(--muted)' }}>Loading projects...</div>;
+  }
 
-  const filteredProjects = projects.filter(project => {
-    // Search filter
-    const matchesSearch = project.name.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    // Type filter
-    let matchesFilter = true;
-    if (filterType === 'all' || filterValue === 'all') {
-      matchesFilter = true;
-    } else if (filterType === 'status') {
-      matchesFilter = project.status === filterValue;
-    } else if (filterType === 'risk_level') {
-      matchesFilter = project.risk_level === filterValue;
-    } else if (filterType === 'type') {
-      matchesFilter = project.type === filterValue;
-    } else if (filterType === 'industry') {
-      matchesFilter = project.industry === filterValue;
-    }
-
-    return matchesSearch && matchesFilter;
-  });
-
-  const clearFilters = () => {
-    setFilterType('all');
-    setFilterValue('all');
-  };
-
-  const hasActiveFilter = filterType !== 'all' && filterValue !== 'all';
-
+  const avgPct = averageProgress;
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-text-primary">
-            {selectedTeam.type === 'single' && selectedTeam.teamId
-              ? t('teamProjects')
-              : t('allProjects')}
-          </h1>
-          <p className="text-sm text-text-secondary mt-0.5">
-            {selectedTeam.type === 'single' && selectedTeam.teamId
-              ? t('teamProjectsDescription')
-              : t('manageProjects')}
-          </p>
-        </div>
-        <button
-          onClick={() => router.push('/dashboard/projects/new')}
-          className="glass-button flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-semibold"
-        >
-          <Plus className="w-4 h-4" />
-          <span>{t('newAnalysis')}</span>
-        </button>
-      </div>
-
-      {/* Filters */}
-      <div className="space-y-3">
-        <div className="flex items-center space-x-3">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary pointer-events-none" />
-            <input
-              type="text"
-              placeholder={t('searchProjects')}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-sm rounded-lg glass-medium border border-white/10 focus:outline-none focus:border-primary/50 text-text-primary placeholder:text-text-tertiary transition-all"
-            />
-          </div>
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className={cn(
-              "glass-light flex items-center space-x-2 px-3 py-2 rounded-lg hover:glass-medium transition-all duration-200 hover:scale-105",
-              showFilters && "glass-medium border border-primary/50",
-              hasActiveFilter && "border-primary/50"
-            )}
-          >
-            <Filter className="w-4 h-4 text-text-secondary" />
-            <span className="text-sm text-text-primary">{t('filters')}</span>
-            {hasActiveFilter && (
-              <span className="w-1.5 h-1.5 rounded-full bg-primary"></span>
-            )}
-          </button>
-        </div>
-
-        {/* Filter Panel */}
-        {showFilters && (
-          <div className="glass-medium rounded-lg p-3 border border-white/10">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-xs font-semibold text-text-primary">{t('filterProjects')}</h3>
-              {hasActiveFilter && (
-                <button
-                  onClick={clearFilters}
-                  className="text-[10px] text-text-tertiary hover:text-text-primary flex items-center space-x-1"
-                >
-                  <X className="w-3 h-3" />
-                  <span>{t('clear')}</span>
-                </button>
-              )}
+    <div className="proj-screen" data-testid="projects-screen">
+      <div className="scr-inner">
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+          <div className="scr-header" style={{ padding: '0 28px', borderBottom: '1px solid var(--line)', background: 'var(--white)', flexShrink: 0, justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+            <div>
+              <h1 style={{ fontFamily: 'var(--font-inter), Inter, sans-serif', fontSize: 26, fontWeight: 600, color: 'var(--ink)', letterSpacing: '-.02em', margin: 0 }}>Projects</h1>
+              <div style={{ fontSize: 14, color: 'var(--muted)', marginTop: 2 }}>{activeProjects} active · {openTasks} open tasks · {overdue} overdue</div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-              {/* Filter Type Selector */}
-              <div>
-                <label className="block text-[10px] font-medium text-text-tertiary mb-1.5">
-                  {t('filterBy')}
-                </label>
-                <select
-                  value={filterType}
-                  onChange={(e) => {
-                    setFilterType(e.target.value as FilterType);
-                    setFilterValue('all');
-                  }}
-                  className="w-full px-2.5 py-1.5 rounded-lg glass-input border border-white/10 text-text-primary text-xs focus:outline-none focus:border-primary/50"
-                >
-                  <option value="all">{t('allProjectsFilter')}</option>
-                  <option value="status">{t('status')}</option>
-                  <option value="risk_level">{t('riskLevel')}</option>
-                  <option value="type">{t('type')}</option>
-                  <option value="industry">{t('industry')}</option>
-                </select>
-              </div>
-
-              {/* Filter Value Selector */}
-              {filterType !== 'all' && (
-                <div>
-                  <label className="block text-[10px] font-medium text-text-tertiary mb-1.5">
-                    {filterType === 'status' && t('status')}
-                    {filterType === 'risk_level' && t('riskLevel')}
-                    {filterType === 'type' && t('type')}
-                    {filterType === 'industry' && t('industry')}
-                  </label>
-                  <select
-                    value={filterValue}
-                    onChange={(e) => setFilterValue(e.target.value)}
-                    className="w-full px-2.5 py-1.5 rounded-lg glass-input border border-white/10 text-text-primary text-xs focus:outline-none focus:border-primary/50"
-                  >
-                    <option value="all">All</option>
-                    {filterType === 'status' && statuses.map(status => (
-                      <option key={status} value={status}>{status}</option>
-                    ))}
-                    {filterType === 'risk_level' && riskLevels.map(risk => (
-                      <option key={risk} value={risk}>{risk}</option>
-                    ))}
-                    {filterType === 'type' && types.map(type => (
-                      <option key={type} value={type}>{type}</option>
-                    ))}
-                    {filterType === 'industry' && industries.map(industry => (
-                      <option key={industry} value={industry}>{industry}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
-            </div>
-            {hasActiveFilter && (
-              <div className="mt-3 pt-3 border-t border-white/10">
-                <p className="text-[10px] text-text-tertiary">
-                  {t('showing')} {filteredProjects.length} {t('of')} {projects.length} {t('projects')}
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Projects Grid */}
-      {shouldShowLoading ? (
-        <CardGridSkeleton count={6} />
-      ) : filteredProjects.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-          {filteredProjects.map((project) => (
-            <ProjectCard
-              key={project.id}
-              {...project}
-              onClick={() => router.push(`/dashboard/projects/${project.id}`)}
-              onDelete={project.isOwner ? (e) => deleteProject(project.id, e) : undefined}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-8 glass-medium rounded-xl border border-white/10">
-          <p className="text-sm text-text-secondary">
-            {searchQuery || hasActiveFilter
-              ? t('noProjectsMatch')
-              : t('noProjects')}
-          </p>
-          {(searchQuery || hasActiveFilter) && (
-            <button
-              onClick={() => {
-                setSearchQuery('');
-                clearFilters();
-              }}
-              className="mt-3 px-3 py-1.5 text-xs glass-light hover:glass-medium rounded-lg transition-all"
-            >
-              {t('clearAllFilters')}
+            <button type="button" className="btn btn-acc" onClick={() => router.push('/dashboard/projects/new')}>
+              <Plus />
+              New analysis
             </button>
-          )}
+          </div>
+          <div style={{ padding: '20px 28px 40px', flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10 }}>
+              <div className="stat-card"><div className="stat-lbl">Active</div><div className="stat-val">{activeProjects}</div><div className="stat-hint">projects</div></div>
+              <div className="stat-card"><div className="stat-lbl">Open tasks</div><div className="stat-val">{openTasks}</div><div className="stat-hint">across all projects</div></div>
+              <div className="stat-card"><div className="stat-lbl">Overdue</div><div className="stat-val" style={{ color: 'var(--red)' }}>{overdue}</div><div className="stat-hint" style={{ color: 'var(--red)' }}>needs attention</div></div>
+              <div className="stat-card">
+                <div className="stat-lbl">Avg progress</div>
+                <div className="stat-val">{averageProgress}<span style={{ fontSize: 16, color: 'var(--faint)' }}>%</span></div>
+                <div style={{ height: 3, background: 'var(--bg3)', borderRadius: 99, marginTop: 6, overflow: 'hidden' }}>
+                  <div style={{ width: avgPct + '%', height: '100%', background: 'var(--accent)', borderRadius: 99 }} />
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {filterPills.map((pill, pillIndex) => {
+                const active = (pill === 'All teams' && teamFilter === 'all') || teamFilter === pill;
+                const teamColor = pillIndex > 0 ? teamPillColors[(pillIndex - 1) % teamPillColors.length] : null;
+                const teamBg = pillIndex > 0 ? teamBgColors[(pillIndex - 1) % teamBgColors.length] : null;
+                return (
+                  <button key={pill} type="button" className={`filter-pill ${active ? 'active' : ''}`} onClick={() => setTeamFilter(pill === 'All teams' ? 'all' : pill)}>
+                    {teamColor && teamBg ? (
+                      <span style={{ width: 8, height: 8, borderRadius: 2, background: teamBg, border: '1.5px solid ' + teamColor, flexShrink: 0 }} />
+                    ) : null}
+                    {pill}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div id="projGrid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12 }}>
+              {filteredProjects.map((project, index) => {
+                const projectTasks = tasks.filter((t: { project_id: number; status: string }) => t.project_id === project.id && t.status !== 'done');
+                const projectOverdue = tasks.filter((t: { project_id: number; status: string; due_date?: string }) => t.project_id === project.id && t.status !== 'done' && t.due_date && new Date(t.due_date) < new Date()).length;
+                const pct = progress(project, projectTasks.length);
+                const cardColor = colorAt(index);
+                return (
+                  <div
+                    key={project.id}
+                    className="proj-card"
+                    onClick={() => router.push(`/dashboard/projects/${project.id}`)}
+                    onMouseEnter={() => prefetchProject(project.id)}
+                  >
+                    <div className="proj-card-hd">
+                      <div className="proj-card-dot" style={{ background: cardColor }} />
+                      <div className="proj-card-name">{project.name}</div>
+                      {project.risk_level ? <span className={`bg ${project.risk_level === 'HIGH' || project.risk_level === 'CRITICAL' ? 'bg-r' : 'bg-hot'}`}>{project.risk_level}</span> : null}
+                      {pct >= 90 && !project.risk_level ? <span className="bg bg-ok">{pct}%</span> : null}
+                    </div>
+                    <div className="proj-card-meta">
+                      <span className="proj-card-team">{project.type || 'Project'}</span>
+                      <span className="proj-card-sprint">{project.timeline || 'Active phase'}</span>
+                    </div>
+                    <div className="proj-card-stats">
+                      <div className="proj-card-stat">
+                        {projectTasks.length > 0 ? (
+                          <>
+                            <CheckSquare style={{ width: 11, height: 11, display: 'inline', marginRight: 4, verticalAlign: 'middle' }} />
+                            {projectTasks.length} open
+                          </>
+                        ) : (
+                          <span style={{ color: 'var(--faint)' }}>No tasks</span>
+                        )}
+                      </div>
+                      <div className="proj-card-stat" style={projectOverdue > 0 ? { color: 'var(--red)' } : {}}>
+                        {projectOverdue > 0 ? (
+                          <>
+                            <AlertCircle style={{ width: 11, height: 11, display: 'inline', marginRight: 4, verticalAlign: 'middle' }} />
+                            {projectOverdue} overdue
+                          </>
+                        ) : (
+                          <>
+                            <Clock style={{ width: 11, height: 11, display: 'inline', marginRight: 4, verticalAlign: 'middle' }} />
+                            {project.industry || '—'}
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <div className="proj-prog-row">
+                      <div className="proj-prog-bar"><div style={{ width: pct + '%', height: '100%', background: cardColor, borderRadius: 99 }} /></div>
+                      <span className="proj-prog-pct">{pct}%</span>
+                    </div>
+                    <div className="proj-card-members">
+                      <div className="proj-av" style={{ background: cardColor }}>{initials(project.name)}</div>
+                      <div className="proj-av" style={{ background: '#B83232' }}>{initials(project.type || 'PR')}</div>
+                      <div className="proj-av" style={{ background: '#2E5DA8' }}>{initials(project.industry || 'IN')}</div>
+                      {project.isOwner ? (
+                        <button
+                          type="button"
+                          className="proj-av"
+                          style={{ background: 'var(--bg3)', color: 'var(--muted)', border: 'none', cursor: 'pointer' }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteModal({ isOpen: true, project });
+                          }}
+                        >
+                          <Trash2 style={{ width: 10, height: 10 }} />
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+                );
+              })}
+              <div className="proj-card proj-card-new" onClick={() => router.push('/dashboard/projects/new')}>
+                <Plus style={{ width: 24, height: 24, color: 'var(--ghost)' }} />
+                <span style={{ fontSize: 14, color: 'var(--faint)', marginTop: 6 }}>New project</span>
+              </div>
+            </div>
+          </div>
         </div>
-      )}
+      </div>
 
       <DeleteConfirmModal
         isOpen={deleteModal.isOpen}
         title="Delete Project"
-        message="This will mark the project as deleted. This action can be undone by restoring the project from the deleted projects list."
+        message="This will mark the project as deleted."
         itemName={deleteModal.project?.name || ''}
         onConfirm={confirmDelete}
         onCancel={() => setDeleteModal({ isOpen: false, project: null })}

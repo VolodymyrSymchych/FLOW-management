@@ -1,14 +1,12 @@
 import { test, expect } from '@playwright/test';
+import { loginUser } from './helpers/login';
 
 test.describe('Localization (i18n) Tests', () => {
     test.skip(() => !process.env.TEST_USER_EMAIL || !process.env.TEST_USER_PASSWORD, 'Requires test credentials');
 
-    test.beforeEach(async ({ page }) => {
-        await page.goto('/sign-in');
-        await page.locator('input[type="email"]').fill(process.env.TEST_USER_EMAIL!);
-        await page.locator('input[type="password"]').fill(process.env.TEST_USER_PASSWORD!);
-        await page.getByRole('button', { name: /Sign In/i }).click();
-        await page.waitForURL(/dashboard/, { timeout: 15000 });
+    test.beforeEach(async ({ page }, testInfo) => {
+        testInfo.setTimeout(120000);
+        await loginUser(page, process.env.TEST_USER_EMAIL!, process.env.TEST_USER_PASSWORD!, 90000);
     });
 
     test('should switch language to Ukrainian', async ({ page }) => {
@@ -19,6 +17,10 @@ test.describe('Localization (i18n) Tests', () => {
         await page.goto('/en/dashboard/settings');
         await page.waitForLoadState('networkidle');
         await page.waitForTimeout(1000);
+
+        // Open Profile section (language selector is in Profile)
+        await page.locator('.stg-ni').filter({ hasText: /Profile|Профіль/i }).first().click();
+        await page.waitForTimeout(500);
 
         // Find language selector
         const langSelect = page.getByTestId('language-select');
@@ -60,6 +62,10 @@ test.describe('Localization (i18n) Tests', () => {
         await page.goto('/uk/dashboard/settings');
         await page.waitForLoadState('networkidle');
         await page.waitForTimeout(1000);
+
+        // Open Profile section (language selector is in Profile)
+        await page.locator('.stg-ni').filter({ hasText: /Profile|Профіль/i }).first().click();
+        await page.waitForTimeout(500);
 
         // Find language selector
         const langSelect = page.getByTestId('language-select');

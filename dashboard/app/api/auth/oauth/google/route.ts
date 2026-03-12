@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { nanoid } from 'nanoid';
+import { validateOAuthRedirect } from '@/lib/oauth-redirect';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest) {
   }
 
   const searchParams = request.nextUrl.searchParams;
-  const redirectTo = searchParams.get('redirect') || '/';
+  const redirectTo = validateOAuthRedirect(searchParams.get('redirect'));
   const rememberMe = searchParams.get('rememberMe') === 'true';
 
   // Generate state parameter for CSRF protection

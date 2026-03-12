@@ -25,7 +25,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
             return;
         }
 
-        if (!segments || segments.length === 0) {
+        if (!segments[0]) {
             console.log('[AuthGuard] No segments yet');
             return;
         }

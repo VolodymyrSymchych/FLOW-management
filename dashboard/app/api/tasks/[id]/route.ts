@@ -2,8 +2,36 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { storage } from '../../../../../server/storage';
 import { invalidateOnUpdate } from '@/lib/cache-invalidation';
+import { apiResponses, parseNumericId } from '@/lib/api-route-helpers';
 
 export const dynamic = 'force-dynamic';
+
+const unauthorized = () => apiResponses.unauthorized();
+const invalidTaskId = () => apiResponses.badRequest('Invalid task ID');
+const taskNotFound = () => apiResponses.notFound('Task not found');
+const forbidden = (msg?: string) => apiResponses.forbidden(msg ?? 'Forbidden');
+
+function parseTaskId(idStr: string): number | null {
+  return parseNumericId(idStr);
+}
+
+function buildTaskUpdateData(data: Record<string, unknown>): Record<string, unknown> {
+  const updateData: Record<string, unknown> = {};
+  if (data.status) updateData.status = data.status;
+  if (data.title) updateData.title = data.title;
+  if (data.description !== undefined) updateData.description = data.description;
+  if (data.priority) updateData.priority = data.priority;
+  if (data.assignee !== undefined) updateData.assignee = data.assignee;
+  if (data.start_date !== undefined) updateData.startDate = data.start_date ? new Date(data.start_date as string) : null;
+  if (data.due_date !== undefined) updateData.dueDate = data.due_date ? new Date(data.due_date as string) : null;
+  if (data.end_date !== undefined) updateData.endDate = data.end_date ? new Date(data.end_date as string) : null;
+  if (data.project_id !== undefined) updateData.projectId = data.project_id;
+  if (data.depends_on !== undefined) {
+    updateData.dependsOn = data.depends_on ? JSON.stringify(data.depends_on) : null;
+  }
+  if (data.progress !== undefined) updateData.progress = data.progress;
+  return updateData;
+}
 
 export async function GET(
   request: NextRequest,
@@ -11,28 +39,17 @@ export async function GET(
 ) {
   try {
     const session = await getSession();
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    if (!session) return unauthorized();
 
-    const id = parseInt(params.id);
-    if (isNaN(id) || id <= 0) {
-      return NextResponse.json({ error: 'Invalid task ID' }, { status: 400 });
-    }
+    const id = parseTaskId(params.id);
+    if (id === null) return invalidTaskId();
 
     const task = await storage.getTask(id);
-
-    if (!task) {
-      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
-    }
-
-    // Verify ownership
-    if (task.userId !== session.userId) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
+    if (!task) return taskNotFound();
+    if (task.userId !== session.userId) return forbidden();
 
     return NextResponse.json({ task });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching task:', error);
     return NextResponse.json({ error: 'Failed to fetch task' }, { status: 500 });
   }
@@ -44,54 +61,28 @@ export async function PUT(
 ) {
   try {
     const session = await getSession();
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    if (!session) return unauthorized();
 
-    const id = parseInt(params.id);
-    if (isNaN(id) || id <= 0) {
-      return NextResponse.json({ error: 'Invalid task ID' }, { status: 400 });
-    }
+    const id = parseTaskId(params.id);
+    if (id === null) return invalidTaskId();
 
     const data = await request.json();
 
-    // Get original task to calculate date delta
     const originalTask = await storage.getTask(id);
-    if (!originalTask) {
-      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
-    }
+    if (!originalTask) return taskNotFound();
+    if (originalTask.userId !== session.userId) return forbidden();
 
-    // Verify ownership
-    if (originalTask.userId !== session.userId) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
-    // If changing projectId, verify ownership of new project
     if (data.project_id !== undefined && data.project_id !== originalTask.projectId) {
       if (data.project_id) {
-        const newProject = await storage.getProject(parseInt(data.project_id));
+        const newProject = await storage.getProject(parseInt(String(data.project_id)));
         if (!newProject || newProject.userId !== session.userId) {
-          return NextResponse.json({ error: 'Forbidden - Cannot assign task to another user\'s project' }, { status: 403 });
+          return forbidden("Cannot assign task to another user's project");
         }
       }
     }
 
-    const updateData: any = {};
-    if (data.status) updateData.status = data.status;
-    if (data.title) updateData.title = data.title;
-    if (data.description !== undefined) updateData.description = data.description;
-    if (data.priority) updateData.priority = data.priority;
-    if (data.assignee !== undefined) updateData.assignee = data.assignee;
-    if (data.start_date !== undefined) updateData.startDate = data.start_date ? new Date(data.start_date) : null;
-    if (data.due_date !== undefined) updateData.dueDate = data.due_date ? new Date(data.due_date) : null;
-    if (data.end_date !== undefined) updateData.endDate = data.end_date ? new Date(data.end_date) : null;
-    if (data.project_id !== undefined) updateData.projectId = data.project_id;
-    if (data.depends_on !== undefined) {
-      updateData.dependsOn = data.depends_on ? JSON.stringify(data.depends_on) : null;
-    }
-    if (data.progress !== undefined) updateData.progress = data.progress;
+    const updateData = buildTaskUpdateData(data) as Record<string, unknown> & { startDate?: Date | null };
 
-    // Calculate days delta if start_date changed and shift_subtasks flag is set
     let daysDelta = 0;
     if (data.shift_subtasks && data.start_date && originalTask.startDate) {
       const newStart = new Date(data.start_date);
@@ -100,28 +91,22 @@ export async function PUT(
     }
 
     const task = await storage.updateTask(id, updateData);
+    if (!task) return taskNotFound();
 
-    if (!task) {
-      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
-    }
-
-    // Shift subtasks if requested and dates changed
     if (data.shift_subtasks && daysDelta !== 0) {
       await storage.shiftSubtasks(id, daysDelta);
     }
 
-    // If this is a subtask, update parent date range
     if (task.parentId && (data.start_date !== undefined || data.end_date !== undefined)) {
       await storage.updateParentDateRange(task.parentId);
     }
 
-    // Invalidate caches after updating task
     await invalidateOnUpdate('task', id, session.userId, {
       projectId: task.projectId || undefined,
     });
 
     return NextResponse.json({ task });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error updating task:', error);
     return NextResponse.json({ error: 'Failed to update task' }, { status: 500 });
   }
@@ -133,34 +118,23 @@ export async function DELETE(
 ) {
   try {
     const session = await getSession();
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    if (!session) return unauthorized();
 
-    const id = parseInt(params.id);
-    if (isNaN(id) || id <= 0) {
-      return NextResponse.json({ error: 'Invalid task ID' }, { status: 400 });
-    }
+    const id = parseTaskId(params.id);
+    if (id === null) return invalidTaskId();
 
-    // Verify ownership before deleting
     const task = await storage.getTask(id);
-    if (!task) {
-      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
-    }
-
-    if (task.userId !== session.userId) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
+    if (!task) return taskNotFound();
+    if (task.userId !== session.userId) return forbidden();
 
     await storage.deleteTask(id);
 
-    // Invalidate caches after deleting task
     await invalidateOnUpdate('task', id, session.userId, {
       projectId: task.projectId || undefined,
     });
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error deleting task:', error);
     return NextResponse.json({ error: 'Failed to delete task' }, { status: 500 });
   }

@@ -1,18 +1,16 @@
 import { test, expect } from '@playwright/test';
+import { loginUser } from './helpers/login';
 
 test.describe('Settings Page - Detailed Tests', () => {
     test.skip(() => !process.env.TEST_USER_EMAIL || !process.env.TEST_USER_PASSWORD, 'Requires test credentials');
 
-    test.beforeEach(async ({ page }) => {
-        await page.goto('/sign-in');
-        await page.locator('input[type="email"]').fill(process.env.TEST_USER_EMAIL!);
-        await page.locator('input[type="password"]').fill(process.env.TEST_USER_PASSWORD!);
-        await page.getByRole('button', { name: /Sign In/i }).click();
-        await page.waitForURL(/dashboard/, { timeout: 15000 });
+    test.beforeEach(async ({ page }, testInfo) => {
+        testInfo.setTimeout(120000);
+        await loginUser(page, process.env.TEST_USER_EMAIL!, process.env.TEST_USER_PASSWORD!, 90000);
 
         // Navigate to settings page
         await page.goto('/dashboard/settings');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('networkidle', { timeout: 60000 });
     });
 
     test('should display settings page header', async ({ page }) => {
@@ -20,33 +18,27 @@ test.describe('Settings Page - Detailed Tests', () => {
         await expect(header).toBeVisible();
     });
 
-    test('should display all settings tabs', async ({ page }) => {
-        const tabs = ['Profile', 'Notifications', 'Billing', 'Security'];
+    test('should display all settings sections', async ({ page }) => {
+        const sections = ['General', 'Team members', 'Notifications', 'Profile', 'Billing', 'Integrations', 'Security'];
 
-        for (const tabName of tabs) {
-            const tab = page.locator('button, a').filter({ hasText: new RegExp(tabName, 'i') });
-            if (await tab.count() > 0) {
-                await expect(tab.first()).toBeVisible();
+        for (const sectionName of sections) {
+            const item = page.locator('.stg-ni, button, a').filter({ hasText: new RegExp(sectionName.replace(' ', '.*'), 'i') });
+            if (await item.count() > 0) {
+                await expect(item.first()).toBeVisible();
             }
         }
     });
 
-    test('should display Profile tab by default', async ({ page }) => {
-        const profileTab = page.locator('button').filter({ hasText: /Profile|Профіль/i });
-        if (await profileTab.count() > 0) {
-            // Check if profile tab is active
-            const isActive = await profileTab.first().evaluate(el =>
-                el.classList.contains('active') ||
-                el.getAttribute('aria-selected') === 'true' ||
-                el.classList.contains('border-primary') ||
-                el.classList.contains('text-primary')
-            );
-            expect(isActive || true).toBeTruthy();
+    test('should display General section by default', async ({ page }) => {
+        const generalItem = page.locator('.stg-ni').filter({ hasText: /General|Загальні/i });
+        if (await generalItem.count() > 0) {
+            const isActive = await generalItem.first().evaluate(el => el.classList.contains('on'));
+            expect(isActive).toBeTruthy();
         }
     });
 
-    test('should switch to Notifications tab when clicked', async ({ page }) => {
-        const notificationsTab = page.locator('button').filter({ hasText: /Notifications|Сповіщення/i });
+    test('should switch to Notifications when clicked', async ({ page }) => {
+        const notificationsTab = page.locator('.stg-ni').filter({ hasText: /Notifications|Сповіщення/i });
         if (await notificationsTab.count() > 0) {
             await notificationsTab.first().click();
             await page.waitForTimeout(500);
@@ -59,8 +51,8 @@ test.describe('Settings Page - Detailed Tests', () => {
         }
     });
 
-    test('should switch to Billing tab when clicked', async ({ page }) => {
-        const billingTab = page.locator('button').filter({ hasText: /Billing|Оплата/i });
+    test('should switch to Billing when clicked', async ({ page }) => {
+        const billingTab = page.locator('.stg-ni').filter({ hasText: /Billing|Оплата/i });
         if (await billingTab.count() > 0) {
             await billingTab.first().click();
             await page.waitForTimeout(500);
@@ -73,8 +65,8 @@ test.describe('Settings Page - Detailed Tests', () => {
         }
     });
 
-    test('should switch to Security tab when clicked', async ({ page }) => {
-        const securityTab = page.locator('button').filter({ hasText: /Security|Безпека/i });
+    test('should switch to Security when clicked', async ({ page }) => {
+        const securityTab = page.locator('.stg-ni').filter({ hasText: /Security|Безпека/i });
         if (await securityTab.count() > 0) {
             await securityTab.first().click();
             await page.waitForTimeout(500);
@@ -88,7 +80,8 @@ test.describe('Settings Page - Detailed Tests', () => {
     });
 
     test('should display user profile information', async ({ page }) => {
-        // Check for email input/display
+        await page.locator('.stg-ni').filter({ hasText: /Profile|Профіль/i }).first().click();
+        await page.waitForTimeout(500);
         const emailField = page.locator('input[type="email"], input[value*="@"]');
         if (await emailField.count() > 0) {
             await expect(emailField.first()).toBeVisible();
@@ -96,6 +89,8 @@ test.describe('Settings Page - Detailed Tests', () => {
     });
 
     test('should display username field', async ({ page }) => {
+        await page.locator('.stg-ni').filter({ hasText: /Profile|Профіль/i }).first().click();
+        await page.waitForTimeout(500);
         const usernameField = page.locator('input[name="username"], input[placeholder*="username"]');
         if (await usernameField.count() > 0) {
             await expect(usernameField.first()).toBeVisible();
@@ -103,6 +98,8 @@ test.describe('Settings Page - Detailed Tests', () => {
     });
 
     test('should display first name and last name fields', async ({ page }) => {
+        await page.locator('.stg-ni').filter({ hasText: /Profile|Профіль/i }).first().click();
+        await page.waitForTimeout(500);
         const firstNameField = page.locator('input[name="firstName"], input[placeholder*="First"]');
         const lastNameField = page.locator('input[name="lastName"], input[placeholder*="Last"]');
 
@@ -115,11 +112,15 @@ test.describe('Settings Page - Detailed Tests', () => {
     });
 
     test('should display language selector', async ({ page }) => {
+        await page.locator('.stg-ni').filter({ hasText: /Profile|Профіль/i }).first().click();
+        await page.waitForTimeout(500);
         const langSelector = page.getByTestId('language-select');
         await expect(langSelector).toBeVisible();
     });
 
     test('should have English and Ukrainian language options', async ({ page }) => {
+        await page.locator('.stg-ni').filter({ hasText: /Profile|Профіль/i }).first().click();
+        await page.waitForTimeout(500);
         const langSelector = page.getByTestId('language-select');
         const options = await langSelector.locator('option').allTextContents();
 
@@ -130,17 +131,23 @@ test.describe('Settings Page - Detailed Tests', () => {
     });
 
     test('should display Save button', async ({ page }) => {
+        await page.locator('.stg-ni').filter({ hasText: /Profile|Профіль/i }).first().click();
+        await page.waitForTimeout(500);
         const saveBtn = page.getByTestId('save-settings-btn');
         await expect(saveBtn).toBeVisible();
     });
 
     test('should disable Save button when no changes made', async ({ page }) => {
+        await page.locator('.stg-ni').filter({ hasText: /Profile|Профіль/i }).first().click();
+        await page.waitForTimeout(500);
         const saveBtn = page.getByTestId('save-settings-btn');
         const isDisabled = await saveBtn.isDisabled();
         expect(isDisabled).toBe(true);
     });
 
     test('should enable Save button when language is changed', async ({ page }) => {
+        await page.locator('.stg-ni').filter({ hasText: /Profile|Профіль/i }).first().click();
+        await page.waitForTimeout(500);
         const langSelector = page.getByTestId('language-select');
         const currentValue = await langSelector.inputValue();
 
@@ -154,22 +161,22 @@ test.describe('Settings Page - Detailed Tests', () => {
         expect(isEnabled).toBe(true);
     });
 
-    test('should display notification preferences in Notifications tab', async ({ page }) => {
-        const notificationsTab = page.locator('button').filter({ hasText: /Notifications|Сповіщення/i });
+    test('should display notification preferences in Notifications', async ({ page }) => {
+        const notificationsTab = page.locator('.stg-ni').filter({ hasText: /Notifications|Сповіщення/i });
         if (await notificationsTab.count() > 0) {
             await notificationsTab.first().click();
             await page.waitForTimeout(500);
 
             // Check for notification toggles
-            const checkboxes = page.locator('input[type="checkbox"]');
-            if (await checkboxes.count() > 0) {
-                await expect(checkboxes.first()).toBeVisible();
+            const toggles = page.locator('.stg-toggle, input[type="checkbox"]');
+            if (await toggles.count() > 0) {
+                await expect(toggles.first()).toBeVisible();
             }
         }
     });
 
     test('should display email notifications toggle', async ({ page }) => {
-        const notificationsTab = page.locator('button').filter({ hasText: /Notifications|Сповіщення/i });
+        const notificationsTab = page.locator('.stg-ni').filter({ hasText: /Notifications|Сповіщення/i });
         if (await notificationsTab.count() > 0) {
             await notificationsTab.first().click();
             await page.waitForTimeout(500);
@@ -181,8 +188,8 @@ test.describe('Settings Page - Detailed Tests', () => {
         }
     });
 
-    test('should display current plan in Billing tab', async ({ page }) => {
-        const billingTab = page.locator('button').filter({ hasText: /Billing|Оплата/i });
+    test('should display current plan in Billing', async ({ page }) => {
+        const billingTab = page.locator('.stg-ni').filter({ hasText: /Billing|Оплата/i });
         if (await billingTab.count() > 0) {
             await billingTab.first().click();
             await page.waitForTimeout(500);
@@ -194,8 +201,8 @@ test.describe('Settings Page - Detailed Tests', () => {
         }
     });
 
-    test('should display payment method in Billing tab', async ({ page }) => {
-        const billingTab = page.locator('button').filter({ hasText: /Billing|Оплата/i });
+    test('should display payment method in Billing', async ({ page }) => {
+        const billingTab = page.locator('.stg-ni').filter({ hasText: /Billing|Оплата/i });
         if (await billingTab.count() > 0) {
             await billingTab.first().click();
             await page.waitForTimeout(500);
@@ -207,8 +214,8 @@ test.describe('Settings Page - Detailed Tests', () => {
         }
     });
 
-    test('should display "Change Plan" button in Billing tab', async ({ page }) => {
-        const billingTab = page.locator('button').filter({ hasText: /Billing|Оплата/i });
+    test('should display "Change Plan" button in Billing', async ({ page }) => {
+        const billingTab = page.locator('.stg-ni').filter({ hasText: /Billing|Оплата/i });
         if (await billingTab.count() > 0) {
             await billingTab.first().click();
             await page.waitForTimeout(500);
@@ -221,7 +228,7 @@ test.describe('Settings Page - Detailed Tests', () => {
     });
 
     test('should navigate to payment page when clicking Change Plan', async ({ page }) => {
-        const billingTab = page.locator('button').filter({ hasText: /Billing|Оплата/i });
+        const billingTab = page.locator('.stg-ni').filter({ hasText: /Billing|Оплата/i });
         if (await billingTab.count() > 0) {
             await billingTab.first().click();
             await page.waitForTimeout(500);
@@ -236,8 +243,8 @@ test.describe('Settings Page - Detailed Tests', () => {
         }
     });
 
-    test('should display password change form in Security tab', async ({ page }) => {
-        const securityTab = page.locator('button').filter({ hasText: /Security|Безпека/i });
+    test('should display password change form in Security', async ({ page }) => {
+        const securityTab = page.locator('.stg-ni').filter({ hasText: /Security|Безпека/i });
         if (await securityTab.count() > 0) {
             await securityTab.first().click();
             await page.waitForTimeout(500);
@@ -250,7 +257,7 @@ test.describe('Settings Page - Detailed Tests', () => {
     });
 
     test('should display current password field', async ({ page }) => {
-        const securityTab = page.locator('button').filter({ hasText: /Security|Безпека/i });
+        const securityTab = page.locator('.stg-ni').filter({ hasText: /Security|Безпека/i });
         if (await securityTab.count() > 0) {
             await securityTab.first().click();
             await page.waitForTimeout(500);
@@ -264,7 +271,7 @@ test.describe('Settings Page - Detailed Tests', () => {
     });
 
     test('should display new password field', async ({ page }) => {
-        const securityTab = page.locator('button').filter({ hasText: /Security|Безпека/i });
+        const securityTab = page.locator('.stg-ni').filter({ hasText: /Security|Безпека/i });
         if (await securityTab.count() > 0) {
             await securityTab.first().click();
             await page.waitForTimeout(500);
@@ -277,7 +284,7 @@ test.describe('Settings Page - Detailed Tests', () => {
     });
 
     test('should display confirm password field', async ({ page }) => {
-        const securityTab = page.locator('button').filter({ hasText: /Security|Безпека/i });
+        const securityTab = page.locator('.stg-ni').filter({ hasText: /Security|Безпека/i });
         if (await securityTab.count() > 0) {
             await securityTab.first().click();
             await page.waitForTimeout(500);
@@ -289,8 +296,8 @@ test.describe('Settings Page - Detailed Tests', () => {
         }
     });
 
-    test('should display Danger Zone in Security tab', async ({ page }) => {
-        const securityTab = page.locator('button').filter({ hasText: /Security|Безпека/i });
+    test('should display Danger Zone in Security', async ({ page }) => {
+        const securityTab = page.locator('.stg-ni').filter({ hasText: /Security|Безпека/i });
         if (await securityTab.count() > 0) {
             await securityTab.first().click();
             await page.waitForTimeout(500);
@@ -303,7 +310,7 @@ test.describe('Settings Page - Detailed Tests', () => {
     });
 
     test('should display Delete Account button', async ({ page }) => {
-        const securityTab = page.locator('button').filter({ hasText: /Security|Безпека/i });
+        const securityTab = page.locator('.stg-ni').filter({ hasText: /Security|Безпека/i });
         if (await securityTab.count() > 0) {
             await securityTab.first().click();
             await page.waitForTimeout(500);
@@ -316,6 +323,8 @@ test.describe('Settings Page - Detailed Tests', () => {
     });
 
     test('should display bio/description textarea', async ({ page }) => {
+        await page.locator('.stg-ni').filter({ hasText: /Profile|Профіль/i }).first().click();
+        await page.waitForTimeout(500);
         const bioField = page.locator('textarea[name="bio"], textarea[placeholder*="bio"]');
         if (await bioField.count() > 0) {
             await expect(bioField.first()).toBeVisible();
@@ -323,32 +332,34 @@ test.describe('Settings Page - Detailed Tests', () => {
     });
 
     test('should display verification status for email', async ({ page }) => {
+        await page.locator('.stg-ni').filter({ hasText: /Profile|Профіль/i }).first().click();
+        await page.waitForTimeout(500);
         const verificationBadge = page.locator('text=/Verified|Not Verified|Підтверджено/i');
         if (await verificationBadge.count() > 0) {
             await expect(verificationBadge.first()).toBeVisible();
         }
     });
 
-    test('should toggle notification checkbox when clicked', async ({ page }) => {
-        const notificationsTab = page.locator('button').filter({ hasText: /Notifications|Сповіщення/i });
+    test('should toggle notification when clicked', async ({ page }) => {
+        const notificationsTab = page.locator('.stg-ni').filter({ hasText: /Notifications|Сповіщення/i });
         if (await notificationsTab.count() > 0) {
             await notificationsTab.first().click();
             await page.waitForTimeout(500);
 
-            const checkbox = page.locator('input[type="checkbox"]').first();
-            if (await checkbox.isVisible({ timeout: 3000 })) {
-                const initialState = await checkbox.isChecked();
-                await checkbox.click();
+            const toggle = page.locator('.stg-toggle').first();
+            if (await toggle.isVisible({ timeout: 3000 })) {
+                const initialState = await toggle.evaluate(el => el.classList.contains('on'));
+                await toggle.click();
                 await page.waitForTimeout(300);
 
-                const newState = await checkbox.isChecked();
+                const newState = await toggle.evaluate(el => el.classList.contains('on'));
                 expect(newState).not.toBe(initialState);
             }
         }
     });
 
-    test('should display Update Password button in Security tab', async ({ page }) => {
-        const securityTab = page.locator('button').filter({ hasText: /Security|Безпека/i });
+    test('should display Update Password button in Security', async ({ page }) => {
+        const securityTab = page.locator('.stg-ni').filter({ hasText: /Security|Безпека/i });
         if (await securityTab.count() > 0) {
             await securityTab.first().click();
             await page.waitForTimeout(500);

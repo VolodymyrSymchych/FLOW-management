@@ -38,9 +38,9 @@ export function createApp(): Express {
     maxAge: 86400, // 24 hours
   }));
 
-  // Body parsing
-  app.use(express.json());
-  app.use(express.urlencoded({ extended: true }));
+  // Body parsing with size limits (DoS mitigation)
+  app.use(express.json({ limit: '1mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '1mb', parameterLimit: 1000 }));
 
   // Logging and metrics
   app.use(requestLogger);

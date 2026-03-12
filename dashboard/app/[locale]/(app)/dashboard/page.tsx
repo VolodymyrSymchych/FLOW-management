@@ -1,15 +1,5 @@
-import dynamic from 'next/dynamic';
-import { DashboardSkeleton } from '@/components/dashboard/DashboardSkeleton';
-
-// Dynamically import the main dashboard view with SSR disabled
-const DashboardView = dynamic(
-  () => import('@/components/dashboard/DashboardView').then(mod => ({ default: mod.default })),
-  {
-    ssr: false,
-    loading: () => <DashboardSkeleton />
-  }
-);
+import DashboardMockup from '@/components/dashboard/DashboardMockup';
 
 export default function DashboardPage() {
-  return <DashboardView />;
+  return <DashboardMockup />;
 }

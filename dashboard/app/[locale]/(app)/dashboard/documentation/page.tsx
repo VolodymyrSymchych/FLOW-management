@@ -1,14 +1,13 @@
 'use client';
 
-import { useState } from 'react';
-import { Plus, FileText, Download, Edit, Trash2 } from 'lucide-react';
+import { useMemo } from 'react';
+import { FileText } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
+import { useQueryClient } from '@tanstack/react-query';
 import { generateReportPDF } from '@/lib/report-pdf';
 import { useTeam } from '@/contexts/TeamContext';
-import { ListSkeleton } from '@/components/skeletons';
 import { useReports } from '@/hooks/useQueries';
-import { useQueryClient } from '@tanstack/react-query';
 
 interface Report {
   id: number;
@@ -27,200 +26,178 @@ interface Report {
   user?: {
     id: number;
     username: string;
+    fullName?: string | null;
   };
 }
 
-// Skeleton для сторінки
-function PageSkeleton() {
+function formatShortDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Unknown';
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function accentForType(type: Report['type']) {
+  if (type === 'analysis') return { bg: '#F0EBFA', color: '#6941C6' };
+  if (type === 'financial_summary') return { bg: '#EAF2ED', color: '#3D7A5A' };
+  return { bg: '#FDF1EB', color: '#E8753A' };
+}
+
+function iconForType(type: Report['type']) {
+  if (type === 'analysis') {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" style={{ width: 14, height: 14 }}>
+        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+      </svg>
+    );
+  }
+
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="space-y-2">
-          <div className="h-10 w-64 bg-white/10 rounded animate-pulse" />
-          <div className="h-4 w-96 bg-white/10 rounded animate-pulse" />
-        </div>
-        <div className="h-10 w-32 bg-white/10 rounded animate-pulse" />
-      </div>
-      <ListSkeleton items={8} />
-    </div>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" style={{ width: 14, height: 14 }}>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14 2 14 8 20 8" />
+    </svg>
   );
 }
 
 export default function DocumentationPage() {
-  const { selectedTeam, isLoading: teamsLoading } = useTeam();
   const router = useRouter();
   const queryClient = useQueryClient();
-  
-  const teamId = selectedTeam.type === 'single' && selectedTeam.teamId 
-    ? selectedTeam.teamId 
-    : 'all';
-  
-  // React Query для оптимального кешування
-  const { 
-    data: reports = [], 
-    isLoading: reportsLoading,
-    refetch: refetchReports 
-  } = useReports(teamId);
+  const { selectedTeam, isLoading: teamsLoading } = useTeam();
+  const teamId = selectedTeam.type === 'single' && selectedTeam.teamId ? selectedTeam.teamId : 'all';
+  const { data: reports = [], isLoading: reportsLoading } = useReports(teamId);
 
-  // Показуємо skeleton тільки при першому завантаженні
-  const isLoading = teamsLoading || (reportsLoading && reports.length === 0);
+  const sortedReports = useMemo(() => [...reports].sort((a: Report, b: Report) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()), [reports]);
+  const pinnedReports = sortedReports.slice(0, 3);
+  const recentReports = sortedReports;
 
-  const handleDelete = async (reportId: number, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!confirm('Are you sure you want to delete this document?')) {
-      return;
-    }
+  const handleOpen = (id: number) => {
+    router.push(`/dashboard/documentation/${id}`);
+  };
 
+  const handleDelete = async (id: number, event: React.MouseEvent) => {
+    event.stopPropagation();
+    if (!confirm('Delete this document?')) return;
     try {
-      await axios.delete(`/api/reports/${reportId}`);
+      await axios.delete(`/api/reports/${id}`);
       await queryClient.invalidateQueries({ queryKey: ['reports'] });
     } catch (error) {
-      console.error('Failed to delete document:', error);
-      alert('Failed to delete document. Please try again.');
+      console.error('Failed to delete report', error);
+      alert('Failed to delete document');
     }
   };
 
-  const handleExportPDF = async (report: Report, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handlePdf = async (report: Report, event: React.MouseEvent) => {
+    event.stopPropagation();
     try {
       await generateReportPDF(report);
     } catch (error) {
-      console.error('Failed to export PDF:', error);
-      alert('Failed to export PDF. Please try again.');
+      console.error('Failed to export PDF', error);
+      alert('Failed to export PDF');
     }
   };
 
-  const getTypeLabel = (type: string) => {
-    switch (type) {
-      case 'project_status': return 'Project Status';
-      case 'analysis': return 'Analysis';
-      case 'financial_summary': return 'Financial Summary';
-      case 'custom': return 'Custom';
-      default: return type;
-    }
-  };
-
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'project_status': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400';
-      case 'analysis': return 'bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400';
-      case 'financial_summary': return 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400';
-      case 'custom': return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400';
-      default: return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400';
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  if (isLoading) {
-    return <PageSkeleton />;
+  if (teamsLoading || (reportsLoading && reports.length === 0)) {
+    return <div style={{ padding: 24, fontSize: 14, color: 'var(--muted)' }}>Loading documentation...</div>;
   }
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-text-primary">Documentation</h1>
-          <p className="text-xs text-text-secondary mt-0.5">
-            Create and manage rich text documentation
-          </p>
+    <div className="scr-inner" data-testid="documentation-screen">
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+        <div style={{ padding: '20px 28px 14px', borderBottom: '1px solid var(--line)', background: 'var(--white)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+          <div>
+            <h1 style={{ fontFamily: 'var(--font-inter), Inter, sans-serif', fontSize: 26, fontWeight: 600, color: 'var(--ink)', letterSpacing: '-.02em', margin: 0 }}>Documentation</h1>
+            <div style={{ fontSize: 14, color: 'var(--muted)', marginTop: 2 }}>{reports.length} documents · Reports, analyses & summaries</div>
+          </div>
         </div>
-        <button
-          onClick={() => router.push('/documentation/new')}
-          className="flex items-center space-x-2 px-4 py-2 glass-button rounded-lg text-sm font-semibold"
-        >
-          <Plus className="w-4 h-4" />
-          <span>New Document</span>
-        </button>
-      </div>
 
-      {/* Reports Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {reports.map((report: Report) => (
-          <div
-            key={report.id}
-            className="glass-medium glass-hover rounded-lg p-4 cursor-pointer group"
-            onClick={() => router.push(`/documentation/${report.id}`)}
-          >
-            <div className="flex items-start justify-between mb-3">
-              <div className="w-9 h-9 rounded-lg glass-light flex items-center justify-center">
-                <FileText className="w-5 h-5 text-[#FF6B4A]" />
-              </div>
-              <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${getTypeColor(report.type)}`}>
-                {getTypeLabel(report.type)}
-              </span>
-            </div>
-
-            <h3 className="text-sm font-semibold text-text-primary mb-2 group-hover:text-primary transition-colors">
-              {report.title}
-            </h3>
-
-            {report.project && (
-              <p className="text-xs text-text-tertiary mb-2">
-                📁 {report.project.name}
-              </p>
-            )}
-
-            <div className="flex items-center justify-between text-xs text-text-tertiary pt-3 border-t border-white/10">
-              <div className="flex items-center space-x-1.5">
-                <div className="w-5 h-5 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-[10px] font-semibold">
-                  {report.user?.username?.substring(0, 2).toUpperCase() || 'U'}
+        <div style={{ padding: '16px 28px 40px', flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <div>
+            <div style={{ fontFamily: 'var(--font-inter), Inter, sans-serif', fontSize: 10, letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--faint)', marginBottom: 10 }}>Pinned</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
+              {pinnedReports.map((report: Report) => {
+                const accent = accentForType(report.type);
+                return (
+                  <button
+                    key={report.id}
+                    type="button"
+                    onClick={() => handleOpen(report.id)}
+                    className="proj-card glass-hover"
+                    style={{ textAlign: 'left', minHeight: 100 }}
+                  >
+                    <div className="proj-card-hd">
+                      <div style={{ width: 32, height: 32, borderRadius: 8, background: accent.bg, color: accent.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        {iconForType(report.type)}
+                      </div>
+                      <div className="proj-card-name">{report.title}</div>
+                    </div>
+                    <div className="proj-card-meta">
+                      <span className="proj-card-team">{report.project?.name || 'Workspace'}</span>
+                      <span className="proj-card-sprint">Updated {formatShortDate(report.updatedAt)}</span>
+                    </div>
+                  </button>
+                );
+              })}
+              {pinnedReports.length === 0 ? (
+                <div className="stat-card" style={{ gridColumn: '1 / -1', padding: 24, textAlign: 'center' }}>
+                  <FileText style={{ width: 32, height: 32, margin: '0 auto 12px', color: 'var(--ghost)' }} />
+                  <div style={{ fontSize: 15, fontWeight: 500, color: 'var(--ink)' }}>No documents yet</div>
+                  <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 4 }}>Create your first report or analysis</div>
                 </div>
-                <span className="text-[10px]">{report.user?.username || 'Unknown'}</span>
-              </div>
-              <span className="text-[10px]">{formatDate(report.updatedAt)}</span>
-            </div>
-
-            <div className="flex items-center space-x-1.5 mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  router.push(`/documentation/${report.id}`);
-                }}
-                className="flex-1 flex items-center justify-center space-x-1 px-2 py-1.5 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/40 transition-colors text-xs"
-              >
-                <Edit className="w-3 h-3" />
-                <span>Edit</span>
-              </button>
-              <button
-                onClick={(e) => handleExportPDF(report, e)}
-                className="flex-1 flex items-center justify-center space-x-1 px-2 py-1.5 bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/40 transition-colors text-xs"
-              >
-                <Download className="w-3 h-3" />
-                <span>PDF</span>
-              </button>
-              <button
-                onClick={(e) => handleDelete(report.id, e)}
-                className="p-1.5 bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/40 transition-colors"
-              >
-                <Trash2 className="w-3 h-3" />
-              </button>
+              ) : null}
             </div>
           </div>
-        ))}
-      </div>
 
-      {reports.length === 0 && (
-        <div className="text-center py-8 glass-medium rounded-lg">
-          <FileText className="w-10 h-10 text-text-tertiary mx-auto mb-2" />
-          <p className="text-sm text-text-secondary mb-3">No documentation yet</p>
-          <button
-            onClick={() => router.push('/documentation/new')}
-            className="px-3 py-1.5 text-sm glass-button rounded-lg"
-          >
-            Create Your First Document
-          </button>
+          <div>
+            <div style={{ fontFamily: 'var(--font-inter), Inter, sans-serif', fontSize: 10, letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--faint)', marginBottom: 10 }}>Recent</div>
+            <div className="surface-panel" style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid var(--line)' }}>
+              <table className="inv-table" style={{ marginTop: 0 }}>
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Project</th>
+                    <th>Author</th>
+                    <th>Updated</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentReports.map((report: Report, index: number) => (
+                    <tr
+                      key={report.id}
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => handleOpen(report.id)}
+                    >
+                      <td style={{ fontWeight: 500, color: 'var(--ink)' }}>{report.title}</td>
+                      <td style={{ color: 'var(--muted)' }}>{report.project?.name || 'Workspace'}</td>
+                      <td style={{ color: 'var(--muted)' }}>{report.user?.fullName || report.user?.username || 'Unknown'}</td>
+                      <td style={{ fontFamily: 'var(--font-inter), Inter, sans-serif', fontSize: 12, color: 'var(--faint)' }}>{formatShortDate(report.updatedAt)}</td>
+                      <td>
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <button type="button" className="btn btn-ghost" style={{ fontSize: 12, padding: '4px 9px' }} onClick={(event) => { event.stopPropagation(); handleOpen(report.id); }}>Open</button>
+                          <button type="button" className="btn btn-ghost" style={{ fontSize: 12, padding: '4px 9px' }} onClick={(event) => handlePdf(report, event)}>PDF</button>
+                          <button type="button" className="btn btn-red" style={{ fontSize: 12, padding: '4px 9px' }} onClick={(event) => handleDelete(report.id, event)}>Delete</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {recentReports.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} style={{ padding: '48px 24px', textAlign: 'center' }}>
+                        <div style={{ width: 56, height: 56, margin: '0 auto 16px', borderRadius: 14, background: 'var(--bg2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <FileText style={{ width: 24, height: 24, color: 'var(--ghost)' }} />
+                        </div>
+                        <div style={{ fontSize: 17, fontWeight: 600, color: 'var(--ink)', fontFamily: "var(--font-inter), Inter, sans-serif" }}>No documentation yet</div>
+                        <div style={{ fontSize: 14, color: 'var(--muted)', marginTop: 6 }}>Create reports and analyses for your projects</div>
+                      </td>
+                    </tr>
+                  ) : null}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

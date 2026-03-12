@@ -4,24 +4,39 @@ import { messageService } from '@/lib/chat-service';
 
 export const dynamic = 'force-dynamic';
 
+function messageErrorResponse(message: string, status: number) {
+  return NextResponse.json({ error: message }, { status });
+}
+
+/** Preserves prior isNaN-based validation (no id <= 0 check) */
+function parseMessageId(idStr: string): number | null {
+  const id = parseInt(idStr, 10);
+  return Number.isNaN(id) ? null : id;
+}
+
+async function requireAuthAndMessageId(paramsId: string) {
+  const { session } = await requireAuth();
+  if (!session?.userId) {
+    return { error: messageErrorResponse('Unauthorized', 401) };
+  }
+  const messageId = parseMessageId(paramsId);
+  if (messageId === null) {
+    return { error: messageErrorResponse('Invalid message ID', 400) };
+  }
+  return { session, messageId };
+}
+
 // GET /api/chat/messages/[id] - Get message by ID
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const { session } = await requireAuth();
-    if (!session?.userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const messageId = parseInt(params.id);
-    if (isNaN(messageId)) {
-      return NextResponse.json({ error: 'Invalid message ID' }, { status: 400 });
-    }
+    const result = await requireAuthAndMessageId(params.id);
+    if ('error' in result) return result.error;
+    const { session, messageId } = result;
 
     const message = await messageService.getMessageById(messageId, session.userId);
-
     return NextResponse.json({ message });
   } catch (error) {
     console.error('Error fetching message:', error);
@@ -38,25 +53,18 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    const { session } = await requireAuth();
-    if (!session?.userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const messageId = parseInt(params.id);
-    if (isNaN(messageId)) {
-      return NextResponse.json({ error: 'Invalid message ID' }, { status: 400 });
-    }
+    const result = await requireAuthAndMessageId(params.id);
+    if ('error' in result) return result.error;
+    const { session, messageId } = result;
 
     const body = await request.json();
     const { content } = body;
 
     if (!content) {
-      return NextResponse.json({ error: 'Missing content' }, { status: 400 });
+      return messageErrorResponse('Missing content', 400);
     }
 
     const message = await messageService.editMessage(messageId, session.userId, content);
-
     return NextResponse.json({ message });
   } catch (error) {
     console.error('Error editing message:', error);
@@ -73,18 +81,11 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const { session } = await requireAuth();
-    if (!session?.userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const messageId = parseInt(params.id);
-    if (isNaN(messageId)) {
-      return NextResponse.json({ error: 'Invalid message ID' }, { status: 400 });
-    }
+    const result = await requireAuthAndMessageId(params.id);
+    if ('error' in result) return result.error;
+    const { session, messageId } = result;
 
     await messageService.deleteMessage(messageId, session.userId);
-
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting message:', error);

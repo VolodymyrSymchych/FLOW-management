@@ -1,6 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
 
-const TEAM_SERVICE_URL = process.env.NEXT_PUBLIC_TEAM_SERVICE_URL || 'http://localhost:3004';
+const TEAM_SERVICE_URL = process.env.NEXT_PUBLIC_TEAM_SERVICE_URL || 'http://localhost:3006';
 
 class TeamServiceClient {
     private client: AxiosInstance;

@@ -40,7 +40,7 @@ export const config = {
   eventBus: {
     type: (process.env.EVENT_BUS_TYPE || 'redis') as 'redis' | 'rabbitmq',
     rabbitmq: {
-      url: process.env.RABBITMQ_URL || 'amqp://admin:admin_password@localhost:5672',
+      url: process.env.RABBITMQ_URL,
       exchange: process.env.RABBITMQ_EXCHANGE || 'events',
     },
   },
@@ -74,5 +74,10 @@ if (!process.env.DATABASE_URL && (!config.database.name || !config.database.user
 if (!config.jwt.secret) {
   // JWT_SECRET validation - will be checked at runtime
   throw new Error('JWT_SECRET is required for authentication. Please set JWT_SECRET environment variable.');
+}
+
+// RabbitMQ: require explicit RABBITMQ_URL when event bus type is rabbitmq (no insecure defaults)
+if (config.eventBus.type === 'rabbitmq' && !config.eventBus.rabbitmq.url) {
+  throw new Error('RABBITMQ_URL is required when EVENT_BUS_TYPE=rabbitmq. Do not use default credentials in production.');
 }
 

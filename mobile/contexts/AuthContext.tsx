@@ -4,6 +4,7 @@ import { authService } from '@/lib/auth-service';
 
 const TOKEN_KEY = 'auth_token';
 const USER_KEY = 'user_data';
+const SELECTED_TEAM_KEY_PREFIX = 'selected_team_id';
 
 export interface User {
     id: string;
@@ -16,12 +17,14 @@ export interface User {
 interface AuthContextType {
     user: User | null;
     token: string | null;
+    selectedTeamId: number | null;
     isLoading: boolean;
     login: (emailOrUsername: string, password: string) => Promise<{ success: boolean; error?: string }>;
     signup: (data: { email: string; username: string; password: string; fullName?: string }) => Promise<{ success: boolean; error?: string }>;
     loginWithGoogle: (idToken: string) => Promise<{ success: boolean; error?: string }>;
     loginWithMicrosoft: (accessToken: string) => Promise<{ success: boolean; error?: string }>;
     logout: () => Promise<void>;
+    setSelectedTeamId: (teamId: number | null) => Promise<void>;
     isAuthenticated: boolean;
 }
 
@@ -30,12 +33,25 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [token, setToken] = useState<string | null>(null);
+    const [selectedTeamId, setSelectedTeamIdState] = useState<number | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     // Load user from storage on mount
     useEffect(() => {
         loadUserFromStorage();
     }, []);
+
+    const getSelectedTeamStorageKey = (userId: string) => `${SELECTED_TEAM_KEY_PREFIX}:${userId}`;
+
+    const loadSelectedTeamFromStorage = async (userId: string) => {
+        try {
+            const storedTeamId = await AsyncStorage.getItem(getSelectedTeamStorageKey(userId));
+            setSelectedTeamIdState(storedTeamId ? Number(storedTeamId) : null);
+        } catch (error) {
+            console.error('[AuthContext] Error loading selected team:', error);
+            setSelectedTeamIdState(null);
+        }
+    };
 
     const loadUserFromStorage = async () => {
         try {
@@ -59,6 +75,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 } else {
                     console.log('[AuthContext] Token valid, user authenticated');
                     setUser(response.user);
+                    await AsyncStorage.setItem(USER_KEY, JSON.stringify(response.user));
+                    await loadSelectedTeamFromStorage(response.user.id);
                 }
             } else {
                 console.log('[AuthContext] No stored credentials found');
@@ -80,6 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             ]);
             setToken(newToken);
             setUser(newUser);
+            setSelectedTeamIdState(null);
             console.log('[AuthContext] Auth saved successfully');
         } catch (error) {
             console.error('[AuthContext] Error saving auth:', error);
@@ -89,14 +108,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const clearAuth = async () => {
         try {
             console.log('[AuthContext] Clearing auth');
-            await Promise.all([
+            const keysToRemove = [
                 AsyncStorage.removeItem(TOKEN_KEY),
                 AsyncStorage.removeItem(USER_KEY),
-            ]);
+            ];
+
+            if (user?.id) {
+                keysToRemove.push(AsyncStorage.removeItem(getSelectedTeamStorageKey(user.id)));
+            }
+
+            await Promise.all(keysToRemove);
             setToken(null);
             setUser(null);
+            setSelectedTeamIdState(null);
         } catch (error) {
             console.error('[AuthContext] Error clearing auth:', error);
+        }
+    };
+
+    const setSelectedTeamId = async (teamId: number | null) => {
+        if (!user?.id) {
+            setSelectedTeamIdState(teamId);
+            return;
+        }
+
+        try {
+            const storageKey = getSelectedTeamStorageKey(user.id);
+            if (teamId === null) {
+                await AsyncStorage.removeItem(storageKey);
+            } else {
+                await AsyncStorage.setItem(storageKey, String(teamId));
+            }
+            setSelectedTeamIdState(teamId);
+        } catch (error) {
+            console.error('[AuthContext] Error saving selected team:', error);
         }
     };
 
@@ -155,12 +200,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const value = {
         user,
         token,
+        selectedTeamId,
         isLoading,
         login,
         signup,
         loginWithGoogle,
         loginWithMicrosoft,
         logout,
+        setSelectedTeamId,
         isAuthenticated: !!user && !!token,
     };
 

@@ -49,10 +49,11 @@ api.interceptors.response.use(
 );
 
 export const projectService = {
-    async getProjects(token: string): Promise<{ projects?: any[]; total?: number; error?: string }> {
+    async getProjects(token: string, teamId?: number | null): Promise<{ projects?: any[]; total?: number; error?: string }> {
         try {
             const response = await api.get('/api/projects', {
                 headers: { Authorization: `Bearer ${token}` },
+                params: teamId ? { teamId } : undefined,
             });
             return { projects: response.data.projects, total: response.data.total };
         } catch (error: any) {

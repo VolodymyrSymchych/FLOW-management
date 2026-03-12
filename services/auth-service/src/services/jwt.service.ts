@@ -102,13 +102,16 @@ export class JWTService {
   }
 
   /**
-   * Check if token is in blacklist
+   * Check if token is in blacklist.
+   * Fail-closed: when Redis is unavailable or errors, we treat the token as blacklisted
+   * (deny access) to prevent revoked tokens from remaining valid during outages.
    */
   async isTokenBlacklisted(token: string): Promise<boolean> {
     try {
       const redis = getRedisClient();
       if (!redis) {
-        return false; // If Redis is unavailable, allow the token
+        logger.warn('Redis unavailable for token blacklist check - failing closed (denying token)');
+        return true; // Fail closed: treat as blacklisted when Redis unavailable
       }
 
       const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
@@ -117,8 +120,8 @@ export class JWTService {
       const exists = await redis.exists(key);
       return exists === 1;
     } catch (error) {
-      logger.error('Failed to check token blacklist', { error });
-      return false; // On error, allow the token (fail open)
+      logger.error('Failed to check token blacklist - failing closed', { error });
+      return true; // Fail closed: deny token when check fails
     }
   }
 }

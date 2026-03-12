@@ -364,6 +364,14 @@ export function usePrefetch() {
         },
       });
     },
+    prefetchProject: (projectId: number) => {
+      if (!projectId || projectId <= 0) return;
+      queryClient.prefetchQuery({
+        queryKey: ['project', projectId],
+        queryFn: () => api.getProject(projectId),
+        staleTime: 3 * 60 * 1000,
+      });
+    },
   };
 }
 

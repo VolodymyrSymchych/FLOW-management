@@ -65,60 +65,104 @@ export interface ProjectStats {
 
 export class ProjectService {
   /**
-   * Get all projects for a user
+   * Get all projects for a user with pagination
+   * @param userId - User ID (REQUIRED for multi-tenant isolation)
+   * @param limit - Number of items per page (default: 50, max: 100)
+   * @param offset - Number of items to skip
    */
-  async getUserProjects(userId: number): Promise<Project[]> {
+  async getUserProjects(
+    userId: number,
+    limit: number = 50,
+    offset: number = 0
+  ): Promise<{ projects: Project[]; total: number }> {
     try {
+      const conditions = and(eq(projects.userId, userId), isNull(projects.deletedAt));
+
+      // Get total count
+      const [{ count }] = await db()
+        .select({ count: sql<number>`count(*)` })
+        .from(projects)
+        .where(conditions);
+
+      // Get paginated projects
       const userProjects = await db()
         .select()
         .from(projects)
-        .where(and(eq(projects.userId, userId), isNull(projects.deletedAt)))
-        .orderBy(desc(projects.createdAt));
+        .where(conditions)
+        .orderBy(desc(projects.createdAt))
+        .limit(Math.min(limit, 100))
+        .offset(offset);
 
-      return userProjects.map(this.mapToProject);
+      return {
+        projects: userProjects.map(this.mapToProject),
+        total: Number(count) || 0,
+      };
     } catch (error) {
-      logger.error('Error getting user projects', { error, userId });
+      logger.error('Error getting user projects', { error, userId, limit, offset });
       throw error;
     }
   }
 
   /**
-   * Get projects by team ID for a user
+   * Get projects by team ID for a user with pagination
+   * @param userId - User ID (REQUIRED for multi-tenant isolation)
+   * @param teamId - Team ID to filter by
+   * @param limit - Number of items per page (default: 50, max: 100)
+   * @param offset - Number of items to skip
    */
-  async getProjectsByTeam(userId: number, teamId: number): Promise<Project[]> {
+  async getProjectsByTeam(
+    userId: number,
+    teamId: number,
+    limit: number = 50,
+    offset: number = 0
+  ): Promise<{ projects: Project[]; total: number }> {
     try {
+      const conditions = and(
+        eq(projects.userId, userId),
+        eq(projects.teamId, teamId),
+        isNull(projects.deletedAt)
+      );
+
+      // Get total count
+      const [{ count }] = await db()
+        .select({ count: sql<number>`count(*)` })
+        .from(projects)
+        .where(conditions);
+
+      // Get paginated projects
       const teamProjects = await db()
         .select()
         .from(projects)
-        .where(and(
-          eq(projects.userId, userId),
-          eq(projects.teamId, teamId),
-          isNull(projects.deletedAt)
-        ))
-        .orderBy(desc(projects.createdAt));
+        .where(conditions)
+        .orderBy(desc(projects.createdAt))
+        .limit(Math.min(limit, 100))
+        .offset(offset);
 
-      return teamProjects.map(this.mapToProject);
+      return {
+        projects: teamProjects.map(this.mapToProject),
+        total: Number(count) || 0,
+      };
     } catch (error) {
-      logger.error('Error getting team projects', { error, userId, teamId });
+      logger.error('Error getting team projects', { error, userId, teamId, limit, offset });
       throw error;
     }
   }
 
   /**
    * Get project by ID
+   * @param projectId - Project ID to fetch
+   * @param userId - User ID (REQUIRED for multi-tenant isolation)
    */
-  async getProjectById(projectId: number, userId?: number): Promise<Project | null> {
+  async getProjectById(projectId: number, userId: number): Promise<Project | null> {
     try {
-      const conditions = [eq(projects.id, projectId), isNull(projects.deletedAt)];
-
-      if (userId) {
-        conditions.push(eq(projects.userId, userId));
-      }
-
       const [project] = await db()
         .select()
         .from(projects)
-        .where(and(...conditions));
+        .where(and(
+          eq(projects.id, projectId),
+          eq(projects.userId, userId), // ✅ REQUIRED: Enforce multi-tenant isolation
+          isNull(projects.deletedAt)
+        ));
 
       if (!project) {
         return null;

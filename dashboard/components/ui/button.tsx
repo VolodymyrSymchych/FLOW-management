@@ -1,35 +1,193 @@
 'use client';
 
-import { forwardRef, ButtonHTMLAttributes } from 'react';
+import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
+import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
-export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'glass' | 'outline';
-  size?: 'sm' | 'md' | 'lg';
+const buttonVariants = cva(
+  'inline-flex items-center justify-center whitespace-nowrap rounded-[8px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-0 disabled:pointer-events-none disabled:opacity-50',
+  {
+    variants: {
+      variant: {
+        solid: '',
+        soft: '',
+        outline: 'border bg-transparent',
+        ghost: 'border border-transparent bg-transparent',
+      },
+      tone: {
+        primary: '',
+        neutral: '',
+        success: '',
+        danger: '',
+      },
+      size: {
+        sm: 'h-8 px-3 text-[0.875rem] gap-1.5',
+        md: 'h-[33px] px-[13px] text-[0.9375rem] gap-1.5',
+        lg: 'h-10 px-4 text-[0.9375rem] gap-2',
+        icon: 'h-[30px] w-[30px] p-0',
+      },
+      density: {
+        default: '',
+        compact: 'h-7 px-2.5 text-[0.8125rem]',
+      },
+      fullWidth: {
+        true: 'w-full',
+        false: '',
+      },
+    },
+    compoundVariants: [
+      {
+        variant: 'solid',
+        tone: 'primary',
+        className:
+          'border border-primary-dark bg-primary text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.16)] hover:bg-primary-dark',
+      },
+      {
+        variant: 'solid',
+        tone: 'neutral',
+        className:
+          'border border-border bg-foreground text-background hover:bg-foreground/90',
+      },
+      {
+        variant: 'solid',
+        tone: 'success',
+        className: 'border border-success bg-success text-white hover:bg-success/90',
+      },
+      {
+        variant: 'solid',
+        tone: 'danger',
+        className: 'border border-danger bg-danger text-white hover:bg-danger/90',
+      },
+      {
+        variant: 'soft',
+        tone: 'primary',
+        className: 'border border-accent/20 bg-accent-soft text-primary hover:border-accent/35 hover:bg-accent-soft/80',
+      },
+      {
+        variant: 'soft',
+        tone: 'neutral',
+        className: 'border border-border bg-surface-muted text-text-primary hover:bg-surface',
+      },
+      {
+        variant: 'soft',
+        tone: 'success',
+        className: 'border border-success/20 bg-success-soft text-success hover:bg-success-soft/80',
+      },
+      {
+        variant: 'soft',
+        tone: 'danger',
+        className: 'border border-danger/20 bg-danger-soft text-danger hover:bg-danger-soft/80',
+      },
+      {
+        variant: 'outline',
+        tone: 'primary',
+        className: 'border-accent/30 text-primary hover:bg-accent-soft',
+      },
+      {
+        variant: 'outline',
+        tone: 'neutral',
+        className: 'border-border text-text-primary hover:bg-surface-muted',
+      },
+      {
+        variant: 'outline',
+        tone: 'success',
+        className: 'border-success/30 text-success hover:bg-success-soft',
+      },
+      {
+        variant: 'outline',
+        tone: 'danger',
+        className: 'border-danger/30 text-danger hover:bg-danger-soft',
+      },
+      {
+        variant: 'ghost',
+        tone: 'primary',
+        className: 'text-primary hover:bg-accent-soft',
+      },
+      {
+        variant: 'ghost',
+        tone: 'neutral',
+        className: 'text-text-secondary hover:bg-surface-muted hover:text-text-primary',
+      },
+      {
+        variant: 'ghost',
+        tone: 'success',
+        className: 'text-success hover:bg-success-soft',
+      },
+      {
+        variant: 'ghost',
+        tone: 'danger',
+        className: 'text-danger hover:bg-danger-soft',
+      },
+      {
+        density: 'compact',
+        size: 'sm',
+        className: 'h-7 px-2.5 text-[0.8125rem]',
+      },
+      {
+        density: 'compact',
+        size: 'md',
+        className: 'h-7 px-2.5 text-[0.8125rem]',
+      },
+      {
+        density: 'compact',
+        size: 'lg',
+        className: 'h-8 px-3 text-[0.875rem]',
+      },
+    ],
+    defaultVariants: {
+      variant: 'solid',
+      tone: 'primary',
+      size: 'md',
+      density: 'default',
+      fullWidth: false,
+    },
+  }
+);
+
+export interface ButtonProps
+  extends ButtonHTMLAttributes<HTMLButtonElement>,
+    Omit<VariantProps<typeof buttonVariants>, 'fullWidth' | 'variant'> {
+  variant?: VariantProps<typeof buttonVariants>['variant'] | 'primary' | 'secondary' | 'danger' | 'ghost' | 'glass' | 'outline';
+  tone?: VariantProps<typeof buttonVariants>['tone'];
   loading?: boolean;
-  icon?: React.ReactNode;
+  icon?: ReactNode;
   iconPosition?: 'left' | 'right';
   fullWidth?: boolean;
 }
 
-/**
- * Universal Button component with consistent styling
- *
- * Features:
- * - Multiple variants (primary, secondary, danger, ghost, glass, outline)
- * - Multiple sizes (sm, md, lg)
- * - Loading state with spinner
- * - Icon support (left or right)
- * - Full width option
- * - Accessibility (proper focus states, disabled handling)
- * - Glassmorphism theme integration
- */
+function resolveLegacyVariant(
+  variant: ButtonProps['variant'],
+  tone: ButtonProps['tone']
+): Pick<Required<ButtonProps>, 'variant' | 'tone'> {
+  switch (variant) {
+    case 'primary':
+      return { variant: 'solid', tone: tone ?? 'primary' };
+    case 'secondary':
+      return { variant: 'soft', tone: tone ?? 'neutral' };
+    case 'danger':
+      return { variant: 'solid', tone: 'danger' };
+    case 'ghost':
+      return { variant: 'ghost', tone: tone ?? 'neutral' };
+    case 'glass':
+      return { variant: 'soft', tone: tone ?? 'primary' };
+    case 'outline':
+      return { variant: 'outline', tone: tone ?? 'neutral' };
+    default:
+      return {
+        variant: (variant as Required<ButtonProps>['variant']) ?? 'solid',
+        tone: tone ?? 'primary',
+      };
+  }
+}
+
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   (
     {
       className,
-      variant = 'primary',
+      variant = 'solid',
+      tone,
       size = 'md',
+      density = 'default',
       loading = false,
       icon,
       iconPosition = 'left',
@@ -40,65 +198,33 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref
   ) => {
-    const baseStyles = 'inline-flex items-center justify-center font-medium rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none';
-
-    const variants = {
-      primary: 'bg-primary text-white hover:bg-primary-dark focus:ring-primary shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 hover:scale-105 active:scale-95',
-      secondary: 'glass-medium hover:glass-heavy text-text-primary focus:ring-primary border border-white/10 hover:border-white/20 hover:scale-105 active:scale-95',
-      danger: 'bg-danger text-white hover:bg-danger/90 focus:ring-danger shadow-lg shadow-danger/20 hover:shadow-xl hover:shadow-danger/30 hover:scale-105 active:scale-95',
-      ghost: 'text-text-primary hover:bg-white/10 focus:ring-primary hover:scale-102 active:scale-98',
-      glass: 'glass-button text-text-primary focus:ring-primary hover:scale-105 active:scale-95',
-      outline: 'border-2 border-primary text-primary hover:bg-primary hover:text-white focus:ring-primary hover:scale-105 active:scale-95',
-    };
-
-    const sizes = {
-      sm: 'px-3 py-1.5 text-sm gap-1.5',
-      md: 'px-4 py-2.5 text-base gap-2',
-      lg: 'px-6 py-3 text-lg gap-2.5',
-    };
+    const resolved = resolveLegacyVariant(variant, tone);
 
     return (
       <button
         ref={ref}
         className={cn(
-          baseStyles,
-          variants[variant],
-          sizes[size],
-          fullWidth && 'w-full',
+          buttonVariants({
+            variant: resolved.variant as VariantProps<typeof buttonVariants>['variant'],
+            tone: resolved.tone,
+            size,
+            density,
+            fullWidth,
+          }),
           className
         )}
         disabled={disabled || loading}
         {...props}
       >
         {loading && (
-          <svg
-            className="animate-spin h-4 w-4"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-            />
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-            />
+          <svg className="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v4a4 4 0 0 0-4 4H4Z" />
           </svg>
         )}
-        {!loading && icon && iconPosition === 'left' && (
-          <span className="inline-flex">{icon}</span>
-        )}
+        {!loading && icon && iconPosition === 'left' && <span className="inline-flex">{icon}</span>}
         {children}
-        {!loading && icon && iconPosition === 'right' && (
-          <span className="inline-flex">{icon}</span>
-        )}
+        {!loading && icon && iconPosition === 'right' && <span className="inline-flex">{icon}</span>}
       </button>
     );
   }

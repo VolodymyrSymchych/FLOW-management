@@ -38,28 +38,12 @@ export async function proxyToAuthService(
   // Add service-to-service authentication header (server-side only)
   if (serviceApiKey) {
     headers.set('X-Service-API-Key', serviceApiKey);
-  } else if (typeof window === 'undefined') {
-    // Log warning if API key is missing in server-side context
-    console.warn('AUTH_SERVICE_API_KEY is not set - requests may fail if auth-service requires it');
   }
-
-  // Log the request URL in development (without sensitive data)
-  if (process.env.NODE_ENV === 'development') {
-    console.log('Auth service request:', {
-      url,
-      method: options.method || 'GET',
-      hasApiKey: !!serviceApiKey,
-    });
-  }
-
-  console.log(`[AuthService] Proxying request to: ${url}`);
 
   const response = await fetch(url, {
     ...options,
     headers,
   });
-
-  console.log(`[AuthService] Response from ${url}: ${response.status} ${response.statusText}`);
 
   return response;
 }

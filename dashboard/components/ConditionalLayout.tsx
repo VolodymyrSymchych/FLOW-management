@@ -1,7 +1,6 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { SidebarProvider } from '@/components/SidebarContext';
 import { TabProvider } from '@/contexts/TabContext';
 import { Sidebar } from '@/components/Sidebar';
 import { Header } from '@/components/Header';
@@ -42,8 +41,7 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
     // Render with sidebar and header but without padding/overflow constraints for full screen pages
     return (
       <ErrorBoundary>
-        <SidebarProvider>
-          <TabProvider>
+        <TabProvider>
             <div className="flex h-screen relative overflow-hidden w-full max-w-full">
               <Sidebar />
               <MainContent>
@@ -54,7 +52,6 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
               </MainContent>
             </div>
           </TabProvider>
-        </SidebarProvider>
       </ErrorBoundary>
     );
   }
@@ -66,24 +63,28 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
   // Render with sidebar and header for all other pages
   return (
     <ErrorBoundary>
-      <SidebarProvider>
-        <TabProvider>
-          <div className="flex h-screen relative overflow-hidden">
-            <Sidebar />
-            <MainContent>
-              <Header />
-              <div
-                id="main-content"
-                className={`${isNoPaddingPage ? '' : 'p-8'} h-full flex flex-col overflow-y-auto min-h-0`}
-                role="main"
-                aria-label="Main content"
-              >
-                {children}
-              </div>
-            </MainContent>
-          </div>
-        </TabProvider>
-      </SidebarProvider>
+      <TabProvider>
+        <ShellFrame isNoPaddingPage={isNoPaddingPage}>{children}</ShellFrame>
+      </TabProvider>
     </ErrorBoundary>
+  );
+}
+
+function ShellFrame({ children, isNoPaddingPage }: { children: React.ReactNode; isNoPaddingPage: boolean }) {
+  return (
+    <div className="flow-auth-shell sb-open">
+      <Sidebar />
+      <MainContent>
+        <Header />
+        <div
+          id="main-content"
+          className={`flow-main-scroll ${isNoPaddingPage ? '' : 'padded'}`}
+          role="main"
+          aria-label="Main content"
+        >
+          {children}
+        </div>
+      </MainContent>
+    </div>
   );
 }

@@ -1,6 +1,12 @@
 import axios, { AxiosInstance } from 'axios';
+import http from 'http';
+import https from 'https';
 
 const TASK_SERVICE_URL = process.env.NEXT_PUBLIC_TASK_SERVICE_URL || 'http://localhost:3005';
+
+// Reuse TCP connections across requests (saves 20-50ms per request)
+const httpAgent = new http.Agent({ keepAlive: true });
+const httpsAgent = new https.Agent({ keepAlive: true });
 
 class TaskServiceClient {
   private client: AxiosInstance;
@@ -10,6 +16,8 @@ class TaskServiceClient {
       baseURL: TASK_SERVICE_URL,
       timeout: 10000,
       withCredentials: true,
+      httpAgent,
+      httpsAgent,
     });
   }
 

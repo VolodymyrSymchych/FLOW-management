@@ -1,30 +1,19 @@
 'use client';
 
-import { forwardRef, InputHTMLAttributes, useId } from 'react';
-import { cn } from '@/lib/utils';
+import { forwardRef, useId, type InputHTMLAttributes, type ReactNode } from 'react';
 import { AlertCircle, Info } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
   helperText?: string;
-  leftIcon?: React.ReactNode;
-  rightIcon?: React.ReactNode;
+  leftIcon?: ReactNode;
+  rightIcon?: ReactNode;
   fullWidth?: boolean;
+  density?: 'default' | 'compact';
 }
 
-/**
- * Accessible Input component with ARIA support
- *
- * Features:
- * - Full ARIA compliance (aria-invalid, aria-describedby)
- * - Label association with htmlFor
- * - Error and helper text support
- * - Icon support (left and right)
- * - Glassmorphism styling
- * - Focus states
- * - Required field indicator
- */
 export const Input = forwardRef<HTMLInputElement, InputProps>(
   (
     {
@@ -35,6 +24,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
       leftIcon,
       rightIcon,
       fullWidth = false,
+      density = 'default',
       required,
       disabled,
       id: providedId,
@@ -46,90 +36,61 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     const id = providedId || generatedId;
     const errorId = `${id}-error`;
     const helperId = `${id}-helper`;
-
     const hasError = Boolean(error);
     const hasHelper = Boolean(helperText);
 
     return (
       <div className={cn('space-y-2', fullWidth && 'w-full')}>
-        {/* Label */}
-        {label && (
-          <label
-            htmlFor={id}
-            className="block text-sm font-medium text-text-primary"
-          >
+        {label ? (
+          <label htmlFor={id} className="app-label text-text-secondary">
             {label}
-            {required && <span className="text-danger ml-1" aria-label="required">*</span>}
+            {required ? <span className="ml-1 text-danger">*</span> : null}
           </label>
-        )}
+        ) : null}
 
-        {/* Input Container */}
         <div className="relative">
-          {/* Left Icon */}
-          {leftIcon && (
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none">
-              {leftIcon}
-            </div>
-          )}
-
-          {/* Input */}
+          {leftIcon ? <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary">{leftIcon}</div> : null}
           <input
             ref={ref}
             id={id}
             className={cn(
-              'glass-input w-full px-4 py-3 rounded-xl text-text-primary placeholder:text-text-tertiary',
-              'transition-all duration-200',
-              'disabled:opacity-50 disabled:cursor-not-allowed',
-              hasError && 'border-danger focus:border-danger focus:ring-danger',
+              'glass-input w-full rounded-lg text-text-primary placeholder:text-text-tertiary',
+              density === 'compact' ? 'h-8 px-3 text-[0.875rem]' : 'h-[33px] px-3 text-[0.9375rem]',
               leftIcon && 'pl-10',
-              rightIcon && 'pr-10',
+              (rightIcon || hasError) && 'pr-10',
+              hasError && 'border-danger focus:border-danger',
+              disabled && 'cursor-not-allowed opacity-50',
               className
             )}
             aria-invalid={hasError}
-            aria-describedby={
-              hasError ? errorId : hasHelper ? helperId : undefined
-            }
-            disabled={disabled}
+            aria-describedby={hasError ? errorId : hasHelper ? helperId : undefined}
             required={required}
+            disabled={disabled}
             {...props}
           />
-
-          {/* Right Icon or Error Icon */}
-          {(rightIcon || hasError) && (
-            <div className="absolute right-3 top-1/2 -translate-y-1/2">
-              {hasError ? (
-                <AlertCircle className="w-5 h-5 text-danger" aria-hidden="true" />
-              ) : (
-                <span className="text-text-tertiary">{rightIcon}</span>
-              )}
+          {(rightIcon || hasError) ? (
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary">
+              {hasError ? <AlertCircle className="h-4 w-4 text-danger" /> : rightIcon}
             </div>
-          )}
+          ) : null}
         </div>
 
-        {/* Helper Text */}
-        {hasHelper && !hasError && (
-          <div className="flex items-start gap-1.5">
-            <Info className="w-4 h-4 text-text-tertiary flex-shrink-0 mt-0.5" aria-hidden="true" />
-            <p id={helperId} className="text-xs text-text-tertiary">
-              {helperText}
-            </p>
+        {hasHelper && !hasError ? (
+          <div className="flex items-start gap-1.5 text-xs text-text-tertiary">
+            <Info className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
+            <p id={helperId}>{helperText}</p>
           </div>
-        )}
+        ) : null}
 
-        {/* Error Message */}
-        {hasError && (
-          <div className="flex items-start gap-1.5">
-            <AlertCircle className="w-4 h-4 text-danger flex-shrink-0 mt-0.5" aria-hidden="true" />
-            <p id={errorId} role="alert" className="text-xs text-danger">
-              {error}
-            </p>
+        {hasError ? (
+          <div className="flex items-start gap-1.5 text-xs text-danger">
+            <AlertCircle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
+            <p id={errorId}>{error}</p>
           </div>
-        )}
+        ) : null}
       </div>
     );
   }
 );
 
 Input.displayName = 'Input';
-
-

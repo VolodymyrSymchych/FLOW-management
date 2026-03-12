@@ -326,21 +326,36 @@ export function InvoiceSkeleton() {
   );
 }
 
-// Скелетон для сторінки налаштувань
+// Скелетон для сторінки налаштувань (literal design, sidebar layout)
 export function SettingsSkeleton() {
   return (
-    <div className="grid gap-6 lg:grid-cols-[200px_1fr]">
-      {/* Sidebar Navigation */}
-      <div className="space-y-2">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <Skeleton key={i} className="h-10 w-full rounded-md" />
-        ))}
-      </div>
-      
-      {/* Settings Content */}
-      <div className="space-y-6">
-        <FormSkeleton fields={4} />
-        <FormSkeleton fields={3} />
+    <div className="scr-inner" data-testid="settings-screen">
+      <div style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
+        <div style={{ width: 220, minWidth: 220, borderRight: '1px solid var(--line)', background: 'var(--white)', padding: '16px 0', flexShrink: 0 }}>
+          <div style={{ height: 10, width: 60, background: 'var(--bg2)', borderRadius: 4, margin: '0 14px 6px' }} />
+          {[1, 2, 3].map((i) => (
+            <div key={i} style={{ height: 32, width: 120, background: 'var(--bg2)', borderRadius: 7, margin: '2px 8px' }} />
+          ))}
+          <div style={{ height: 10, width: 50, background: 'var(--bg2)', borderRadius: 4, margin: '16px 14px 6px' }} />
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} style={{ height: 32, width: 100, background: 'var(--bg2)', borderRadius: 7, margin: '2px 8px' }} />
+          ))}
+        </div>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '28px 36px 48px' }}>
+          <div style={{ height: 26, width: 180, background: 'var(--bg2)', borderRadius: 4, marginBottom: 8 }} />
+          <div style={{ height: 18, width: 280, background: 'var(--bg2)', borderRadius: 4, marginBottom: 24 }} />
+          <div style={{ maxWidth: 640, padding: 24, background: 'var(--white)', border: '1px solid var(--line)', borderRadius: 12 }}>
+            <div style={{ height: 18, width: 140, background: 'var(--bg2)', borderRadius: 4, marginBottom: 16 }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {[1, 2, 3].map((i) => (
+                <div key={i}>
+                  <div style={{ height: 12, width: 80, background: 'var(--bg2)', borderRadius: 4, marginBottom: 8 }} />
+                  <div style={{ height: 40, width: '100%', background: 'var(--bg2)', borderRadius: 8 }} />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -384,6 +399,63 @@ export function PageSkeleton() {
         <Skeleton className="h-10 w-32" />
       </div>
       <CardGridSkeleton count={6} />
+    </div>
+  );
+}
+
+// Скелетон для сторінки деталей проекту
+export function ProjectDetailSkeleton() {
+  return (
+    <div className="proj-detail-screen">
+      <div className="proj-detail-header">
+        <div className="proj-detail-header-inner">
+          <div style={{ height: 20, width: 100, background: 'var(--bg2)', borderRadius: 6, marginBottom: 16 }} />
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16 }}>
+            <div>
+              <div style={{ height: 28, width: 240, background: 'var(--bg2)', borderRadius: 6, marginBottom: 12 }} />
+              <div style={{ display: 'flex', gap: 8 }}>
+                {[1, 2, 3].map((i) => (
+                  <div key={i} style={{ height: 28, width: 80, background: 'var(--bg2)', borderRadius: 8 }} />
+                ))}
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <div style={{ height: 32, width: 60, background: 'var(--bg2)', borderRadius: 8 }} />
+              <div style={{ height: 32, width: 140, background: 'var(--bg2)', borderRadius: 8 }} />
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="proj-detail-tabs" style={{ gap: 2 }}>
+        {[1, 2, 3, 4, 5, 6].map((i) => (
+          <div key={i} style={{ height: 36, width: 90, background: 'var(--bg2)', borderRadius: 6 }} />
+        ))}
+      </div>
+      <div className="proj-detail-content" style={{ padding: '24px 28px 40px' }}>
+        <div className="proj-detail-overview">
+          <div className="proj-detail-overview-main" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <div className="proj-detail-card">
+              <div style={{ height: 200, background: 'var(--bg2)', borderRadius: 8 }} />
+            </div>
+            <div className="proj-detail-card">
+              <div style={{ height: 24, width: 140, background: 'var(--bg2)', borderRadius: 4, marginBottom: 16 }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} style={{ height: 44, background: 'var(--bg2)', borderRadius: 8 }} />
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="proj-detail-overview-sidebar" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="proj-detail-card">
+                <div style={{ height: 24, width: 120, background: 'var(--bg2)', borderRadius: 4, marginBottom: 16 }} />
+                <div style={{ height: 120, background: 'var(--bg2)', borderRadius: 8 }} />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

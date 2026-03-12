@@ -1,0 +1,18 @@
+# Gitleaks config for secret scanning
+# Run: gitleaks detect --config .gitleaks.toml
+# See: https://github.com/gitleaks/gitleaks
+
+title = "Flow Secret Scanning"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Allowlist for known safe patterns"
+paths = [
+  '''\.env\.example$''',
+  '''\.env\.sample$''',
+  '''package-lock\.json$''',
+  '''yarn\.lock$''',
+  '''pnpm-lock\.yaml$''',
+]

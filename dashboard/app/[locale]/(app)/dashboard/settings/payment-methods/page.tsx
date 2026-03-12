@@ -60,97 +60,99 @@ export default function PaymentMethodsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background px-4 py-8">
-      <div className="max-w-4xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex items-center gap-4">
+    <div className="scr-inner" data-testid="payment-methods-screen">
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+        <div style={{ padding: '20px 28px 14px', borderBottom: '1px solid var(--line)', background: 'var(--white)', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 16 }}>
           <button
+            type="button"
             onClick={() => router.push('/dashboard/settings')}
-            className="p-2 glass-light rounded-lg hover:glass-medium transition-all hover:scale-110"
+            className="ib"
+            aria-label="Back to settings"
           >
-            <ArrowLeft className="w-5 h-5 text-text-primary" />
+            <ArrowLeft style={{ width: 16, height: 16 }} />
           </button>
           <div>
-            <h1 className="text-3xl font-bold text-text-primary">Payment Methods</h1>
-            <p className="text-text-secondary mt-1">
-              Manage your payment methods and billing information
-            </p>
+            <h1 style={{ fontFamily: 'var(--font-inter), Inter, sans-serif', fontSize: 26, fontWeight: 600, color: 'var(--ink)', letterSpacing: '-.02em', margin: 0 }}>Payment Methods</h1>
+            <div style={{ fontSize: 14, color: 'var(--muted)', marginTop: 2 }}>Manage your payment methods and billing information</div>
           </div>
         </div>
 
-        {/* Add New Payment Method */}
-        <button className="w-full glass-medium rounded-2xl p-6 border border-dashed border-white/20 hover:glass-light transition-all duration-200 hover:scale-[1.01]">
-          <div className="flex items-center justify-center gap-3 text-text-primary">
-            <Plus className="w-6 h-6" />
-            <span className="font-semibold">Add New Payment Method</span>
-          </div>
-        </button>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '20px 28px 40px', maxWidth: 640 }}>
+          <button
+            type="button"
+            className="proj-card proj-card-new"
+            style={{ marginBottom: 20 }}
+          >
+            <Plus style={{ width: 24, height: 24, color: 'var(--ghost)' }} />
+            <span style={{ fontSize: 14, color: 'var(--faint)', marginTop: 6 }}>Add New Payment Method</span>
+          </button>
 
-        {/* Payment Methods List */}
-        <div className="space-y-4">
-          {paymentMethods.map((method) => (
-            <div
-              key={method.id}
-              className="glass-medium rounded-2xl p-6 border border-white/10 hover:glass-light transition-all duration-200"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#8098F9] to-[#A78BFA] flex items-center justify-center text-3xl ">
-                    {getCardIcon(method.brand)}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-text-primary">
-                        {method.brand} •••• {method.last4}
-                      </span>
-                      {method.isDefault && (
-                        <span className="px-2 py-0.5 bg-primary/20 text-primary text-xs rounded-full font-medium flex items-center gap-1">
-                          <Check className="w-3 h-3" />
-                          Default
-                        </span>
-                      )}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {paymentMethods.map((method) => (
+              <div
+                key={method.id}
+                className="surface-panel"
+                style={{ borderRadius: 12, padding: 20, border: '1px solid var(--line)' }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                    <div style={{ width: 48, height: 48, borderRadius: 12, background: 'var(--violet-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>
+                      {getCardIcon(method.brand)}
                     </div>
-                    <p className="text-sm text-text-secondary mt-1">
-                      Expires {method.expMonth.toString().padStart(2, '0')}/{method.expYear}
-                    </p>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--ink)' }}>
+                          {method.brand} •••• {method.last4}
+                        </span>
+                        {method.isDefault && (
+                          <span className="tg tg-vi" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                            <Check style={{ width: 10, height: 10 }} />
+                            Default
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 2 }}>
+                        Expires {method.expMonth.toString().padStart(2, '0')}/{method.expYear}
+                      </div>
+                    </div>
                   </div>
-                </div>
 
-                <div className="flex items-center gap-2">
-                  {!method.isDefault && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {!method.isDefault && (
+                      <button
+                        type="button"
+                        className="btn btn-ghost"
+                        onClick={() => handleSetDefault(method.id)}
+                      >
+                        Set as Default
+                      </button>
+                    )}
                     <button
-                      onClick={() => handleSetDefault(method.id)}
-                      className="px-4 py-2 glass-light text-text-primary rounded-lg hover:glass-medium transition-all font-medium"
+                      type="button"
+                      className="ib"
+                      onClick={() => handleDelete(method.id)}
+                      disabled={method.isDefault}
+                      title={method.isDefault ? 'Cannot delete default payment method' : 'Delete'}
+                      style={method.isDefault ? { opacity: 0.5, cursor: 'not-allowed' } : { color: 'var(--red)' }}
                     >
-                      Set as Default
+                      <Trash2 style={{ width: 14, height: 14 }} />
                     </button>
-                  )}
-                  <button
-                    onClick={() => handleDelete(method.id)}
-                    className="p-2 glass-light text-red-400 rounded-lg hover:bg-red-500/10 transition-all"
-                    disabled={method.isDefault}
-                    title={method.isDefault ? 'Cannot delete default payment method' : 'Delete'}
-                  >
-                    <Trash2 className="w-5 h-5" />
-                  </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
 
-        {/* Security Notice */}
-        <div className="glass-medium rounded-2xl p-6 border border-white/10">
-          <div className="flex items-start gap-3">
-            <div className="text-2xl">🔒</div>
-            <div>
-              <h3 className="font-semibold text-text-primary mb-1">
-                Secure Payment Processing
-              </h3>
-              <p className="text-sm text-text-secondary">
-                All payment information is encrypted and securely processed by Stripe.
-                We never store your complete card details on our servers.
-              </p>
+          <div className="surface-panel" style={{ borderRadius: 12, padding: 20, border: '1px solid var(--line)', marginTop: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--sage-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>🔒</div>
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--ink)', marginBottom: 4 }}>Secure Payment Processing</div>
+                <div style={{ fontSize: 14, color: 'var(--muted)', lineHeight: 1.5 }}>
+                  All payment information is encrypted and securely processed by Stripe.
+                  We never store your complete card details on our servers.
+                </div>
+              </div>
             </div>
           </div>
         </div>

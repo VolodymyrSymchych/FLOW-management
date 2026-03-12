@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth-helper';
 import { authenticatePusherChannel } from '@/lib/pusher-server';
+import { chatService } from '@/lib/chat-service';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,16 +22,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify user has access to the channel
+    // Verify user has access to private chat channels
     if (channel_name.startsWith('private-chat-')) {
-      const chatId = parseInt(channel_name.replace('private-chat-', ''));
-      
-      // TODO: Verify user is member of chat
-      // const { chatService } = await import('@/lib/chat-service');
-      // const isMember = await chatService.isUserMember(chatId, session.userId);
-      // if (!isMember) {
-      //   return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      // }
+      const chatId = parseInt(channel_name.replace('private-chat-', ''), 10);
+      if (isNaN(chatId)) {
+        return NextResponse.json({ error: 'Invalid channel name' }, { status: 400 });
+      }
+      const isMember = await chatService.isUserMember(chatId, session.userId);
+      if (!isMember) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
     }
 
     const auth = authenticatePusherChannel(

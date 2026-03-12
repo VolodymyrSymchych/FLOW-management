@@ -22,17 +22,17 @@ export default function ChartsScreen() {
         if (!token) return;
         setIsLoading(true);
         try {
-            const [pStats, tStats, tMembers] = await Promise.all([
+            const [pStats, tStats, teamsResult] = await Promise.all([
                 projectService.getStats(token),
                 taskService.getStats(token),
-                teamService.getMembers(token)
+                teamService.getTeams(token)
             ]);
 
             if (pStats.stats) setProjectStats(pStats.stats);
             if (tStats.stats) {
                 setTaskStats(tStats.stats);
             }
-            if (tMembers.members) setTeamCount(tMembers.members.length);
+            if (teamsResult.teams) setTeamCount(teamsResult.teams.length);
 
         } catch (error) {
             console.error('Failed to fetch chart data', error);

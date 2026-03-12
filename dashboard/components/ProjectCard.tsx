@@ -1,6 +1,14 @@
-import { MoreVertical, Users, Trash2 } from 'lucide-react';
-import { cn, getRiskColor } from '@/lib/utils';
+'use client';
+
+import type { MouseEvent } from 'react';
+import { FolderKanban, Trash2 } from 'lucide-react';
 import { useLocale } from 'next-intl';
+import { AvatarGroup } from '@/components/ui/avatar-group';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 interface ProjectCardProps {
   id: number;
@@ -12,107 +20,137 @@ interface ProjectCardProps {
   isOwner?: boolean;
   isTeamProject?: boolean;
   onClick?: () => void;
-  onDelete?: (e: React.MouseEvent) => void;
+  onDelete?: (e: MouseEvent) => void;
   translations?: Record<string, any>;
 }
 
-export function ProjectCard({ id, name, team, status, risk_level, score, isOwner, isTeamProject, onClick, onDelete, translations }: ProjectCardProps) {
+function getScoreTone(score?: number | null) {
+  if (typeof score !== 'number') return 'neutral';
+  if (score >= 80) return 'success';
+  if (score >= 60) return 'warning';
+  return 'danger';
+}
+
+export function ProjectCard({
+  id,
+  name,
+  team,
+  status,
+  risk_level,
+  score,
+  isOwner,
+  isTeamProject,
+  onClick,
+  onDelete,
+  translations,
+}: ProjectCardProps) {
   const locale = useLocale();
   const displayName = translations?.name?.[locale] || name;
+  const initials = displayName.substring(0, 2).toUpperCase();
+  const teamItems = (team || []).map((member, index) => ({
+    id: `${id}-${member}-${index}`,
+    label: member,
+  }));
 
   return (
-    <div
+    <Card
+      surface="panel"
+      density="md"
       data-testid="project-card"
-      className="glass-light glass-hover rounded-xl p-4 cursor-pointer"
+      className={cn(
+        'flex h-full cursor-pointer flex-col gap-4 border border-border/70 transition-colors hover:border-accent/30 hover:bg-surface-elevated',
+        onClick && 'focus-within:border-accent/30'
+      )}
       onClick={onClick}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={onClick ? (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onClick();
+        }
+      } : undefined}
     >
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center space-x-2.5 flex-1 min-w-0">
-          <div className="w-9 h-9 rounded-lg bg-primary/80 flex items-center justify-center flex-shrink-0">
-            <span className="text-white font-semibold text-sm">
-              {displayName.substring(0, 2).toUpperCase()}
-            </span>
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 items-start gap-3">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-white">
+            {initials}
           </div>
-          <div className="flex-1 min-w-0">
-            <h4 className="font-semibold text-sm text-text-primary truncate">{displayName}</h4>
-            <div className="flex items-center space-x-2 mt-0.5">
-              {isOwner && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/20 text-primary border border-primary/30">
-                  Owner
-                </span>
-              )}
-              {isTeamProject && !isOwner && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30">
-                  Team
-                </span>
-              )}
-              {team && (
-                <p className="text-xs text-text-tertiary">
-                  {team.length} Members
-                </p>
-              )}
+          <div className="min-w-0 space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <h4 className="truncate text-base font-semibold text-text-primary">{displayName}</h4>
+              {status ? <StatusBadge status={status}>{status.replace(/_/g, ' ')}</StatusBadge> : null}
+            </div>
+            <div className="flex flex-wrap items-center gap-2 text-xs text-text-tertiary">
+              {isOwner ? <Badge tone="primary" variant="soft" className="normal-case tracking-normal">Owner</Badge> : null}
+              {isTeamProject && !isOwner ? <Badge tone="info" variant="soft" className="normal-case tracking-normal">Team</Badge> : null}
+              {team?.length ? <span>{team.length} collaborators</span> : <span>Standalone analysis</span>}
             </div>
           </div>
         </div>
-        {onDelete && (
-          <button
-            onClick={onDelete}
-            className="p-1.5 hover:bg-white/10 rounded transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] hover:scale-110 active:scale-95"
-            title="Delete project"
+
+        {onDelete ? (
+          <Button
+            type="button"
+            variant="ghost"
+            tone="danger"
+            size="icon"
+            className="h-9 w-9 rounded-full"
+            onClick={(event) => {
+              event.stopPropagation();
+              onDelete(event);
+            }}
+            aria-label="Delete project"
           >
-            <Trash2 className="w-3.5 h-3.5 text-red-400 hover:text-red-300 transition-transform duration-200" />
-          </button>
-        )}
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        ) : null}
       </div>
 
-      {team && (
-        <div className="flex items-center -space-x-1.5 mb-3">
-          {team.slice(0, 5).map((member, idx) => (
-            <div
-              key={idx}
-              className="w-7 h-7 rounded-full border-2 border-white/20 bg-primary flex items-center justify-center text-white text-xs font-semibold"
-            >
-              {member}
-            </div>
-          ))}
-          {team.length > 5 && (
-            <div className="w-7 h-7 rounded-full border-2 border-white/20 glass-light flex items-center justify-center text-xs font-semibold text-text-primary">
-              +{team.length - 5}
-            </div>
-          )}
-        </div>
-      )}
+      {teamItems.length ? <AvatarGroup items={teamItems} max={5} size="sm" /> : null}
 
-      {score !== undefined && (
-        <div className="mb-2.5">
-          <div className="flex items-center justify-between text-xs mb-1.5">
-            <span className="text-text-secondary">Scope Clarity</span>
+      {typeof score === 'number' ? (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-text-secondary">Scope clarity</span>
             <span className="font-semibold text-text-primary">{score}%</span>
           </div>
-          <div className="h-2 glass-subtle rounded-full overflow-hidden">
+          <div className="h-2 rounded-full bg-surface-muted">
             <div
               className={cn(
-                'h-full rounded-full transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
-                score >= 80 ? 'bg-success' : score >= 60 ? 'bg-primary' : 'bg-warning'
+                'h-full rounded-full transition-all duration-300',
+                score >= 80 ? 'bg-success' : score >= 60 ? 'bg-warning' : 'bg-danger'
               )}
-              style={{ width: `${score}%` }}
-            ></div>
+              style={{ width: `${Math.max(6, Math.min(score, 100))}%` }}
+            />
           </div>
+        </div>
+      ) : (
+        <div className="flex items-center gap-2 rounded-xl bg-surface-muted px-3 py-2 text-sm text-text-secondary">
+          <FolderKanban className="h-4 w-4" />
+          Analysis ready for review.
         </div>
       )}
 
-      {risk_level && (
-        <div className="flex items-center justify-between mt-2.5">
-          <span className={cn('text-xs px-2 py-0.5 rounded-full font-medium', getRiskColor(risk_level))}>
-            {risk_level}
-          </span>
-          {status && (
-            <span className="text-xs text-text-tertiary">
-              {status}
-            </span>
-          )}
+      <div className="mt-auto flex items-center justify-between gap-3 border-t border-border pt-3">
+        {risk_level ? (
+          <div className="space-y-1">
+            <p className="app-label text-text-tertiary">Risk level</p>
+            <Badge tone={getScoreTone(score) as 'neutral' | 'success' | 'warning' | 'danger'} variant="soft" className="normal-case tracking-normal">
+              {risk_level}
+            </Badge>
+          </div>
+        ) : (
+          <div className="space-y-1">
+            <p className="app-label text-text-tertiary">Risk level</p>
+            <span className="text-sm text-text-secondary">Pending</span>
+          </div>
+        )}
+        <div className="text-right">
+          <p className="app-label text-text-tertiary">Project ID</p>
+          <p className="text-sm font-medium text-text-primary">#{id}</p>
         </div>
-      )}
-    </div>
+      </div>
+    </Card>
   );
 }

@@ -1,262 +1,173 @@
 'use client';
 
-import { memo, useState, useMemo } from 'react';
-import { X, Plus, GripVertical, Search, LayoutGrid, Sparkles } from 'lucide-react';
+import { memo, useMemo, useState, type ComponentType } from 'react';
+import { GripVertical, LayoutGrid, Plus, Search, Sparkles, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { FilterChip } from '@/components/ui/filter-chip';
+import { Input } from '@/components/ui/input';
+import { SectionHeader } from '@/components/ui/section-header';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 export type WidgetDefinition = {
-    id: string;
-    label: string;
-    description: string;
-    icon: React.ComponentType<{ className?: string }>;
-    defaultW: number;
-    defaultH: number;
-    minW?: number;
-    minH?: number;
-    maxW?: number;
-    maxH?: number;
+  id: string;
+  label: string;
+  description: string;
+  icon: ComponentType<{ className?: string }>;
+  defaultW: number;
+  defaultH: number;
+  minW?: number;
+  minH?: number;
+  maxW?: number;
+  maxH?: number;
 };
 
 type WidgetGalleryProps = {
-    isOpen: boolean;
-    onClose: () => void;
-    availableWidgets: WidgetDefinition[];
-    activeWidgetIds: string[];
-    onAddWidget: (widgetId: string, w: number, h: number) => void;
-    onRemoveWidget: (widgetId: string) => void;
+  isOpen: boolean;
+  onClose: () => void;
+  availableWidgets: WidgetDefinition[];
+  activeWidgetIds: string[];
+  onAddWidget: (widgetId: string, w: number, h: number) => void;
+  onRemoveWidget: (widgetId: string) => void;
 };
 
 const WidgetCard = memo(function WidgetCard({
-    widget,
-    isActive,
-    onAdd,
-    onRemove,
+  widget,
+  isActive,
+  onAdd,
+  onRemove,
 }: {
-    widget: WidgetDefinition;
-    isActive: boolean;
-    onAdd: () => void;
-    onRemove: () => void;
+  widget: WidgetDefinition;
+  isActive: boolean;
+  onAdd: () => void;
+  onRemove: () => void;
 }) {
-    const Icon = widget.icon;
+  const Icon = widget.icon;
 
-    return (
-        <div
-            className={cn(
-                'group relative flex flex-col rounded-xl border p-4 transition-all duration-200',
-                isActive
-                    ? 'border-primary/40 bg-primary/10'
-                    : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'
-            )}
-        >
-            {/* Drag handle indicator */}
-            <div className="absolute right-2 top-2 opacity-0 group-hover:opacity-60 transition-opacity">
-                <GripVertical className="h-4 w-4 text-text-tertiary" />
-            </div>
-
-            {/* Icon */}
-            <div className={cn(
-                'flex h-12 w-12 items-center justify-center rounded-xl mb-3',
-                isActive ? 'bg-primary/20' : 'bg-white/10'
-            )}>
-                <Icon className={cn(
-                    'h-6 w-6',
-                    isActive ? 'text-primary' : 'text-text-secondary'
-                )} />
-            </div>
-
-            {/* Content */}
-            <h4 className="text-sm font-semibold text-text-primary mb-1">
-                {widget.label}
-            </h4>
-            <p className="text-xs text-text-tertiary mb-3 line-clamp-2">
-                {widget.description}
-            </p>
-
-            {/* Size badge */}
-            <div className="flex items-center gap-2 mb-3">
-                <span className="text-[10px] px-2 py-0.5 rounded bg-white/10 text-text-tertiary">
-                    {widget.defaultW}×{widget.defaultH}
-                </span>
-            </div>
-
-            {/* Action button */}
-            {isActive ? (
-                <button
-                    type="button"
-                    onClick={onRemove}
-                    className="mt-auto flex items-center justify-center gap-1.5 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-400 transition-all hover:bg-red-500/20"
-                >
-                    <X className="h-3.5 w-3.5" />
-                    Remove
-                </button>
-            ) : (
-                <button
-                    type="button"
-                    onClick={onAdd}
-                    className="mt-auto flex items-center justify-center gap-1.5 rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-xs font-semibold text-primary transition-all hover:bg-primary/20"
-                >
-                    <Plus className="h-3.5 w-3.5" />
-                    Add to Dashboard
-                </button>
-            )}
-        </div>
-    );
+  return (
+    <Card
+      surface={isActive ? 'accent' : 'panel'}
+      density="sm"
+      className={cn('relative flex h-full flex-col gap-3 border border-border/70', isActive && 'border-accent/30')}
+    >
+      <div className="absolute right-4 top-4 opacity-40">
+        <GripVertical className="h-4 w-4 text-text-tertiary" />
+      </div>
+      <div className={cn('flex h-11 w-11 items-center justify-center rounded-full', isActive ? 'bg-primary text-white' : 'bg-surface-muted text-text-secondary')}>
+        <Icon className="h-5 w-5" />
+      </div>
+      <div className="space-y-1">
+        <h4 className="text-sm font-semibold text-text-primary">{widget.label}</h4>
+        <p className="text-sm text-text-secondary">{widget.description}</p>
+      </div>
+      <div className="flex items-center gap-2">
+        <Badge variant="soft" tone="neutral" className="normal-case tracking-normal">
+          {widget.defaultW} x {widget.defaultH}
+        </Badge>
+        {isActive ? <Badge variant="soft" tone="primary" className="normal-case tracking-normal">Active</Badge> : null}
+      </div>
+      <Button variant={isActive ? 'outline' : 'soft'} tone={isActive ? 'danger' : 'primary'} size="sm" className="mt-auto" onClick={isActive ? onRemove : onAdd}>
+        {isActive ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+        {isActive ? 'Remove' : 'Add widget'}
+      </Button>
+    </Card>
+  );
 });
 
 export const WidgetGallery = memo(function WidgetGallery({
-    isOpen,
-    onClose,
-    availableWidgets,
-    activeWidgetIds,
-    onAddWidget,
-    onRemoveWidget,
+  isOpen,
+  onClose,
+  availableWidgets,
+  activeWidgetIds,
+  onAddWidget,
+  onRemoveWidget,
 }: WidgetGalleryProps) {
-    const [searchQuery, setSearchQuery] = useState('');
-    const [filter, setFilter] = useState<'all' | 'active' | 'available'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filter, setFilter] = useState<'all' | 'active' | 'available'>('all');
 
-    const filteredWidgets = useMemo(() => {
-        let widgets = availableWidgets;
+  const filteredWidgets = useMemo(() => {
+    let widgets = availableWidgets;
 
-        // Filter by search
-        if (searchQuery.trim()) {
-            const query = searchQuery.toLowerCase();
-            widgets = widgets.filter(
-                (w) =>
-                    w.label.toLowerCase().includes(query) ||
-                    w.description.toLowerCase().includes(query)
-            );
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      widgets = widgets.filter((widget) => widget.label.toLowerCase().includes(query) || widget.description.toLowerCase().includes(query));
+    }
+
+    if (filter === 'active') {
+      widgets = widgets.filter((widget) => activeWidgetIds.includes(widget.id));
+    } else if (filter === 'available') {
+      widgets = widgets.filter((widget) => !activeWidgetIds.includes(widget.id));
+    }
+
+    return widgets;
+  }, [activeWidgetIds, availableWidgets, filter, searchQuery]);
+
+  if (!isOpen) return null;
+
+  return (
+    <Card surface="elevated" density="lg" className="space-y-5 border border-border/70" data-testid="widget-gallery">
+      <SectionHeader
+        eyebrow="Workspace"
+        title="Widget gallery"
+        description="Add, remove, and reorganize the modules that shape the dashboard overview."
+        action={
+          <Button variant="ghost" tone="neutral" size="icon" onClick={onClose} aria-label="Close widget gallery">
+            <X className="h-4 w-4" />
+          </Button>
         }
+      />
 
-        // Filter by status
-        if (filter === 'active') {
-            widgets = widgets.filter((w) => activeWidgetIds.includes(w.id));
-        } else if (filter === 'available') {
-            widgets = widgets.filter((w) => !activeWidgetIds.includes(w.id));
-        }
-
-        return widgets;
-    }, [availableWidgets, activeWidgetIds, searchQuery, filter]);
-
-    const activeCount = activeWidgetIds.length;
-    const availableCount = availableWidgets.length - activeCount;
-
-    if (!isOpen) return null;
-
-    return (
-        <div className="glass-medium rounded-2xl border border-white/10 overflow-hidden animate-fadeIn">
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
-                <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/20">
-                        <LayoutGrid className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                        <h2 className="text-lg font-bold text-text-primary">Widget Gallery</h2>
-                        <p className="text-xs text-text-tertiary">
-                            Drag widgets onto the grid or click to add
-                        </p>
-                    </div>
-                </div>
-                <button
-                    type="button"
-                    onClick={onClose}
-                    className="rounded-lg p-2 text-text-tertiary transition-colors hover:bg-white/10 hover:text-text-primary"
-                >
-                    <X className="h-5 w-5" />
-                </button>
-            </div>
-
-            {/* Filters and Search */}
-            <div className="flex flex-col gap-4 border-b border-white/10 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-                {/* Search */}
-                <div className="relative flex-1 max-w-xs">
-                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-tertiary" />
-                    <input
-                        type="text"
-                        placeholder="Search widgets..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full rounded-lg border border-white/10 bg-white/5 py-2 pl-10 pr-4 text-sm text-text-primary placeholder:text-text-tertiary focus:border-primary/40 focus:outline-none focus:ring-1 focus:ring-primary/40"
-                    />
-                </div>
-
-                {/* Filter tabs */}
-                <div className="flex items-center gap-1 rounded-lg border border-white/10 p-1">
-                    <button
-                        type="button"
-                        onClick={() => setFilter('all')}
-                        className={cn(
-                            'rounded-md px-3 py-1.5 text-xs font-semibold transition-all',
-                            filter === 'all'
-                                ? 'bg-primary/20 text-primary'
-                                : 'text-text-tertiary hover:text-text-secondary'
-                        )}
-                    >
-                        All ({availableWidgets.length})
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setFilter('active')}
-                        className={cn(
-                            'rounded-md px-3 py-1.5 text-xs font-semibold transition-all',
-                            filter === 'active'
-                                ? 'bg-primary/20 text-primary'
-                                : 'text-text-tertiary hover:text-text-secondary'
-                        )}
-                    >
-                        Active ({activeCount})
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setFilter('available')}
-                        className={cn(
-                            'rounded-md px-3 py-1.5 text-xs font-semibold transition-all',
-                            filter === 'available'
-                                ? 'bg-primary/20 text-primary'
-                                : 'text-text-tertiary hover:text-text-secondary'
-                        )}
-                    >
-                        Available ({availableCount})
-                    </button>
-                </div>
-            </div>
-
-            {/* Widget Grid */}
-            <div className="p-6">
-                {filteredWidgets.length > 0 ? (
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                        {filteredWidgets.map((widget) => {
-                            const isActive = activeWidgetIds.includes(widget.id);
-                            return (
-                                <WidgetCard
-                                    key={widget.id}
-                                    widget={widget}
-                                    isActive={isActive}
-                                    onAdd={() => onAddWidget(widget.id, widget.defaultW, widget.defaultH)}
-                                    onRemove={() => onRemoveWidget(widget.id)}
-                                />
-                            );
-                        })}
-                    </div>
-                ) : (
-                    <div className="flex flex-col items-center justify-center py-12 text-center">
-                        <Sparkles className="mb-3 h-12 w-12 text-text-tertiary" />
-                        <p className="text-sm font-semibold text-text-primary">No widgets found</p>
-                        <p className="text-xs text-text-tertiary">
-                            Try adjusting your search or filter
-                        </p>
-                    </div>
-                )}
-            </div>
-
-            {/* Footer tip */}
-            <div className="border-t border-white/10 bg-primary/5 px-6 py-3">
-                <p className="text-xs text-text-tertiary text-center">
-                    <span className="font-semibold text-primary">Pro tip:</span> You can drag widgets anywhere on the grid and resize them by grabbing the corners.
-                </p>
-            </div>
+      <div className="flex flex-col gap-3 border-y border-border py-4 lg:flex-row lg:items-center lg:justify-between">
+        <Input
+          value={searchQuery}
+          onChange={(event) => setSearchQuery(event.target.value)}
+          placeholder="Search widgets"
+          leftIcon={<Search className="h-4 w-4" />}
+          className="max-w-md"
+        />
+        <div className="flex flex-wrap gap-2">
+          <FilterChip active={filter === 'all'} onClick={() => setFilter('all')}>
+            All ({availableWidgets.length})
+          </FilterChip>
+          <FilterChip active={filter === 'active'} onClick={() => setFilter('active')}>
+            Active ({activeWidgetIds.length})
+          </FilterChip>
+          <FilterChip active={filter === 'available'} onClick={() => setFilter('available')}>
+            Available ({Math.max(availableWidgets.length - activeWidgetIds.length, 0)})
+          </FilterChip>
         </div>
-    );
-});
+      </div>
 
-export default WidgetGallery;
+      {filteredWidgets.length > 0 ? (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {filteredWidgets.map((widget) => {
+            const isActive = activeWidgetIds.includes(widget.id);
+            return (
+              <WidgetCard
+                key={widget.id}
+                widget={widget}
+                isActive={isActive}
+                onAdd={() => onAddWidget(widget.id, widget.defaultW, widget.defaultH)}
+                onRemove={() => onRemoveWidget(widget.id)}
+              />
+            );
+          })}
+        </div>
+      ) : (
+        <div className="flex min-h-[220px] flex-col items-center justify-center rounded-xl border border-dashed border-border px-6 py-12 text-center">
+          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-surface-muted text-text-tertiary">
+            <Sparkles className="h-6 w-6" />
+          </div>
+          <p className="text-lg font-semibold text-text-primary">No widgets found</p>
+          <p className="mt-2 max-w-md text-sm text-text-secondary">Adjust the search or filter to find the module you need.</p>
+        </div>
+      )}
+
+      <div className="flex items-center gap-2 rounded-xl bg-surface-muted px-4 py-3 text-sm text-text-secondary">
+        <LayoutGrid className="h-4 w-4 text-primary" />
+        Drag widgets in edit mode and save the layout when the arrangement is final.
+      </div>
+    </Card>
+  );
+});

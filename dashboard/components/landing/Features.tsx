@@ -42,16 +42,11 @@ const features = [
 const Features = memo(function Features() {
     const [isHydrated, setIsHydrated] = useState(typeof window !== 'undefined');
     
-    // #region agent log
     useEffect(() => {
         if (!isHydrated) {
             setIsHydrated(true);
         }
-        fetch('http://127.0.0.1:7242/ingest/0e0dbcba-8565-423c-afc9-9ff8dcbd2ea3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Features.tsx:47',message:'Features hydrated (FIXED)',data:{isHydrated:true,wasAlreadyHydrated:isHydrated},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix-v2',hypothesisId:'F'})}).catch(()=>{});
     }, [isHydrated]);
-    
-    fetch('http://127.0.0.1:7242/ingest/0e0dbcba-8565-423c-afc9-9ff8dcbd2ea3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Features.tsx:50',message:'Features component rendered (FIXED)',data:{featuresCount:features.length,isHydrated},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix-v2',hypothesisId:'C'})}).catch(()=>{});
-    // #endregion
     
     return (
         <section className="py-24 relative overflow-hidden">
@@ -81,12 +76,6 @@ const Features = memo(function Features() {
 
                             <div className="relative z-10 h-full flex flex-col">
                                 <div className={`p-3 rounded-xl w-fit mb-6 ${feature.bg} ${feature.color}`}>
-                                    {/* #region agent log */}
-                                    {(() => {
-                                        fetch('http://127.0.0.1:7242/ingest/0e0dbcba-8565-423c-afc9-9ff8dcbd2ea3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Features.tsx:78',message:'feature icon rendering (FIXED)',data:{featureTitle:feature.title,iconName:feature.icon.name,isHydrated},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix-v2',hypothesisId:'I'})}).catch(()=>{});
-                                        return null;
-                                    })()}
-                                    {/* #endregion */}
                                     <feature.icon 
                                         className="w-6 h-6"
                                         style={{ 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { storage } from '../../../../../../../server/storage';
 import { createSession } from '@/lib/auth';
-import { nanoid } from 'nanoid';
+import { validateOAuthRedirect } from '@/lib/oauth-redirect';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
 
     // Verify state parameter
     const storedState = request.cookies.get('oauth_state')?.value;
-    const redirectTo = request.cookies.get('oauth_redirect')?.value || '/';
+    const redirectTo = validateOAuthRedirect(request.cookies.get('oauth_redirect')?.value);
 
     if (!storedState || storedState !== state) {
       return NextResponse.redirect(

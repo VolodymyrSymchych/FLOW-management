@@ -1,52 +1,82 @@
 'use client';
 
-import { useState } from 'react';
-import { Search, Plus, MessageSquare } from 'lucide-react';
-import { useChat, Chat } from '@/hooks/useChat';
-import { ChatWindow } from '@/components/chat/ChatWindow';
+import { useEffect, useMemo, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
+import { MailPlus, MessageSquare, Plus, Send } from 'lucide-react';
 import axios from 'axios';
-import { useUser } from '@/hooks/useUser';
+import { useChat, type Chat } from '@/hooks/useChat';
 import { useChats, useChatWithMessages, usePrefetch } from '@/hooks/useQueries';
-import { ChatListSkeleton } from '@/components/chat/ChatSkeleton';
+import { useUser } from '@/hooks/useUser';
+
+function initials(value?: string | null) {
+  if (!value) return 'FL';
+  return value
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+function avatarColor(index: number) {
+  return ['#c4548e', '#3D7A5A', '#2E5DA8', '#B8870A', '#6941C6', '#E8753A'][index % 6];
+}
 
 export default function MessagesPage() {
   const { user } = useUser();
   const { createDirectChat } = useChat();
-  
-  // React Query для оптимального кешування
   const { data: chats = [], isLoading: chatsLoading, refetch: refetchChats } = useChats();
-  const [selectedChatId, setSelectedChatId] = useState<number | null>(null);
-  const { data: chatData } = useChatWithMessages(selectedChatId);
   const { prefetchChat } = usePrefetch();
-  
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showNewChatModal, setShowNewChatModal] = useState(false);
+
+  const [selectedChatId, setSelectedChatId] = useState<number | null>(null);
+  const [filter, setFilter] = useState<'all' | 'direct' | 'group'>('all');
+  const [showComposer, setShowComposer] = useState(false);
   const [newChatRecipient, setNewChatRecipient] = useState('');
+  const [reply, setReply] = useState('');
 
-  // Отримуємо currentChat з chatData
-  const currentChat = chatData?.chat;
+  const { data: chatData, refetch: refetchChat } = useChatWithMessages(selectedChatId);
 
-  const handleSelectChat = (chatId: number) => {
-    setSelectedChatId(chatId);
+  useEffect(() => {
+    if (!selectedChatId && chats.length > 0) {
+      setSelectedChatId(chats[0].id);
+    }
+  }, [chats, selectedChatId]);
+
+  const filteredChats = useMemo(() => chats.filter((chat) => filter === 'all' || chat.type === filter), [chats, filter]);
+
+  const getOtherMember = (chat: Chat) => {
+    if (chat.type !== 'direct' || !chat.members || !user) return null;
+    return chat.members.find((member) => member.user.id !== user.id)?.user || null;
   };
 
-  const handleNewDirectChat = async () => {
-    if (!newChatRecipient) return;
+  const getChatDisplayName = (chat: Chat) => {
+    if (chat.name) return chat.name;
+    const otherMember = getOtherMember(chat);
+    return otherMember?.fullName || otherMember?.username || 'Conversation';
+  };
 
+  const getChatSubtitle = (chat: Chat) => {
+    if (chat.lastMessage?.content) return chat.lastMessage.content;
+    return chat.type === 'group' ? 'Team workspace conversation' : 'Start the conversation';
+  };
+
+  const selectedChat = filteredChats.find((chat) => chat.id === selectedChatId) || chats.find((chat) => chat.id === selectedChatId) || null;
+  const selectedMessages = chatData?.messages || [];
+  const selectedOtherMember = selectedChat ? getOtherMember(selectedChat) : null;
+
+  const handleNewDirectChat = async () => {
+    if (!newChatRecipient.trim()) return;
     try {
-      // Search for user by username or email
-      const response = await axios.get(`/api/users/search?q=${newChatRecipient}`);
+      const response = await axios.get(`/api/users/search?q=${encodeURIComponent(newChatRecipient)}`);
       const users = response.data.users || [];
-      
       if (users.length === 0) {
         alert('User not found');
         return;
       }
-
       const chat = await createDirectChat(users[0].id);
       setSelectedChatId(chat.id);
-      setShowNewChatModal(false);
+      setShowComposer(false);
       setNewChatRecipient('');
       refetchChats();
     } catch (error: any) {
@@ -54,168 +84,139 @@ export default function MessagesPage() {
     }
   };
 
-  // Prefetch chat on hover for instant loading
-  const handleChatHover = (chatId: number) => {
-    prefetchChat(chatId);
-  };
-
-  const filteredChats = chats.filter(chat => {
-    if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
-    
-    if (chat.type === 'direct' && chat.members) {
-      return chat.members.some(member => 
-        member.user.username.toLowerCase().includes(query) ||
-        member.user.fullName?.toLowerCase().includes(query)
-      );
+  const handleReply = async () => {
+    if (!reply.trim() || !selectedChatId) return;
+    try {
+      await axios.post(`/api/chat/${selectedChatId}/messages`, { content: reply, messageType: 'text' });
+      setReply('');
+      await refetchChat();
+      await refetchChats();
+    } catch (error: any) {
+      alert(error.response?.data?.error || 'Failed to send message');
     }
-    
-    return chat.name?.toLowerCase().includes(query);
-  });
-
-  const getChatDisplayName = (chat: Chat) => {
-    if (chat.name) return chat.name;
-    if (chat.type === 'direct' && chat.members) {
-      const otherMember = chat.members.find(m => m.user.id !== currentChat?.members?.[0]?.user.id);
-      return otherMember?.user.fullName || otherMember?.user.username || 'Unknown User';
-    }
-    return 'Chat';
-  };
-
-  const getChatAvatar = (chat: Chat) => {
-    if (chat.type === 'direct' && chat.members) {
-      const otherMember = chat.members.find(m => m.user.id !== currentChat?.members?.[0]?.user.id);
-      return otherMember?.user.username[0].toUpperCase() || 'U';
-    }
-    return chat.name?.[0].toUpperCase() || 'G';
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-text-primary">Messages</h1>
-          <p className="text-text-secondary mt-1">
-            Team communication and notifications
-          </p>
-        </div>
-        <button
-          onClick={() => setShowNewChatModal(true)}
-          className="flex items-center space-x-2 px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600"
-        >
-          <Plus className="w-5 h-5" />
-          <span>New Message</span>
-        </button>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Conversations List */}
-        <div className="lg:col-span-1 glass-light rounded-xl p-4 border border-white/10">
-          <div className="relative mb-4">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-text-tertiary" />
-            <input
-              type="text"
-              placeholder="Search messages..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-lg glass-light border border-white/10 text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-            />
+    <div className="messages-screen" data-testid="messages-screen">
+      <div className="sg-wrap messages-shell" style={{ minHeight: 'calc(100vh - 51px)' }}>
+        <div className="inbox-sidebar" data-testid="messages-list-pane">
+          <div className="inbox-hd">
+            <div className="inbox-hd-title">Inbox</div>
+            <button type="button" className="inbox-action-btn" onClick={() => setShowComposer(true)} aria-label="New message">
+              <Plus />
+            </button>
           </div>
-          <div className="space-y-2 max-h-[600px] overflow-y-auto">
+
+          <div className="inbox-tabs">
+            <button type="button" className={`inbox-tab ${filter === 'all' ? 'on' : ''}`} onClick={() => setFilter('all')}>
+              All
+              <span className="inbox-tab-cnt">{chats.length}</span>
+            </button>
+            <button type="button" className={`inbox-tab ${filter === 'direct' ? 'on' : ''}`} onClick={() => setFilter('direct')}>
+              Direct
+            </button>
+            <button type="button" className={`inbox-tab ${filter === 'group' ? 'on' : ''}`} onClick={() => setFilter('group')}>
+              Group
+            </button>
+          </div>
+
+          <div className="inbox-list">
             {chatsLoading ? (
-              <ChatListSkeleton />
-            ) : filteredChats.length === 0 ? (
-              <div className="text-center py-8 text-text-secondary">
-                <MessageSquare className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                <p>No conversations yet</p>
-              </div>
+              <div style={{ padding: 14, fontSize: 14, color: 'var(--muted)' }}>Loading conversations...</div>
+            ) : filteredChats.length > 0 ? (
+              filteredChats.map((chat, index) => {
+                const otherMember = getOtherMember(chat);
+                const unread = !!chat.lastMessage && chat.lastMessage.senderId !== user?.id && !chat.lastMessage.readAt;
+                return (
+                  <button
+                    key={chat.id}
+                    type="button"
+                    className={`inbox-item ${selectedChatId === chat.id ? 'on' : ''} ${unread ? 'unread' : ''}`}
+                    onClick={() => setSelectedChatId(chat.id)}
+                    onMouseEnter={() => prefetchChat(chat.id)}
+                  >
+                    <div className="inbox-av" style={{ background: avatarColor(index) }}>{initials(getChatDisplayName(chat))}</div>
+                    <div className="inbox-body">
+                      <div className="inbox-row1">
+                        <div className="inbox-who">{getChatDisplayName(chat)}</div>
+                        <div className="inbox-time">{chat.updatedAt ? formatDistanceToNow(new Date(chat.updatedAt), { addSuffix: true }) : ''}</div>
+                      </div>
+                      <div className="inbox-subject">{chat.type === 'group' ? 'Group workspace thread' : otherMember?.username || 'Direct conversation'}</div>
+                      <div className="inbox-preview">{getChatSubtitle(chat)}</div>
+                    </div>
+                    {unread ? <div className="inbox-unread-dot" /> : null}
+                  </button>
+                );
+              })
             ) : (
-              filteredChats.map((chat) => (
-                <div
-                  key={chat.id}
-                  onClick={() => handleSelectChat(chat.id)}
-                  onMouseEnter={() => handleChatHover(chat.id)}
-                  className={`p-3 rounded-lg cursor-pointer transition-colors ${
-                    selectedChatId === chat.id
-                      ? 'bg-primary-500/20 border border-primary-500/30'
-                      : 'hover:bg-white/5 border border-transparent'
-                  }`}
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 rounded-full bg-primary-500 flex items-center justify-center text-white font-semibold flex-shrink-0">
-                      {getChatAvatar(chat)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-text-primary truncate">
-                        {getChatDisplayName(chat)}
-                      </p>
-                      {chat.lastMessage && (
-                        <p className="text-sm text-text-secondary truncate">
-                          {chat.lastMessage.content}
-                        </p>
-                      )}
-                      {chat.updatedAt && (
-                        <p className="text-xs text-text-tertiary mt-1">
-                          {formatDistanceToNow(new Date(chat.updatedAt), { addSuffix: true })}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))
+              <div style={{ padding: 16, fontSize: 14, color: 'var(--muted)' }}>No conversations found.</div>
             )}
           </div>
         </div>
 
-        {/* Chat Area */}
-        <div className="lg:col-span-2 glass-light rounded-xl border border-white/10 flex flex-col" style={{ height: '600px' }}>
-          {selectedChatId && user ? (
-            <ChatWindow chatId={selectedChatId} currentUserId={user.id} />
-          ) : (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-center">
-                <MessageSquare className="w-12 h-12 text-text-tertiary mx-auto mb-3 opacity-50" />
-                <p className="text-text-secondary">
-                  Select a conversation or start a new message
-                </p>
+        <div className="inbox-detail" data-testid="messages-detail-pane">
+          {selectedChat ? (
+            <div className="inbox-msg">
+              <div className="inbox-msg-hd">
+                <div className="inbox-msg-av" style={{ background: avatarColor(0) }}>{initials(getChatDisplayName(selectedChat))}</div>
+                <div>
+                  <div className="inbox-msg-from">{getChatDisplayName(selectedChat)}</div>
+                  <div className="inbox-msg-meta">{selectedChat.type === 'group' ? 'Group workspace conversation' : selectedOtherMember?.username || 'Direct thread'}</div>
+                </div>
+              </div>
+              <div className="inbox-msg-subject">{selectedChat.lastMessage?.content ? 'Latest conversation update' : 'Start the conversation'}</div>
+              <div className="inbox-msg-body">
+                {selectedMessages.length > 0 ? (
+                  selectedMessages.map((message: any, index: number) => (
+                    <p key={message.id || index}>
+                      <strong>{message.sender?.fullName || message.sender?.username || 'User'}:</strong> {message.content}
+                    </p>
+                  ))
+                ) : (
+                  <p>No messages yet in this thread.</p>
+                )}
+              </div>
+              {selectedChat.lastMessage ? (
+                <div className="inbox-msg-task">
+                  <div className="inbox-task-row">
+                    <MessageSquare style={{ width: 13, height: 13, color: 'var(--violet)' }} />
+                    <div style={{ fontSize: 14, color: 'var(--ink)' }}>Last activity: {formatDistanceToNow(new Date(selectedChat.lastMessage.createdAt), { addSuffix: true })}</div>
+                  </div>
+                </div>
+              ) : null}
+              <div className="inbox-reply">
+                <div className="inbox-reply-av" style={{ background: '#c4548e' }}>{initials(user?.fullName || user?.username || 'FL')}</div>
+                <input className="inbox-reply-input" value={reply} onChange={(event) => setReply(event.target.value)} placeholder={`Reply to ${getChatDisplayName(selectedChat)}...`} />
+                <button type="button" className="inbox-reply-btn" onClick={handleReply}>Send</button>
               </div>
             </div>
+          ) : (
+            <div style={{ padding: 24, fontSize: 14, color: 'var(--muted)' }}>Select a conversation.</div>
           )}
         </div>
       </div>
 
-      {/* New Chat Modal */}
-      {showNewChatModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm">
-          <div className="glass-light rounded-xl p-6 max-w-md w-full border border-white/20 shadow-xl">
-            <h2 className="text-xl font-bold mb-4 text-text-primary">New Message</h2>
-            <input
-              type="text"
-              placeholder="Search by username or email..."
-              value={newChatRecipient}
-              onChange={(e) => setNewChatRecipient(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg glass-light border border-white/10 text-text-primary mb-4 focus:outline-none focus:ring-2 focus:ring-primary-500"
-            />
-            <div className="flex space-x-2">
-              <button
-                onClick={handleNewDirectChat}
-                className="flex-1 px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
-              >
-                Start Chat
-              </button>
-              <button
-                onClick={() => {
-                  setShowNewChatModal(false);
-                  setNewChatRecipient('');
-                }}
-                className="px-4 py-2 glass-light border border-white/10 rounded-lg text-text-primary hover:bg-white/5 transition-colors"
-              >
-                Cancel
-              </button>
+      {showComposer ? (
+        <div className="modal-overlay open" onClick={() => setShowComposer(false)}>
+          <div className="modal" onClick={(event) => event.stopPropagation()}>
+            <div className="modal-hd">
+              <div className="modal-hd-icon"><MailPlus style={{ width: 15, height: 15, color: 'var(--accent)' }} /></div>
+              <div className="modal-hd-title">New Message</div>
+              <button type="button" className="modal-close" onClick={() => setShowComposer(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              <div className="form-row">
+                <label className="form-lbl">Recipient</label>
+                <input className="form-inp" value={newChatRecipient} onChange={(event) => setNewChatRecipient(event.target.value)} placeholder="username or email" autoFocus />
+              </div>
+            </div>
+            <div className="modal-ft">
+              <button type="button" className="btn btn-ghost" onClick={() => setShowComposer(false)}>Cancel</button>
+              <button type="button" className="btn btn-acc" onClick={handleNewDirectChat}>Create chat</button>
             </div>
           </div>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

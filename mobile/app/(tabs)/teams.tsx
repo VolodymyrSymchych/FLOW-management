@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,89 +9,93 @@ import { Colors, Spacing, Typography, BorderRadius } from '../../constants/theme
 import { teamService } from '@/lib/team-service';
 import { useAuth } from '@/contexts/AuthContext';
 
+interface Team {
+    id: number;
+    name: string;
+    description?: string | null;
+    ownerId?: number;
+}
+
 export default function TeamsScreen() {
-    const { token } = useAuth();
-    const [members, setMembers] = useState<any[]>([]);
+    const { token, selectedTeamId, setSelectedTeamId } = useAuth();
+    const [teams, setTeams] = useState<Team[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         if (token) {
-            fetchTeam();
+            fetchTeams();
         } else {
             setIsLoading(false);
         }
     }, [token]);
 
-    const fetchTeam = async () => {
+    const fetchTeams = async () => {
         if (!token) return;
+
         setIsLoading(true);
         setError(null);
+
         try {
-            const { members, error } = await teamService.getMembers(token);
-            if (error) {
-                setError(error);
-            } else {
-                setMembers(members || []);
+            const { teams: fetchedTeams, error: fetchError } = await teamService.getTeams(token);
+            if (fetchError) {
+                setError(fetchError);
+                setTeams([]);
+                return;
+            }
+
+            const nextTeams = fetchedTeams || [];
+            setTeams(nextTeams);
+
+            const hasSelectedTeam = selectedTeamId
+                ? nextTeams.some((team) => team.id === selectedTeamId)
+                : false;
+
+            if (selectedTeamId && !hasSelectedTeam) {
+                await setSelectedTeamId(null);
             }
         } catch (err: any) {
-            setError(err.message || 'Failed to fetch team members');
+            setError(err.message || 'Failed to fetch workspaces');
+            setTeams([]);
         } finally {
             setIsLoading(false);
         }
     };
 
-    const statusColors: Record<string, string> = {
-        online: Colors.success,
-        away: Colors.warning,
-        offline: Colors.text.tertiary,
-        busy: Colors.danger,
-    };
-
-    const renderMember = ({ item }: any) => {
-        const initials = item.firstName && item.lastName
-            ? `${item.firstName[0]}${item.lastName[0]}`
-            : item.username?.substring(0, 2).toUpperCase() || '??';
-
-        const status = item.status || 'offline';
+    const renderTeam = ({ item }: { item: Team }) => {
+        const isSelected = item.id === selectedTeamId;
+        const cardStyle = isSelected
+            ? { ...styles.teamCard, ...styles.teamCardSelected }
+            : styles.teamCard;
 
         return (
-            <GlassCard intensity="medium" style={styles.memberCard}>
-                <View style={styles.memberHeader}>
-                    <View style={styles.avatarContainer}>
-                        <View style={styles.avatar}>
-                            <Text style={styles.avatarText}>{initials}</Text>
+            <TouchableOpacity activeOpacity={0.85} onPress={() => setSelectedTeamId(isSelected ? null : item.id)}>
+                <GlassCard intensity="medium" style={cardStyle}>
+                    <View style={styles.teamHeader}>
+                        <View style={styles.teamIcon}>
+                            <Ionicons name="people" size={20} color={Colors.primary} />
                         </View>
-                        <View style={[styles.statusDot, { backgroundColor: statusColors[status] || statusColors.offline }]} />
+                        <View style={styles.teamInfo}>
+                            <Text style={styles.teamName}>{item.name}</Text>
+                            <Text style={styles.teamDescription}>
+                                {item.description || 'Workspace for team collaboration'}
+                            </Text>
+                        </View>
+                        <View style={styles.teamActions}>
+                            {isSelected ? (
+                                <View style={styles.selectedBadge}>
+                                    <Ionicons name="checkmark-circle" size={18} color={Colors.success} />
+                                    <Text style={styles.selectedText}>Active</Text>
+                                </View>
+                            ) : (
+                                <Ionicons name="chevron-forward" size={18} color={Colors.text.tertiary} />
+                            )}
+                        </View>
                     </View>
-                    <View style={styles.memberInfo}>
-                        <Text style={styles.memberName}>{item.firstName} {item.lastName}</Text>
-                        <Text style={styles.memberRole}>{item.role || 'Member'}</Text>
-                    </View>
-                    <TouchableOpacity style={styles.moreButton}>
-                        <Ionicons name="ellipsis-horizontal" size={20} color={Colors.text.secondary} />
-                    </TouchableOpacity>
-                </View>
-                <View style={styles.memberStats}>
-                    <View style={styles.statItem}>
-                        <Ionicons name="checkmark-circle-outline" size={16} color={Colors.text.tertiary} />
-                        <Text style={styles.statText}>{item.completedTasksCount || 0} tasks</Text>
-                    </View>
-                    <View style={[styles.statusBadge, { backgroundColor: `${statusColors[status] || statusColors.offline}20` }]}>
-                        <Text style={[styles.statusText, { color: statusColors[status] || statusColors.offline }]}>
-                            {status}
-                        </Text>
-                    </View>
-                </View>
-            </GlassCard>
+                </GlassCard>
+            </TouchableOpacity>
         );
     };
-
-    // Calculate dynamic stats
-    const totalMembers = members.length;
-    const onlineMembers = members.filter(m => m.status === 'online').length;
-    // Assuming we might have task counts in the member object or just placeholder for now since we fetching members
-    const totalTasks = members.reduce((acc, curr) => acc + (curr.completedTasksCount || 0), 0);
 
     return (
         <GradientBackground>
@@ -100,33 +104,16 @@ export default function TeamsScreen() {
 
                 <View style={styles.content}>
                     <View style={styles.header}>
-                        <Text style={styles.title}>Teams</Text>
-                        <TouchableOpacity style={styles.addButton}>
-                            <Ionicons name="person-add" size={20} color="#fff" />
-                        </TouchableOpacity>
+                        <View>
+                            <Text style={styles.title}>Workspaces</Text>
+                            <Text style={styles.subtitle}>Your last selected workspace is restored automatically</Text>
+                        </View>
+                        {selectedTeamId ? (
+                            <TouchableOpacity style={styles.clearButton} onPress={() => setSelectedTeamId(null)}>
+                                <Text style={styles.clearButtonText}>All</Text>
+                            </TouchableOpacity>
+                        ) : null}
                     </View>
-
-                    {/* Team Stats */}
-                    <View style={styles.statsRow}>
-                        <GlassCard intensity="medium" style={styles.statCard}>
-                            <Ionicons name="people" size={24} color={Colors.primary} />
-                            <Text style={styles.statValue}>{totalMembers}</Text>
-                            <Text style={styles.statLabel}>Members</Text>
-                        </GlassCard>
-                        <GlassCard intensity="medium" style={styles.statCard}>
-                            <Ionicons name="wifi" size={24} color={Colors.success} />
-                            <Text style={styles.statValue}>{onlineMembers}</Text>
-                            <Text style={styles.statLabel}>Online</Text>
-                        </GlassCard>
-                        <GlassCard intensity="medium" style={styles.statCard}>
-                            <Ionicons name="checkmark-done" size={24} color={Colors.warning} />
-                            <Text style={styles.statValue}>{totalTasks}</Text>
-                            <Text style={styles.statLabel}>Tasks Done</Text>
-                        </GlassCard>
-                    </View>
-
-                    {/* Team Members */}
-                    <Text style={styles.sectionTitle}>Team Members</Text>
 
                     {isLoading ? (
                         <View style={styles.loadingContainer}>
@@ -135,24 +122,25 @@ export default function TeamsScreen() {
                     ) : error ? (
                         <View style={styles.errorContainer}>
                             <Text style={styles.errorText}>{error}</Text>
-                            <TouchableOpacity style={styles.retryButton} onPress={fetchTeam}>
+                            <TouchableOpacity style={styles.retryButton} onPress={fetchTeams}>
                                 <Text style={styles.retryText}>Retry</Text>
                             </TouchableOpacity>
                         </View>
-                    ) : members.length === 0 ? (
+                    ) : teams.length === 0 ? (
                         <View style={styles.emptyContainer}>
                             <Ionicons name="people-outline" size={64} color={Colors.text.tertiary} />
-                            <Text style={styles.emptyText}>No team members found</Text>
+                            <Text style={styles.emptyText}>No workspaces found</Text>
+                            <Text style={styles.emptySubtext}>When you join or create one, it will appear here.</Text>
                         </View>
                     ) : (
                         <FlatList
-                            data={members}
-                            renderItem={renderMember}
-                            keyExtractor={(item) => item.id?.toString() || Math.random().toString()}
+                            data={teams}
+                            renderItem={renderTeam}
+                            keyExtractor={(item) => item.id.toString()}
                             contentContainerStyle={styles.listContent}
                             showsVerticalScrollIndicator={false}
                             refreshing={isLoading}
-                            onRefresh={fetchTeam}
+                            onRefresh={fetchTeams}
                         />
                     )}
                 </View>
@@ -172,130 +160,87 @@ const styles = StyleSheet.create({
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: Spacing.sm,
+        alignItems: 'flex-start',
+        marginBottom: Spacing.md,
         marginTop: Spacing.xs,
+        gap: Spacing.sm,
     },
     title: {
         fontSize: 20,
         fontWeight: Typography.weights.bold,
         color: Colors.text.primary,
     },
-    addButton: {
-        width: 32,
+    subtitle: {
+        fontSize: 11,
+        color: Colors.text.secondary,
+        marginTop: 2,
+    },
+    clearButton: {
+        minWidth: 44,
         height: 32,
         borderRadius: 16,
-        backgroundColor: Colors.primary,
+        backgroundColor: Colors.glass.medium,
         justifyContent: 'center',
         alignItems: 'center',
+        paddingHorizontal: 12,
     },
-    statsRow: {
-        flexDirection: 'row',
-        gap: Spacing.sm,
-        marginBottom: Spacing.md,
-    },
-    statCard: {
-        flex: 1,
-        padding: Spacing.xs,
-        borderRadius: BorderRadius.sm,
-        alignItems: 'center',
-    },
-    statValue: {
-        fontSize: Typography.sizes.xl,
-        fontWeight: Typography.weights.bold,
+    clearButtonText: {
         color: Colors.text.primary,
-        marginTop: Spacing.xs,
-        marginBottom: 2,
-    },
-    statLabel: {
-        fontSize: Typography.sizes.xs,
-        color: Colors.text.secondary,
-    },
-    sectionTitle: {
-        fontSize: Typography.sizes.lg,
-        fontWeight: Typography.weights.bold,
-        color: Colors.text.primary,
-        marginBottom: Spacing.xs,
+        fontWeight: Typography.weights.semibold,
+        fontSize: 12,
     },
     listContent: {
         paddingBottom: 100,
     },
-    memberCard: {
-        padding: Spacing.xs,
-        borderRadius: BorderRadius.sm,
-        marginBottom: 4,
+    teamCard: {
+        padding: Spacing.sm,
+        borderRadius: BorderRadius.md,
+        marginBottom: Spacing.sm,
+        borderWidth: 1,
+        borderColor: 'transparent',
     },
-    memberHeader: {
+    teamCardSelected: {
+        borderColor: `${Colors.success}66`,
+    },
+    teamHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: Spacing.xs,
+        gap: Spacing.sm,
     },
-    avatarContainer: {
-        position: 'relative',
-        marginRight: Spacing.sm,
-    },
-    avatar: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: Colors.primary,
+    teamIcon: {
+        width: 42,
+        height: 42,
+        borderRadius: 21,
+        backgroundColor: Colors.glass.medium,
         justifyContent: 'center',
         alignItems: 'center',
     },
-    avatarText: {
-        fontSize: Typography.sizes.base,
-        fontWeight: Typography.weights.bold,
-        color: '#fff',
-    },
-    statusDot: {
-        position: 'absolute',
-        bottom: 0,
-        right: 0,
-        width: 12,
-        height: 12,
-        borderRadius: 6,
-        borderWidth: 2,
-        borderColor: Colors.background.secondary,
-    },
-    memberInfo: {
+    teamInfo: {
         flex: 1,
     },
-    memberName: {
-        fontSize: Typography.sizes.sm,
-        fontWeight: Typography.weights.semibold,
+    teamName: {
+        fontSize: Typography.sizes.base,
+        fontWeight: Typography.weights.bold,
         color: Colors.text.primary,
-        marginBottom: 2,
+        marginBottom: 4,
     },
-    memberRole: {
+    teamDescription: {
         fontSize: Typography.sizes.xs,
         color: Colors.text.secondary,
     },
-    moreButton: {
-        padding: 4,
+    teamActions: {
+        alignItems: 'flex-end',
+        justifyContent: 'center',
     },
-    memberStats: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
-    statItem: {
+    selectedBadge: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 6,
+        gap: 4,
     },
-    statText: {
-        fontSize: Typography.sizes.xs,
-        color: Colors.text.tertiary,
-    },
-    statusBadge: {
-        paddingHorizontal: 8,
-        paddingVertical: 2,
-        borderRadius: 12,
-    },
-    statusText: {
-        fontSize: Typography.sizes.xs,
+    selectedText: {
+        color: Colors.success,
+        fontSize: 12,
         fontWeight: Typography.weights.semibold,
-        textTransform: 'capitalize',
     },
     loadingContainer: {
         flex: 1,
@@ -314,20 +259,30 @@ const styles = StyleSheet.create({
         marginBottom: Spacing.md,
     },
     retryButton: {
-        padding: Spacing.md,
-        backgroundColor: Colors.glass.medium,
+        backgroundColor: Colors.primary,
+        paddingHorizontal: Spacing.lg,
+        paddingVertical: Spacing.sm,
         borderRadius: BorderRadius.md,
     },
     retryText: {
-        color: Colors.text.primary,
+        color: '#fff',
+        fontWeight: Typography.weights.semibold,
     },
     emptyContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+        paddingHorizontal: Spacing.xl,
     },
     emptyText: {
-        color: Colors.text.secondary,
+        color: Colors.text.primary,
+        fontSize: Typography.sizes.lg,
+        fontWeight: Typography.weights.bold,
         marginTop: Spacing.md,
+    },
+    emptySubtext: {
+        color: Colors.text.secondary,
+        textAlign: 'center',
+        marginTop: Spacing.xs,
     },
 });

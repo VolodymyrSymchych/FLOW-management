@@ -10,7 +10,7 @@ import { projectService } from '@/lib/project-service';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function ProjectsScreen() {
-    const { token } = useAuth();
+    const { token, selectedTeamId } = useAuth();
     const [projects, setProjects] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -23,14 +23,14 @@ export default function ProjectsScreen() {
             // If token is null briefly on mount, it might cause a flash, but useEffect dependency handles it
             setIsLoading(false); // Stop loading if no token (e.g. unauthenticated)
         }
-    }, [token]);
+    }, [token, selectedTeamId]);
 
     const fetchProjects = async () => {
         if (!token) return;
         setIsLoading(true);
         setError(null);
         try {
-            const { projects, error } = await projectService.getProjects(token);
+            const { projects, error } = await projectService.getProjects(token, selectedTeamId);
             if (error) {
                 setError(error);
                 setProjects([]); // Clear mock/stale data
@@ -92,7 +92,12 @@ export default function ProjectsScreen() {
 
                 <View style={styles.content}>
                     <View style={styles.header}>
-                        <Text style={styles.title}>Projects</Text>
+                        <View>
+                            <Text style={styles.title}>Projects</Text>
+                            <Text style={styles.subtitle}>
+                                {selectedTeamId ? `Workspace #${selectedTeamId}` : 'All workspaces'}
+                            </Text>
+                        </View>
                         <TouchableOpacity style={styles.addButton} onPress={() => { /* Navigate to create project */ }}>
                             <Ionicons name="add" size={20} color="#fff" />
                         </TouchableOpacity>
@@ -161,6 +166,11 @@ const styles = StyleSheet.create({
         backgroundColor: Colors.primary,
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    subtitle: {
+        fontSize: 11,
+        color: Colors.text.secondary,
+        marginTop: 2,
     },
     listContent: {
         paddingBottom: 100,

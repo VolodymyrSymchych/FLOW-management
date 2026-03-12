@@ -1,22 +1,25 @@
 import { test, expect } from '@playwright/test';
+import { loginUser } from './helpers/login';
 
 test.describe('Chat Page - Detailed Tests', () => {
     test.skip(() => !process.env.TEST_USER_EMAIL || !process.env.TEST_USER_PASSWORD, 'Requires test credentials');
 
     test.beforeEach(async ({ page }, testInfo) => {
-        // Increase timeout for beforeEach due to slow chat API
-        testInfo.setTimeout(60000);
+        // Increase timeout for beforeEach due to slow chat API and Vercel services
+        testInfo.setTimeout(180000);
 
-        await page.goto('/sign-in');
-        await page.locator('input[type="email"]').fill(process.env.TEST_USER_EMAIL!);
-        await page.locator('input[type="password"]').fill(process.env.TEST_USER_PASSWORD!);
-        await page.getByRole('button', { name: /Sign In/i }).click();
-        await page.waitForURL(/dashboard/, { timeout: 15000 });
+        // Login using helper function
+        await loginUser(
+            page,
+            process.env.TEST_USER_EMAIL!,
+            process.env.TEST_USER_PASSWORD!,
+            90000 // 90 second timeout for Vercel services
+        );
 
-        // Navigate to chat page - may be slow due to chat service
-        await page.goto('/dashboard/chat', { timeout: 45000 });
-        await page.waitForLoadState('networkidle', { timeout: 45000 });
-        await page.waitForTimeout(3000);
+        // Navigate to chat page - may be slow due to chat service on Vercel
+        await page.goto('/dashboard/chat', { timeout: 90000 });
+        await page.waitForLoadState('networkidle', { timeout: 90000 });
+        await page.waitForTimeout(5000); // Extra wait for chat service to initialize
     });
 
     test('should display chat page header', async ({ page }) => {

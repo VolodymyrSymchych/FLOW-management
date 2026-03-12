@@ -1,6 +1,12 @@
 import axios, { AxiosInstance } from 'axios';
+import http from 'http';
+import https from 'https';
 
 const PROJECT_SERVICE_URL = process.env.NEXT_PUBLIC_PROJECT_SERVICE_URL || 'http://localhost:3004';
+
+// Reuse TCP connections across requests (saves 20-50ms per request)
+const httpAgent = new http.Agent({ keepAlive: true });
+const httpsAgent = new https.Agent({ keepAlive: true });
 
 class ProjectServiceClient {
   private client: AxiosInstance;
@@ -10,6 +16,8 @@ class ProjectServiceClient {
       baseURL: PROJECT_SERVICE_URL,
       timeout: 10000,
       withCredentials: true,
+      httpAgent,
+      httpsAgent,
     });
   }
 
@@ -20,23 +28,13 @@ class ProjectServiceClient {
     try {
       const { cookies } = await import('next/headers');
       const cookieStore = await cookies();
-      
+
       // Try auth_token first (from auth-service)
       const authToken = cookieStore.get('auth_token')?.value;
-      if (authToken) {
-        console.log('✅ Found auth_token cookie');
-        return authToken;
-      }
-      
+      if (authToken) return authToken;
+
       // Fallback to session token (local dashboard session)
-      const sessionToken = cookieStore.get('session')?.value;
-      if (sessionToken) {
-        console.log('⚠️ Using session token as fallback (may not work with microservice)');
-        return sessionToken;
-      }
-      
-      console.warn('❌ No auth token found in cookies');
-      return null;
+      return cookieStore.get('session')?.value || null;
     } catch (error) {
       console.error('Error getting auth token:', error);
       return null;
@@ -45,32 +43,19 @@ class ProjectServiceClient {
 
   private async getHeaders(): Promise<Record<string, string>> {
     const headers: Record<string, string> = {};
-    
-    // Add user JWT token (for user authentication)
+
     const token = await this.getAuthToken();
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
-      console.log('✅ Added Authorization header');
-    } else {
-      console.warn('⚠️ No auth token available - request may fail');
     }
-    
-    // Add service API key (for service-to-service authentication, server-side only)
+
     if (typeof window === 'undefined') {
       const serviceApiKey = process.env.PROJECT_SERVICE_API_KEY;
       if (serviceApiKey) {
         headers['X-Service-API-Key'] = serviceApiKey;
-        console.log('✅ Added X-Service-API-Key header');
-      } else {
-        console.warn('⚠️ PROJECT_SERVICE_API_KEY not set');
       }
     }
-    
-    console.log('📋 Request headers:', {
-      hasAuth: !!headers['Authorization'],
-      hasApiKey: !!headers['X-Service-API-Key'],
-    });
-    
+
     return headers;
   }
 
@@ -96,37 +81,16 @@ class ProjectServiceClient {
    * Get project by ID
    */
   async getProject(projectId: number): Promise<{ project?: any; error?: string }> {
-    const serviceUrl = process.env.NEXT_PUBLIC_PROJECT_SERVICE_URL || 'http://localhost:3004';
-    console.log('🔍 ProjectService.getProject called:', {
-      projectId,
-      serviceUrl,
-      baseURL: this.client.defaults.baseURL,
-    });
-    
     try {
       const headers = await this.getHeaders();
-      console.log('📤 Making request to microservice:', {
-        url: `${this.client.defaults.baseURL}/api/projects/${projectId}`,
-        hasAuthToken: !!headers['Authorization'],
-        hasApiKey: !!headers['X-Service-API-Key'],
-      });
-      
       const response = await this.client.get(`/api/projects/${projectId}`, { headers });
-      console.log('✅ Microservice response received:', {
-        status: response.status,
-        hasProject: !!response.data?.project,
-      });
-      
       return { project: response.data.project };
     } catch (error: any) {
-      console.error('❌ Microservice request failed:', {
+      console.error('ProjectService.getProject failed:', {
+        projectId,
         message: error.message,
-        code: error.code,
         status: error.response?.status,
-        data: error.response?.data,
-        url: error.config?.url,
       });
-      
       return {
         error: error.response?.data?.error || error.message || 'Failed to get project',
       };

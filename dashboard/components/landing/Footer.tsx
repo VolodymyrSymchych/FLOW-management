@@ -3,7 +3,7 @@
 import { Twitter, Github, Linkedin } from "lucide-react";
 import Link from "next/link";
 
-const logo = "/logo.png";
+const logo = "/flow-logo.png";
 
 export function Footer() {
     return (
@@ -14,8 +14,8 @@ export function Footer() {
                         <div className="flex items-center space-x-2 mb-6">
                             <img
                                 src={logo}
-                                alt="FLOW management"
-                                className="h-6 w-auto object-contain"
+                                alt="Flow"
+                                className="h-6 w-auto object-contain flow-logo-flow-only"
                             />
                         </div>
                         <p className="text-gray-400 max-w-sm mb-6">

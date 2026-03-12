@@ -1,15 +1,13 @@
 import { test, expect } from '@playwright/test';
+import { loginUser } from './helpers/login';
 
 test.describe('Performance Tests', () => {
     test.skip(() => !process.env.TEST_USER_EMAIL || !process.env.TEST_USER_PASSWORD, 'Requires test credentials');
 
-    test.beforeEach(async ({ page }) => {
+    test.beforeEach(async ({ page }, testInfo) => {
+        testInfo.setTimeout(120000);
         // Login before each test to measure authenticated performance
-        await page.goto('/sign-in');
-        await page.locator('input[type="email"]').fill(process.env.TEST_USER_EMAIL!);
-        await page.locator('input[type="password"]').fill(process.env.TEST_USER_PASSWORD!);
-        await page.getByRole('button', { name: /Sign In/i }).click();
-        await page.waitForURL(/dashboard/, { timeout: 15000 });
+        await loginUser(page, process.env.TEST_USER_EMAIL!, process.env.TEST_USER_PASSWORD!, 90000);
     });
 
     test('should load dashboard within acceptable time', async ({ page }) => {

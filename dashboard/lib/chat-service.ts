@@ -1,6 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
 
-const CHAT_SERVICE_URL = process.env.NEXT_PUBLIC_CHAT_SERVICE_URL || 'http://localhost:3006';
+const CHAT_SERVICE_URL = process.env.NEXT_PUBLIC_CHAT_SERVICE_URL || 'http://localhost:3007';
 
 class ChatServiceClient {
   private client: AxiosInstance;

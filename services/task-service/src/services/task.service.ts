@@ -1,5 +1,5 @@
 import { db, tasks, projects } from '../db';
-import { eq, and, isNull, desc, inArray } from 'drizzle-orm';
+import { eq, and, isNull, desc, inArray, sql } from 'drizzle-orm';
 import { logger } from '@project-scope-analyzer/shared';
 
 export interface Task {
@@ -61,9 +61,18 @@ export interface WorkedHours {
 
 export class TaskService {
   /**
-   * Get tasks for a user
+   * Get tasks for a user with pagination
+   * @param userId - User ID (REQUIRED for multi-tenant isolation)
+   * @param projectId - Optional project filter
+   * @param limit - Number of items per page (default: 50, max: 100)
+   * @param offset - Number of items to skip
    */
-  async getUserTasks(userId: number, projectId?: number): Promise<Task[]> {
+  async getUserTasks(
+    userId: number,
+    projectId?: number,
+    limit: number = 50,
+    offset: number = 0
+  ): Promise<{ tasks: Task[]; total: number }> {
     try {
       const conditions = [
         eq(tasks.userId, userId),
@@ -74,60 +83,96 @@ export class TaskService {
         conditions.push(eq(tasks.projectId, projectId));
       }
 
+      // Get total count
+      const [{ count }] = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(tasks)
+        .where(and(...conditions));
+
+      // Get paginated tasks
       const userTasks = await db
         .select()
         .from(tasks)
         .where(and(...conditions))
-        .orderBy(desc(tasks.createdAt));
+        .orderBy(desc(tasks.createdAt))
+        .limit(Math.min(limit, 100)) // Max 100 items
+        .offset(offset);
 
-      return userTasks.map(this.mapToTask);
+      return {
+        tasks: userTasks.map(this.mapToTask),
+        total: Number(count) || 0,
+      };
     } catch (error) {
-      logger.error('Error getting user tasks', { error, userId, projectId });
+      logger.error('Error getting user tasks', { error, userId, projectId, limit, offset });
       throw error;
     }
   }
 
   /**
-   * Get tasks by team ID (through project relationship)
+   * Get tasks by team ID (through project relationship) with pagination
+   * @param userId - User ID (REQUIRED for multi-tenant isolation)
+   * @param teamId - Team ID to filter by
+   * @param limit - Number of items per page (default: 50, max: 100)
+   * @param offset - Number of items to skip
    */
-  async getTasksByTeam(userId: number, teamId: number): Promise<Task[]> {
+  async getTasksByTeam(
+    userId: number,
+    teamId: number,
+    limit: number = 50,
+    offset: number = 0
+  ): Promise<{ tasks: Task[]; total: number }> {
     try {
+      const conditions = and(
+        eq(tasks.userId, userId),
+        eq(projects.teamId, teamId),
+        isNull(tasks.deletedAt),
+        isNull(projects.deletedAt)
+      );
+
+      // Get total count
+      const [{ count }] = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(tasks)
+        .innerJoin(projects, eq(tasks.projectId, projects.id))
+        .where(conditions);
+
+      // Get paginated tasks
       const teamTasks = await db
         .select({
           task: tasks,
         })
         .from(tasks)
         .innerJoin(projects, eq(tasks.projectId, projects.id))
-        .where(and(
-          eq(tasks.userId, userId),
-          eq(projects.teamId, teamId),
-          isNull(tasks.deletedAt),
-          isNull(projects.deletedAt)
-        ))
-        .orderBy(desc(tasks.createdAt));
+        .where(conditions)
+        .orderBy(desc(tasks.createdAt))
+        .limit(Math.min(limit, 100))
+        .offset(offset);
 
-      return teamTasks.map(row => this.mapToTask(row.task));
+      return {
+        tasks: teamTasks.map(row => this.mapToTask(row.task)),
+        total: Number(count) || 0,
+      };
     } catch (error) {
-      logger.error('Error getting tasks by team', { error, userId, teamId });
+      logger.error('Error getting tasks by team', { error, userId, teamId, limit, offset });
       throw error;
     }
   }
 
   /**
    * Get task by ID
+   * @param taskId - Task ID to fetch
+   * @param userId - User ID (REQUIRED for multi-tenant isolation)
    */
-  async getTaskById(taskId: number, userId?: number): Promise<Task | null> {
+  async getTaskById(taskId: number, userId: number): Promise<Task | null> {
     try {
-      const conditions = [eq(tasks.id, taskId), isNull(tasks.deletedAt)];
-
-      if (userId) {
-        conditions.push(eq(tasks.userId, userId));
-      }
-
       const [task] = await db
         .select()
         .from(tasks)
-        .where(and(...conditions));
+        .where(and(
+          eq(tasks.id, taskId),
+          eq(tasks.userId, userId), // ✅ REQUIRED: Enforce multi-tenant isolation
+          isNull(tasks.deletedAt)
+        ));
 
       if (!task) {
         return null;
@@ -265,10 +310,12 @@ export class TaskService {
 
   /**
    * Get task dependencies
+   * @param taskId - Task ID to get dependencies for
+   * @param userId - User ID (REQUIRED for multi-tenant isolation)
    */
-  async getDependencies(taskId: number): Promise<Task[]> {
+  async getDependencies(taskId: number, userId: number): Promise<Task[]> {
     try {
-      const task = await this.getTaskById(taskId);
+      const task = await this.getTaskById(taskId, userId);
       if (!task || !task.dependsOn) {
         return [];
       }
@@ -283,12 +330,13 @@ export class TaskService {
         .from(tasks)
         .where(and(
           inArray(tasks.id, dependencyIds),
+          eq(tasks.userId, userId), // ✅ REQUIRED: Enforce multi-tenant isolation
           isNull(tasks.deletedAt)
         ));
 
       return dependencyTasks.map(this.mapToTask);
     } catch (error) {
-      logger.error('Error getting dependencies', { error, taskId });
+      logger.error('Error getting dependencies', { error, taskId, userId });
       throw error;
     }
   }
@@ -298,10 +346,11 @@ export class TaskService {
    */
   async getGanttData(userId: number, projectId?: number): Promise<Task[]> {
     try {
-      const userTasks = await this.getUserTasks(userId, projectId);
+      // Get all tasks (no pagination for Gantt chart)
+      const { tasks: userTasks } = await this.getUserTasks(userId, projectId, 1000, 0);
 
       // Filter tasks with dates for Gantt chart
-      return userTasks.filter(task => task.startDate || task.dueDate);
+      return userTasks.filter((task: Task) => task.startDate || task.dueDate);
     } catch (error) {
       logger.error('Error getting Gantt data', { error, userId, projectId });
       throw error;

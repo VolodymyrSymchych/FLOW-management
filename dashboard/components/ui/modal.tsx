@@ -10,7 +10,8 @@ interface ModalProps {
   title: string | React.ReactNode;
   description?: string;
   children: React.ReactNode;
-  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | 'full';
+  position?: 'center' | 'right';
   showCloseButton?: boolean;
   closeOnEscape?: boolean;
   closeOnBackdrop?: boolean;
@@ -35,6 +36,7 @@ export function Modal({
   description,
   children,
   size = 'md',
+  position = 'center',
   showCloseButton = true,
   closeOnEscape = true,
   closeOnBackdrop = true,
@@ -142,6 +144,8 @@ export function Modal({
     lg: 'max-w-lg',
     xl: 'max-w-xl',
     '2xl': 'max-w-2xl',
+    '3xl': 'max-w-3xl',
+    '4xl': 'max-w-4xl',
     full: 'max-w-full mx-4',
   };
 
@@ -153,7 +157,10 @@ export function Modal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in-0 duration-200"
+      className={cn(
+        "fixed inset-0 z-50 flex bg-black/60 backdrop-blur-sm animate-in fade-in-0 duration-200",
+        position === 'center' ? "items-center justify-center p-4" : "justify-end"
+      )}
       onClick={handleBackdropClick}
       aria-hidden="true"
     >
@@ -164,13 +171,14 @@ export function Modal({
         aria-labelledby={titleId}
         aria-describedby={description ? descriptionId : undefined}
         className={cn(
-          'glass-medium rounded-2xl border border-white/10 w-full shadow-2xl animate-in zoom-in-95 duration-200',
+          'glass-medium border border-white/10 shadow-2xl duration-200 w-full flex flex-col',
+          position === 'center' ? 'rounded-2xl animate-in zoom-in-95 max-h-full' : 'h-full rounded-l-2xl animate-in slide-in-from-right-full',
           sizeClasses[size],
           className
         )}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-white/10">
+        <div className="flex-none flex items-center justify-between p-6 border-b border-white/10">
           <div className="flex-1 pr-4">
             {typeof title === 'string' ? (
               <h2
@@ -205,7 +213,7 @@ export function Modal({
         </div>
 
         {/* Content */}
-        <div className="p-6">
+        <div className="flex-1 overflow-y-auto p-6">
           {children}
         </div>
       </div>

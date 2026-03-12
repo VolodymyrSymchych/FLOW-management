@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { loginUser } from './helpers/login';
 
 // These tests require authentication
 // Set TEST_USER_EMAIL and TEST_USER_PASSWORD in .env.local
@@ -7,25 +8,17 @@ test.describe('Dashboard (Authenticated)', () => {
     // Skip all tests if no credentials
     test.skip(() => !process.env.TEST_USER_EMAIL || !process.env.TEST_USER_PASSWORD, 'Requires test credentials');
 
-    test.beforeEach(async ({ page }) => {
+    test.beforeEach(async ({ page }, testInfo) => {
+        testInfo.setTimeout(120000);
         // Login before each test
-        await page.goto('/sign-in');
-        await page.waitForLoadState('networkidle');
-
-        await page.locator('input[type="email"], input#email').fill(process.env.TEST_USER_EMAIL!);
-        await page.locator('input[type="password"]').fill(process.env.TEST_USER_PASSWORD!);
-        await page.getByRole('button', { name: /Sign In/i }).click();
-
-        // Wait for redirect to dashboard
-        await page.waitForURL(/dashboard/, { timeout: 15000 });
+        await loginUser(page, process.env.TEST_USER_EMAIL!, process.env.TEST_USER_PASSWORD!, 90000);
     });
 
     test('should display dashboard after login', async ({ page }) => {
         // Should be on dashboard
         await expect(page).toHaveURL(/dashboard/);
 
-        // Wait for page to load
-        await page.waitForLoadState('networkidle');
+        await page.waitForSelector('[data-testid="dashboard-screen"]');
 
         // Dashboard should have content (not sign-in page)
         await expect(page.locator('body')).not.toContainText(/Sign in to your account/i);
@@ -33,16 +26,16 @@ test.describe('Dashboard (Authenticated)', () => {
 
     test('should display sidebar navigation', async ({ page }) => {
         await page.goto('/dashboard');
-        await page.waitForLoadState('networkidle');
+        await page.waitForSelector('[data-testid="app-shell-sidebar"]');
 
         // Look for common navigation elements
-        const nav = page.locator('nav, aside, [role="navigation"]').first();
+        const nav = page.locator('[data-testid="app-shell-sidebar"]').first();
         await expect(nav).toBeVisible({ timeout: 10000 });
     });
 
     test('should navigate to projects page', async ({ page }) => {
         await page.goto('/dashboard');
-        await page.waitForLoadState('networkidle');
+        await page.waitForSelector('[data-testid="app-shell-sidebar"]');
 
         // Find and click projects link
         const projectsLink = page.getByRole('link', { name: /projects|проекти/i }).first();
@@ -54,7 +47,7 @@ test.describe('Dashboard (Authenticated)', () => {
 
     test('should navigate to tasks page', async ({ page }) => {
         await page.goto('/dashboard');
-        await page.waitForLoadState('networkidle');
+        await page.waitForSelector('[data-testid="app-shell-sidebar"]');
 
         const tasksLink = page.getByRole('link', { name: /tasks|завдання/i }).first();
         if (await tasksLink.isVisible()) {
@@ -65,7 +58,7 @@ test.describe('Dashboard (Authenticated)', () => {
 
     test('should navigate to team page', async ({ page }) => {
         await page.goto('/dashboard');
-        await page.waitForLoadState('networkidle');
+        await page.waitForSelector('[data-testid="app-shell-sidebar"]');
         await page.waitForTimeout(2000);
 
         const teamLink = page.getByRole('link', { name: /team|команда/i }).first();
@@ -78,16 +71,16 @@ test.describe('Dashboard (Authenticated)', () => {
 
     test('should be able to logout', async ({ page }) => {
         await page.goto('/dashboard');
-        await page.waitForLoadState('networkidle');
+        await page.waitForSelector('[data-testid="app-shell-sidebar"]');
 
         // Find user menu/profile button and click
-        const profileButton = page.locator('button:has(img), [data-testid="user-menu"], [aria-label*="profile"]').first();
+        const profileButton = page.locator('[data-testid="user-menu-trigger"]').first();
 
         if (await profileButton.isVisible()) {
             await profileButton.click();
 
             // Click logout
-            const logoutButton = page.getByRole('menuitem', { name: /logout|sign out|вийти/i });
+            const logoutButton = page.getByRole('button', { name: /logout|sign out|вийти/i });
             if (await logoutButton.isVisible()) {
                 await logoutButton.click();
                 // Should redirect to sign-in

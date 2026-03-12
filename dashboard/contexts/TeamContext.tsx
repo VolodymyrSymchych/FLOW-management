@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useUser } from '@/hooks/useUser';
 
 export interface Team {
   id: number;
@@ -29,6 +30,7 @@ const TeamContext = createContext<TeamContextType | undefined>(undefined);
 const STORAGE_KEY = 'selected-team';
 
 export function TeamProvider({ children }: { children: ReactNode }) {
+  const { user, loading: userLoading } = useUser();
   const [teams, setTeams] = useState<Team[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedTeam, setSelectedTeamState] = useState<TeamSelection>({ type: 'all' });
@@ -37,6 +39,12 @@ export function TeamProvider({ children }: { children: ReactNode }) {
 
   // Load saved selection from localStorage after hydration
   useEffect(() => {
+    // Only run on client side
+    if (typeof window === 'undefined') {
+      setIsHydrated(true);
+      return;
+    }
+
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
@@ -49,9 +57,23 @@ export function TeamProvider({ children }: { children: ReactNode }) {
     setIsHydrated(true);
   }, []);
 
-  // Load teams on mount
+  // Load teams on mount, but only if user is authenticated
   useEffect(() => {
     async function loadTeams() {
+      // Wait for user loading to complete
+      if (userLoading) {
+        console.log('TeamContext: User loading, waiting...');
+        return;
+      }
+
+      // Don't load teams if there's no user
+      if (!user) {
+        console.log('TeamContext: No user, skipping team load');
+        setTeams([]);
+        setTeamsLoaded(true);
+        return;
+      }
+
       try {
         console.log('TeamContext: Loading teams...');
         const response = await fetch('/api/teams');
@@ -73,7 +95,7 @@ export function TeamProvider({ children }: { children: ReactNode }) {
     }
 
     loadTeams();
-  }, []);
+  }, [user, userLoading]);
 
   // Validate selected team and set isLoading = false ONLY when both hydration and teams are loaded
   useEffect(() => {

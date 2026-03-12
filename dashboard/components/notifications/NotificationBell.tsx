@@ -1,9 +1,13 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { Bell, X } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Bell, CheckCheck, X } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { createPortal } from 'react-dom';
+import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 interface Notification {
   id: number;
@@ -14,6 +18,13 @@ interface Notification {
   actionUrl?: string;
   createdAt: string;
 }
+
+const toneMap: Record<string, 'primary' | 'success' | 'warning' | 'danger' | 'info' | 'neutral'> = {
+  friend_request: 'info',
+  friend_accepted: 'success',
+  project_invite: 'primary',
+  task_assigned: 'warning',
+};
 
 export function NotificationBell() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -29,23 +40,17 @@ export function NotificationBell() {
 
   useEffect(() => {
     fetchNotifications();
-    // Poll for new notifications every 30 seconds
     const interval = setInterval(fetchNotifications, 30000);
     return () => clearInterval(interval);
   }, []);
 
-  // Update dropdown position when shown
   useEffect(() => {
     if (showNotifications && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
-      setDropdownPosition({
-        top: rect.bottom + 8,
-        right: window.innerWidth - rect.right
-      });
+      setDropdownPosition({ top: rect.bottom + 10, right: window.innerWidth - rect.right });
     }
   }, [showNotifications]);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -78,147 +83,112 @@ export function NotificationBell() {
 
   const markAsRead = async (id: number) => {
     try {
-      const response = await fetch(`/api/notifications/${id}/read`, {
-        method: 'POST',
-      });
-
+      const response = await fetch(`/api/notifications/${id}/read`, { method: 'POST' });
       if (response.ok) {
-        setNotifications((prev) =>
-          prev.map((n) => (n.id === id ? { ...n, read: true } : n))
-        );
+        setNotifications((prev) => prev.map((notification) => (notification.id === id ? { ...notification, read: true } : notification)));
       }
     } catch (error) {
       console.error('Failed to mark notification as read:', error);
     }
   };
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
-
-  const getNotificationIcon = (type: string) => {
-    switch (type) {
-      case 'friend_request':
-        return '👋';
-      case 'friend_accepted':
-        return '✅';
-      case 'project_invite':
-        return '📁';
-      case 'task_assigned':
-        return '✏️';
-      default:
-        return '🔔';
-    }
-  };
+  const unreadCount = useMemo(() => notifications.filter((notification) => !notification.read).length, [notifications]);
 
   return (
     <div className="relative">
       <button
         ref={buttonRef}
-        onClick={() => setShowNotifications(!showNotifications)}
-        className="relative p-2 rounded-lg glass-subtle hover:glass-light transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] hover:scale-110 active:scale-95"
+        type="button"
+        data-testid="notification-bell"
+        onClick={() => setShowNotifications((prev) => !prev)}
+        className="ib"
       >
-        <Bell className="w-5 h-5 text-text-secondary transition-transform duration-200 hover:rotate-12" />
-        {unreadCount > 0 && (
-          <span
-            className="absolute -top-1 -right-1 w-5 h-5 bg-danger rounded-full flex items-center justify-center text-white text-xs font-bold  animate-pulse"
-            suppressHydrationWarning
-          >
-            {unreadCount > 9 ? '9+' : unreadCount}
-          </span>
-        )}
+        <Bell />
+        {unreadCount > 0 ? (
+          <span className="dot" />
+        ) : null}
       </button>
 
       {showNotifications && mounted && createPortal(
         <>
-          <div
-            className="fixed inset-0 z-[9998]"
-            onClick={() => setShowNotifications(false)}
-          />
+          <div className="fixed inset-0 z-[9998]" onClick={() => setShowNotifications(false)} />
           <div
             ref={dropdownRef}
-            className="fixed w-96 max-h-[600px] rounded-2xl border border-white/10 z-[10000] overflow-hidden glass-heavy animate-fadeIn"
-            style={{
-              top: `${dropdownPosition.top}px`,
-              right: `${dropdownPosition.right}px`
-            }}
+            className="fixed z-[10000] w-[24rem] overflow-hidden rounded-2xl border border-border bg-surface shadow-floating"
+            style={{ top: `${dropdownPosition.top}px`, right: `${dropdownPosition.right}px` }}
           >
-            {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-white/20 glass-light">
-              <h3 className="font-semibold text-text-primary">Notifications</h3>
-              <button
-                onClick={() => setShowNotifications(false)}
-                className="p-1 rounded-lg hover:bg-white/10 hover:backdrop-blur-sm transition-all duration-200"
-              >
-                <X className="w-4 h-4 text-text-tertiary" />
-              </button>
+            <div className="flex items-center justify-between border-b border-border px-4 py-3">
+              <div>
+                <div className="app-eyebrow">Inbox</div>
+                <h3 className="text-base font-semibold text-text-primary">Notifications</h3>
+              </div>
+              <IconButton icon={<X className="h-4 w-4" />} label="Close notifications" onClick={() => setShowNotifications(false)} />
             </div>
 
-            {/* Notifications List */}
-            <div className="max-h-[500px] overflow-y-auto">
+            <div className="max-h-[28rem] overflow-y-auto scrollbar-thin">
               {notifications.length === 0 ? (
-                <div className="p-12 text-center">
-                  <Bell className="w-12 h-12 text-text-tertiary mx-auto mb-4 opacity-50" />
-                  <p className="text-text-secondary">No notifications yet</p>
+                <div className="px-6 py-10 text-center">
+                  <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-surface-muted text-text-tertiary">
+                    <Bell className="h-5 w-5" />
+                  </div>
+                  <p className="text-sm font-medium text-text-primary">No notifications yet</p>
+                  <p className="mt-1 text-sm text-text-secondary">Everything new in the workspace will appear here.</p>
                 </div>
               ) : (
-                <div className="divide-y divide-white/10">
-                  {notifications.map((notification) => (
-                    <div
+                notifications.map((notification) => {
+                  const tone = toneMap[notification.type] ?? 'neutral';
+                  return (
+                    <button
                       key={notification.id}
-                      className={`p-4 hover:glass-medium transition-all duration-200 cursor-pointer ${!notification.read ? 'bg-primary/5' : ''
-                        }`}
-                      onClick={() => {
+                      type="button"
+                      onClick={async () => {
                         if (!notification.read) {
-                          markAsRead(notification.id);
+                          await markAsRead(notification.id);
                         }
                         if (notification.actionUrl) {
                           window.location.href = notification.actionUrl;
                         }
                       }}
+                      className={cn(
+                        'flex w-full items-start gap-3 border-b border-border px-4 py-4 text-left transition-colors last:border-b-0 hover:bg-surface-muted',
+                        !notification.read && 'bg-accent-soft/60'
+                      )}
                     >
-                      <div className="flex gap-3">
-                        <div className="text-2xl flex-shrink-0">
-                          {getNotificationIcon(notification.type)}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2 mb-1">
-                            <h4 className="font-semibold text-text-primary text-sm">
-                              {notification.title}
-                            </h4>
-                            {!notification.read && (
-                              <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-1" />
-                            )}
-                          </div>
-                          <p className="text-sm text-text-secondary mb-2 line-clamp-2">
-                            {notification.content}
-                          </p>
-                          <p className="text-xs text-text-tertiary">
-                            {formatDistanceToNow(new Date(notification.createdAt), {
-                              addSuffix: true,
-                            })}
-                          </p>
-                        </div>
+                      <div className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-full bg-surface-muted text-sm font-semibold text-text-primary">
+                        {notification.title.slice(0, 2).toUpperCase()}
                       </div>
-                    </div>
-                  ))}
-                </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="truncate text-sm font-semibold text-text-primary">{notification.title}</p>
+                          <Badge tone={tone} variant="soft">
+                            {notification.type.replace(/_/g, ' ')}
+                          </Badge>
+                        </div>
+                        <p className="mt-1 line-clamp-2 text-sm text-text-secondary">{notification.content}</p>
+                        <p className="mt-2 text-xs text-text-tertiary">
+                          {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
+                        </p>
+                      </div>
+                      {!notification.read ? <span className="mt-1 h-2.5 w-2.5 rounded-full bg-primary" /> : null}
+                    </button>
+                  );
+                })
               )}
             </div>
 
-            {/* Footer */}
-            {notifications.length > 0 && (
-              <div className="p-3 border-t border-white/20 glass-light">
-                <button
-                  onClick={() => {
-                    notifications.forEach((n) => {
-                      if (!n.read) markAsRead(n.id);
-                    });
-                  }}
-                  className="w-full text-sm text-primary hover:text-primary-dark font-semibold transition-all duration-200 hover:bg-white/10 py-2 rounded-lg"
+            {notifications.length > 0 ? (
+              <div className="border-t border-border px-4 py-3">
+                <Button
+                  variant="ghost"
+                  tone="neutral"
+                  fullWidth
+                  icon={<CheckCheck className="h-4 w-4" />}
+                  onClick={() => notifications.forEach((notification) => !notification.read && markAsRead(notification.id))}
                 >
                   Mark all as read
-                </button>
+                </Button>
               </div>
-            )}
+            ) : null}
           </div>
         </>,
         document.body
@@ -226,4 +196,3 @@ export function NotificationBell() {
     </div>
   );
 }
-

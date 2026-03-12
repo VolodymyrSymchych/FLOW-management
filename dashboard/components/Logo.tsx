@@ -1,49 +1,36 @@
 'use client';
 
-import Link from 'next/link';
-import Image from 'next/image';
-import { motion } from 'framer-motion';
 import { usePathname } from 'next/navigation';
+import { Link } from '@/i18n/routing';
+import Image from 'next/image';
 
 interface LogoProps {
+  compact?: boolean;
   variant?: 'default' | 'compact' | 'icon';
   className?: string;
 }
 
-export function Logo({ variant = 'default', className = '' }: LogoProps) {
+const LOGO_SRC = '/flow-logo.png?v=3';
+
+export function Logo({ compact = false, variant = 'default', className }: LogoProps) {
   const pathname = usePathname();
-  const logoSize = variant === 'compact' ? 48 : variant === 'icon' ? 56 : variant === 'default' ? 112 : 48;
-
-  // Auth pages should link to home, authenticated pages link to dashboard
-  const authPages = ['/sign-in', '/sign-up', '/verify', '/forgot-password', '/reset-password', '/verify-email'];
-  const isAuthPage = authPages.some(page => pathname.includes(page));
-  const linkHref = isAuthPage ? '/' : '/dashboard';
-
-  const logoContent = (
-    <>
-      <motion.div
-        className="relative"
-        whileHover={{ scale: 1.05 }}
-        transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-      >
-        <Image
-          src="/logo.png"
-          alt="Logo"
-          width={logoSize}
-          height={logoSize}
-          className="object-contain transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]"
-          style={{ height: "auto", maxWidth: `${logoSize}px`, maxHeight: `${logoSize}px` }}
-          priority
-          unoptimized
-        />
-      </motion.div>
-    </>
-  );
+  const authPages = ['/sign-in', '/sign-up', '/verify', '/forgot-password', '/reset-password', '/verify-email', '/login'];
+  const isAuthPage = authPages.some((page) => pathname.includes(page));
+  const href = isAuthPage ? '/' : '/dashboard';
+  const isCompact = compact || variant === 'compact' || variant === 'icon';
 
   return (
-    <Link href={linkHref} className={`flex items-center gap-3 group ${className}`}>
-      {logoContent}
+    <Link href={href} aria-label="Flow dashboard home" className={`sb-logo-container ${className ?? ''}`}>
+      <div className={`sb-logo-mark ${!isCompact ? 'sb-logo-mark-wide' : ''}`}>
+        <Image
+          src={LOGO_SRC}
+          alt="Flow Management"
+          width={isCompact ? 24 : 120}
+          height={isCompact ? 24 : 44}
+          className="object-contain sb-logo-img"
+        />
+      </div>
+      {!isCompact ? <div className="sb-tag">Beta</div> : null}
     </Link>
   );
 }
-

@@ -16,7 +16,6 @@ import {
   Home,
   DollarSign,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 /**
  * Command Palette component with Cmd+K support
@@ -39,12 +38,18 @@ export function CommandPalette() {
     const down = (e: KeyboardEvent) => {
       if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
-        setOpen((open) => !open);
+        setOpen((o) => !o);
       }
     };
-
     document.addEventListener('keydown', down);
     return () => document.removeEventListener('keydown', down);
+  }, []);
+
+  // Open when search bar is clicked (HTML behavior)
+  useEffect(() => {
+    const handler = () => setOpen(true);
+    document.addEventListener('open-command-palette', handler);
+    return () => document.removeEventListener('open-command-palette', handler);
   }, []);
 
   const navigate = useCallback((path: string) => {
@@ -57,175 +62,139 @@ export function CommandPalette() {
       open={open}
       onOpenChange={setOpen}
       label="Global command menu"
-      className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-2xl"
+      className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh]"
     >
-      <div className="glass-heavy rounded-2xl border border-white/10 shadow-2xl overflow-hidden">
-        {/* Search Input */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-white/10">
-          <Search className="w-5 h-5 text-text-tertiary" aria-hidden="true" />
-          <Command.Input
-            placeholder="Type a command or search..."
-            className="flex-1 bg-transparent text-text-primary placeholder:text-text-tertiary outline-none text-base"
-          />
-          <kbd className="hidden sm:inline-flex px-2 py-1 text-xs glass-subtle rounded-md text-text-tertiary">
-            ESC
-          </kbd>
+      {/* Backdrop - HTML modal-overlay style */}
+      {open && (
+        <div
+          className="cmd-overlay"
+          onClick={() => setOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+      <div className="cmd-dialog relative z-50 mx-4">
+        {/* Search Input - HTML tb-search style */}
+        <div className="cmd-search">
+          <Search aria-hidden="true" />
+          <Command.Input placeholder="Search tasks, projects, people…" />
+          <span className="cmd-search-kbd">ESC</span>
         </div>
 
         {/* Commands List */}
-        <Command.List className="max-h-96 overflow-y-auto p-2">
-          <Command.Empty className="px-4 py-8 text-center text-text-secondary text-sm">
-            No results found.
-          </Command.Empty>
+        <Command.List className="cmd-list">
+          <Command.Empty className="cmd-empty">No results found.</Command.Empty>
 
-          {/* Quick Actions */}
-          <Command.Group heading="Quick Actions" className="mb-2">
+          <Command.Group heading="Quick Actions">
             <CommandGroupLabel>Quick Actions</CommandGroupLabel>
-
             <CommandItem
-              onSelect={() => navigate('/projects/new')}
-              icon={<Plus className="w-4 h-4" />}
-            >
-              Create New Project
-            </CommandItem>
-
-            <CommandItem
-              onSelect={() => navigate('/tasks')}
-              icon={<CheckSquare className="w-4 h-4" />}
+              onSelect={() => navigate('/dashboard/tasks')}
+              icon={<Plus />}
             >
               Create New Task
             </CommandItem>
-
             <CommandItem
-              onSelect={() => navigate('/invoices')}
-              icon={<DollarSign className="w-4 h-4" />}
+              onSelect={() => navigate('/dashboard/projects')}
+              icon={<FileText />}
+            >
+              Create New Project
+            </CommandItem>
+            <CommandItem
+              onSelect={() => navigate('/dashboard/invoices')}
+              icon={<DollarSign />}
             >
               Create New Invoice
             </CommandItem>
-
             <CommandItem
-              onSelect={() => navigate('/team')}
-              icon={<Users className="w-4 h-4" />}
+              onSelect={() => navigate('/dashboard/team')}
+              icon={<Users />}
             >
               Invite Team Member
             </CommandItem>
           </Command.Group>
 
-          {/* Navigation */}
-          <Command.Group heading="Navigation" className="mb-2">
+          <Command.Group heading="Navigation">
             <CommandGroupLabel>Navigation</CommandGroupLabel>
-
             <CommandItem
-              onSelect={() => navigate('/')}
-              icon={<Home className="w-4 h-4" />}
+              onSelect={() => navigate('/dashboard')}
+              icon={<Home />}
               shortcut="⌘H"
             >
               Dashboard
             </CommandItem>
-
             <CommandItem
-              onSelect={() => navigate('/projects')}
-              icon={<FileText className="w-4 h-4" />}
+              onSelect={() => navigate('/dashboard/projects')}
+              icon={<FileText />}
               shortcut="⌘P"
             >
               Projects
             </CommandItem>
-
             <CommandItem
-              onSelect={() => navigate('/tasks')}
-              icon={<CheckSquare className="w-4 h-4" />}
+              onSelect={() => navigate('/dashboard/tasks')}
+              icon={<CheckSquare />}
               shortcut="⌘T"
             >
               Tasks
             </CommandItem>
-
             <CommandItem
-              onSelect={() => navigate('/timeline')}
-              icon={<Calendar className="w-4 h-4" />}
+              onSelect={() => navigate('/dashboard/calendar')}
+              icon={<Calendar />}
               shortcut="⌘G"
             >
-              Gantt Chart
+              Calendar
             </CommandItem>
-
             <CommandItem
-              onSelect={() => navigate('/invoices')}
-              icon={<DollarSign className="w-4 h-4" />}
+              onSelect={() => navigate('/dashboard/invoices')}
+              icon={<DollarSign />}
               shortcut="⌘I"
             >
               Invoices
             </CommandItem>
-
             <CommandItem
-              onSelect={() => navigate('/documentation')}
-              icon={<File className="w-4 h-4" />}
+              onSelect={() => navigate('/dashboard/documentation')}
+              icon={<File />}
               shortcut="⌘D"
             >
               Documentation
             </CommandItem>
-
             <CommandItem
-              onSelect={() => navigate('/team')}
-              icon={<Users className="w-4 h-4" />}
+              onSelect={() => navigate('/dashboard/team')}
+              icon={<Users />}
             >
               Team
             </CommandItem>
-
             <CommandItem
-              onSelect={() => navigate('/settings')}
-              icon={<Settings className="w-4 h-4" />}
+              onSelect={() => navigate('/dashboard/settings')}
+              icon={<Settings />}
               shortcut="⌘,"
             >
               Settings
             </CommandItem>
           </Command.Group>
 
-          {/* Reports */}
           <Command.Group heading="Reports">
             <CommandGroupLabel>Reports</CommandGroupLabel>
-
             <CommandItem
-              onSelect={() => navigate('/billing')}
-              icon={<BarChart3 className="w-4 h-4" />}
+              onSelect={() => navigate('/dashboard/analytics')}
+              icon={<BarChart3 />}
             >
               View Analytics
-            </CommandItem>
-
-            <CommandItem
-              onSelect={() => navigate('/billing')}
-              icon={<DollarSign className="w-4 h-4" />}
-            >
-              Financial Reports
             </CommandItem>
           </Command.Group>
         </Command.List>
 
-        {/* Footer with hint */}
-        <div className="px-4 py-2 border-t border-white/10 flex items-center justify-between text-xs text-text-tertiary">
-          <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1">
-              <kbd className="glass-subtle px-1.5 py-0.5 rounded">↑↓</kbd>
-              Navigate
-            </span>
-            <span className="flex items-center gap-1">
-              <kbd className="glass-subtle px-1.5 py-0.5 rounded">↵</kbd>
-              Select
-            </span>
-            <span className="flex items-center gap-1">
-              <kbd className="glass-subtle px-1.5 py-0.5 rounded">ESC</kbd>
-              Close
-            </span>
-          </div>
+        {/* Footer - HTML style */}
+        <div className="cmd-footer">
+          <span className="flex items-center gap-1.5">
+            <kbd>↑↓</kbd> Navigate
+          </span>
+          <span className="flex items-center gap-1.5">
+            <kbd>↵</kbd> Select
+          </span>
+          <span className="flex items-center gap-1.5">
+            <kbd>ESC</kbd> Close
+          </span>
         </div>
       </div>
-
-      {/* Backdrop */}
-      {open && (
-        <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 animate-in fade-in-0 duration-200"
-          onClick={() => setOpen(false)}
-          aria-hidden="true"
-        />
-      )}
     </Command.Dialog>
   );
 }
@@ -244,24 +213,11 @@ function CommandItem({ children, onSelect, icon, shortcut }: CommandItemProps) {
   return (
     <Command.Item
       onSelect={onSelect}
-      className={cn(
-        'flex items-center justify-between gap-3 px-3 py-2 rounded-lg cursor-pointer',
-        'text-text-primary text-sm',
-        'transition-colors duration-150',
-        'aria-selected:glass-medium aria-selected:text-text-primary',
-        'hover:glass-light',
-        'outline-none'
-      )}
+      className="cmd-item"
     >
-      <div className="flex items-center gap-3">
-        {icon && <span className="text-text-tertiary">{icon}</span>}
-        <span>{children}</span>
-      </div>
-      {shortcut && (
-        <kbd className="hidden sm:inline-block text-xs text-text-tertiary glass-subtle px-2 py-1 rounded">
-          {shortcut}
-        </kbd>
-      )}
+      {icon}
+      <span>{children}</span>
+      {shortcut && <span className="cmd-item-kbd">{shortcut}</span>}
     </Command.Item>
   );
 }
@@ -270,11 +226,7 @@ function CommandItem({ children, onSelect, icon, shortcut }: CommandItemProps) {
  * Command Group Label component
  */
 function CommandGroupLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="px-3 py-2 text-xs font-semibold text-text-tertiary uppercase tracking-wider">
-      {children}
-    </div>
-  );
+  return <div className="cmd-group-label">{children}</div>;
 }
 
 /**

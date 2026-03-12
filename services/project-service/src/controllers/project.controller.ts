@@ -35,7 +35,10 @@ export class ProjectController {
   /**
    * GET /projects
    * Get all projects for current user
-   * Query params: teamId (optional) - filter by team
+   * Query params: 
+   *   - teamId (optional) - filter by team
+   *   - limit (optional) - items per page (default: 50, max: 100)
+   *   - offset (optional) - items to skip (default: 0)
    */
   async getProjects(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
     try {
@@ -45,12 +48,22 @@ export class ProjectController {
 
       const userId = req.userId;
       const teamId = req.query.teamId ? parseInt(req.query.teamId as string, 10) : undefined;
+      const limit = Math.min(parseInt(req.query.limit as string || '50', 10), 100);
+      const offset = parseInt(req.query.offset as string || '0', 10);
 
-      const projects = teamId
-        ? await projectService.getProjectsByTeam(userId, teamId)
-        : await projectService.getUserProjects(userId);
+      const result = teamId
+        ? await projectService.getProjectsByTeam(userId, teamId, limit, offset)
+        : await projectService.getUserProjects(userId, limit, offset);
 
-      res.json({ projects, total: projects.length });
+      res.json({
+        projects: result.projects,
+        total: result.total,
+        pagination: {
+          limit,
+          offset,
+          hasMore: offset + limit < result.total,
+        },
+      });
     } catch (error) {
       _next(error);
     }

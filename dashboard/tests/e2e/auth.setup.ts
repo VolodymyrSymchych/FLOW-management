@@ -18,14 +18,20 @@ setup('authenticate', async ({ page }) => {
     }
 
     await page.goto('/sign-in');
+    await page.waitForLoadState('networkidle');
 
     // Fill login form
     await page.locator('input[type="email"], input[name="email"]').fill(testEmail);
     await page.locator('input[type="password"]').fill(testPassword);
-    await page.getByRole('button', { name: /sign in|login|увійти/i }).click();
+    
+    // Click login button and wait for navigation
+    await Promise.all([
+        page.waitForURL(/dashboard/, { timeout: 60000 }),
+        page.getByRole('button', { name: /Log In/i }).click()
+    ]);
 
-    // Wait for redirect to dashboard
-    await expect(page).toHaveURL(/dashboard/, { timeout: 15000 });
+    // Wait for dashboard to load
+    await page.waitForLoadState('networkidle', { timeout: 60000 });
 
     // Save storage state
     await page.context().storageState({ path: authFile });

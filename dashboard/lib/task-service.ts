@@ -28,7 +28,12 @@ class TaskServiceClient {
     try {
       const { cookies } = await import('next/headers');
       const cookieStore = await cookies();
-      return cookieStore.get('auth_token')?.value || null;
+      const authToken = cookieStore.get('auth_token')?.value;
+      if (authToken) {
+        return authToken;
+      }
+
+      return cookieStore.get('session')?.value || null;
     } catch (error) {
       return null;
     }
@@ -303,4 +308,3 @@ class TaskServiceClient {
 }
 
 export const taskService = new TaskServiceClient();
-

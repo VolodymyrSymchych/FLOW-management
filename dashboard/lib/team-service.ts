@@ -22,7 +22,12 @@ class TeamServiceClient {
         try {
             const { cookies } = await import('next/headers');
             const cookieStore = await cookies();
-            return cookieStore.get('auth_token')?.value || null;
+            const authToken = cookieStore.get('auth_token')?.value;
+            if (authToken) {
+                return authToken;
+            }
+
+            return cookieStore.get('session')?.value || null;
         } catch (error) {
             // If cookies() fails (e.g., in middleware), return null
             return null;

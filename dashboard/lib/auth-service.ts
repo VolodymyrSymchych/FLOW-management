@@ -96,6 +96,7 @@ export const authService = {
   async login(data: {
     emailOrUsername: string;
     password: string;
+    rememberMe?: boolean;
   }): Promise<AuthServiceResponse> {
     try {
       const response = await proxyToAuthService('/api/auth/login', {

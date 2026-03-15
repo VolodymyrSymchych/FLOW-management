@@ -122,19 +122,19 @@ export function CreateTaskFromMessageModal({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Створити завдання з повідомлення</DialogTitle>
+          <DialogTitle>Create task from message</DialogTitle>
           <DialogDescription>
-            Заповніть деталі завдання
+            Fill in the task details
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           {/* Title */}
           <div className="space-y-2">
-            <Label htmlFor="title">Назва завдання *</Label>
+            <Label htmlFor="title">Task title *</Label>
             <Input
               id="title"
-              placeholder="Введіть назву завдання"
+              placeholder="Enter task title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               maxLength={255}
@@ -143,10 +143,10 @@ export function CreateTaskFromMessageModal({
 
           {/* Description */}
           <div className="space-y-2">
-            <Label htmlFor="description">Опис</Label>
+            <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
-              placeholder="Опишіть завдання детальніше..."
+              placeholder="Describe the task in more detail..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={4}
@@ -155,13 +155,13 @@ export function CreateTaskFromMessageModal({
 
           {/* Project */}
           <div className="space-y-2">
-            <Label htmlFor="project">Проект</Label>
+            <Label htmlFor="project">Project</Label>
             <Select
               value={projectId?.toString()}
               onValueChange={(value) => setProjectId(parseInt(value))}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Оберіть проект (необов'язково)" />
+                <SelectValue placeholder="Select a project (optional)" />
               </SelectTrigger>
               <SelectContent>
                 {projects.map((project) => (
@@ -175,23 +175,23 @@ export function CreateTaskFromMessageModal({
 
           {/* Priority */}
           <div className="space-y-2">
-            <Label htmlFor="priority">Пріоритет</Label>
+            <Label htmlFor="priority">Priority</Label>
             <Select value={priority} onValueChange={setPriority}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="low">Низький</SelectItem>
-                <SelectItem value="medium">Середній</SelectItem>
-                <SelectItem value="high">Високий</SelectItem>
-                <SelectItem value="urgent">Термінoвий</SelectItem>
+                <SelectItem value="low">Low</SelectItem>
+                <SelectItem value="medium">Medium</SelectItem>
+                <SelectItem value="high">High</SelectItem>
+                <SelectItem value="urgent">Urgent</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           {/* Due Date */}
           <div className="space-y-2">
-            <Label htmlFor="dueDate">Термін виконання</Label>
+            <Label htmlFor="dueDate">Due date</Label>
             <Input
               id="dueDate"
               type="datetime-local"
@@ -202,10 +202,10 @@ export function CreateTaskFromMessageModal({
 
           {/* Assignee */}
           <div className="space-y-2">
-            <Label htmlFor="assignee">Виконавець</Label>
+            <Label htmlFor="assignee">Assignee</Label>
             <Input
               id="assignee"
-              placeholder="Ім'я виконавця (необов'язково)"
+              placeholder="Assignee name (optional)"
               value={assignee}
               onChange={(e) => setAssignee(e.target.value)}
             />
@@ -214,14 +214,13 @@ export function CreateTaskFromMessageModal({
 
         <DialogFooter>
           <Button variant="outline" onClick={handleClose}>
-            Скасувати
+            Cancel
           </Button>
           <Button onClick={createTask} disabled={!title.trim() || loading}>
-            {loading ? 'Створення...' : 'Створити завдання'}
+            {loading ? 'Creating...' : 'Create task'}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
-

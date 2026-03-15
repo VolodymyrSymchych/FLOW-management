@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, FileText, Calendar, DollarSign, Download, Edit, Mail, Link as LinkIcon } from 'lucide-react';
+import { Ban, ChevronRight, Download, Edit, Mail, Save, Send, Link as LinkIcon } from 'lucide-react';
 import Link from 'next/link';
 import axios from 'axios';
 import { generateInvoicePDF } from '@/lib/invoice-pdf';
 import { useDelayedLoading } from '@/hooks/useDelayedLoading';
-import { InvoiceSkeleton } from '@/components/skeletons';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface Invoice {
   id: number;
@@ -36,10 +36,116 @@ interface Project {
   name: string;
 }
 
+function InvoiceDetailSkeleton() {
+  return (
+    <div className="min-h-full bg-[#f7f7f5] text-[#202224]">
+      <div className="flex items-center justify-between px-4 py-2 border-b border-[rgba(15,15,14,0.08)] bg-[#fbfbfa]">
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-3 w-14 rounded-sm" />
+          <Skeleton className="h-3 w-3 rounded-sm" />
+          <Skeleton className="h-3 w-24 rounded-sm" />
+        </div>
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-6 w-12 rounded-md" />
+          <Skeleton className="h-6 w-20 rounded-md" />
+          <Skeleton className="h-6 w-24 rounded-md" />
+          <Skeleton className="h-7 w-16 rounded-full" />
+        </div>
+      </div>
+
+      <div className="grid items-start grid-cols-1 xl:grid-cols-[0.98fr_1.02fr] gap-6 px-6 py-4 2xl:px-8">
+        <div className="space-y-4">
+          {[1, 2, 3].map((section) => (
+            <section key={section} className={section === 1 ? '' : 'border-t border-[rgba(15,15,14,0.08)] pt-3'}>
+              <div className="py-2">
+                <Skeleton className="h-6 w-44 rounded-sm" />
+              </div>
+              <div className="space-y-3 pt-1">
+                <div className="grid grid-cols-2 gap-3">
+                  <Skeleton className="h-10 w-full rounded-md" />
+                  <Skeleton className="h-10 w-full rounded-md" />
+                </div>
+                <Skeleton className="h-10 w-full rounded-md" />
+                {section === 3 ? (
+                  <>
+                    <div className="grid grid-cols-4 gap-2.5">
+                      <Skeleton className="h-3 w-full rounded-sm" />
+                      <Skeleton className="h-3 w-full rounded-sm" />
+                      <Skeleton className="h-3 w-full rounded-sm" />
+                      <Skeleton className="h-3 w-full rounded-sm" />
+                    </div>
+                    <div className="grid grid-cols-4 gap-2.5">
+                      <Skeleton className="h-10 w-full rounded-md" />
+                      <Skeleton className="h-10 w-full rounded-md" />
+                      <Skeleton className="h-10 w-full rounded-md" />
+                      <Skeleton className="h-10 w-full rounded-md" />
+                    </div>
+                    <div className="grid grid-cols-4 gap-2.5">
+                      <Skeleton className="h-10 w-full rounded-md" />
+                      <Skeleton className="h-10 w-full rounded-md" />
+                      <Skeleton className="h-10 w-full rounded-md" />
+                      <Skeleton className="h-10 w-full rounded-md" />
+                    </div>
+                  </>
+                ) : null}
+              </div>
+            </section>
+          ))}
+        </div>
+
+        <div className="sticky top-4 self-start rounded-xl bg-white border border-[rgba(15,15,14,0.06)] shadow-[0_12px_30px_rgba(15,15,14,0.05)] px-5 py-5">
+          <div className="min-h-[500px]">
+            <Skeleton className="h-10 w-32 rounded-sm" />
+            <Skeleton className="mt-2 h-5 w-40 rounded-sm" />
+            <div className="grid grid-cols-[1fr_0.95fr_0.85fr] gap-6 mt-6">
+              <div className="space-y-2">
+                <Skeleton className="h-3 w-12 rounded-sm" />
+                <Skeleton className="h-4 w-28 rounded-sm" />
+              </div>
+              <div className="space-y-2">
+                <Skeleton className="h-3 w-12 rounded-sm" />
+                <Skeleton className="h-4 w-28 rounded-sm" />
+                <Skeleton className="h-4 w-32 rounded-sm" />
+                <Skeleton className="h-4 w-36 rounded-sm" />
+              </div>
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-full rounded-sm" />
+                <Skeleton className="h-4 w-full rounded-sm" />
+                <Skeleton className="h-4 w-full rounded-sm" />
+              </div>
+            </div>
+            <div className="mt-7 space-y-3">
+              <Skeleton className="h-4 w-full rounded-sm" />
+              <Skeleton className="h-10 w-full rounded-md" />
+              <Skeleton className="h-10 w-full rounded-md" />
+              <Skeleton className="h-10 w-full rounded-md" />
+            </div>
+            <div className="ml-auto mt-5 w-[250px] space-y-2">
+              <div className="flex justify-between">
+                <Skeleton className="h-4 w-20 rounded-sm" />
+                <Skeleton className="h-4 w-24 rounded-sm" />
+              </div>
+              <div className="flex justify-between">
+                <Skeleton className="h-4 w-16 rounded-sm" />
+                <Skeleton className="h-4 w-24 rounded-sm" />
+              </div>
+              <div className="flex justify-between pt-1">
+                <Skeleton className="h-5 w-16 rounded-sm" />
+                <Skeleton className="h-5 w-28 rounded-sm" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function InvoiceDetailPage() {
-  const params = useParams();
+  const params = useParams<{ id: string; locale: string }>();
   const router = useRouter();
   const invoiceId = params.id as string;
+  const locale = params.locale || 'en';
 
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [project, setProject] = useState<Project | null>(null);
@@ -57,18 +163,22 @@ export default function InvoiceDetailPage() {
 
   const loadInvoice = async () => {
     try {
+      setError(null);
       const response = await axios.get(`/api/invoices/${invoiceId}`);
-      setInvoice(response.data.invoice);
-      
-      // Load project if projectId exists
-      if (response.data.invoice.projectId) {
+      const loadedInvoice = response.data.invoice;
+      let loadedProject: Project | null = null;
+
+      if (loadedInvoice.projectId) {
         try {
-          const projectResponse = await axios.get(`/api/projects/${response.data.invoice.projectId}`);
-          setProject(projectResponse.data.project);
+          const projectResponse = await axios.get(`/api/projects/${loadedInvoice.projectId}`);
+          loadedProject = projectResponse.data.project || null;
         } catch (e) {
           console.error('Failed to load project:', e);
         }
       }
+
+      setInvoice(loadedInvoice);
+      setProject(loadedProject);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to load invoice');
     } finally {
@@ -123,16 +233,21 @@ export default function InvoiceDetailPage() {
   };
 
   const formatCurrency = (cents: number) => {
-    return `$${(cents / 100).toFixed(2)}`;
+    return new Intl.NumberFormat('en-GB', {
+      style: 'currency',
+      currency: (invoice?.currency || 'GBP').toUpperCase(),
+      minimumFractionDigits: 2,
+    }).format((cents || 0) / 100);
   };
 
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
+  const formatShortDate = (dateString: string | null) => {
+    if (!dateString) return '--';
+    const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return '--';
+    const day = `${date.getUTCDate()}`.padStart(2, '0');
+    const month = `${date.getUTCMonth() + 1}`.padStart(2, '0');
+    const year = date.getUTCFullYear();
+    return `${day}-${month}-${year}`;
   };
 
   const getStatusColor = (status: string) => {
@@ -150,12 +265,8 @@ export default function InvoiceDetailPage() {
     }
   };
 
-  if (shouldShowLoading) {
-    return (
-      <div className="container mx-auto px-4 py-8 max-w-5xl">
-        <InvoiceSkeleton />
-      </div>
-    );
+  if (loading || shouldShowLoading || (!invoice && !error)) {
+    return <InvoiceDetailSkeleton />;
   }
 
   if (error || !invoice) {
@@ -165,7 +276,7 @@ export default function InvoiceDetailPage() {
           <h1 className="text-2xl font-bold text-text-primary mb-4">Invoice Not Found</h1>
           <p className="text-text-secondary mb-6">{error || 'The invoice you are looking for does not exist.'}</p>
           <button
-            onClick={() => router.push('/invoices')}
+            onClick={() => router.push(`/${locale}/dashboard/invoices`)}
             className="px-4 py-2 bg-primary text-white rounded-lg hover:opacity-90 transition-colors"
           >
             Back to Invoices
@@ -178,169 +289,212 @@ export default function InvoiceDetailPage() {
   const parsedItems = invoice.items ? JSON.parse(invoice.items) : [];
   const isPaid = invoice.status === 'paid';
   const isOverdue = invoice.status === 'overdue';
+  const normalizedItems = parsedItems.map((item: any) => {
+    const unitPrice = Number(item.unitPrice ?? item.rate ?? 0);
+    const quantity = Number(item.quantity ?? 0);
+    const lineTotal = item.amount !== undefined ? Number(item.amount) : unitPrice * quantity;
+    return {
+      description: item.description || '-',
+      quantity,
+      unitPrice,
+      lineTotal,
+    };
+  });
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-5xl">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <button
-          onClick={() => router.back()}
-          className="flex items-center space-x-2 text-text-secondary hover:text-text-primary transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          <span>Back</span>
-        </button>
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={handleDownloadPDF}
-            className="flex items-center space-x-2 px-4 py-2 bg-primary/20 text-primary rounded-lg hover:bg-primary/30 transition-colors"
-            title="Download PDF"
-          >
-            <Download className="w-4 h-4" />
-            <span>Download</span>
+    <div className="min-h-full bg-[#f7f7f5] text-[#202224]">
+      <div className="flex items-center justify-between px-4 py-2 text-[11px] border-b border-[rgba(15,15,14,0.08)] bg-[#fbfbfa]">
+        <div className="flex items-center gap-2 text-[#616161]">
+          <Link href={`/${locale}/dashboard/invoices`} className="hover:text-[#202224]">Invoices</Link>
+          <ChevronRight className="w-3.5 h-3.5" />
+          <span className="text-[#202224]">{invoice.invoiceNumber}</span>
+        </div>
+
+        <div className="flex items-center gap-4 text-[11px]">
+          <button type="button" onClick={() => router.push(`/${locale}/dashboard/invoices`)} className="text-[#3d3d3d] hover:text-[#111]">Back</button>
+          <button type="button" onClick={() => router.refresh()} className="inline-flex items-center gap-1 text-[#4b4b4b] hover:text-[#111]">
+            <Ban className="w-3.5 h-3.5" />
+            {invoice.status}
           </button>
-          {invoice.clientEmail && (
-            <button
-              onClick={handleSendEmail}
-              className="flex items-center space-x-2 px-4 py-2 bg-primary/20 text-primary rounded-lg hover:bg-primary/30 transition-colors"
-              title="Send email"
-            >
-              <Mail className="w-4 h-4" />
-              <span>Send Email</span>
+          {invoice.clientEmail ? (
+            <button type="button" onClick={handleSendEmail} className="inline-flex items-center gap-1 text-[#ef5a73] hover:text-[#d6425e]">
+              <Send className="w-3.5 h-3.5" />
+              Send Invoice
             </button>
-          )}
-          <button
-            onClick={handleGeneratePublicLink}
-            className="flex items-center space-x-2 px-4 py-2 bg-primary/20 text-primary rounded-lg hover:bg-primary/30 transition-colors"
-            title="Generate public link"
-          >
-            <LinkIcon className="w-4 h-4" />
-            <span>Public Link</span>
+          ) : null}
+          <button type="button" onClick={handleDownloadPDF} className="inline-flex items-center gap-1 text-[#ef5a73] hover:text-[#d6425e]">
+            <Download className="w-3.5 h-3.5" />
+            Download PDF
+          </button>
+          <button type="button" onClick={() => router.push(`/${locale}/dashboard/invoices/${invoice.id}/edit`)} className="inline-flex items-center gap-1 rounded-full bg-[#ef4f6e] px-3 py-1 text-white shadow-sm hover:bg-[#dd4261]">
+            <Edit className="w-3.5 h-3.5" />
+            Edit
           </button>
         </div>
       </div>
 
-      {/* Invoice Header */}
-      <div className="glass-medium rounded-xl p-8 border border-white/10 mb-6">
-        <div className="flex items-start justify-between mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-text-primary mb-2">Invoice</h1>
-            <p className="text-text-secondary">#{invoice.invoiceNumber}</p>
-            {project && (
-              <Link
-                href={`/dashboard/projects/${project.id}`}
-                className="text-sm text-primary hover:underline mt-2 inline-block"
-              >
-                {project.name}
-              </Link>
-            )}
-          </div>
-          <div className={`px-4 py-2 rounded-lg font-semibold ${getStatusColor(invoice.status)}`}>
-            {invoice.status.toUpperCase()}
-          </div>
+      <div className="grid items-start grid-cols-1 xl:grid-cols-[0.98fr_1.02fr] gap-6 px-6 py-4 2xl:px-8">
+        <div className="space-y-4">
+          <section>
+            <div className="flex w-full items-center justify-between py-2 text-left">
+              <h2 className="text-[20px] font-semibold tracking-[-0.02em] text-[#222]">Customer Information</h2>
+            </div>
+            <div className="space-y-3 pt-1">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <div className="block text-[12px] text-[#5b5b5b] mb-1.5">Client</div>
+                  <div className="w-full rounded-md border border-[#e5e5e5] bg-white px-3 py-2.5 text-[13px]">{invoice.clientName || '-'}</div>
+                </div>
+                <div>
+                  <div className="block text-[12px] text-[#5b5b5b] mb-1.5">Email</div>
+                  <div className="w-full rounded-md border border-[#e5e5e5] bg-white px-3 py-2.5 text-[13px]">{invoice.clientEmail || '-'}</div>
+                </div>
+              </div>
+              <div>
+                <div className="block text-[12px] text-[#5b5b5b] mb-1.5">Address</div>
+                <div className="w-full rounded-md border border-[#e5e5e5] bg-white px-3 py-2.5 text-[13px] whitespace-pre-line">{invoice.clientAddress || '-'}</div>
+              </div>
+              {project ? (
+                <div>
+                  <div className="block text-[12px] text-[#5b5b5b] mb-1.5">Project</div>
+                  <Link href={`/${locale}/dashboard/projects/${project.id}`} className="block w-full rounded-md border border-[#e5e5e5] bg-white px-3 py-2.5 text-[13px] hover:text-[#111]">
+                    {project.name}
+                  </Link>
+                </div>
+              ) : null}
+            </div>
+          </section>
+
+          <section className="border-t border-[rgba(15,15,14,0.08)] pt-3">
+            <div className="flex w-full items-center justify-between py-2 text-left">
+              <h2 className="text-[20px] font-semibold tracking-[-0.02em] text-[#222]">Invoice Details</h2>
+            </div>
+            <div className="space-y-3 pt-1">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <div className="block text-[12px] text-[#5b5b5b] mb-1.5">Invoice Number</div>
+                  <div className="w-full rounded-md border border-[#e5e5e5] bg-white px-3 py-2.5 text-[13px]">{invoice.invoiceNumber}</div>
+                </div>
+                <div>
+                  <div className="block text-[12px] text-[#5b5b5b] mb-1.5">Status</div>
+                  <div className="w-full rounded-md border border-[#e5e5e5] bg-white px-3 py-2.5 text-[13px]">{invoice.status}</div>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <div className="block text-[12px] text-[#5b5b5b] mb-1.5">Issue Date</div>
+                  <div className="w-full rounded-md border border-[#e5e5e5] bg-white px-3 py-2.5 text-[13px]">{formatShortDate(invoice.issueDate)}</div>
+                </div>
+                <div>
+                  <div className="block text-[12px] text-[#5b5b5b] mb-1.5">Due Date</div>
+                  <div className="w-full rounded-md border border-[#e5e5e5] bg-white px-3 py-2.5 text-[13px]">{formatShortDate(invoice.dueDate)}</div>
+                </div>
+              </div>
+              {invoice.description ? (
+                <div>
+                  <div className="block text-[12px] text-[#5b5b5b] mb-1.5">Description</div>
+                  <div className="w-full rounded-md border border-[#e5e5e5] bg-white px-3 py-2.5 text-[13px] whitespace-pre-line">{invoice.description}</div>
+                </div>
+              ) : null}
+            </div>
+          </section>
+
+          <section className="border-t border-[rgba(15,15,14,0.08)] pt-3">
+            <div className="flex w-full items-center justify-between py-2 text-left">
+              <h2 className="text-[20px] font-semibold tracking-[-0.02em] text-[#222]">Invoice Items</h2>
+              <button type="button" onClick={handleGeneratePublicLink} className="inline-flex items-center gap-1 text-[12px] text-[#545454] hover:text-[#111]">
+                <LinkIcon className="w-3.5 h-3.5" />
+                Public Link
+              </button>
+            </div>
+            <div className="space-y-2 pt-1">
+              <div className="grid grid-cols-[1.6fr_0.55fr_0.75fr_0.75fr] gap-2.5 text-[11px] uppercase tracking-[0.08em] text-[#8a8a8a]">
+                <div>Description</div>
+                <div>Qty</div>
+                <div>Price</div>
+                <div>Total</div>
+              </div>
+              {normalizedItems.map((item, index) => (
+                <div key={index} className="grid grid-cols-[1.6fr_0.55fr_0.75fr_0.75fr] gap-2.5">
+                  <div className="rounded-md border border-[#e5e5e5] bg-white px-3 py-2.5 text-[13px]">{item.description}</div>
+                  <div className="rounded-md border border-[#e5e5e5] bg-white px-3 py-2.5 text-[13px]">{item.quantity}</div>
+                  <div className="rounded-md border border-[#e5e5e5] bg-white px-3 py-2.5 text-[13px]">{formatCurrency(Math.round(item.unitPrice * 100))}</div>
+                  <div className="rounded-md border border-[#e5e5e5] bg-white px-3 py-2.5 text-[13px]">{formatCurrency(Math.round(item.lineTotal * 100))}</div>
+                </div>
+              ))}
+            </div>
+          </section>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <h3 className="text-sm font-medium text-text-tertiary mb-2">Bill To</h3>
-            <p className="text-text-primary font-medium">{invoice.clientName || 'N/A'}</p>
-            {invoice.clientEmail && (
-              <p className="text-text-secondary text-sm">{invoice.clientEmail}</p>
-            )}
-            {invoice.clientAddress && (
-              <p className="text-text-secondary text-sm mt-2 whitespace-pre-line">{invoice.clientAddress}</p>
-            )}
-          </div>
-          <div>
-            <div className="flex items-center space-x-2 text-text-secondary mb-2">
-              <Calendar className="w-4 h-4" />
-              <span className="text-sm">Issue Date: {formatDate(invoice.issueDate)}</span>
+        <div className="sticky top-4 self-start rounded-xl bg-white border border-[rgba(15,15,14,0.06)] shadow-[0_12px_30px_rgba(15,15,14,0.05)] px-5 py-5">
+          <div className="min-h-[500px]">
+            <h1 className="text-[34px] font-semibold tracking-[-0.03em] text-[#1e1f22]">Invoice</h1>
+            <div className="text-[18px] text-[#727272] mt-1">INV-{invoice.invoiceNumber}</div>
+
+            <div className="grid grid-cols-[1fr_0.95fr_0.85fr] gap-6 mt-6 text-[13px]">
+              <div>
+                <div className="text-[#8a8a8a] mb-2">From</div>
+                <div className="font-medium text-[#242528]">ABC Private Ltd.</div>
+              </div>
+              <div>
+                <div className="text-[#8a8a8a] mb-2">Bill To</div>
+                <div className="font-medium text-[#242528]">{invoice.clientName || '-'}</div>
+                <div className="text-[#555] mt-1">{invoice.clientEmail || '-'}</div>
+                <div className="text-[#555] mt-1 whitespace-pre-line">{invoice.clientAddress || '-'}</div>
+              </div>
+              <div className="grid grid-cols-[auto_auto] gap-x-5 gap-y-2">
+                <div className="text-[#8a8a8a]">Issue Date</div>
+                <div className="font-medium">{formatShortDate(invoice.issueDate)}</div>
+                <div className="text-[#8a8a8a]">Due Date</div>
+                <div className="font-medium">{formatShortDate(invoice.dueDate)}</div>
+                <div className="text-[#8a8a8a]">Billing Method</div>
+                <div className="font-medium">Wire Transfer</div>
+              </div>
             </div>
-            {invoice.dueDate && (
-              <div className="flex items-center space-x-2 text-text-secondary mb-2">
-                <Calendar className="w-4 h-4" />
-                <span className="text-sm">Due Date: {formatDate(invoice.dueDate)}</span>
+
+            <div className="mt-7 grid grid-cols-[1.8fr_0.6fr_0.9fr_0.9fr] text-[#8a8a8a] text-[12px] pb-2 border-b border-[rgba(15,15,14,0.08)]">
+              <div>Description</div>
+              <div>Qty</div>
+              <div className="text-right">Price</div>
+              <div className="text-right">Total</div>
+            </div>
+            <div>
+              {normalizedItems.map((item, index) => (
+                <div key={index} className="grid grid-cols-[1.8fr_0.6fr_0.9fr_0.9fr] text-[13px] py-2.5 border-b border-[rgba(15,15,14,0.05)]">
+                  <div>{item.description}</div>
+                  <div>{item.quantity}</div>
+                  <div className="text-right">{formatCurrency(Math.round(item.unitPrice * 100))}</div>
+                  <div className="text-right">{formatCurrency(Math.round(item.lineTotal * 100))}</div>
+                </div>
+              ))}
+            </div>
+
+            <div className="ml-auto mt-5 w-[250px] space-y-2 text-[13px]">
+              <div className="flex items-center justify-between">
+                <span className="text-[#666]">Subtotal</span>
+                <span>{formatCurrency(invoice.amount)}</span>
               </div>
-            )}
-            {invoice.paidDate && (
-              <div className="flex items-center space-x-2 text-text-secondary">
-                <Calendar className="w-4 h-4" />
-                <span className="text-sm">Paid Date: {formatDate(invoice.paidDate)}</span>
+              {invoice.taxRate > 0 ? (
+                <div className="flex items-center justify-between">
+                  <span className="text-[#666]">VAT ({invoice.taxRate}%)</span>
+                  <span>{formatCurrency(invoice.taxAmount)}</span>
+                </div>
+              ) : null}
+              <div className="flex items-center justify-between pt-1 font-semibold text-[16px]">
+                <span>Total</span>
+                <span>{formatCurrency(invoice.totalAmount)}</span>
               </div>
-            )}
+            </div>
+
+            {invoice.notes ? (
+              <div className="mt-20">
+                <div className="text-[#8a8a8a] text-[12px] mb-1.5">Notes</div>
+                <div className="font-medium text-[13px] whitespace-pre-line">{invoice.notes}</div>
+              </div>
+            ) : null}
           </div>
         </div>
       </div>
-
-      {/* Invoice Items */}
-      {parsedItems.length > 0 && (
-        <div className="glass-medium rounded-xl p-6 border border-white/10 mb-6">
-          <h2 className="text-xl font-bold text-text-primary mb-4">Items</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-white/10">
-                  <th className="text-left py-3 px-4 text-sm font-medium text-text-tertiary">Description</th>
-                  <th className="text-right py-3 px-4 text-sm font-medium text-text-tertiary">Quantity</th>
-                  <th className="text-right py-3 px-4 text-sm font-medium text-text-tertiary">Unit Price</th>
-                  <th className="text-right py-3 px-4 text-sm font-medium text-text-tertiary">Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {parsedItems.map((item: any, index: number) => (
-                  <tr key={index} className="border-b border-white/5">
-                    <td className="py-3 px-4 text-text-primary">{item.description || '-'}</td>
-                    <td className="py-3 px-4 text-right text-text-secondary">{item.quantity || 0}</td>
-                    <td className="py-3 px-4 text-right text-text-secondary">{formatCurrency((item.unitPrice || 0) * 100)}</td>
-                    <td className="py-3 px-4 text-right text-text-primary font-semibold">
-                      {formatCurrency((item.unitPrice || 0) * (item.quantity || 0) * 100)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* Invoice Totals */}
-      <div className="glass-medium rounded-xl p-6 border border-white/10 mb-6">
-        <div className="flex justify-end">
-          <div className="w-full md:w-1/2 space-y-3">
-            <div className="flex justify-between text-text-secondary">
-              <span>Subtotal:</span>
-              <span>{formatCurrency(invoice.amount)}</span>
-            </div>
-            {invoice.taxRate > 0 && (
-              <div className="flex justify-between text-text-secondary">
-                <span>Tax ({invoice.taxRate}%):</span>
-                <span>{formatCurrency(invoice.taxAmount)}</span>
-              </div>
-            )}
-            <div className="flex justify-between text-xl font-bold text-text-primary pt-3 border-t border-white/10">
-              <span>Total:</span>
-              <span>{formatCurrency(invoice.totalAmount)}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Description */}
-      {invoice.description && (
-        <div className="glass-medium rounded-xl p-6 border border-white/10 mb-6">
-          <h2 className="text-xl font-bold text-text-primary mb-4">Description</h2>
-          <p className="text-text-secondary whitespace-pre-line">{invoice.description}</p>
-        </div>
-      )}
-
-      {/* Notes */}
-      {invoice.notes && (
-        <div className="glass-medium rounded-xl p-6 border border-white/10">
-          <h2 className="text-xl font-bold text-text-primary mb-4">Notes</h2>
-          <p className="text-text-secondary whitespace-pre-line">{invoice.notes}</p>
-        </div>
-      )}
     </div>
   );
 }
-

@@ -31,6 +31,7 @@ const signupSchema = z.object({
 const loginSchema = z.object({
   emailOrUsername: z.string().min(1, 'Email or username is required'),
   password: z.string().min(1, 'Password is required'),
+  rememberMe: z.boolean().optional(),
 });
 
 export class AuthController {
@@ -108,7 +109,7 @@ export class AuthController {
         throw new ValidationError('Email/username and password are required');
       }
 
-      const { emailOrUsername, password } = validation.data;
+      const { emailOrUsername, password, rememberMe } = validation.data;
 
       let user = await authService.getUserByEmail(emailOrUsername);
       if (!user) {
@@ -147,12 +148,14 @@ export class AuthController {
         throw new ForbiddenError('Account is disabled');
       }
 
+      const expiresIn = rememberMe ? '7d' : undefined;
+
       const token = await jwtService.createToken({
         userId: user.id,
         email: user.email,
         username: user.username,
         role: user.role,
-      });
+      }, expiresIn);
 
       // Publish event (non-blocking)
       publishEvent({
@@ -198,7 +201,7 @@ export class AuthController {
         email: user.email,
         username: user.username,
         role: user.role,
-      });
+      }, '7d');
 
       publishEvent({
         type: 'user.logged_in',
@@ -245,7 +248,7 @@ export class AuthController {
         email: user.email,
         username: user.username,
         role: user.role,
-      });
+      }, '7d');
 
       publishEvent({
         type: 'user.logged_in',

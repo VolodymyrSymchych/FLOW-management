@@ -47,6 +47,9 @@ export const config = {
     ],
     credentials: true,
   },
+  services: {
+    projectService: process.env.PROJECT_SERVICE_URL || 'http://localhost:3004',
+  },
 };
 
 // Validate required configuration
@@ -54,6 +57,5 @@ export const config = {
 if (!process.env.DATABASE_URL && (!config.database.name || !config.database.user || !config.database.password)) {
   throw new Error('Database configuration is incomplete. Either set DATABASE_URL or DB_NAME, DB_USER, and DB_PASSWORD.');
 }
-
 
 

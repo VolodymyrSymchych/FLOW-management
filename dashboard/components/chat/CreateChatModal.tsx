@@ -171,16 +171,16 @@ export function CreateChatModal({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Створити новий чат</DialogTitle>
+          <DialogTitle>Create a new chat</DialogTitle>
           <DialogDescription>
-            Оберіть тип чату та учасників
+            Choose the chat type and participants
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           {/* Chat Type */}
           <div className="space-y-2">
-            <Label>Тип чату</Label>
+            <Label>Chat type</Label>
             <Select
               value={chatType}
               onValueChange={(value: any) => setChatType(value)}
@@ -189,9 +189,9 @@ export function CreateChatModal({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="direct">Прямий чат</SelectItem>
-                <SelectItem value="group">Група</SelectItem>
-                <SelectItem value="project">Проектний чат</SelectItem>
+                <SelectItem value="direct">Direct chat</SelectItem>
+                <SelectItem value="group">Group</SelectItem>
+                <SelectItem value="project">Project chat</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -199,9 +199,9 @@ export function CreateChatModal({
           {/* Group Name */}
           {chatType === 'group' && (
             <div className="space-y-2">
-              <Label>Назва групи</Label>
+              <Label>Group name</Label>
               <Input
-                placeholder="Введіть назву групи"
+                placeholder="Enter group name"
                 value={chatName}
                 onChange={(e) => setChatName(e.target.value)}
               />
@@ -211,13 +211,13 @@ export function CreateChatModal({
           {/* Project Selection */}
           {chatType === 'project' && (
             <div className="space-y-2">
-              <Label>Проект</Label>
+              <Label>Project</Label>
               <Select
                 value={selectedProject?.toString()}
                 onValueChange={(value) => setSelectedProject(parseInt(value))}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Оберіть проект" />
+                  <SelectValue placeholder="Select a project" />
                 </SelectTrigger>
                 <SelectContent>
                   {projects.map((project) => (
@@ -234,16 +234,16 @@ export function CreateChatModal({
           {(chatType === 'direct' || chatType === 'group') && (
             <div className="space-y-2">
               <Label>
-                Учасники
-                {chatType === 'direct' && ' (оберіть 1 користувача)'}
-                {chatType === 'group' && ' (мінімум 2 користувача)'}
+                Participants
+                {chatType === 'direct' && ' (select 1 user)'}
+                {chatType === 'group' && ' (at least 2 users)'}
               </Label>
 
               {/* Search */}
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-tertiary pointer-events-none" />
                 <Input
-                  placeholder="Пошук користувачів..."
+                  placeholder="Search users..."
                   className="pl-9"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -285,14 +285,13 @@ export function CreateChatModal({
 
         <DialogFooter>
           <Button variant="outline" onClick={handleClose}>
-            Скасувати
+            Cancel
           </Button>
           <Button onClick={createChat} disabled={!canCreate() || loading}>
-            {loading ? 'Створення...' : 'Створити'}
+            {loading ? 'Creating...' : 'Create'}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
-

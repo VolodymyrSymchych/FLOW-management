@@ -124,7 +124,7 @@ export function ChatList({ onChatSelect, selectedChatId }: ChatListProps) {
       {/* Header */}
       <div className="border-b border-white/10 p-4">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-text-primary">Чати</h2>
+          <h2 className="text-xl font-semibold text-text-primary">Chats</h2>
           <Button 
             size="sm" 
             variant="ghost"
@@ -139,7 +139,7 @@ export function ChatList({ onChatSelect, selectedChatId }: ChatListProps) {
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-tertiary pointer-events-none" />
           <Input
-            placeholder="Пошук чатів..."
+            placeholder="Search chats..."
             className="pl-9 glass-input text-text-primary placeholder:text-text-tertiary"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -156,7 +156,7 @@ export function ChatList({ onChatSelect, selectedChatId }: ChatListProps) {
               : 'glass-light hover:glass-medium text-text-secondary'}
             onClick={() => setFilter('all')}
           >
-            Всі
+            All
           </Button>
           <Button
             size="sm"
@@ -166,7 +166,7 @@ export function ChatList({ onChatSelect, selectedChatId }: ChatListProps) {
               : 'glass-light hover:glass-medium text-text-secondary'}
             onClick={() => setFilter('direct')}
           >
-            Прямі
+            Direct
           </Button>
           <Button
             size="sm"
@@ -176,7 +176,7 @@ export function ChatList({ onChatSelect, selectedChatId }: ChatListProps) {
               : 'glass-light hover:glass-medium text-text-secondary'}
             onClick={() => setFilter('group')}
           >
-            Групи
+            Groups
           </Button>
           <Button
             size="sm"
@@ -186,7 +186,7 @@ export function ChatList({ onChatSelect, selectedChatId }: ChatListProps) {
               : 'glass-light hover:glass-medium text-text-secondary'}
             onClick={() => setFilter('project')}
           >
-            Проекти
+            Projects
           </Button>
         </div>
       </div>
@@ -197,7 +197,7 @@ export function ChatList({ onChatSelect, selectedChatId }: ChatListProps) {
           <ChatListSkeleton />
         ) : filteredChats.length === 0 ? (
           <div className="p-4 text-center text-sm text-text-tertiary">
-            Чати не знайдено
+            No chats found
           </div>
         ) : (
           <div className="divide-y divide-white/10">
@@ -273,4 +273,3 @@ export function ChatList({ onChatSelect, selectedChatId }: ChatListProps) {
     </div>
   );
 }
-

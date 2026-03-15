@@ -4,8 +4,8 @@ import { useMemo, useState } from 'react';
 import { Plus, Search, Download, Trash2, Mail } from 'lucide-react';
 import axios from 'axios';
 import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
-import { InvoiceForm } from '@/components/InvoiceForm';
 import { DeleteConfirmModal } from '@/components/DeleteConfirmModal';
 import { generateInvoicePDF } from '@/lib/invoice-pdf';
 import { useTeam } from '@/contexts/TeamContext';
@@ -50,6 +50,9 @@ function invoiceStatusMeta(status: string) {
 }
 
 export default function InvoicesPage() {
+  const router = useRouter();
+  const params = useParams<{ locale: string }>();
+  const locale = params?.locale || 'en';
   const { selectedTeam, isLoading: teamsLoading } = useTeam();
   const queryClient = useQueryClient();
   const teamId = selectedTeam.type === 'single' && selectedTeam.teamId ? selectedTeam.teamId : 'all';
@@ -59,7 +62,6 @@ export default function InvoicesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'overdue' | 'paid' | 'draft'>('all');
   const [showFilters, setShowFilters] = useState(false);
-  const [showInvoiceForm, setShowInvoiceForm] = useState(false);
   const [clientFilter, setClientFilter] = useState('');
   const [projectFilter, setProjectFilter] = useState('');
   const [minAmount, setMinAmount] = useState('');
@@ -171,6 +173,10 @@ export default function InvoicesPage() {
     setStatusFilter('all');
   };
 
+  const openNewInvoicePage = () => {
+    router.push(`/${locale}/dashboard/invoices/new`);
+  };
+
   if (isLoading) {
     return <div style={{ padding: 24, fontSize: 14, color: 'var(--muted)' }}>Loading invoices...</div>;
   }
@@ -210,7 +216,7 @@ export default function InvoicesPage() {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ width: 12, height: 12 }}><line x1="4" y1="6" x2="20" y2="6" /><line x1="8" y1="12" x2="16" y2="12" /><line x1="12" y1="18" x2="12" y2="18" /></svg>
               Filter
             </button>
-            <button type="button" className="btn btn-acc" onClick={() => setShowInvoiceForm(true)}>
+            <button type="button" className="btn btn-acc" onClick={openNewInvoicePage}>
               <Plus />
               New Invoice
             </button>
@@ -322,7 +328,7 @@ export default function InvoicesPage() {
             </div>
             <div style={{ fontSize: 17, fontWeight: 600, color: 'var(--ink)', fontFamily: "var(--font-inter), Inter, sans-serif" }}>No invoices match</div>
             <div style={{ fontSize: 14, color: 'var(--muted)', marginTop: 6 }}>Try adjusting your filters or create a new invoice</div>
-            <button type="button" className="btn btn-acc" style={{ marginTop: 16 }} onClick={() => setShowInvoiceForm(true)}>
+            <button type="button" className="btn btn-acc" style={{ marginTop: 16 }} onClick={openNewInvoicePage}>
               <Plus />
               New Invoice
             </button>
@@ -332,15 +338,6 @@ export default function InvoicesPage() {
           </div>
         </div>
       </div>
-
-      <InvoiceForm
-        isOpen={showInvoiceForm}
-        onClose={() => setShowInvoiceForm(false)}
-        onSave={async () => {
-          setShowInvoiceForm(false);
-          await loadData();
-        }}
-      />
 
       <DeleteConfirmModal
         isOpen={deleteModal.isOpen}

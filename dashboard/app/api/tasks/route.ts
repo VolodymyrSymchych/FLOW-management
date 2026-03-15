@@ -3,6 +3,7 @@ import { getSession } from '@/lib/auth';
 import { taskService } from '@/lib/task-service';
 import { withRateLimit } from '@/lib/rate-limit';
 import { createTaskSchema, validateRequestBody, formatZodError } from '@/lib/validations';
+import { storage } from '@/server/storage';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,26 +20,17 @@ export async function GET(request: NextRequest) {
 
     console.log('Fetching tasks for userId:', session.userId, 'projectId:', projectId, 'teamId:', teamId);
 
-    // Use task-service microservice
-    let result;
-    if (projectId) {
-      result = await taskService.getTasks(parseInt(projectId));
-    } else if (teamId && teamId !== 'all') {
-      result = await taskService.getTasksByTeam(parseInt(teamId));
-    } else {
-      result = await taskService.getTasks();
-    }
+    const tasks = projectId
+      ? await storage.getTasks(session.userId, parseInt(projectId, 10))
+      : teamId && teamId !== 'all'
+        ? await storage.getTasksByTeam(parseInt(teamId, 10))
+        : await storage.getTasks(session.userId);
 
-    if (result.error) {
-      console.error('Task service error:', result.error);
-      return NextResponse.json({ error: result.error }, { status: 500 });
-    }
-
-    console.log('Found tasks:', result.tasks?.length || 0);
+    console.log('Found tasks:', tasks.length || 0);
 
     return NextResponse.json({
-      tasks: result.tasks || [],
-      total: result.total || 0,
+      tasks,
+      total: tasks.length,
     });
   } catch (error: any) {
     console.error('Error fetching tasks:', error);

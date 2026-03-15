@@ -13,6 +13,7 @@ import {
   LayoutDashboard,
   LogOut,
   MessageSquare,
+  Bell,
   Plus,
   Receipt,
   Settings,
@@ -45,7 +46,8 @@ const navigation: NavSection[] = [
     items: [
       { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
       { name: 'My Tasks', href: '/dashboard/tasks', icon: CheckSquare },
-      { name: 'Inbox', href: '/dashboard/messages', icon: MessageSquare },
+      { name: 'Inbox', href: '/dashboard/messages', icon: Bell },
+      { name: 'Chat', href: '/dashboard/chat', icon: MessageSquare },
       { name: 'Calendar', href: '/dashboard/calendar', icon: Calendar },
       { name: 'Team', href: '/dashboard/team', icon: Users },
     ],
@@ -64,7 +66,6 @@ const navigation: NavSection[] = [
     label: 'AI Tools',
     items: [
       { name: 'AI Scope Guard', href: '/dashboard/scope-guard', icon: Shield, guard: true, badge: 'New' },
-      { name: 'Chat', href: '/dashboard/chat', icon: Bot },
     ],
   },
 ];
@@ -102,6 +103,7 @@ export const Sidebar = memo(function Sidebar() {
   const { prefetchChats, prefetchInvoices, prefetchProjects, prefetchTasks, prefetchStats, prefetchTeams, prefetchReports, prefetchProject } = usePrefetch();
   const [showWorkspaceMenu, setShowWorkspaceMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [expandedProject, setExpandedProject] = useState<number | null>(null);
   const workspaceRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
@@ -222,6 +224,7 @@ export const Sidebar = memo(function Sidebar() {
               onClick={() => {
                 setSelectedTeam({ type: 'all' });
                 setShowWorkspaceMenu(false);
+                router.refresh();
               }}
             >
               <div className="ws-oi" style={{ background: '#0F0F0E', color: '#fff' }}>A</div>
@@ -241,6 +244,7 @@ export const Sidebar = memo(function Sidebar() {
                   onClick={() => {
                     setSelectedTeam({ type: 'single', teamId: team.id });
                     setShowWorkspaceMenu(false);
+                    router.refresh();
                   }}
                 >
                   <div className="ws-oi" style={{ background, color }}>{team.name.slice(0, 1).toUpperCase()}</div>
@@ -287,19 +291,50 @@ export const Sidebar = memo(function Sidebar() {
           <div className="nav-s">Projects</div>
           <div className="sb-projects-list">
             {projects.slice(0, 6).map((project) => {
-              const active = isActivePath(pathname, `/dashboard/projects/${project.id}`);
+              const baseActive = isActivePath(pathname, `/dashboard/projects/${project.id}`);
+              // determine if any sub-link is active to highlight the main parent
+              const isTasksActive = isActivePath(pathname, '/dashboard/tasks');
+              const active = baseActive || (expandedProject === project.id && isTasksActive);
+              const isExpanded = expandedProject === project.id;
+
               return (
-                <Link
-                  key={project.id}
-                  href={`/dashboard/projects/${project.id}`}
-                  className={`ni ${active ? 'on' : ''}`}
-                  title={project.name}
-                  onMouseEnter={() => prefetchProject(project.id)}
-                  data-testid={`sidebar-project-${project.id}`}
-                >
-                  <FolderKanban />
-                  <span className="ni-n">{project.name}</span>
-                </Link>
+                <div key={project.id} className="sb-project-group" style={{ display: 'flex', flexDirection: 'column' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (isExpanded) {
+                        setExpandedProject(null);
+                        router.push(`/dashboard/projects/${project.id}`);
+                      } else {
+                        setExpandedProject(project.id);
+                      }
+                    }}
+                    className={`ni ${active ? 'on' : ''}`}
+                    title={project.name}
+                    onMouseEnter={() => prefetchProject(project.id)}
+                    style={{ width: '100%', border: 'none', background: 'transparent', textAlign: 'left' }}
+                  >
+                    <FolderKanban />
+                    <span className="ni-n">{project.name}</span>
+                    <ChevronDown style={{ width: 14, height: 14, marginLeft: 'auto', transition: 'transform 0.2s', transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }} />
+                  </button>
+                  {isExpanded && (
+                    <div className="sb-project-items" style={{ paddingLeft: '28px', display: 'flex', flexDirection: 'column', marginTop: '2px', gap: '2px' }}>
+                      <Link href={`/dashboard/projects/${project.id}`} className={`ni ${baseActive ? 'on' : ''}`} style={{ minHeight: '32px', padding: '6px 10px' }}>
+                        <span className="ni-n" style={{ fontSize: '12px' }}>Overview</span>
+                      </Link>
+                      <Link href={`/dashboard/projects/${project.id}?tab=finance`} className="ni" style={{ minHeight: '32px', padding: '6px 10px' }}>
+                        <span className="ni-n" style={{ fontSize: '12px' }}>Cash Flow</span>
+                      </Link>
+                      <Link href={`/dashboard/tasks?projectId=${project.id}`} className={`ni ${isTasksActive ? 'on' : ''}`} style={{ minHeight: '32px', padding: '6px 10px' }}>
+                        <span className="ni-n" style={{ fontSize: '12px' }}>Tasks</span>
+                      </Link>
+                      <Link href={`/dashboard/projects/${project.id}?tab=team`} className="ni" style={{ minHeight: '32px', padding: '6px 10px' }}>
+                        <span className="ni-n" style={{ fontSize: '12px' }}>Team</span>
+                      </Link>
+                    </div>
+                  )}
+                </div>
               );
             })}
             <Link href="/dashboard/projects" className="ni ni-more" data-testid="sidebar-projects-all" onMouseEnter={() => prefetchProjects()}>

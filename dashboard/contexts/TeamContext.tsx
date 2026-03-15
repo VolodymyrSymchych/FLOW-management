@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useUser } from '@/hooks/useUser';
 
 export interface Team {
@@ -36,6 +37,7 @@ export function TeamProvider({ children }: { children: ReactNode }) {
   const [selectedTeam, setSelectedTeamState] = useState<TeamSelection>({ type: 'all' });
   const [isHydrated, setIsHydrated] = useState(false);
   const [teamsLoaded, setTeamsLoaded] = useState(false);
+  const queryClient = useQueryClient();
 
   // Load saved selection from localStorage after hydration
   useEffect(() => {
@@ -142,6 +144,17 @@ export function TeamProvider({ children }: { children: ReactNode }) {
       } catch (error) {
         console.error('Failed to save team selection:', error);
       }
+    }
+    
+    // Invalidate queries to force data reload across the app for the new team without a full page refresh
+    if (queryClient) {
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['stats'] });
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['attendance'] });
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
     }
   };
 

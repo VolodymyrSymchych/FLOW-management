@@ -58,7 +58,7 @@ const deliveryColumns = [
 
 export default function DashboardMockup() {
   return (
-    <div className="scr-inner relative mx-auto max-w-[1440px] overflow-auto" data-testid="dashboard-mockup" style={{ padding: '20px 24px 32px' }}>
+    <div className="relative mx-auto w-full max-w-[1440px] h-full" data-testid="dashboard-mockup" style={{ padding: '20px 24px 32px', overflowY: 'auto' }}>
       <section className="surface-panel rounded-[24px] border p-5 md:p-6" style={{ background: 'var(--white)' }}>
         <div className="grid gap-5 xl:grid-cols-[1.05fr_0.95fr]">
           <div className="flex flex-col justify-between gap-6">

@@ -24,7 +24,6 @@ import {
   ListTodo,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { uk } from 'date-fns/locale';
 import { CreateTaskFromMessageModal } from './CreateTaskFromMessageModal';
 import { MentionInput } from './MentionInput';
 import { useChatPusher } from '@/hooks/useChatPusher';
@@ -299,7 +298,7 @@ export function ChatWindow({ chatId, currentUserId }: ChatWindowProps) {
               {/* Reply indicator */}
               {message.replyToId && (
                 <div className="mb-2 border-l-2 border-primary/50 pl-2 text-xs text-text-secondary">
-                  Відповідь на повідомлення
+                  Reply to message
                 </div>
               )}
 
@@ -312,7 +311,7 @@ export function ChatWindow({ chatId, currentUserId }: ChatWindowProps) {
               {message.taskId && (
                 <div className="mt-2 flex items-center gap-1 text-xs text-text-secondary">
                   <ListTodo className="h-3 w-3" />
-                  <span>Створено завдання</span>
+                  <span>Task created</span>
                 </div>
               )}
 
@@ -321,10 +320,9 @@ export function ChatWindow({ chatId, currentUserId }: ChatWindowProps) {
                 <span>
                   {formatDistanceToNow(new Date(message.createdAt), {
                     addSuffix: true,
-                    locale: uk,
                   })}
                 </span>
-                {message.editedAt && <span>(редаговано)</span>}
+                {message.editedAt && <span>(edited)</span>}
                 {isOwnMessage && message.readBy && message.readBy.length > 1 && (
                   <CheckCheck className="h-3 w-3" />
                 )}
@@ -345,35 +343,35 @@ export function ChatWindow({ chatId, currentUserId }: ChatWindowProps) {
                   <DropdownMenuContent className="glass-medium border-white/10">
                     <DropdownMenuItem onClick={() => setReplyTo(message)}>
                       <Reply className="mr-2 h-4 w-4" />
-                      Відповісти
+                      Reply
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => addReaction(message.id, '👍')}>
                       <Smile className="mr-2 h-4 w-4" />
-                      Реакція
+                      React
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => openTaskCreationModal(message)}
                       disabled={!!message.taskId}
                     >
                       <ListTodo className="mr-2 h-4 w-4" />
-                      {message.taskId ? 'Завдання створено' : 'Створити завдання'}
+                      {message.taskId ? 'Task created' : 'Create task'}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => navigator.clipboard.writeText(message.content)}>
                       <Copy className="mr-2 h-4 w-4" />
-                      Копіювати
+                      Copy
                     </DropdownMenuItem>
                     {isOwnMessage && (
                       <>
                         <DropdownMenuItem>
                           <Edit className="mr-2 h-4 w-4" />
-                          Редагувати
+                          Edit
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => deleteMessage(message.id)}
                           className="text-destructive"
                         >
                           <Trash className="mr-2 h-4 w-4" />
-                          Видалити
+                          Delete
                         </DropdownMenuItem>
                       </>
                     )}
@@ -414,7 +412,7 @@ export function ChatWindow({ chatId, currentUserId }: ChatWindowProps) {
         <div className="flex items-center justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-3">
-          <h3 className="font-semibold text-text-primary">Чат</h3>
+          <h3 className="font-semibold text-text-primary">Chat</h3>
               {shouldShowLoadingMembers ? (
                 <ChatMembersSkeleton />
               ) : chatMembers.length > 0 ? (
@@ -430,7 +428,7 @@ export function ChatWindow({ chatId, currentUserId }: ChatWindowProps) {
                     ))}
                   </div>
                   <span className="text-sm text-text-secondary">
-                    {chatMembers.length} {chatMembers.length === 1 ? 'учасник' : chatMembers.length < 5 ? 'учасники' : 'учасників'}
+                    {chatMembers.length} {chatMembers.length === 1 ? 'member' : 'members'}
                   </span>
                 </div>
               ) : null}
@@ -442,7 +440,7 @@ export function ChatWindow({ chatId, currentUserId }: ChatWindowProps) {
               ? 'glass-button border-primary/50 text-text-primary' 
               : 'glass-light border-white/20 text-text-secondary'}
           >
-            {isConnected ? '🟢 Підключено' : '🔴 Відключено'}
+            {isConnected ? 'Connected' : 'Disconnected'}
           </Badge>
         </div>
       </div>
@@ -453,7 +451,7 @@ export function ChatWindow({ chatId, currentUserId }: ChatWindowProps) {
           <ChatMessagesSkeleton />
         ) : messages.length === 0 ? (
           <div className="flex h-full items-center justify-center text-text-tertiary">
-            Немає повідомлень. Почніть розмову!
+            No messages yet. Start the conversation!
           </div>
         ) : (
           <>
@@ -462,7 +460,7 @@ export function ChatWindow({ chatId, currentUserId }: ChatWindowProps) {
             {/* Typing indicator */}
             {typingUserNames.length > 0 && (
               <div className="mb-4 text-sm text-text-secondary glass-light rounded-lg px-3 py-2 inline-block">
-                {typingUserNames.join(', ')} {typingUserNames.length === 1 ? 'друкує' : 'друкують'}...
+                {typingUserNames.join(', ')} {typingUserNames.length === 1 ? 'is typing' : 'are typing'}...
               </div>
             )}
             
@@ -477,7 +475,7 @@ export function ChatWindow({ chatId, currentUserId }: ChatWindowProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-sm text-text-primary">
               <Reply className="h-4 w-4" />
-              <span>Відповідь на: {replyTo.content.substring(0, 50)}...</span>
+              <span>Replying to: {replyTo.content.substring(0, 50)}...</span>
             </div>
             <Button
               size="sm"
@@ -505,7 +503,7 @@ export function ChatWindow({ chatId, currentUserId }: ChatWindowProps) {
             value={newMessage}
             onChange={handleInputChange}
             onKeyPress={handleKeyPress}
-            placeholder="Введіть повідомлення... (@ для згадування)"
+            placeholder="Type a message... (@ to mention)"
             className="flex-1"
             chatMembers={chatMembers}
           />

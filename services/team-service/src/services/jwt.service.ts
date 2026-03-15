@@ -1,6 +1,6 @@
 import { SignJWT, jwtVerify } from 'jose';
 import { config } from '../config';
-import { logger } from '@project-scope-analyzer/shared';
+import { logger, UnauthorizedError } from '@project-scope-analyzer/shared';
 
 const JWT_SECRET = new TextEncoder().encode(config.jwt.secret);
 
@@ -23,7 +23,7 @@ export class JWTService {
       });
 
       if (!payload.userId || !payload.email || !payload.username) {
-        throw new Error('Invalid token payload');
+        throw new UnauthorizedError('Invalid token payload');
       }
 
       return {
@@ -34,7 +34,10 @@ export class JWTService {
       };
     } catch (error) {
       logger.error('JWT verification failed', { error });
-      throw new Error('Invalid or expired token');
+      if (error instanceof UnauthorizedError) {
+        throw error;
+      }
+      throw new UnauthorizedError('Invalid or expired token');
     }
   }
 

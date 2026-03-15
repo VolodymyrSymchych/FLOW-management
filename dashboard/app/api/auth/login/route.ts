@@ -23,6 +23,7 @@ export async function POST(request: NextRequest) {
     const result = await authService.login({
       emailOrUsername: body.emailOrUsername || body.email,
       password: body.password,
+      rememberMe: rememberMe,
     });
 
     // Check for errors from auth-service

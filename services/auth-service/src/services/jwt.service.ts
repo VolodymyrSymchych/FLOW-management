@@ -13,8 +13,8 @@ export interface JWTPayload {
 }
 
 export class JWTService {
-  async createToken(payload: JWTPayload): Promise<string> {
-    const expiresIn = config.jwt.expiresIn || '1h';
+  async createToken(payload: JWTPayload, expiresInOverride?: string): Promise<string> {
+    const expiresIn = expiresInOverride || config.jwt.expiresIn || '1h';
 
     const token = await new SignJWT({
       userId: payload.userId,

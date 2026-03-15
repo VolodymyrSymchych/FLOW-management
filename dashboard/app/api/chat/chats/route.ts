@@ -4,6 +4,7 @@ import { chatService } from '@/lib/chat-service';
 import { cachedWithValidation } from '@/lib/redis';
 import { CacheKeys } from '@/lib/cache-keys';
 import { invalidateOnUpdate } from '@/lib/cache-invalidation';
+import { storage } from '@/server/storage';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,15 +27,12 @@ export async function GET(request: NextRequest) {
       }
     );
 
-    // Check for errors
-    if (result.error) {
-      return NextResponse.json(
-        { error: result.error },
-        { status: 500 }
-      );
+    if (result.chats) {
+      return NextResponse.json({ chats: result.chats });
     }
 
-    return NextResponse.json({ chats: result.chats || [] });
+    const chats = await storage.getUserChats(session.userId);
+    return NextResponse.json({ chats });
   } catch (error) {
     console.error('Error fetching chats:', error);
     return NextResponse.json(
@@ -104,4 +102,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

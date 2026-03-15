@@ -59,9 +59,6 @@ export function useProjects(teamId?: number | string) {
     refetchInterval: 60 * 1000, // Автоматично оновлювати кожну хвилину
     refetchOnWindowFocus: true,
     refetchOnMount: false,
-    // Показувати попередні дані поки завантажуються нові (при зміні teamId)
-    // Це запобігає показу skeleton при переключенні команд
-    placeholderData: (previousData) => previousData,
   });
 }
 
@@ -90,8 +87,6 @@ export function useTasks(teamId?: number | string) {
     refetchInterval: 60 * 1000, // Автоматично оновлювати кожну хвилину
     refetchOnWindowFocus: true,
     refetchOnMount: false,
-    // Показувати попередні дані поки завантажуються нові
-    placeholderData: (previousData) => previousData,
   });
 }
 
@@ -110,7 +105,6 @@ export function useInvoices(teamId?: number | string) {
     gcTime: 10 * 60 * 1000, // Зберігати в кеші 10 хвилин
     refetchOnWindowFocus: true,
     refetchOnMount: false,
-    placeholderData: (previousData) => previousData,
   });
 }
 
@@ -128,7 +122,6 @@ export function useChats() {
     gcTime: 5 * 60 * 1000, // Зберігати в кеші 5 хвилин
     refetchOnWindowFocus: true,
     refetchOnMount: false,
-    placeholderData: (previousData) => previousData,
   });
 }
 
@@ -146,7 +139,6 @@ export function useChatWithMessages(chatId: number | null) {
     gcTime: 5 * 60 * 1000,
     enabled: !!chatId,
     refetchOnMount: false,
-    placeholderData: (previousData) => previousData,
   });
 }
 
@@ -164,7 +156,6 @@ export function useTeamMembers(teamId: number) {
     enabled: !!teamId && teamId > 0,
     refetchOnWindowFocus: true,
     refetchOnMount: false,
-    placeholderData: (previousData) => previousData,
   });
 }
 
@@ -180,7 +171,6 @@ export function useTeams() {
     gcTime: 30 * 60 * 1000, // Зберігати в кеші 30 хвилин
     refetchOnWindowFocus: true,
     refetchOnMount: false,
-    placeholderData: (previousData) => previousData,
   });
 }
 
@@ -213,7 +203,6 @@ export function useAttendance(teamId?: number | string) {
     gcTime: 10 * 60 * 1000,
     refetchOnWindowFocus: true,
     refetchOnMount: false,
-    placeholderData: (previousData) => previousData,
   });
 }
 
@@ -232,7 +221,6 @@ export function useReports(teamId?: number | string) {
     gcTime: 15 * 60 * 1000,
     refetchOnWindowFocus: true,
     refetchOnMount: false,
-    placeholderData: (previousData) => previousData,
   });
 }
 

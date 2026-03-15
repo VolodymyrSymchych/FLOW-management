@@ -1592,6 +1592,12 @@ button.tb-search {
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
 }
 
+.card.dragging,
+.card.dragging:hover {
+  box-shadow: none !important;
+  transform: none !important;
+}
+
 .c-bar {
   position: absolute;
   left: 0;

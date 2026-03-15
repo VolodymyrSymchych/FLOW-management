@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { teamService } from '@/lib/team-service';
+import { storage } from '@/server/storage';
 
 export async function GET() {
   try {
@@ -14,12 +15,13 @@ export async function GET() {
 
     console.log('[Teams API] Session found for user:', session.userId);
 
-    // Use team-service microservice
     const result = await teamService.getTeams();
 
     if (result.error) {
       console.error('[Teams API] Team service error:', result.error);
-      return NextResponse.json({ error: result.error }, { status: 500 });
+      const fallbackTeams = await storage.getUserTeams(session.userId);
+      console.log('[Teams API] Falling back to local storage teams:', fallbackTeams.length);
+      return NextResponse.json({ teams: fallbackTeams, source: 'local-fallback' });
     }
 
     console.log('[Teams API] Found teams:', result.teams?.length || 0);
@@ -63,7 +65,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Use team-service microservice
     const result = await teamService.createTeam({
       name,
       description: description || undefined,
@@ -71,7 +72,12 @@ export async function POST(request: Request) {
 
     if (result.error) {
       console.error('Team service error:', result.error);
-      return NextResponse.json({ error: result.error }, { status: 500 });
+      const localTeam = await storage.createTeam({
+        name,
+        description: description || null,
+        ownerId: session.userId,
+      });
+      return NextResponse.json({ success: true, team: localTeam, source: 'local-fallback' });
     }
 
     return NextResponse.json({ success: true, team: result.team });

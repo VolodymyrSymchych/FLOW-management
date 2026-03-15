@@ -142,10 +142,9 @@ export async function GET(request: NextRequest) {
     const { SignJWT, jwtVerify } = await import('jose');
     const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || '');
 
-    // Read rememberMe preference from cookie
-    const rememberMe = request.cookies.get('oauth_remember_me')?.value === 'true';
-    const expirationTime = rememberMe ? '7d' : '1h';
-    const cookieMaxAge = rememberMe ? 7 * 24 * 60 * 60 : 60 * 60; // 7 days or 1 hour
+    const rememberMe = true; // Always remember SSO users for 7 days
+    const expirationTime = '7d';
+    const cookieMaxAge = 7 * 24 * 60 * 60; // 7 days
 
     // Create auth-service compatible token
     const authToken = await new SignJWT({

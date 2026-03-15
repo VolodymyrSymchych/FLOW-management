@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Link } from '@/i18n/routing';
 import { useTeam } from '@/contexts/TeamContext';
 import {
@@ -97,10 +97,15 @@ const TABS = [
 export default function ProjectDetailPage() {
   const { isLoading: teamsLoading } = useTeam();
   const params = useParams();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const projectId = Number(params.id);
   const { data: project, isLoading: projectLoading, refetch: loadProject } = useProject(projectId);
-  const [activeTab, setActiveTab] = useState<typeof TABS[number]['id']>('overview');
+  
+  const initialTab = (searchParams.get('tab') as typeof TABS[number]['id']) || 'overview';
+  const validTab = TABS.some(t => t.id === initialTab) ? initialTab : 'overview';
+  
+  const [activeTab, setActiveTab] = useState<typeof TABS[number]['id']>(validTab);
   const [filesRefreshKey, setFilesRefreshKey] = useState(0);
   const [showEditModal, setShowEditModal] = useState(false);
 
@@ -225,7 +230,13 @@ export default function ProjectDetailPage() {
               key={tab.id}
               type="button"
               className={cn('proj-detail-tab', activeTab === tab.id && 'active')}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => {
+                setActiveTab(tab.id);
+                // Optional: update URL silently to keep state
+                const currentUrl = new URL(window.location.href);
+                currentUrl.searchParams.set('tab', tab.id);
+                window.history.replaceState({}, '', currentUrl.toString());
+              }}
             >
               <Icon style={{ width: 14, height: 14 }} />
               {tab.label}

@@ -63,6 +63,16 @@ export async function createSession(data: SessionData, rememberMe: boolean = fal
     // Don't set domain - let browser handle it automatically for better compatibility
   });
 
+  // Keep microservice auth in sync with dashboard session so a user
+  // doesn't appear logged in locally while remote services see an expired token.
+  cookieStore.set('auth_token', token, {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: 'lax',
+    maxAge: sessionDuration,
+    path: '/',
+  });
+
   return token;
 }
 
@@ -116,9 +126,17 @@ export async function getSession(autoRefresh: boolean = true): Promise<SessionDa
       const now = Date.now();
       const timeUntilExpiry = expiresAt - now;
 
-      // Refresh if token expires in less than REFRESH_THRESHOLD
-      if (timeUntilExpiry < REFRESH_THRESHOLD * 1000) {
-        await createSession(sessionData);
+      // Detect if this session was created with "rememberMe" (7 days vs 1 hour)
+      const expiresInSeconds = payload.exp - (payload.iat || 0);
+      const isRememberMe = expiresInSeconds > 24 * 60 * 60; // if it lives longer than 1 day, it's remember me
+      
+      // If remember me is true, refresh if time until expiry is less than 3 days
+      // If normal session (1 hour), refresh if time until expiry is less than REFRESH_THRESHOLD (15 mins)
+      const thresholdMs = isRememberMe ? (3 * 24 * 60 * 60 * 1000) : (REFRESH_THRESHOLD * 1000);
+
+      // Refresh if token expires in less than threshold
+      if (timeUntilExpiry < thresholdMs) {
+        await createSession(sessionData, isRememberMe);
       }
     }
 
@@ -131,6 +149,7 @@ export async function getSession(autoRefresh: boolean = true): Promise<SessionDa
 export async function deleteSession() {
   const cookieStore = await cookies();
   cookieStore.delete('session');
+  cookieStore.delete('auth_token');
 }
 
 export async function requireAuth(request?: NextRequest): Promise<SessionData> {

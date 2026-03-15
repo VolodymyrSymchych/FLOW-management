@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Users, Mail, MoreVertical, UserPlus, Clock, Calendar, Building2 } from 'lucide-react';
 import { useTeams, useTeamMembers } from '@/hooks/useQueries';
+import { EmployeeAttendanceDrawer } from '@/components/dashboard/EmployeeAttendanceDrawer';
 
 interface TeamMember {
   id: number;
@@ -39,6 +40,7 @@ function TeamPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
+  const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
 
   const { data: teams = [], isLoading: teamsLoading } = useTeams();
   const { data: members = [], isLoading: membersLoading, isFetching: membersFetching } = useTeamMembers(selectedTeamId || 0);
@@ -188,6 +190,7 @@ function TeamPageContent() {
                         onMouseOut={(e) => {
                           e.currentTarget.style.boxShadow = '';
                         }}
+                        onClick={() => setSelectedMember(member)}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
                           <div
@@ -241,7 +244,10 @@ function TeamPageContent() {
                           type="button"
                           className="btn btn-ghost"
                           style={{ width: '100%', justifyContent: 'center' }}
-                          onClick={() => router.push(`/dashboard/profile/${user.id}`)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/dashboard/profile/${user.id}`);
+                          }}
                         >
                           View Profile
                         </button>
@@ -254,6 +260,13 @@ function TeamPageContent() {
           )}
         </div>
       </div>
+      
+      <EmployeeAttendanceDrawer 
+        member={selectedMember} 
+        isOpen={!!selectedMember} 
+        onClose={() => setSelectedMember(null)}
+        teamId={selectedTeamId || undefined}
+      />
     </div>
   );
 }

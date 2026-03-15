@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { projectService } from '@/lib/project-service';
 import { withRateLimit } from '@/lib/rate-limit';
+import { storage } from '@/server/storage';
 import { createProjectSchema, validateRequestBody, formatZodError } from '@/lib/validations';
 
 export const dynamic = 'force-dynamic';
@@ -17,18 +18,23 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const teamIdParam = searchParams.get('team_id');
     const teamId = teamIdParam === 'all' ? 'all' : teamIdParam ? parseInt(teamIdParam, 10) : undefined;
+    const projects = teamId && teamId !== 'all'
+      ? await storage.getProjectsByTeam(teamId)
+      : await storage.getUserProjects(session.userId);
 
-    // Use project-service microservice
-    const result = await projectService.getProjects(teamId);
-
-    if (result.error) {
-      console.error('Project service error:', result.error);
-      return NextResponse.json({ error: result.error }, { status: 500 });
-    }
+    const projectsWithTeamIds = await Promise.all(
+      projects.map(async (project) => {
+        const projectTeams = await storage.getProjectTeams(project.id);
+        return {
+          ...project,
+          team_id: projectTeams[0]?.id,
+        };
+      })
+    );
 
     return NextResponse.json({
-      projects: result.projects || [],
-      total: result.total || 0,
+      projects: projectsWithTeamIds,
+      total: projectsWithTeamIds.length,
     });
   } catch (error: any) {
     console.error('Get projects error:', error);

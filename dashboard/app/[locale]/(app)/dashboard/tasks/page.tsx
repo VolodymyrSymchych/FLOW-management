@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Plus, Clock, SquareKanban, LayoutList } from 'lucide-react';
 import axios from 'axios';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTeam } from '@/contexts/TeamContext';
 import { useSmartDelayedLoading } from '@/hooks/useSmartDelayedLoading';
@@ -83,9 +84,11 @@ export default function TasksPage() {
 
   const [showNewTaskForm, setShowNewTaskForm] = useState(false);
   const [editingTask, setEditingTask] = useState<any | null>(null);
+  const searchParams = useSearchParams();
   const [filterView, setFilterView] = useState<'all' | 'today' | 'week'>('all');
   const [viewMode, setViewMode] = useState<ViewMode>('list');
-  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
+  const initialProjectId = searchParams.get('projectId');
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(initialProjectId ? parseInt(initialProjectId, 10) : null);
   const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; task: any | null }>({ isOpen: false, task: null });
   const [newTask, setNewTask] = useState<TaskFormState>(initialTaskState);
   const [mounted, setMounted] = useState(false);

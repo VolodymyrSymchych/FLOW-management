@@ -21,6 +21,7 @@ interface Task {
   priority: string;
   assignee: string | null;
   project_id: number | null;
+  projectName?: string | null;
   userId?: number | null;
   isOwner?: boolean; // Whether user is owner of the project
 }
@@ -427,6 +428,11 @@ function DraggableTask({
             <h4 className="text-sm font-semibold text-text-primary truncate">
               {task.title}
             </h4>
+            {task.projectName && (
+              <p className="text-[10px] text-primary/90 truncate font-medium mt-0.5">
+                {task.projectName}
+              </p>
+            )}
             {isRunning && (
               <span className="ml-2 text-xs font-mono font-bold text-success flex-shrink-0">
                 {elapsedTime}

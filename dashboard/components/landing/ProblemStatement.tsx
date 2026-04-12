@@ -41,8 +41,8 @@ const problems = [
         title: "Missed Deadlines",
         description: "60% of projects delivered late due to poor planning",
         stat: "60%",
-        color: "text-purple-400",
-        bg: "bg-purple-500/10"
+        color: "text-orange-400",
+        bg: "bg-orange-500/10"
     },
     {
         icon: TrendingDown,
@@ -153,7 +153,7 @@ export function ProblemStatement() {
                                         y: -5,
                                         transition: { duration: 0.2 }
                                     }}
-                                    className="relative p-6 rounded-2xl glass-medium border border-white/10 hover:border-white/20 transition-all group cursor-pointer w-[320px] flex-shrink-0"
+                                    className="relative p-6 rounded-2xl glass-medium border border-foreground/10 hover:border-white/20 transition-all group cursor-pointer w-[320px] flex-shrink-0"
                                 >
                                     <div className="flex flex-col h-full">
                                         <div className="flex items-start justify-between mb-4">

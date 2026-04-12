@@ -61,7 +61,7 @@ const FAQSection = memo(function FAQSection() {
                 >
                     <div className="flex items-center justify-center gap-3 mb-4">
                         <HelpCircle className="w-8 h-8 text-primary" />
-                        <h2 className="text-3xl md:text-4xl font-bold text-white">
+                        <h2 className="text-3xl md:text-4xl font-bold text-foreground">
                             Frequently Asked Questions
                         </h2>
                     </div>
@@ -96,7 +96,7 @@ const FAQSection = memo(function FAQSection() {
                     </p>
                     <a
                         href="mailto:support@projectscope.com"
-                        className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white font-semibold rounded-lg hover:opacity-90 transition-opacity"
+                        className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-secondary text-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity"
                     >
                         Contact Support
                     </a>

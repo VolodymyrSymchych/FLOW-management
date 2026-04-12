@@ -10,8 +10,8 @@ const features = [
         description: "Detect scope creep automatically. Our AI analyzes your project requirements against actual deliverables.",
         icon: Brain,
         className: "md:col-span-2 md:row-span-2",
-        color: "text-purple-400",
-        bg: "bg-purple-500/10"
+        color: "text-orange-400",
+        bg: "bg-orange-500/10"
     },
     {
         title: "Smart Invoicing",
@@ -70,7 +70,7 @@ const Features = memo(function Features() {
                             whileInView={isHydrated ? { opacity: 1, y: 0 } : {}}
                             viewport={{ once: true, margin: "-50px" }}
                             transition={{ duration: 0.5, delay: isHydrated ? index * 0.1 : 0, ease: "easeOut" }}
-                            className={`group relative overflow-hidden rounded-2xl glass-medium border border-white/10 p-8 hover:bg-white/5 transition-colors ${feature.className}`}
+                            className={`group relative overflow-hidden rounded-2xl glass-medium border border-foreground/10 p-8 hover:bg-white/5 transition-colors ${feature.className}`}
                         >
                             <div className={`absolute top-0 right-0 p-32 rounded-full blur-[80px] opacity-20 group-hover:opacity-30 transition-opacity ${feature.bg}`} />
 

@@ -29,13 +29,13 @@ function buildExpenseUpdateData(data: Record<string, unknown>): Record<string, u
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getSession();
     if (!session) return unauthorized();
 
-    const id = parseExpenseId(params.id);
+    const id = parseExpenseId((await params).id);
     if (id === null) return invalidExpenseId();
 
     const expense = await storage.getExpense(id);
@@ -51,13 +51,13 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getSession();
     if (!session) return unauthorized();
 
-    const id = parseExpenseId(params.id);
+    const id = parseExpenseId((await params).id);
     if (id === null) return invalidExpenseId();
 
     const existingExpense = await storage.getExpense(id);
@@ -81,13 +81,13 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getSession();
     if (!session) return unauthorized();
 
-    const id = parseExpenseId(params.id);
+    const id = parseExpenseId((await params).id);
     if (id === null) return invalidExpenseId();
 
     const expense = await storage.getExpense(id);

@@ -601,6 +601,11 @@ function SortableTaskCard({ task, onStatusChange, getPriorityColor, onEdit, onDe
                         className="flex-1 min-w-0 cursor-grab active:cursor-grabbing"
                     >
                         <h4 className="font-semibold text-sm text-text-primary break-words">{task.title}</h4>
+                        {task.projectName && (
+                            <div className="text-[10px] text-primary/90 mt-0.5 font-medium truncate">
+                                {task.projectName}
+                            </div>
+                        )}
                     </div>
                     {/* Non-draggable area - edit button, delete button and priority */}
                     <div className="flex items-center gap-1.5 flex-shrink-0 pointer-events-auto">

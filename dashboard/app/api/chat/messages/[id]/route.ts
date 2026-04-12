@@ -29,10 +29,10 @@ async function requireAuthAndMessageId(paramsId: string) {
 // GET /api/chat/messages/[id] - Get message by ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const result = await requireAuthAndMessageId(params.id);
+    const result = await requireAuthAndMessageId((await params).id);
     if ('error' in result) return result.error;
     const { session, messageId } = result;
 
@@ -50,10 +50,10 @@ export async function GET(
 // PATCH /api/chat/messages/[id] - Edit message
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const result = await requireAuthAndMessageId(params.id);
+    const result = await requireAuthAndMessageId((await params).id);
     if ('error' in result) return result.error;
     const { session, messageId } = result;
 
@@ -78,10 +78,10 @@ export async function PATCH(
 // DELETE /api/chat/messages/[id] - Delete message
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const result = await requireAuthAndMessageId(params.id);
+    const result = await requireAuthAndMessageId((await params).id);
     if ('error' in result) return result.error;
     const { session, messageId } = result;
 

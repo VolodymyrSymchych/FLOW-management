@@ -119,7 +119,7 @@ export function FeatureView({ feature, session, slug = "ai-scope-analysis" }: Fe
                         <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-white/95 mb-6 tracking-tight leading-tight">
                             {feature.title}
                         </h1>
-                        <p className="text-xl md:text-2xl text-white/60 max-w-3xl mx-auto leading-relaxed">
+                        <p className="text-xl md:text-2xl text-foreground/60 max-w-3xl mx-auto leading-relaxed">
                             {feature.description}
                         </p>
                     </motion.div>
@@ -136,16 +136,16 @@ export function FeatureView({ feature, session, slug = "ai-scope-analysis" }: Fe
                     transition={{ duration: 0.6 }}
                     className="container mx-auto px-4 sm:px-6 lg:px-8 mt-16 mb-16"
                 >
-                    <div className="max-w-4xl mx-auto text-center glass-card p-12 rounded-3xl border border-white/10">
+                    <div className="max-w-4xl mx-auto text-center glass-card p-12 rounded-3xl border border-foreground/10">
                         <h2 className="text-3xl md:text-4xl font-bold text-white/95 mb-6">
                             Ready to experience {feature.title}?
                         </h2>
-                        <p className="text-lg text-white/60 mb-8 max-w-2xl mx-auto">
+                        <p className="text-lg text-foreground/60 mb-8 max-w-2xl mx-auto">
                             Join thousands of teams already using our platform to streamline their workflow.
                         </p>
                         <Link
                             href="/sign-up"
-                            className={`inline-flex items-center px-8 py-4 rounded-2xl bg-gradient-to-r ${feature.color} text-white font-semibold text-lg hover:scale-105 transition-transform duration-200 shadow-lg`}
+                            className={`inline-flex items-center px-8 py-4 rounded-2xl bg-gradient-to-r ${feature.color} text-foreground font-semibold text-lg hover:scale-105 transition-transform duration-200 shadow-lg`}
                         >
                             Get Started Free
                         </Link>

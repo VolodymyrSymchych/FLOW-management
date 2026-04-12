@@ -5,10 +5,10 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { token: string } }
+  { params }: { params: Promise<{ token: string }> }
 ) {
   try {
-    const invoice = await storage.getInvoiceByPublicToken(params.token);
+    const invoice = await storage.getInvoiceByPublicToken((await params).token);
 
     if (!invoice) {
       return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });

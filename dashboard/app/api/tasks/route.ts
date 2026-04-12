@@ -26,11 +26,19 @@ export async function GET(request: NextRequest) {
         ? await storage.getTasksByTeam(parseInt(teamId, 10))
         : await storage.getTasks(session.userId);
 
-    console.log('Found tasks:', tasks.length || 0);
+    const userProjects = await storage.getUserProjects(session.userId);
+    const projectMap = new Map(userProjects.map((p: any) => [p.id, p.name]));
+    
+    const tasksWithProjects = tasks.map(t => ({
+      ...t,
+      projectName: t.projectId ? projectMap.get(t.projectId) : null
+    }));
+
+    console.log('Found tasks:', tasksWithProjects.length || 0);
 
     return NextResponse.json({
-      tasks,
-      total: tasks.length,
+      tasks: tasksWithProjects,
+      total: tasksWithProjects.length,
     });
   } catch (error: any) {
     console.error('Error fetching tasks:', error);

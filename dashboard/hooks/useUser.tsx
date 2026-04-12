@@ -41,8 +41,10 @@ export const UserProvider: React.FC<UserProviderProps> = ({
       if (response.data.user) {
         setUser(response.data.user);
       }
-    } catch (error) {
-      console.error('Failed to fetch user:', error);
+    } catch (error: any) {
+      if (error?.response?.status !== 401) {
+        console.error('Failed to fetch user:', error);
+      }
       setUser(null);
     } finally {
       setLoading(false);

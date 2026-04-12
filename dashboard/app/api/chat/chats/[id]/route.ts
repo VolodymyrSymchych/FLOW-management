@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 // GET /api/chat/chats/[id] - Get chat by ID with messages
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { session } = await requireAuth();
@@ -16,7 +16,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const chatId = parseInt(params.id);
+    const chatId = parseInt((await params).id);
     if (isNaN(chatId)) {
       return NextResponse.json({ error: 'Invalid chat ID' }, { status: 400 });
     }
@@ -48,7 +48,7 @@ export async function GET(
 // PATCH /api/chat/chats/[id] - Update chat
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { session } = await requireAuth();
@@ -56,7 +56,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const chatId = parseInt(params.id);
+    const chatId = parseInt((await params).id);
     if (isNaN(chatId)) {
       return NextResponse.json({ error: 'Invalid chat ID' }, { status: 400 });
     }
@@ -82,7 +82,7 @@ export async function PATCH(
 // DELETE /api/chat/chats/[id] - Delete chat
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { session } = await requireAuth();
@@ -90,7 +90,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const chatId = parseInt(params.id);
+    const chatId = parseInt((await params).id);
     if (isNaN(chatId)) {
       return NextResponse.json({ error: 'Invalid chat ID' }, { status: 400 });
     }

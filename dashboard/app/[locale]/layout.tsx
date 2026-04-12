@@ -35,11 +35,12 @@ export function generateStaticParams() {
 
 export default async function RootLayout({
   children,
-  params: { locale }
+  params,
 }: {
   children: React.ReactNode;
-  params: { locale: string };
+  params: Promise<{ locale: string }>;
 }) {
+  const { locale } = await params;
   setRequestLocale(locale);
   const messages = await getMessages({ locale });
 
@@ -61,7 +62,7 @@ export default async function RootLayout({
         suppressHydrationWarning
       >
         <NextIntlClientProvider messages={messages} locale={locale}>
-          <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} forcedTheme="light">
+          <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
             <QueryProvider>
               <UserProvider initialUser={preloadedUser}>
                 <TeamProvider>

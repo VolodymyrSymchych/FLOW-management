@@ -2,9 +2,9 @@ import { NextResponse } from 'next/server';
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const projectId = parseInt(params.id);
+  const projectId = parseInt((await params).id);
 
   // Mock progress data
   return NextResponse.json({

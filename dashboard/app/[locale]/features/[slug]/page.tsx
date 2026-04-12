@@ -84,9 +84,9 @@ const featuresData: Record<string, {
     }
 };
 
-export default async function FeaturePage({ params }: { params: { slug: string } }) {
+export default async function FeaturePage({ params }: { params: Promise<{ slug: string }> }) {
     const session = await getSession();
-    const { slug } = params;
+    const { slug } = await params;
     const feature = featuresData[slug];
 
     if (!feature) {

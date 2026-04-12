@@ -17,10 +17,10 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { token: string } }
+  { params }: { params: Promise<{ token: string }> }
 ) {
   try {
-    const invoice = await storage.getInvoiceByPublicToken(params.token);
+    const invoice = await storage.getInvoiceByPublicToken((await params).token);
 
     if (!invoice) {
       return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });
@@ -57,11 +57,11 @@ export async function POST(
         },
       ],
       mode: 'payment',
-      success_url: `${baseUrl}/invoices/public/${params.token}?payment=success`,
-      cancel_url: `${baseUrl}/invoices/public/${params.token}?payment=cancelled`,
+      success_url: `${baseUrl}/invoices/public/${(await params).token}?payment=success`,
+      cancel_url: `${baseUrl}/invoices/public/${(await params).token}?payment=cancelled`,
       metadata: {
         invoiceId: invoice.id.toString(),
-        invoiceToken: params.token,
+        invoiceToken: (await params).token,
       },
     });
 

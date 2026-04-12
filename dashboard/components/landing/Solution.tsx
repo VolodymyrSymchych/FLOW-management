@@ -1,109 +1,99 @@
 'use client';
 
 import { motion } from "framer-motion";
-import { Brain, FileText, PieChart, Layers, Check } from "lucide-react";
-import { useEffect, useState } from "react";
-import Link from "next/link";
+import { Brain, FileText, PieChart, Layers, Shield, Zap } from "lucide-react";
 
 const features = [
     {
-        icon: Brain,
-        title: "AI Scope Analysis",
-        slug: "ai-scope-analysis",
-        description: "Automatically analyzes requirements against deliverables to detect scope creep before it impacts your budget.",
-        color: "from-indigo-500 to-blue-500"
+        icon: Shield,
+        title: "AI Scope Guard",
+        description: "Automatically detect scope creep the moment it happens. Our AI compares chat messages, tasks, and requirements against your original SOW in real-time.",
+        color: "from-orange-500 to-orange-500",
+        glow: "bg-orange-500/20",
+        large: true,
     },
     {
         icon: FileText,
         title: "Smart Invoicing",
-        slug: "smart-invoicing",
-        description: "Turn tracked time and approved milestones into professional invoices with one click.",
-        color: "from-purple-500 to-pink-500"
+        description: "Turn approved milestones and tracked time into professional invoices with one click.",
+        color: "from-orange-500 to-orange-500",
+        glow: "bg-orange-500/20",
+        large: false,
     },
     {
         icon: PieChart,
-        title: "Advanced Analytics",
-        slug: "advanced-analytics",
-        description: "Visualise team velocity, burn-down charts, and project health in real-time.",
-        color: "from-emerald-500 to-teal-500"
+        title: "Live Analytics",
+        description: "Velocity, burn-down charts, and project health — always up to date.",
+        color: "from-emerald-500 to-teal-500",
+        glow: "bg-emerald-500/20",
+        large: false,
     },
     {
         icon: Layers,
         title: "Unified Workspace",
-        slug: "unified-workspace",
-        description: "Kanban, Gantt charts, and Documentation all living together in one seamless interface.",
-        color: "from-orange-500 to-red-500"
-    }
+        description: "Kanban, Gantt, and docs — all in one place. No more context switching.",
+        color: "from-orange-500 to-amber-500",
+        glow: "bg-orange-500/20",
+        large: false,
+    },
+    {
+        icon: Zap,
+        title: "Automations",
+        description: "Automate recurring reports, invoice reminders, and status updates.",
+        color: "from-cyan-500 to-blue-500",
+        glow: "bg-cyan-500/20",
+        large: false,
+    },
 ];
 
-export function SolutionSection() {
-    const [hasScrolled, setHasScrolled] = useState(false);
-    
-    useEffect(() => {
-        // Only enable animations after user interaction
-        const handleScroll = () => {
-            if (!hasScrolled) {
-                setHasScrolled(true);
-            }
-        };
-        
-        window.addEventListener('scroll', handleScroll, { passive: true });
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, [hasScrolled]);
-    
+function FeatureCard({ feature, i }: { feature: typeof features[0]; i: number }) {
+    const Icon = feature.icon;
     return (
-        <section id="features" className="py-24 relative bg-gradient-to-b from-transparent via-black/10 to-black/20">
-            <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="mb-16">
-                    <div className="inline-flex items-center rounded-full border border-indigo-500/30 bg-indigo-500/10 px-3 py-1 text-sm font-medium text-indigo-300 mb-6">
-                        Our Solution
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-60px" }}
+            transition={{ duration: 0.5, delay: i * 0.07, ease: [0.22, 1, 0.36, 1] }}
+            className={`group relative rounded-2xl border border-white/[0.07] bg-white/[0.03] p-6 overflow-hidden hover:border-white/[0.14] hover:bg-white/[0.05] transition-all duration-300 ${feature.large ? 'md:col-span-2 md:row-span-1' : ''}`}
+        >
+            {/* Glow */}
+            <div className={`absolute top-0 right-0 w-48 h-48 ${feature.glow} blur-[64px] opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none`} />
+
+            <div className={`inline-flex w-10 h-10 rounded-xl bg-gradient-to-br ${feature.color} items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300`}>
+                <Icon className="w-5 h-5 text-foreground" />
+            </div>
+            <h3 className="text-base font-bold text-foreground mb-2">{feature.title}</h3>
+            <p className="text-sm text-foreground/40 leading-relaxed">{feature.description}</p>
+        </motion.div>
+    );
+}
+
+export function SolutionSection() {
+    return (
+        <section id="features" className="relative py-32">
+            <div className="max-w-7xl mx-auto px-6 lg:px-8">
+                {/* Header */}
+                <motion.div
+                    initial={{ opacity: 0, y: 16 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.5 }}
+                    className="mb-16 max-w-2xl"
+                >
+                    <div className="inline-flex items-center gap-2 text-xs font-semibold text-orange-400 uppercase tracking-widest mb-4">
+                        <div className="w-4 h-px bg-orange-400" />
+                        Features
                     </div>
-                    <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-                        Everything You Need to Ship <br />
-                        <span className="gradient-text">Without the Chaos</span>
+                    <h2 className="text-4xl md:text-5xl font-black text-foreground tracking-tight leading-tight">
+                        Everything you need.
+                        <br />
+                        <span className="text-foreground/30">Nothing you don't.</span>
                     </h2>
-                </div>
+                </motion.div>
 
-                <div className="grid md:grid-cols-2 gap-8">
-                    {features.map((feature, index) => (
-                        <Link key={index} href={`/features/${feature.slug}`} className="block">
-                            <motion.div
-                                initial={hasScrolled ? { opacity: 0, scale: 0.95 } : { opacity: 1, scale: 1 }}
-                                animate={hasScrolled ? { opacity: 1, scale: 1 } : { opacity: 1, scale: 1 }}
-                                whileInView={hasScrolled ? { opacity: 1, scale: 1 } : {}}
-                                whileHover={hasScrolled ? { scale: 1.02, y: -5 } : {}}
-                                viewport={{ once: true, margin: "-50px" }}
-                                transition={{ delay: hasScrolled ? index * 0.1 : 0, duration: hasScrolled ? 0.3 : 0, ease: "easeOut" }}
-                                className="glass-card group relative h-full overflow-hidden rounded-3xl p-8 border border-white/10 hover:border-white/20 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all cursor-pointer"
-                            >
-                                <div className={`absolute top-0 right-0 w-64 h-64 bg-gradient-to-br ${feature.color} opacity-[0.08] blur-[80px] group-hover:opacity-[0.15] transition-opacity duration-500`} />
-
-                                <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${feature.color} p-[1px] mb-6 group-hover:scale-110 transition-transform duration-300`}>
-                                    <div className="w-full h-full rounded-2xl bg-black/50 backdrop-blur-sm flex items-center justify-center">
-                                        <feature.icon 
-                                            className="w-7 h-7 text-white"
-                                            style={{ 
-                                                // Ensure consistent rendering
-                                                opacity: 1,
-                                                transform: 'translateZ(0)',
-                                                backfaceVisibility: 'hidden'
-                                            }}
-                                        />
-                                    </div>
-                                </div>
-
-                                <h3 className="text-2xl font-bold text-white mb-3 group-hover:text-indigo-300 transition-colors">{feature.title}</h3>
-                                <p className="text-gray-400 leading-relaxed mb-6">
-                                    {feature.description}
-                                </p>
-
-                                <div className="flex items-center text-sm font-medium text-white/60 group-hover:text-white transition-colors w-fit">
-                                    Learn more
-                                    <Check className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
-                                </div>
-                            </motion.div>
-                        </Link>
-                    ))}
+                {/* Bento Grid */}
+                <div className="grid md:grid-cols-3 auto-rows-auto gap-4">
+                    {features.map((f, i) => <FeatureCard key={f.title} feature={f} i={i} />)}
                 </div>
             </div>
         </section>

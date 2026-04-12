@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { AddTaskModal } from '@/components/AddTaskModal';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -24,6 +25,13 @@ const DEMO_EVENTS: CalEvent[] = [
 
 export default function CalendarPage() {
   const [viewDate, setViewDate] = useState(new Date(2026, 2, 1)); // March 2026
+  const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
+  const [selectedDateForNewTask, setSelectedDateForNewTask] = useState<Date | undefined>(undefined);
+
+  const handleAddTask = (date?: Date) => {
+    setSelectedDateForNewTask(date);
+    setIsAddTaskModalOpen(true);
+  };
 
   const getWeekNum = (date: Date) => {
     const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
@@ -124,6 +132,14 @@ export default function CalendarPage() {
           <button type="button" onClick={goToday} className="btn btn-ghost" style={{ marginLeft: 8, padding: '4px 10px', fontSize: 13 }}>
             Today
           </button>
+          <button
+            type="button"
+            onClick={() => handleAddTask()}
+            className="flex items-center space-x-1 px-3 py-1.5 bg-primary text-white text-sm font-medium rounded-lg hover:opacity-90 transition-all active:scale-95 ml-4"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add Event</span>
+          </button>
         </div>
       </div>
       <div className="cal-wrap" style={{ flex: 1, minHeight: 0 }}>
@@ -221,6 +237,15 @@ export default function CalendarPage() {
           </div>
         </aside>
       </div>
+
+      <AddTaskModal
+        isOpen={isAddTaskModalOpen}
+        onClose={() => setIsAddTaskModalOpen(false)}
+        onSave={() => {
+          // Trigger refresh logic here if needed for real data integration
+        }}
+        initialDate={selectedDateForNewTask}
+      />
     </div>
   );
 }

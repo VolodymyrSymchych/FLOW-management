@@ -5,11 +5,11 @@ import { invalidateOnUpdate } from '@/lib/cache-invalidation';
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await requireAuth();
-    const notificationId = parseInt(params.id);
+    const notificationId = parseInt((await params).id);
 
     if (isNaN(notificationId)) {
       return NextResponse.json(

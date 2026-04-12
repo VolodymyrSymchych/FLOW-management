@@ -68,7 +68,7 @@ export function WaitlistForm({ className = '', variant = 'default' }: WaitlistFo
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             placeholder="Enter your email"
-                            className="w-full pl-10 pr-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                            className="w-full pl-10 pr-4 py-3 rounded-lg bg-white/5 border border-foreground/10 text-foreground placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
                             required
                             disabled={status === 'loading' || status === 'success'}
                         />
@@ -76,7 +76,7 @@ export function WaitlistForm({ className = '', variant = 'default' }: WaitlistFo
                     <button
                         type="submit"
                         disabled={status === 'loading' || status === 'success'}
-                        className="px-6 py-3 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold hover:from-indigo-500 hover:to-purple-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 whitespace-nowrap"
+                        className="px-6 py-3 rounded-lg bg-gradient-to-r from-orange-600 to-orange-600 text-foreground font-semibold hover:from-orange-500 hover:to-orange-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 whitespace-nowrap"
                     >
                         {status === 'loading' ? (
                             <>
@@ -135,7 +135,7 @@ export function WaitlistForm({ className = '', variant = 'default' }: WaitlistFo
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             placeholder="Enter your email"
-                            className="w-full pl-12 pr-4 py-4 rounded-full bg-white/5 border border-white/10 text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-lg"
+                            className="w-full pl-12 pr-4 py-4 rounded-full bg-white/5 border border-foreground/10 text-foreground placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all text-lg"
                             required
                             disabled={status === 'loading' || status === 'success'}
                         />
@@ -143,7 +143,7 @@ export function WaitlistForm({ className = '', variant = 'default' }: WaitlistFo
                     <button
                         type="submit"
                         disabled={status === 'loading' || status === 'success'}
-                        className="px-8 py-4 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold hover:from-indigo-500 hover:to-purple-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-lg whitespace-nowrap"
+                        className="px-8 py-4 rounded-full bg-gradient-to-r from-orange-600 to-orange-600 text-foreground font-semibold hover:from-orange-500 hover:to-orange-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-lg whitespace-nowrap"
                     >
                         {status === 'loading' ? (
                             <>

@@ -147,7 +147,7 @@ function StorySection({ section, index }: { section: StorySection; index: number
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true, margin: "-100px" }}
                             transition={{ duration: 0.6, delay: 0.4 }}
-                            className="text-lg md:text-xl text-white/60 leading-relaxed max-w-xl"
+                            className="text-lg md:text-xl text-foreground/60 leading-relaxed max-w-xl"
                         >
                             {section.description}
                         </motion.p>

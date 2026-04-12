@@ -1,8 +1,8 @@
 'use client';
 
 import { motion } from "framer-motion";
-import { Check } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Check, Zap } from "lucide-react";
+import Link from "next/link";
 
 const plans = [
     {
@@ -10,129 +10,102 @@ const plans = [
         price: "Free",
         period: "forever",
         description: "Perfect for freelancers and solo developers.",
-        features: [
-            "Up to 3 projects",
-            "Basic AI analysis",
-            "Kanban board",
-            "Community support"
-        ],
-        cta: "Start for Free",
-        popular: false
+        features: ["Up to 3 projects", "Basic AI analysis", "Kanban board", "Community support"],
+        cta: "Start for free",
+        href: "/sign-up",
+        popular: false,
     },
     {
         name: "Pro",
         price: "$29",
         period: "per month",
         description: "For growing teams that need full visibility.",
-        features: [
-            "Unlimited projects",
-            "Advanced AI risk detection",
-            "Gantt charts & timeline",
-            "Smart invoicing",
-            "Priority support"
-        ],
-        cta: "Get Started",
-        popular: true
+        features: ["Unlimited projects", "Advanced AI risk detection", "Gantt & timeline", "Smart invoicing", "Priority support"],
+        cta: "Get started",
+        href: "/sign-up",
+        popular: true,
     },
     {
         name: "Enterprise",
         price: "Custom",
-        period: "contact sales",
+        period: "contact us",
         description: "Advanced security and control for large orgs.",
-        features: [
-            "Custom AI models",
-            "SLA & dedicated support",
-            "SSO & advanced security",
-            "On-premise deployment",
-            "API access"
-        ],
-        cta: "Contact Sales",
-        popular: false
-    }
+        features: ["Custom AI models", "SLA & dedicated support", "SSO & security", "On-premise option", "API access"],
+        cta: "Contact sales",
+        href: "/sign-up",
+        popular: false,
+    },
 ];
 
 export function PricingSection() {
-    const [hasScrolled, setHasScrolled] = useState(false);
-    
-    useEffect(() => {
-        const handleScroll = () => {
-            if (!hasScrolled) {
-                setHasScrolled(true);
-            }
-        };
-        
-        window.addEventListener('scroll', handleScroll, { passive: true });
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, [hasScrolled]);
-    
     return (
-        <section id="pricing" className="py-24 relative bg-gradient-to-b from-black/20 via-black/10 to-transparent">
-            <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="text-center max-w-3xl mx-auto mb-16">
-                    <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-                        Simple, Transparent Pricing
-                    </h2>
-                    <p className="text-lg text-gray-400">
-                        Choose the plan that fits your team size. Scale up or down at any time.
-                    </p>
-                </div>
+        <section id="pricing" className="relative py-32">
+            <div className="max-w-7xl mx-auto px-6 lg:px-8">
+                <motion.div
+                    initial={{ opacity: 0, y: 16 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.5 }}
+                    className="text-center mb-16"
+                >
+                    <div className="inline-flex items-center gap-2 text-xs font-semibold text-foreground/30 uppercase tracking-widest mb-4">
+                        <div className="w-4 h-px bg-white/20" />
+                        Pricing
+                        <div className="w-4 h-px bg-white/20" />
+                    </div>
+                    <h2 className="text-4xl md:text-5xl font-black text-foreground tracking-tight">Simple, transparent pricing.</h2>
+                    <p className="mt-4 text-foreground/40 text-lg">Scale up or down any time. No hidden fees.</p>
+                </motion.div>
 
-                <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-                    {plans.map((plan, index) => (
+                <div className="grid md:grid-cols-3 gap-4 max-w-5xl mx-auto">
+                    {plans.map((plan, i) => (
                         <motion.div
-                            key={index}
-                            initial={hasScrolled ? { opacity: 0, y: 30 } : { opacity: 1, y: 0 }}
-                            animate={hasScrolled ? { opacity: 1, y: 0 } : { opacity: 1, y: 0 }}
-                            whileInView={hasScrolled ? { opacity: 1, y: 0 } : {}}
+                            key={plan.name}
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
-                            transition={{ delay: hasScrolled ? index * 0.1 : 0, duration: hasScrolled ? 0.3 : 0 }}
-                            className={`glass-card relative rounded-3xl p-8 border ${plan.popular
-                                ? "border-indigo-500/50 bg-indigo-500/5"
-                                : "border-white/10"
-                                } flex flex-col`}
+                            transition={{ delay: i * 0.08, duration: 0.45 }}
+                            className={`relative flex flex-col rounded-2xl p-6 ${
+                                plan.popular
+                                    ? 'border border-orange-500/40 bg-orange-500/[0.06]'
+                                    : 'border border-white/[0.07] bg-white/[0.02]'
+                            }`}
                         >
                             {plan.popular && (
-                                <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 text-xs font-bold text-white uppercase tracking-wider shadow-lg shadow-indigo-500/20">
+                                <div className="absolute -top-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-600 text-xs font-bold text-foreground">
+                                    <Zap className="w-3 h-3" />
                                     Most Popular
                                 </div>
                             )}
 
-                            <div className="mb-8">
-                                <h3 className="text-xl font-semibold text-white mb-2">{plan.name}</h3>
-                                <div className="flex items-baseline gap-1 mb-4">
-                                    <span className="text-4xl font-bold text-white">{plan.price}</span>
-                                    <span className="text-sm text-gray-400">/{plan.period}</span>
+                            <div className="mb-6">
+                                <h3 className="text-sm font-bold text-foreground/60 uppercase tracking-widest mb-4">{plan.name}</h3>
+                                <div className="flex items-baseline gap-1 mb-2">
+                                    <span className="text-4xl font-black text-foreground">{plan.price}</span>
+                                    <span className="text-sm text-foreground/30">/{plan.period}</span>
                                 </div>
-                                <p className="text-gray-400 text-sm">{plan.description}</p>
+                                <p className="text-sm text-foreground/30">{plan.description}</p>
                             </div>
 
-                            <div className="flex-grow space-y-4 mb-8">
-                                {plan.features.map((feature, i) => (
-                                    <div key={i} className="flex items-start gap-3">
-                                        <div className="mt-1 w-4 h-4 rounded-full bg-indigo-500/20 flex items-center justify-center flex-shrink-0">
-                                            <Check 
-                                                className="w-3 h-3 text-indigo-400"
-                                                style={{ 
-                                                    // Ensure consistent rendering
-                                                    opacity: 1,
-                                                    transform: 'translateZ(0)',
-                                                    backfaceVisibility: 'hidden'
-                                                }}
-                                            />
-                                        </div>
-                                        <span className="text-gray-300 text-sm">{feature}</span>
-                                    </div>
+                            <ul className="space-y-3 mb-8 flex-1">
+                                {plan.features.map((f) => (
+                                    <li key={f} className="flex items-center gap-2.5 text-sm text-foreground/50">
+                                        <Check className="w-3.5 h-3.5 text-orange-400 flex-shrink-0" />
+                                        {f}
+                                    </li>
                                 ))}
-                            </div>
+                            </ul>
 
-                            <button
-                                className={`w-full py-3 rounded-xl font-medium transition-all ${plan.popular
-                                    ? "glass-button text-white hover:shadow-lg hover:shadow-indigo-500/25"
-                                    : "bg-white/5 text-white hover:bg-white/10 border border-white/10"
-                                    }`}
+                            <Link
+                                href={plan.href}
+                                className={`w-full py-3 rounded-xl text-sm font-bold text-center transition-all ${
+                                    plan.popular
+                                        ? 'bg-foreground text-background hover:bg-foreground/90'
+                                        : 'bg-white/[0.06] text-foreground hover:bg-foreground/10 border border-white/[0.08]'
+                                }`}
                             >
                                 {plan.cta}
-                            </button>
+                            </Link>
                         </motion.div>
                     ))}
                 </div>

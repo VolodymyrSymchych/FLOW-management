@@ -573,14 +573,14 @@ export class DatabaseStorage {
         }
       }
       // Return all tasks for the project
-      tasksResult = await db
+      tasksResult = (await db
         .select()
         .from(tasks)
         .where(and(
           eq(tasks.projectId, projectId),
           isNull(tasks.deletedAt)
         ))
-        .orderBy(desc(tasks.createdAt));
+        .orderBy(desc(tasks.createdAt))) as Task[];
     }
     // If only userId is provided, show all tasks:
     // 1. Tasks created by the user (userId matches)
@@ -631,22 +631,22 @@ export class DatabaseStorage {
         conditions.push(inArray(tasks.projectId, projectIds));
       }
 
-      tasksResult = await db
+      tasksResult = (await db
         .select()
         .from(tasks)
         .where(and(
           or(...conditions),
           isNull(tasks.deletedAt)
         ))
-        .orderBy(desc(tasks.createdAt));
+        .orderBy(desc(tasks.createdAt))) as Task[];
     }
     // If neither is provided, return all tasks (shouldn't happen in normal flow)
     else {
-      tasksResult = await db
+      tasksResult = (await db
         .select()
         .from(tasks)
         .where(isNull(tasks.deletedAt))
-        .orderBy(desc(tasks.createdAt));
+        .orderBy(desc(tasks.createdAt))) as Task[];
     }
 
     // Add worked hours to all tasks
@@ -654,10 +654,10 @@ export class DatabaseStorage {
   }
 
   async getTask(taskId: number): Promise<Task | undefined> {
-    const [task] = await db.select().from(tasks).where(and(
+    const [task] = (await db.select().from(tasks).where(and(
       eq(tasks.id, taskId),
       isNull(tasks.deletedAt)
-    ));
+    ))) as Task[];
     return task;
   }
 
@@ -726,14 +726,14 @@ export class DatabaseStorage {
 
   // Subtasks
   async getSubtasks(parentId: number): Promise<Task[]> {
-    return await db
+    return (await db
       .select()
       .from(tasks)
       .where(and(
         eq(tasks.parentId, parentId),
         isNull(tasks.deletedAt)
       ))
-      .orderBy(desc(tasks.createdAt));
+      .orderBy(desc(tasks.createdAt))) as Task[];
   }
 
   async createSubtask(parentId: number, data: Omit<InsertTask, 'parentId'>): Promise<Task> {
@@ -889,14 +889,14 @@ export class DatabaseStorage {
       return [];
     }
 
-    const tasksResult = await db
+    const tasksResult = (await db
       .select()
       .from(tasks)
       .where(and(
         or(...orConditions),
         isNull(tasks.deletedAt)
       ))
-      .orderBy(desc(tasks.createdAt));
+      .orderBy(desc(tasks.createdAt))) as Task[];
 
     console.log(`[getTasksByTeam] Found ${tasksResult.length} tasks for team ${teamId}`);
     console.log(`[getTasksByTeam] Tasks:`, tasksResult.map(t => ({

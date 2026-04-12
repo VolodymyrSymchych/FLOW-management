@@ -5,9 +5,9 @@ import { Typography } from "@/components/ui/typography";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
-export default async function CaseStudyPage({ params }: { params: { slug: string } }) {
+export default async function CaseStudyPage({ params }: { params: Promise<{ slug: string }> }) {
     const session = await getSession();
-    const { slug } = params;
+    const { slug } = await params;
 
     // In a real app, fetch data based on slug
     const title = slug.split("-").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");

@@ -1,10 +1,11 @@
 /** @type {import('next').NextConfig} */
+const path = require('path');
 const nextConfig = {
   reactStrictMode: true,
+  outputFileTracingRoot: path.join(__dirname, '../../'),
 
   // Performance optimizations
   compress: true, // Enable gzip compression
-  swcMinify: true, // Use SWC for faster minification
 
   // Image optimization
   images: {
@@ -76,15 +77,13 @@ const nextConfig = {
 
     return config;
   },
-  // Use experimental option for Next.js 14.2.0
-  experimental: {
-    serverComponentsExternalPackages: [
-      '@aws-sdk/client-s3',
-      '@aws-sdk/s3-request-presigner',
-      'drizzle-orm',
-      '@neondatabase/serverless'
-    ],
-  },
+  // External packages that should not be bundled in server components
+  serverExternalPackages: [
+    '@aws-sdk/client-s3',
+    '@aws-sdk/s3-request-presigner',
+    'drizzle-orm',
+    '@neondatabase/serverless'
+  ],
 };
 
 const createNextIntlPlugin = require('next-intl/plugin');

@@ -51,7 +51,7 @@ export function AnimatedBackground() {
 
             <motion.div
                 style={{ y: y1 }}
-                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-full blur-[100px]"
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-gradient-to-r from-orange-500/10 to-pink-500/10 rounded-full blur-[100px]"
                 animate={{
                     scale: [1, 1.3, 1],
                     opacity: [0.2, 0.3, 0.2],

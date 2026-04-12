@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 // POST /api/chat/messages/[id]/reactions - Add reaction to message
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { session } = await requireAuth();
@@ -15,7 +15,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const messageId = parseInt(params.id);
+    const messageId = parseInt((await params).id);
     if (isNaN(messageId)) {
       return NextResponse.json({ error: 'Invalid message ID' }, { status: 400 });
     }
@@ -42,7 +42,7 @@ export async function POST(
 // DELETE /api/chat/messages/[id]/reactions - Remove reaction from message
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { session } = await requireAuth();
@@ -50,7 +50,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const messageId = parseInt(params.id);
+    const messageId = parseInt((await params).id);
     if (isNaN(messageId)) {
       return NextResponse.json({ error: 'Invalid message ID' }, { status: 400 });
     }

@@ -13,7 +13,7 @@ interface AnimatedButtonProps {
 
 export function AnimatedButton({ href, children, variant = 'primary', className = '' }: AnimatedButtonProps) {
     const baseClass = variant === 'primary'
-        ? 'glass-button text-white'
+        ? 'glass-button text-foreground'
         : 'glass-light text-text-primary hover:glass-medium';
 
     return (

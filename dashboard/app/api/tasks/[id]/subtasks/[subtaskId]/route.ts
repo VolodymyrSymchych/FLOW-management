@@ -6,7 +6,7 @@ import { invalidateCache } from '@/lib/redis';
 // PUT /api/tasks/[id]/subtasks/[subtaskId] - Update a subtask
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string; subtaskId: string } }
+  { params }: { params: Promise<{ id: string; subtaskId: string }> }
 ) {
   try {
     const session = await getSession();
@@ -14,8 +14,8 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const parentId = parseInt(params.id);
-    const subtaskId = parseInt(params.subtaskId);
+    const parentId = parseInt((await params).id);
+    const subtaskId = parseInt((await params).subtaskId);
 
     if (isNaN(parentId) || isNaN(subtaskId)) {
       return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
@@ -82,7 +82,7 @@ export async function PUT(
 // DELETE /api/tasks/[id]/subtasks/[subtaskId] - Delete a subtask
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string; subtaskId: string } }
+  { params }: { params: Promise<{ id: string; subtaskId: string }> }
 ) {
   try {
     const session = await getSession();
@@ -90,8 +90,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const parentId = parseInt(params.id);
-    const subtaskId = parseInt(params.subtaskId);
+    const parentId = parseInt((await params).id);
+    const subtaskId = parseInt((await params).subtaskId);
 
     if (isNaN(parentId) || isNaN(subtaskId)) {
       return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });

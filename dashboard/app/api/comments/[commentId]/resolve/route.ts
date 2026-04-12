@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic';
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { commentId: string } }
+  { params }: { params: Promise<{ commentId: string }> }
 ) {
   try {
     const session = await getSession();
@@ -23,7 +23,7 @@ export async function PATCH(
       );
     }
 
-    const commentId = parseInt(params.commentId);
+    const commentId = parseInt((await params).commentId);
     if (isNaN(commentId)) {
       return NextResponse.json({ error: 'Invalid comment ID' }, { status: 400 });
     }

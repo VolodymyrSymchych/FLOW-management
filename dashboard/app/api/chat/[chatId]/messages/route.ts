@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { chatId: string } }
+  { params }: { params: Promise<{ chatId: string }> }
 ) {
   try {
     const session = await getSession();
@@ -23,7 +23,7 @@ export async function GET(
       );
     }
 
-    const chatId = parseInt(params.chatId);
+    const chatId = parseInt((await params).chatId);
     if (isNaN(chatId)) {
       return NextResponse.json({ error: 'Invalid chat ID' }, { status: 400 });
     }
@@ -67,7 +67,7 @@ export async function GET(
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { chatId: string } }
+  { params }: { params: Promise<{ chatId: string }> }
 ) {
   try {
     const session = await getSession();
@@ -78,7 +78,7 @@ export async function POST(
       );
     }
 
-    const chatId = parseInt(params.chatId);
+    const chatId = parseInt((await params).chatId);
     if (isNaN(chatId)) {
       return NextResponse.json({ error: 'Invalid chat ID' }, { status: 400 });
     }

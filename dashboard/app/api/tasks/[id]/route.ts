@@ -35,13 +35,13 @@ function buildTaskUpdateData(data: Record<string, unknown>): Record<string, unkn
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getSession();
     if (!session) return unauthorized();
 
-    const id = parseTaskId(params.id);
+    const id = parseTaskId((await params).id);
     if (id === null) return invalidTaskId();
 
     const task = await storage.getTask(id);
@@ -57,13 +57,13 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getSession();
     if (!session) return unauthorized();
 
-    const id = parseTaskId(params.id);
+    const id = parseTaskId((await params).id);
     if (id === null) return invalidTaskId();
 
     const data = await request.json();
@@ -114,13 +114,13 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getSession();
     if (!session) return unauthorized();
 
-    const id = parseTaskId(params.id);
+    const id = parseTaskId((await params).id);
     if (id === null) return invalidTaskId();
 
     const task = await storage.getTask(id);

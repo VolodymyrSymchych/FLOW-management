@@ -1,10 +1,12 @@
 'use client';
 
-import { ChevronLeft, ChevronRight, Calendar as LucideCalendar } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as LucideCalendar, Plus } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { cn } from '@/lib/utils';
 import { useTeam } from '@/contexts/TeamContext';
+import { useDroppable } from '@dnd-kit/core';
+import { AddTaskModal } from '@/components/AddTaskModal';
 
 interface Task {
   id: number;
@@ -18,6 +20,7 @@ interface Task {
   assignee?: string | null;
   priority?: string;
   status?: string;
+  projectName?: string | null;
 }
 
 interface CalendarDay {
@@ -33,14 +36,20 @@ interface CalendarViewProps {
 }
 
 interface DroppableDayProps {
+  dateId: string;
   day: CalendarDay;
   isSelected: boolean;
   onDateClick: (date: Date) => void;
 }
 
-function DroppableDay({ day, isSelected, onDateClick }: DroppableDayProps) {
+function DroppableDay({ dateId, day, isSelected, onDateClick }: DroppableDayProps) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: dateId,
+  });
+
   return (
     <div
+      ref={setNodeRef}
       onClick={() => onDateClick(day.date)}
       className={cn(
         'min-h-[120px] p-2 rounded-lg border-2 transition-all cursor-pointer',
@@ -48,7 +57,9 @@ function DroppableDay({ day, isSelected, onDateClick }: DroppableDayProps) {
           ? 'border-primary bg-primary/10'
           : isSelected
             ? 'border-primary/50 bg-primary/5'
-            : 'border-transparent hover:border-white/10 hover:bg-white/5',
+            : isOver
+              ? 'border-success/50 bg-success/10 border-dashed'
+              : 'border-transparent hover:border-white/10 hover:bg-white/5',
         !day.isCurrentMonth && 'opacity-40'
       )}
     >
@@ -83,8 +94,13 @@ function DroppableDay({ day, isSelected, onDateClick }: DroppableDayProps) {
               title={task.title}
             >
               <div className="font-medium truncate">{task.title}</div>
+              {task.projectName && (
+                <div className="text-[10px] text-primary/90 mt-0.5 truncate font-medium">
+                  {task.projectName}
+                </div>
+              )}
               {task.assignee && (
-                <div className="text-[10px] opacity-75 mt-0.5">
+                <div className="text-[10px] opacity-75 mt-0.5 truncate">
                   {task.assignee}
                 </div>
               )}
@@ -108,6 +124,13 @@ export default function CalendarView({ refreshKey = 0 }: CalendarViewProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
+  const [selectedDateForNewTask, setSelectedDateForNewTask] = useState<Date | undefined>(undefined);
+
+  const handleAddTask = (date?: Date) => {
+    setSelectedDateForNewTask(date);
+    setIsAddTaskModalOpen(true);
+  };
 
   // Single consolidated useEffect for loading tasks
   useEffect(() => {
@@ -299,12 +322,19 @@ export default function CalendarView({ refreshKey = 0 }: CalendarViewProps) {
           <select
             value={viewMode}
             onChange={(e) => setViewMode(e.target.value as '1week' | '2weeks' | '1month')}
-            className="text-sm glass-input border-0 text-text-primary focus:outline-none rounded px-2 py-1 cursor-pointer"
+            className="text-sm glass-input border-0 text-text-primary focus:outline-none rounded px-2 py-1 cursor-pointer mr-2"
           >
             <option value="1week">1 Week</option>
             <option value="2weeks">2 Weeks</option>
             <option value="1month">1 Month</option>
           </select>
+          <button
+            onClick={() => handleAddTask()}
+            className="flex items-center space-x-1 px-3 py-1.5 bg-primary text-white text-sm font-medium rounded-lg hover:opacity-90 transition-all active:scale-95"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add Task</span>
+          </button>
         </div>
       </div>
 
@@ -320,10 +350,12 @@ export default function CalendarView({ refreshKey = 0 }: CalendarViewProps) {
         {/* Calendar days */}
         {days.map((day, idx) => {
           const isSelected = selectedDate ? day.date.getTime() === selectedDate.getTime() : false;
+          const dateId = `date-${day.date.toISOString().split('T')[0]}`;
 
           return (
             <DroppableDay
               key={idx}
+              dateId={dateId}
               day={day}
               isSelected={isSelected}
               onDateClick={handleDateClick}
@@ -349,6 +381,12 @@ export default function CalendarView({ refreshKey = 0 }: CalendarViewProps) {
         </div>
       )}
 
+      <AddTaskModal
+        isOpen={isAddTaskModalOpen}
+        onClose={() => setIsAddTaskModalOpen(false)}
+        onSave={() => loadTasks()}
+        initialDate={selectedDateForNewTask}
+      />
     </div>
   );
 }

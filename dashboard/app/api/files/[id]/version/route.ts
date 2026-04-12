@@ -8,7 +8,7 @@ export const maxDuration = 60;
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getSession();
@@ -16,7 +16,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const id = parseInt(params.id);
+    const id = parseInt((await params).id);
     const parentFile = await storage.getFileAttachment(id);
 
     if (!parentFile) {

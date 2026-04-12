@@ -1,186 +1,100 @@
 'use client';
 
-import Image from "next/image";
 import { motion } from "framer-motion";
-import { ArrowRight, PlayCircle, CheckCircle2, BarChart3, Clock, AlertTriangle } from "lucide-react";
 import Link from "next/link";
+import { ArrowRight, Sparkles } from "lucide-react";
+import { InteractiveMockup } from "./InteractiveMockup";
 import { WaitlistForm } from "./WaitlistForm";
 
 export function Hero({ user }: { user?: any }) {
     return (
-        <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
-            {/* Background Elements */}
-            <div className="absolute inset-0 z-0">
-                <Image
-                    src="/assets/generated_images/abstract_project_management_interface_background.png"
-                    alt="Hero Background"
-                    fill
-                    className="object-cover opacity-50"
-                    priority
+        <section className="relative min-h-screen flex flex-col items-center justify-center overflow-x-clip pt-14">
+            {/* Background radial glow */}
+            <div className="absolute inset-0 pointer-events-none">
+                <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-orange-900/30 rounded-full blur-[140px] translate-x-1/4 -translate-y-1/4" />
+                <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-orange-900/20 rounded-full blur-[120px] -translate-x-1/4 translate-y-1/4" />
+                <div className="absolute inset-0 opacity-[0.08]"
+                    style={{
+                        backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.6) 1px, transparent 1px)',
+                        backgroundSize: '32px 32px'
+                    }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/90 to-background z-10" />
             </div>
 
-            <div className="container relative z-10 mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="grid lg:grid-cols-2 gap-12 items-center">
-                    <motion.div
-                        initial={{ opacity: 0, x: -50 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.8, ease: "easeOut" }}
-                        className="max-w-2xl"
-                    >
+            <div className="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-8 flex flex-col items-center">
+                {/* Eyebrow badge */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                    className="mb-8"
+                >
+                    <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-foreground/[0.12] bg-foreground/[0.04] backdrop-blur-sm text-sm font-medium text-foreground/70 cursor-default">
+                        <Sparkles className="w-3.5 h-3.5 text-orange-400" />
+                        Introducing AI Scope Guard
+                        <span className="text-foreground/30">·</span>
+                        <span className="text-orange-400">Learn more →</span>
+                    </div>
+                </motion.div>
 
+                {/* Headline */}
+                <motion.h1
+                    initial={{ opacity: 0, y: 24 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+                    className="text-center text-5xl md:text-7xl lg:text-[88px] font-black tracking-[-0.04em] text-foreground leading-[1.0] mb-6 max-w-5xl"
+                >
+                    Project management
+                    <br />
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-orange-400 to-orange-400">
+                        built for revenue.
+                    </span>
+                </motion.h1>
 
-                        <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-white mb-6 leading-[1.1]">
-                            Stop Losing Revenue to <span className="gradient-text">Scope Creep</span>
-                        </h1>
+                {/* Sub */}
+                <motion.p
+                    initial={{ opacity: 0, y: 24 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.7, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                    className="text-center text-lg md:text-xl text-foreground/40 max-w-2xl mb-10 leading-relaxed"
+                >
+                    Flow catches scope creep, automates invoicing, and gives your team real-time visibility — before clients ask why things are late.
+                </motion.p>
 
-                        <p className="text-xl text-gray-400 mb-8 leading-relaxed max-w-lg">
-                            AI-powered project management that helps you catch risks early, bill accurately, and deliver on time.
-                        </p>
+                {/* CTA */}
+                <motion.div
+                    initial={{ opacity: 0, y: 24 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.7, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                    className="flex flex-col sm:flex-row items-center gap-4 mb-20 w-full max-w-lg"
+                >
+                    {user ? (
+                        <Link
+                            href="/dashboard"
+                            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-foreground text-background text-sm font-bold hover:bg-foreground/90 transition-colors shadow-lg shadow-foreground/10"
+                        >
+                            Open Dashboard
+                            <ArrowRight className="w-4 h-4" />
+                        </Link>
+                    ) : (
+                        <>
+                            <WaitlistForm className="w-full" variant="compact" />
+                            <Link href="/sign-up" className="text-sm text-foreground/40 hover:text-foreground/70 transition-colors whitespace-nowrap">
+                                Or sign up free →
+                            </Link>
+                        </>
+                    )}
+                </motion.div>
 
-                        {user ? (
-                            <>
-                                <div className="flex flex-wrap gap-4">
-                                    <Link href="/dashboard" className="glass-button px-8 py-4 rounded-full text-white font-semibold flex items-center gap-2 text-lg group">
-                                        Let's get to work
-                                        <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
-                                    </Link>
-
-                                    <button className="px-8 py-4 rounded-full text-white font-medium flex items-center gap-2 hover:bg-white/5 transition-colors border border-white/10">
-                                        <PlayCircle className="w-5 h-5" />
-                                        Watch Demo
-                                    </button>
-                                </div>
-
-                                <div className="mt-10 flex items-center gap-4 text-sm text-gray-400">
-                                    <div className="flex -space-x-2">
-                                        {[1, 2, 3, 4].map(i => (
-                                            <div key={i} className="w-8 h-8 rounded-full border-2 border-background bg-gray-800" />
-                                        ))}
-                                    </div>
-                                    <p>Trusted by 500+ top development teams</p>
-                                </div>
-                            </>
-                        ) : (
-                            <>
-                                <WaitlistForm className="max-w-2xl" />
-
-                                <div className="mt-8 flex flex-col sm:flex-row gap-4">
-                                    <Link href="/sign-up" className="text-gray-400 hover:text-white transition-colors text-sm flex items-center gap-2">
-                                        Already have access?
-                                        <span className="text-indigo-400 font-medium">Sign up now →</span>
-                                    </Link>
-                                    <button className="text-gray-400 hover:text-white transition-colors text-sm flex items-center gap-2">
-                                        <PlayCircle className="w-4 h-4" />
-                                        Watch Demo
-                                    </button>
-                                </div>
-
-                                <div className="mt-8 flex items-center gap-4 text-sm text-gray-400">
-                                    <div className="flex -space-x-2">
-                                        {[1, 2, 3, 4].map(i => (
-                                            <div key={i} className="w-8 h-8 rounded-full border-2 border-background bg-gray-800" />
-                                        ))}
-                                    </div>
-                                    <p>Join 500+ teams on the waitlist</p>
-                                </div>
-                            </>
-                        )}
-                    </motion.div>
-
-                    <motion.div
-                        initial={{ opacity: 0, y: 50 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
-                        className="relative hidden lg:block"
-                    >
-                        {/* Floating Glass Cards Visualization */}
-                        <div className="relative w-full h-[600px]">
-                            {/* Main Dashboard Card */}
-                            <div className="glass-card absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] max-w-2xl rounded-2xl p-6 border border-white/10 bg-black/40 backdrop-blur-xl shadow-2xl z-20" style={{ left: '-100px', top: '111px' }}>
-                                <div className="flex items-center justify-between mb-6">
-                                    <div className="flex items-center gap-3">
-                                        <div className="h-10 w-10 rounded-lg bg-indigo-600 flex items-center justify-center">
-                                            <BarChart3 className="text-white w-6 h-6" />
-                                        </div>
-                                        <div>
-                                            <h3 className="text-white font-semibold">Project Health</h3>
-                                            <p className="text-xs text-gray-400">Real-time Analysis</p>
-                                        </div>
-                                    </div>
-                                    <div className="px-3 py-1 rounded-full bg-green-500/20 text-green-400 text-xs font-medium">
-                                        On Track
-                                    </div>
-                                </div>
-
-                                <div className="space-y-4">
-                                    <div className="space-y-2">
-                                        <div className="flex justify-between text-sm">
-                                            <span className="text-gray-400">Scope Adherence</span>
-                                            <span className="text-white font-medium">94%</span>
-                                        </div>
-                                        <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-                                            <div className="h-full w-[94%] bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full" />
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-3 gap-4 pt-4">
-                                        <div className="p-3 rounded-xl bg-white/5 border border-white/5">
-                                            <p className="text-xs text-gray-400 mb-1">Velocity</p>
-                                            <p className="text-xl font-bold text-white">124 SP</p>
-                                        </div>
-                                        <div className="p-3 rounded-xl bg-white/5 border border-white/5">
-                                            <p className="text-xs text-gray-400 mb-1">Risks</p>
-                                            <p className="text-xl font-bold text-yellow-400">2 Low</p>
-                                        </div>
-                                        <div className="p-3 rounded-xl bg-white/5 border border-white/5">
-                                            <p className="text-xs text-gray-400 mb-1">Budget</p>
-                                            <p className="text-xl font-bold text-white">$12.4k</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Floating Alert Card */}
-                            <motion.div
-                                animate={{ y: [0, -10, 0] }}
-                                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                                className="glass-card absolute top-0 right-0 w-64 p-4 rounded-xl border border-red-500/30 bg-red-500/10 backdrop-blur-xl z-30"
-                            >
-                                <div className="flex items-start gap-3">
-                                    <div className="p-2 rounded-lg bg-red-500/20 text-red-400">
-                                        <AlertTriangle className="w-5 h-5" />
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-semibold text-white">Scope Risk Detected</p>
-                                        <p className="text-xs text-gray-300 mt-1">New feature request exceeds sprint capacity by 15%.</p>
-                                    </div>
-                                </div>
-                            </motion.div>
-
-                            {/* Floating Success Card */}
-                            <motion.div
-                                animate={{ y: [0, 10, 0] }}
-                                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-                                className="glass-card absolute bottom-10 left-0 w-64 p-4 rounded-xl border border-green-500/30 bg-green-500/10 backdrop-blur-xl z-30"
-                            >
-                                <div className="flex items-start gap-3">
-                                    <div className="p-2 rounded-lg bg-green-500/20 text-green-400">
-                                        <CheckCircle2 className="w-5 h-5" />
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-semibold text-white">Milestone Approved</p>
-                                        <p className="text-xs text-gray-300 mt-1">Invoice #2024 generated automatically.</p>
-                                    </div>
-                                </div>
-                            </motion.div>
-
-                            {/* Decorative Blur Elements */}
-                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-gradient-to-r from-indigo-500/20 to-purple-500/20 rounded-full blur-[80px] -z-10" />
-                        </div>
-                    </motion.div>
-                </div>
+                {/* Mockup */}
+                <motion.div
+                    initial={{ opacity: 0, y: 40 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.9, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                    className="w-full"
+                >
+                    <InteractiveMockup />
+                </motion.div>
             </div>
         </section>
     );

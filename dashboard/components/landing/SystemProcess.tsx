@@ -14,7 +14,7 @@ export function SystemProcess() {
 
     return (
         <div ref={containerRef} className="overflow-hidden py-24 lg:py-32 relative bg-gradient-to-b from-black/20 via-black/15 to-black/10">
-            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-purple-500/3 to-transparent opacity-20"></div>
+            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 via-orange-500/3 to-transparent opacity-20"></div>
 
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                 <div className="grid lg:grid-cols-2 gap-16 lg:gap-24 items-center">
@@ -74,11 +74,11 @@ export function SystemProcess() {
                     </div>
 
                     <div className="flex flex-col justify-center">
-                        <div className="inline-flex items-center rounded-full border border-indigo-500/30 bg-indigo-500/10 px-3 py-1 text-sm font-medium text-indigo-300 mb-6 w-fit">
+                        <div className="inline-flex items-center rounded-full border border-orange-500/30 bg-orange-500/10 px-3 py-1 text-sm font-medium text-orange-300 mb-6 w-fit">
                             Our Process
                         </div>
 
-                        <h2 className="text-4xl md:text-5xl font-bold text-white tracking-tight leading-[1.1] mb-6">
+                        <h2 className="text-4xl md:text-5xl font-bold text-foreground tracking-tight leading-[1.1] mb-6">
                             From Idea to Impact
                             <br />
                             <span className="gradient-text">Without the Chaos</span>
@@ -89,7 +89,7 @@ export function SystemProcess() {
                         </p>
 
                         <div className="relative space-y-8">
-                            <div className="bg-gradient-to-b from-indigo-500 via-purple-500/20 to-transparent w-[1px] absolute top-4 bottom-4 left-[19px]"></div>
+                            <div className="bg-gradient-to-b from-orange-500 via-orange-500/20 to-transparent w-[1px] absolute top-4 bottom-4 left-[19px]"></div>
 
                             <ProcessStep
                                 icon="solar:clipboard-list-bold-duotone"
@@ -132,7 +132,7 @@ export function SystemProcess() {
                             />
                         </div>
 
-                        <div className="mt-12 pt-8 border-t border-white/5">
+                        <div className="mt-12 pt-8 border-t border-foreground/5">
                             <p className="text-xs uppercase tracking-widest text-gray-500 mb-6">Integrations</p>
                             <div className="flex flex-wrap gap-8 items-center opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
                                 <iconify-icon icon="logos:github-icon" width="28" className="hover:opacity-100 transition-opacity"></iconify-icon>
@@ -189,7 +189,7 @@ function AnimatedLayer({ color, label, zIndex, translateY, scrollProgress, scrol
     );
 
     const colorMap: any = {
-        purple: { border: 'border-purple-500/20', bg: 'from-purple-500/15 to-purple-500/5', text: 'text-purple-300', dot: 'bg-purple-500', line: 'bg-purple-500/30', hoverBorder: 'group-hover:border-purple-500/30' },
+        purple: { border: 'border-orange-500/20', bg: 'from-orange-500/15 to-orange-500/5', text: 'text-orange-300', dot: 'bg-orange-500', line: 'bg-orange-500/30', hoverBorder: 'group-hover:border-orange-500/30' },
         blue: { border: 'border-blue-500/20', bg: 'from-blue-500/15 to-blue-500/5', text: 'text-blue-300', dot: 'bg-blue-500', line: 'bg-blue-500/30', hoverBorder: 'group-hover:border-blue-500/30' },
         amber: { border: 'border-amber-500/20', bg: 'from-amber-500/15 to-amber-500/5', text: 'text-amber-300', dot: 'bg-amber-500', line: 'bg-amber-500/30', hoverBorder: 'group-hover:border-amber-500/30' },
         emerald: { border: 'border-emerald-500/20', bg: 'from-emerald-500/15 to-emerald-500/5', text: 'text-emerald-300', dot: 'bg-emerald-500', line: 'bg-emerald-500/30', hoverBorder: 'group-hover:border-emerald-500/30' },
@@ -216,7 +216,7 @@ function AnimatedLayer({ color, label, zIndex, translateY, scrollProgress, scrol
                 className={`absolute top-1/2 ${side === 'left' ? '-left-16 sm:-left-28' : '-right-16 sm:-right-28'} translate-y-0 flex ${side === 'left' ? 'flex-row' : 'flex-row-reverse'} items-center gap-3`}
                 style={{ opacity: tagOpacity, x: tagX }}
             >
-                <div className={`px-3 py-1.5 rounded-full border ${c.border} bg-white/10 backdrop-blur-sm flex items-center gap-2 shadow-xl`}>
+                <div className={`px-3 py-1.5 rounded-full border ${c.border} bg-foreground/10 backdrop-blur-sm flex items-center gap-2 shadow-xl`}>
                     {side === 'left' && <span className={`text-sm font-medium ${c.text} uppercase tracking-wider`}>{label}</span>}
                     <div className={`w-2 h-2 ${c.dot} rounded-full`}></div>
                     {side === 'right' && <span className={`text-sm font-medium ${c.text} uppercase tracking-wider`}>{label}</span>}
@@ -254,20 +254,20 @@ function ProcessStep({ icon, title, description, color, scrollProgress, scrollSt
 
     const colorClasses: any = {
         indigo: {
-            border: 'border-indigo-500/30',
-            text: 'text-indigo-400',
-            hoverBorder: 'group-hover:border-indigo-500',
-            hoverText: 'group-hover:text-indigo-300',
-            hoverShadow: 'group-hover:shadow-indigo-500/30',
-            titleHover: 'group-hover:text-indigo-300'
+            border: 'border-orange-500/30',
+            text: 'text-orange-400',
+            hoverBorder: 'group-hover:border-orange-500',
+            hoverText: 'group-hover:text-orange-300',
+            hoverShadow: 'group-hover:shadow-orange-500/30',
+            titleHover: 'group-hover:text-orange-300'
         },
         purple: {
-            border: 'border-purple-500/30',
-            text: 'text-purple-400',
-            hoverBorder: 'group-hover:border-purple-500',
-            hoverText: 'group-hover:text-purple-300',
-            hoverShadow: 'group-hover:shadow-purple-500/30',
-            titleHover: 'group-hover:text-purple-300'
+            border: 'border-orange-500/30',
+            text: 'text-orange-400',
+            hoverBorder: 'group-hover:border-orange-500',
+            hoverText: 'group-hover:text-orange-300',
+            hoverShadow: 'group-hover:shadow-orange-500/30',
+            titleHover: 'group-hover:text-orange-300'
         },
         green: {
             border: 'border-green-500/30',
@@ -288,12 +288,12 @@ function ProcessStep({ icon, title, description, color, scrollProgress, scrollSt
             style={{ opacity, y }}
         >
             <div className="relative z-10 shrink-0">
-                <div className={`w-10 h-10 rounded-full bg-black/50 border ${c.border} flex items-center justify-center ${c.text} ${c.hoverBorder} ${c.hoverText} ${c.hoverShadow} transition-all duration-300`}>
+                <div className={`w-10 h-10 rounded-full bg-background/50 border ${c.border} flex items-center justify-center ${c.text} ${c.hoverBorder} ${c.hoverText} ${c.hoverShadow} transition-all duration-300`}>
                     <iconify-icon icon={icon} width="20"></iconify-icon>
                 </div>
             </div>
             <div className="pt-1">
-                <h3 className={`text-lg text-white font-semibold mb-1.5 ${c.titleHover} transition-colors`}>{title}</h3>
+                <h3 className={`text-lg text-foreground font-semibold mb-1.5 ${c.titleHover} transition-colors`}>{title}</h3>
                 <p className="text-gray-400 leading-relaxed text-sm">
                     {description}
                 </p>

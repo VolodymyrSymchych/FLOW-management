@@ -2,7 +2,7 @@
 const path = require('path');
 const nextConfig = {
   reactStrictMode: true,
-  outputFileTracingRoot: path.join(__dirname, '../../'),
+  outputFileTracingRoot: path.join(__dirname, '../'),
 
   // Performance optimizations
   compress: true, // Enable gzip compression

@@ -3,19 +3,20 @@
   "version": "1.0.0",
   "private": true,
   "workspaces": [
-    "shared",
+    "apps/*",
+    "packages/*",
     "services/*"
   ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "cd dashboard && npm start",
+    "start": "cd apps/dashboard && npm start",
     "lint": "eslint services/*/src --ext .ts",
     "lint:fix": "eslint services/*/src --ext .ts --fix",
-    "lint:shared": "eslint shared --ext .ts",
+    "lint:shared": "eslint packages/shared --ext .ts",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "build": "cd dashboard && npm install && npm run build",
-    "build:shared": "npm run build --workspace=shared",
+    "build": "cd apps/dashboard && npm install && npm run build",
+    "build:shared": "npm run build --workspace=@project-scope-analyzer/shared",
     "build:auth-service": "npm run build --workspace=@project-scope-analyzer/auth-service",
     "build:team-service": "npm run build --workspace=@project-scope-analyzer/team-service",
     "build:task-service": "npm run build --workspace=@project-scope-analyzer/task-service"

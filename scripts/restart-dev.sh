@@ -20,7 +20,7 @@ echo "Starting services..."
 
 # Start Dashboard (Port 3001)
 if [ -d "dashboard" ]; then
-  cd dashboard && npm run dev > ../dashboard.log 2>&1 &
+  cd apps/dashboard && npm run dev > ../../dashboard.log 2>&1 &
   echo "Dashboard starting..."
   cd "$ROOT_DIR"
 fi

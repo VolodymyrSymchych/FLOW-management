@@ -12,8 +12,8 @@ eggs/
 .eggs/
 lib/
 lib64/
-!dashboard/lib/
-!mobile/lib/
+!apps/dashboard/lib/
+!apps/mobile/lib/
 parts/
 sdist/
 var/
@@ -45,7 +45,7 @@ node_modules/
 
 # Reports
 reports/
-!dashboard/app/reports/
+!apps/dashboard/app/reports/
 
 # Test artifacts
 **/playwright-report/
@@ -71,16 +71,12 @@ Thumbs.db
 *.log
 
 # Next.js (Dashboard)
-dashboard/.next/
-dashboard/out/
-dashboard/node_modules/
-dashboard/.env.local
-dashboard/.env.development.local
-dashboard/.env.test.local
-dashboard/.env.production.local
-dashboard/npm-debug.log*
-dashboard/yarn-debug.log*
-dashboard/yarn-error.log*
+**/.next/
+**/out/
+**/npm-debug.log*
+**/yarn-debug.log*
+**/yarn-error.log*
+**/tsconfig.tsbuildinfo
 
 # API Keys (секретні)
 API_KEYS.env

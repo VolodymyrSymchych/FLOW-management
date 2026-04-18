@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "npm run build:shared && tsc",
-    "build:shared": "npm --prefix ../../shared run build",
+    "build:shared": "npm --prefix ../../packages/shared run build",
     "vercel-build": "npm run build",
     "start": "node dist/src/index.js",
     "test": "jest",
@@ -21,7 +21,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@project-scope-analyzer/shared": "file:../../shared",
+    "@project-scope-analyzer/shared": "file:../../packages/shared",
     "@vercel/node": "^3.0.0",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",

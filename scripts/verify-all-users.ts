@@ -10,7 +10,7 @@ import { config } from 'dotenv';
 // Try multiple env file locations
 dotenv.config({ path: '.env.local' });
 dotenv.config({ path: '.env' });
-dotenv.config({ path: 'dashboard/.env.local' });
+dotenv.config({ path: 'apps/dashboard/.env.local' });
 dotenv.config({ path: 'services/auth-service/.env' });
 
 const DATABASE_URL = process.env.DATABASE_URL || process.env.POSTGRES_URL;

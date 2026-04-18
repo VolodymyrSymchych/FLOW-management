@@ -14,7 +14,7 @@ export default async function LandingPage() {
     return (
         <div className="min-h-screen bg-background text-foreground selection:bg-indigo-500/30">
             <Navbar user={session} />
-            <main>
+            <main id="main-content" tabIndex={-1}>
                 <Hero user={session} />
                 <ProblemSection />
                 <SolutionSection />

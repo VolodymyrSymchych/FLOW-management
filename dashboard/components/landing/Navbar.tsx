@@ -18,6 +18,7 @@ export function Navbar({ user }: { user?: any }) {
 
     return (
         <nav
+            aria-label="Primary"
             className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
                 scrolled
                     ? 'border-b border-border bg-background/80 backdrop-blur-xl'
@@ -35,11 +36,11 @@ export function Navbar({ user }: { user?: any }) {
                     </div>
 
                     {/* Desktop Nav */}
-                    <div className="hidden md:flex items-center gap-8">
-                        <a href="#features" className="text-sm text-foreground/50 hover:text-foreground transition-colors">Features</a>
-                        <a href="#pricing" className="text-sm text-foreground/50 hover:text-foreground transition-colors">Pricing</a>
-                        <a href="#about" className="text-sm text-foreground/50 hover:text-foreground transition-colors">About</a>
-                    </div>
+                    <ul className="hidden md:flex items-center gap-8 list-none p-0 m-0">
+                        <li><a href="#features" className="text-sm text-foreground/80 hover:text-foreground transition-colors inline-flex items-center min-h-[44px] px-1">Features</a></li>
+                        <li><a href="#pricing" className="text-sm text-foreground/80 hover:text-foreground transition-colors inline-flex items-center min-h-[44px] px-1">Pricing</a></li>
+                        <li><a href="#about" className="text-sm text-foreground/80 hover:text-foreground transition-colors inline-flex items-center min-h-[44px] px-1">About</a></li>
+                    </ul>
 
                     {/* CTA */}
                     <div className="hidden md:flex items-center gap-3">
@@ -54,7 +55,7 @@ export function Navbar({ user }: { user?: any }) {
                             </Link>
                         ) : (
                             <>
-                                <Link href="/sign-in" className="text-sm text-foreground/50 hover:text-foreground transition-colors">
+                                <Link href="/sign-in" className="text-sm text-foreground/80 hover:text-foreground transition-colors inline-flex items-center min-h-[44px] px-1">
                                     Log in
                                 </Link>
                                 <Link
@@ -71,9 +72,12 @@ export function Navbar({ user }: { user?: any }) {
                     {/* Mobile hamburger */}
                     <button
                         onClick={() => setIsOpen(!isOpen)}
-                        className="md:hidden p-2 text-foreground/60 hover:text-foreground transition-colors"
+                        aria-label={isOpen ? "Close menu" : "Open menu"}
+                        aria-expanded={isOpen}
+                        aria-controls="mobile-nav-menu"
+                        className="md:hidden p-3 min-w-[44px] min-h-[44px] text-foreground/70 hover:text-foreground transition-colors"
                     >
-                        {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                        {isOpen ? <X className="h-5 w-5" aria-hidden="true" /> : <Menu className="h-5 w-5" aria-hidden="true" />}
                     </button>
                     <div className="md:hidden pl-2">
                         <ThemeToggle />
@@ -85,21 +89,22 @@ export function Navbar({ user }: { user?: any }) {
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
+                        id="mobile-nav-menu"
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
                         className="md:hidden border-t border-border bg-background/90 backdrop-blur-xl overflow-hidden"
                     >
                         <div className="px-6 py-6 flex flex-col gap-4">
-                            <a href="#features" className="text-sm text-foreground/60 hover:text-foreground transition-colors" onClick={() => setIsOpen(false)}>Features</a>
-                            <a href="#pricing" className="text-sm text-foreground/60 hover:text-foreground transition-colors" onClick={() => setIsOpen(false)}>Pricing</a>
-                            <a href="#about" className="text-sm text-foreground/60 hover:text-foreground transition-colors" onClick={() => setIsOpen(false)}>About</a>
+                            <a href="#features" className="text-sm text-foreground/80 hover:text-foreground transition-colors min-h-[44px] inline-flex items-center" onClick={() => setIsOpen(false)}>Features</a>
+                            <a href="#pricing" className="text-sm text-foreground/80 hover:text-foreground transition-colors min-h-[44px] inline-flex items-center" onClick={() => setIsOpen(false)}>Pricing</a>
+                            <a href="#about" className="text-sm text-foreground/80 hover:text-foreground transition-colors min-h-[44px] inline-flex items-center" onClick={() => setIsOpen(false)}>About</a>
                             <div className="pt-4 border-t border-border flex flex-col gap-3">
                                 {user ? (
                                     <Link href="/dashboard" className="w-full text-center px-4 py-2.5 rounded-lg bg-foreground text-background text-sm font-semibold">Open Dashboard</Link>
                                 ) : (
                                     <>
-                                        <Link href="/sign-in" className="text-sm text-center text-foreground/60 hover:text-foreground transition-colors">Log in</Link>
+                                        <Link href="/sign-in" className="text-sm text-center text-foreground/80 hover:text-foreground transition-colors min-h-[44px] inline-flex items-center justify-center">Log in</Link>
                                         <Link href="/sign-up" className="w-full text-center px-4 py-2.5 rounded-lg bg-foreground text-background text-sm font-semibold">Get started</Link>
                                     </>
                                 )}

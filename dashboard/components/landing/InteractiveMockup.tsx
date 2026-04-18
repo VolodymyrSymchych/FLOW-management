@@ -85,7 +85,11 @@ export function InteractiveMockup() {
     const [activeTab, setActiveTab] = useState<Tab>('dashboard');
 
     return (
-        <div className="relative w-full max-w-6xl mx-auto rounded-2xl bg-background border border-border/80 shadow-[0_32px_80px_rgba(0,0,0,0.15)] dark:shadow-[0_32px_80px_rgba(0,0,0,0.4)] overflow-hidden">
+        <div
+            role="img"
+            aria-label="Flow dashboard preview: sidebar with Dashboard, My Tasks, Inbox, Calendar, and AI Scope Guard; main panel shows revenue, scope-saved, and on-time KPIs."
+            aria-hidden="true"
+            className="relative w-full max-w-6xl mx-auto rounded-2xl bg-background border border-border/80 shadow-[0_32px_80px_rgba(0,0,0,0.15)] dark:shadow-[0_32px_80px_rgba(0,0,0,0.4)] overflow-hidden">
             {/* Browser chrome */}
             <div className="h-10 border-b border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-[#1A1A1A] flex items-center px-4 gap-3 select-none">
                 <div className="flex gap-1.5">
@@ -102,7 +106,7 @@ export function InteractiveMockup() {
 
             <div className="flex" style={{ height: '600px' }}>
                 {/* Sidebar */}
-                <aside className="w-52 border-r border-gray-100 dark:border-white/5 bg-gray-50/60 dark:bg-[#151515] flex flex-col overflow-hidden">
+                <div className="w-52 border-r border-gray-100 dark:border-white/5 bg-gray-50/60 dark:bg-[#151515] flex flex-col overflow-hidden">
                     {/* Logo */}
                     <div className="px-4 py-3.5 flex items-center gap-2.5 border-b border-gray-100 dark:border-white/5">
                         <div className="w-6 h-6 rounded-md bg-orange-600 flex items-center justify-center text-white font-black text-xs">F</div>
@@ -113,7 +117,7 @@ export function InteractiveMockup() {
                         <ChevronDown className="w-3 h-3 text-gray-400 dark:text-white/50 ml-auto" />
                     </div>
 
-                    <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-4">
+                    <div className="flex-1 overflow-y-auto py-3 px-2 space-y-4">
                         {navSections.map((section) => (
                             <div key={section.label}>
                                 <div className="px-2 mb-1 text-[9px] font-bold text-gray-400 dark:text-white/50 uppercase tracking-widest">{section.label}</div>
@@ -144,7 +148,7 @@ export function InteractiveMockup() {
                                 })}
                             </div>
                         ))}
-                    </nav>
+                    </div>
 
                     {/* User */}
                     <div className="p-3 border-t border-gray-100 dark:border-white/5">
@@ -156,10 +160,10 @@ export function InteractiveMockup() {
                             </div>
                         </div>
                     </div>
-                </aside>
+                </div>
 
                 {/* Main content */}
-                <main className="flex-1 overflow-hidden relative bg-white dark:bg-[#1C1C1C]">
+                <div className="flex-1 overflow-hidden relative bg-white dark:bg-[#1C1C1C]">
                     <AnimatePresence mode="wait">
                         {/* ─── SCOPE GUARD ─── */}
                         {activeTab === 'scope-guard' && (
@@ -459,7 +463,7 @@ export function InteractiveMockup() {
 
         
                     </AnimatePresence>
-                </main>
+                </div>
             </div>
         </div>
     );

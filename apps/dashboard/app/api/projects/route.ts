@@ -22,19 +22,20 @@ export async function GET(request: NextRequest) {
       ? await storage.getProjectsByTeam(teamId)
       : await storage.getUserProjects(session.userId);
 
-    const projectsWithTeamIds = await Promise.all(
+    const projectsWithTeams = await Promise.all(
       projects.map(async (project) => {
         const projectTeams = await storage.getProjectTeams(project.id);
         return {
           ...project,
           team_id: projectTeams[0]?.id,
+          teams: projectTeams,
         };
       })
     );
 
     return NextResponse.json({
-      projects: projectsWithTeamIds,
-      total: projectsWithTeamIds.length,
+      projects: projectsWithTeams,
+      total: projectsWithTeams.length,
     });
   } catch (error: any) {
     console.error('Get projects error:', error);

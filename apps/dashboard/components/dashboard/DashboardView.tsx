@@ -98,7 +98,7 @@ export default function DashboardView({ onOpenTasks, onCreateTask }: DashboardVi
 
   const projectStats = useMemo(() => {
     return projects.slice(0, 4).map((project: any, index: number) => {
-      const projectTasks = tasks.filter((t: any) => t.project_id === project.id);
+      const projectTasks = tasks.filter((t: any) => (t.projectId ?? t.project_id) === project.id);
       const doneCount = projectTasks.filter((t: any) => t.status === 'done').length;
       const progress = projectTasks.length > 0 ? Math.round((doneCount / projectTasks.length) * 100) : 0;
       return { ...project, taskCount: projectTasks.length, doneCount, progress, color: PROJECT_COLORS[index % PROJECT_COLORS.length] };

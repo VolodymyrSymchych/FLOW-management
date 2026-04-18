@@ -148,7 +148,7 @@ export default function TasksPage() {
     let result = tasks;
 
     if (selectedProjectId) {
-      result = result.filter((task: any) => task.project_id === selectedProjectId);
+      result = result.filter((task: any) => (task.projectId ?? task.project_id) === selectedProjectId);
     }
 
     return result.filter((task: any) => {
@@ -267,8 +267,9 @@ export default function TasksPage() {
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                   {section.items.map((task: any) => {
-                    const projectIndex = projects.findIndex((project: any) => project.id === task.project_id);
-                    const project = projects.find((item: any) => item.id === task.project_id);
+                    const taskProjectId = task.projectId ?? task.project_id;
+                    const projectIndex = projects.findIndex((project: any) => project.id === taskProjectId);
+                    const project = projects.find((item: any) => item.id === taskProjectId);
                     return (
                       <div key={task.id} className="mt-row" onClick={() => setEditingTask(task)}>
                         <button

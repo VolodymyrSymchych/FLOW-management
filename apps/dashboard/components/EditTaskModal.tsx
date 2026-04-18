@@ -349,7 +349,7 @@ export function EditTaskModal({ task, isOpen, onClose, onSave }: EditTaskModalPr
     setFormData({
       title: task.title || '',
       description: task.description || '',
-      project_id: task.project_id || '',
+      project_id: (task as any).projectId ?? task.project_id ?? '',
       assignee: task.assignee || '',
       start_date: formatDateForInput(task.start_date),
       due_date: formatDateForInput(task.due_date),

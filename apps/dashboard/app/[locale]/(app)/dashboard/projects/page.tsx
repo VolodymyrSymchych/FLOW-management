@@ -56,7 +56,7 @@ export default function ProjectsPage() {
   const openTasks = tasks.filter((t: { status: string }) => t.status !== 'done').length;
   const overdue = tasks.filter((t: { status: string; due_date?: string }) => t.status !== 'done' && t.due_date && new Date(t.due_date) < new Date()).length;
   const averageProgress = filteredProjects.length
-    ? Math.round(filteredProjects.reduce((sum, project) => sum + progress(project, tasks.filter((t: { project_id: number }) => t.project_id === project.id).length), 0) / filteredProjects.length)
+    ? Math.round(filteredProjects.reduce((sum, project) => sum + progress(project, tasks.filter((t: any) => (t.projectId ?? t.project_id) === project.id).length), 0) / filteredProjects.length)
     : 0;
 
   const filterPills = ['All teams', ...teams.slice(0, 3).map((team) => team.name)];
@@ -127,8 +127,8 @@ export default function ProjectsPage() {
 
             <div id="projGrid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12 }}>
               {filteredProjects.map((project, index) => {
-                const projectTasks = tasks.filter((t: { project_id: number; status: string }) => t.project_id === project.id && t.status !== 'done');
-                const projectOverdue = tasks.filter((t: { project_id: number; status: string; due_date?: string }) => t.project_id === project.id && t.status !== 'done' && t.due_date && new Date(t.due_date) < new Date()).length;
+                const projectTasks = tasks.filter((t: any) => (t.projectId ?? t.project_id) === project.id && t.status !== 'done');
+                const projectOverdue = tasks.filter((t: any) => (t.projectId ?? t.project_id) === project.id && t.status !== 'done' && (t.dueDate || t.due_date) && new Date(t.dueDate || t.due_date) < new Date()).length;
                 const pct = progress(project, projectTasks.length);
                 const cardColor = colorAt(index);
                 return (
@@ -145,7 +145,7 @@ export default function ProjectsPage() {
                       {pct >= 90 && !project.risk_level ? <span className="bg bg-ok">{pct}%</span> : null}
                     </div>
                     <div className="proj-card-meta">
-                      <span className="proj-card-team">{project.type || 'Project'}</span>
+                      <span className="proj-card-team">{(project as any).teams?.[0]?.name || project.type || 'Project'}</span>
                       <span className="proj-card-sprint">{project.timeline || 'Active phase'}</span>
                     </div>
                     <div className="proj-card-stats">

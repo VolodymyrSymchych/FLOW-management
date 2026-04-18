@@ -85,6 +85,7 @@ export async function GET(
       start_date: toISOString(project.startDate),
       end_date: toISOString(project.endDate),
       team_id: teamId,
+      teams: projectTeams,
     };
 
   return NextResponse.json({

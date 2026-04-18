@@ -25,6 +25,7 @@ const envSchema = z.object({
   NEXT_PUBLIC_BASE_URL: z.string().url('NEXT_PUBLIC_BASE_URL must be a valid URL'),
 
   // Microservices URLs (optional for local dev, required for production)
+  AUTH_SERVICE_URL: z.string().url().optional(),
   NEXT_PUBLIC_AUTH_SERVICE_URL: z.string().url().optional(),
   NEXT_PUBLIC_USER_SERVICE_URL: z.string().url().optional(),
   NEXT_PUBLIC_PROJECT_SERVICE_URL: z.string().url().optional(),

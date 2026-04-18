@@ -40,7 +40,7 @@ export function ProblemSection() {
                         <span className="text-rose-400">$50,000</span> in revenue lost.<br />
                         Before you even noticed.
                     </h2>
-                    <p className="mt-6 text-foreground/40 text-lg max-w-xl mx-auto">
+                    <p className="mt-6 text-foreground/70 text-lg max-w-xl mx-auto">
                         Traditional project tools track tasks. Flow protects your bottom line.
                     </p>
                 </motion.div>
@@ -65,10 +65,10 @@ export function ProblemSection() {
                             whileInView={{ opacity: 1 }}
                             viewport={{ once: true }}
                             transition={{ delay: i * 0.08 }}
-                            className="bg-white/50 dark:bg-white/[0.02] border border-gray-200/50 dark:border-white/[0.05] rounded-2xl px-6 py-8 text-center backdrop-blur-md shadow-sm"
+                            className="bg-foreground/[0.02] border border-border rounded-2xl px-6 py-8 text-center backdrop-blur-md shadow-sm"
                         >
                             <div className="text-4xl md:text-5xl font-black text-rose-500 mb-2">{s.stat}</div>
-                            <div className="text-sm text-foreground/50">{s.label}</div>
+                            <div className="text-sm text-foreground/70">{s.label}</div>
                         </motion.div>
                     ))}
                 </motion.div>
@@ -80,16 +80,16 @@ export function ProblemSection() {
                         whileInView={{ opacity: 1, x: 0 }}
                         viewport={{ once: true }}
                         transition={{ duration: 0.5 }}
-                        className="rounded-2xl border border-foreground/[0.06] bg-white/[0.02] p-8"
+                        className="rounded-2xl border border-border bg-foreground/[0.02] p-8"
                     >
                         <div className="flex items-center gap-2 mb-6">
                             <div className="w-2.5 h-2.5 rounded-full bg-rose-500" />
-                            <span className="text-sm font-bold text-foreground/60 uppercase tracking-widest">Without Flow</span>
+                            <span className="text-sm font-bold text-foreground/70 uppercase tracking-widest">Without Flow</span>
                         </div>
                         <ul className="space-y-4">
                             {before.map((b) => (
-                                <li key={b} className="flex items-start gap-3 text-sm text-foreground/40">
-                                    <span className="mt-0.5 text-rose-500/60">✗</span>
+                                <li key={b} className="flex items-start gap-3 text-sm text-foreground/70">
+                                    <span className="mt-0.5 text-rose-500/80">✗</span>
                                     {b}
                                 </li>
                             ))}
@@ -109,7 +109,7 @@ export function ProblemSection() {
                         </div>
                         <ul className="space-y-4">
                             {after.map((a) => (
-                                <li key={a} className="flex items-start gap-3 text-sm text-foreground/70">
+                                <li key={a} className="flex items-start gap-3 text-sm text-foreground/90">
                                     <span className="mt-0.5 text-orange-400">✓</span>
                                     {a}
                                 </li>

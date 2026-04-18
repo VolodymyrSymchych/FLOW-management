@@ -3,6 +3,11 @@ const path = require('path');
 const nextConfig = {
   reactStrictMode: true,
   outputFileTracingRoot: path.join(__dirname, '../'),
+  allowedDevOrigins: [
+    'http://localhost:3001',
+    'http://127.0.0.1:3001',
+    'http://192.168.1.105:3001',
+  ],
 
   // Performance optimizations
   compress: true, // Enable gzip compression
@@ -13,6 +18,11 @@ const nextConfig = {
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     imageSizes: [16, 32, 48, 64, 96, 128, 256],
     minimumCacheTTL: 60 * 60 * 24 * 365, // Cache images for 1 year
+    localPatterns: [
+      {
+        pathname: '/flow-logo.png',
+      },
+    ],
   },
 
   // Headers for caching
@@ -91,4 +101,3 @@ const createNextIntlPlugin = require('next-intl/plugin');
 const withNextIntl = createNextIntlPlugin('./i18n.ts');
 
 module.exports = withNextIntl(nextConfig);
-

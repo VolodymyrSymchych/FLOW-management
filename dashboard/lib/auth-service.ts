@@ -3,7 +3,10 @@
  * Proxies requests to the auth-service microservice
  */
 
-const AUTH_SERVICE_URL = process.env.NEXT_PUBLIC_AUTH_SERVICE_URL || 'http://localhost:3002';
+const AUTH_SERVICE_URL =
+  process.env.AUTH_SERVICE_URL ||
+  process.env.NEXT_PUBLIC_AUTH_SERVICE_URL ||
+  'http://localhost:3002';
 
 // Log configuration in server-side context (development only)
 if (typeof window === 'undefined' && process.env.NODE_ENV === 'development') {
@@ -19,6 +22,7 @@ export interface AuthServiceResponse<T = any> {
   token?: string;
   error?: string;
   message?: string;
+  status?: number;
 }
 
 export async function proxyToAuthService(
@@ -63,13 +67,7 @@ export const authService = {
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        let errorData;
-        try {
-          errorData = JSON.parse(errorText);
-        } catch {
-          errorData = { error: errorText || `HTTP ${response.status}` };
-        }
+        const errorData = await parseErrorResponse(response);
 
         console.error('Auth service signup error:', {
           status: response.status,
@@ -80,6 +78,7 @@ export const authService = {
         return {
           success: false,
           error: extractErrorMessage(errorData, response.status),
+          status: response.status,
         };
       }
 
@@ -89,6 +88,7 @@ export const authService = {
       return {
         success: false,
         error: error.message || 'Failed to connect to auth service',
+        status: 502,
       };
     }
   },
@@ -105,13 +105,7 @@ export const authService = {
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        let errorData;
-        try {
-          errorData = JSON.parse(errorText);
-        } catch {
-          errorData = { error: errorText || `HTTP ${response.status}` };
-        }
+        const errorData = await parseErrorResponse(response);
 
         console.error('Auth service login error:', {
           status: response.status,
@@ -123,6 +117,7 @@ export const authService = {
         return {
           success: false,
           error: extractErrorMessage(errorData, response.status),
+          status: response.status,
         };
       }
 
@@ -136,6 +131,7 @@ export const authService = {
       return {
         success: false,
         error: error.message || 'Failed to connect to auth service',
+        status: 502,
       };
     }
   },
@@ -160,17 +156,12 @@ export const authService = {
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        let errorData;
-        try {
-          errorData = JSON.parse(errorText);
-        } catch {
-          errorData = { error: errorText || `HTTP ${response.status}` };
-        }
+        const errorData = await parseErrorResponse(response);
 
         return {
           success: false,
           error: extractErrorMessage(errorData, response.status),
+          status: response.status,
         };
       }
 
@@ -180,6 +171,7 @@ export const authService = {
       return {
         success: false,
         error: error.message || 'Failed to connect to auth service',
+        status: 502,
       };
     }
   },
@@ -204,17 +196,12 @@ export const authService = {
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        let errorData;
-        try {
-          errorData = JSON.parse(errorText);
-        } catch {
-          errorData = { error: errorText || `HTTP ${response.status}` };
-        }
+        const errorData = await parseErrorResponse(response);
 
         return {
           success: false,
           error: extractErrorMessage(errorData, response.status),
+          status: response.status,
         };
       }
 
@@ -224,6 +211,7 @@ export const authService = {
       return {
         success: false,
         error: error.message || 'Failed to connect to auth service',
+        status: 502,
       };
     }
   },
@@ -236,17 +224,12 @@ export const authService = {
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        let errorData;
-        try {
-          errorData = JSON.parse(errorText);
-        } catch {
-          errorData = { error: errorText || `HTTP ${response.status}` };
-        }
+        const errorData = await parseErrorResponse(response);
 
         return {
           success: false,
           error: extractErrorMessage(errorData, response.status),
+          status: response.status,
         };
       }
 
@@ -256,6 +239,7 @@ export const authService = {
       return {
         success: false,
         error: error.message || 'Failed to connect to auth service',
+        status: 502,
       };
     }
   },
@@ -268,17 +252,12 @@ export const authService = {
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        let errorData;
-        try {
-          errorData = JSON.parse(errorText);
-        } catch {
-          errorData = { error: errorText || `HTTP ${response.status}` };
-        }
+        const errorData = await parseErrorResponse(response);
 
         return {
           success: false,
           error: extractErrorMessage(errorData, response.status),
+          status: response.status,
         };
       }
 
@@ -288,6 +267,7 @@ export const authService = {
       return {
         success: false,
         error: error.message || 'Failed to connect to auth service',
+        status: 502,
       };
     }
   },
@@ -300,17 +280,12 @@ export const authService = {
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        let errorData;
-        try {
-          errorData = JSON.parse(errorText);
-        } catch {
-          errorData = { error: errorText || `HTTP ${response.status}` };
-        }
+        const errorData = await parseErrorResponse(response);
 
         return {
           success: false,
           error: extractErrorMessage(errorData, response.status),
+          status: response.status,
         };
       }
 
@@ -320,6 +295,7 @@ export const authService = {
       return {
         success: false,
         error: error.message || 'Failed to connect to auth service',
+        status: 502,
       };
     }
   },
@@ -332,17 +308,12 @@ export const authService = {
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        let errorData;
-        try {
-          errorData = JSON.parse(errorText);
-        } catch {
-          errorData = { error: errorText || `HTTP ${response.status}` };
-        }
+        const errorData = await parseErrorResponse(response);
 
         return {
           success: false,
           error: extractErrorMessage(errorData, response.status),
+          status: response.status,
         };
       }
 
@@ -352,10 +323,21 @@ export const authService = {
       return {
         success: false,
         error: error.message || 'Failed to connect to auth service',
+        status: 502,
       };
     }
   },
 };
+
+async function parseErrorResponse(response: Response): Promise<any> {
+  const errorText = await response.text();
+
+  try {
+    return JSON.parse(errorText);
+  } catch {
+    return { error: errorText || `HTTP ${response.status}` };
+  }
+}
 
 function extractErrorMessage(errorData: any, status: number): string {
   if (typeof errorData === 'string') return errorData;

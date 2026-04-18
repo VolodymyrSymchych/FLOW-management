@@ -3,8 +3,20 @@
 import { Twitter, Github, Linkedin } from "lucide-react";
 
 const links = {
-    Product: ["Features", "Pricing", "Case Studies", "API", "Integrations"],
-    Company: ["About Us", "Careers", "Blog", "Legal", "Contact"],
+    Product: [
+        { label: "Features", href: "#features" },
+        { label: "Pricing", href: "#pricing" },
+        { label: "Case Studies", href: "#social-proof" },
+        { label: "API", href: "mailto:hello@flow.app?subject=API%20Access" },
+        { label: "Integrations", href: "mailto:hello@flow.app?subject=Integrations" },
+    ],
+    Company: [
+        { label: "About Us", href: "mailto:hello@flow.app?subject=About%20Flow" },
+        { label: "Careers", href: "mailto:jobs@flow.app?subject=Careers" },
+        { label: "Blog", href: "mailto:hello@flow.app?subject=Flow%20Blog" },
+        { label: "Legal", href: "mailto:legal@flow.app?subject=Legal" },
+        { label: "Contact", href: "mailto:hello@flow.app?subject=Contact" },
+    ],
 };
 
 const socials = [
@@ -21,8 +33,8 @@ export function Footer() {
                     {/* Brand */}
                     <div className="md:col-span-2">
                         <div className="flex items-center gap-2 mb-5">
-                            <div className="w-7 h-7 rounded-lg bg-white flex items-center justify-center" aria-hidden="true">
-                                <span className="text-black font-black text-sm">F</span>
+                            <div className="w-7 h-7 rounded-lg bg-foreground flex items-center justify-center" aria-hidden="true">
+                                <span className="text-background font-black text-sm">F</span>
                             </div>
                             <span className="text-foreground font-bold tracking-tight">Flow</span>
                         </div>
@@ -51,8 +63,8 @@ export function Footer() {
                             <h2 className="text-xs font-bold uppercase tracking-widest text-foreground/70 mb-5">{group}</h2>
                             <ul className="space-y-3">
                                 {items.map((item) => (
-                                    <li key={item}>
-                                        <a href="#" className="text-sm text-foreground/70 hover:text-foreground transition-colors">{item}</a>
+                                    <li key={item.label}>
+                                        <a href={item.href} className="text-sm text-foreground/80 hover:text-foreground transition-colors">{item.label}</a>
                                     </li>
                                 ))}
                             </ul>
@@ -61,11 +73,11 @@ export function Footer() {
                 </div>
 
                 <div className="border-t border-foreground/[0.06] pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
-                    <p className="text-xs text-foreground/60">© 2026 Flow Management Inc. All rights reserved.</p>
-                    <div className="flex gap-6 text-xs text-foreground/60">
-                        <a href="#" className="hover:text-foreground transition-colors">Privacy Policy</a>
-                        <a href="#" className="hover:text-foreground transition-colors">Terms of Service</a>
-                        <a href="#" className="hover:text-foreground transition-colors">Cookies</a>
+                    <p className="text-xs text-foreground/70">© 2026 Flow Management Inc. All rights reserved.</p>
+                    <div className="flex gap-6 text-xs text-foreground/70">
+                        <a href="mailto:legal@flow.app?subject=Privacy%20Policy" className="hover:text-foreground transition-colors">Privacy Policy</a>
+                        <a href="mailto:legal@flow.app?subject=Terms%20of%20Service" className="hover:text-foreground transition-colors">Terms of Service</a>
+                        <a href="mailto:legal@flow.app?subject=Cookie%20Policy" className="hover:text-foreground transition-colors">Cookies</a>
                     </div>
                 </div>
             </div>

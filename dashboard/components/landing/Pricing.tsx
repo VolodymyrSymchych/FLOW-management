@@ -32,7 +32,7 @@ const plans = [
         description: "Advanced security and control for large orgs.",
         features: ["Custom AI models", "SLA & dedicated support", "SSO & security", "On-premise option", "API access"],
         cta: "Contact sales",
-        href: "/sign-up",
+        href: "mailto:sales@flow.app?subject=Enterprise%20inquiry",
         popular: false,
     },
 ];
@@ -48,13 +48,13 @@ export function PricingSection() {
                     transition={{ duration: 0.5 }}
                     className="text-center mb-16"
                 >
-                    <div className="inline-flex items-center gap-2 text-xs font-semibold text-foreground/30 uppercase tracking-widest mb-4">
-                        <div className="w-4 h-px bg-white/20" />
+                    <div className="inline-flex items-center gap-2 text-xs font-semibold text-foreground/60 uppercase tracking-widest mb-4">
+                        <div className="w-4 h-px bg-foreground/20" />
                         Pricing
-                        <div className="w-4 h-px bg-white/20" />
+                        <div className="w-4 h-px bg-foreground/20" />
                     </div>
                     <h2 className="text-4xl md:text-5xl font-black text-foreground tracking-tight">Simple, transparent pricing.</h2>
-                    <p className="mt-4 text-foreground/40 text-lg">Scale up or down any time. No hidden fees.</p>
+                    <p className="mt-4 text-foreground/70 text-lg">Scale up or down any time. No hidden fees.</p>
                 </motion.div>
 
                 <div className="grid md:grid-cols-3 gap-4 max-w-5xl mx-auto">
@@ -68,28 +68,28 @@ export function PricingSection() {
                             className={`relative flex flex-col rounded-2xl p-6 ${
                                 plan.popular
                                     ? 'border border-orange-500/40 bg-orange-500/[0.06]'
-                                    : 'border border-white/[0.07] bg-white/[0.02]'
+                                    : 'border border-border bg-foreground/[0.02]'
                             }`}
                         >
                             {plan.popular && (
-                                <div className="absolute -top-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-600 text-xs font-bold text-foreground">
+                                <div className="absolute -top-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-600 text-xs font-bold text-white">
                                     <Zap className="w-3 h-3" />
                                     Most Popular
                                 </div>
                             )}
 
                             <div className="mb-6">
-                                <h3 className="text-sm font-bold text-foreground/60 uppercase tracking-widest mb-4">{plan.name}</h3>
+                                <h3 className="text-sm font-bold text-foreground/70 uppercase tracking-widest mb-4">{plan.name}</h3>
                                 <div className="flex items-baseline gap-1 mb-2">
                                     <span className="text-4xl font-black text-foreground">{plan.price}</span>
-                                    <span className="text-sm text-foreground/30">/{plan.period}</span>
+                                    <span className="text-sm text-foreground/60">/{plan.period}</span>
                                 </div>
-                                <p className="text-sm text-foreground/30">{plan.description}</p>
+                                <p className="text-sm text-foreground/70">{plan.description}</p>
                             </div>
 
                             <ul className="space-y-3 mb-8 flex-1">
                                 {plan.features.map((f) => (
-                                    <li key={f} className="flex items-center gap-2.5 text-sm text-foreground/50">
+                                    <li key={f} className="flex items-center gap-2.5 text-sm text-foreground/70">
                                         <Check className="w-3.5 h-3.5 text-orange-400 flex-shrink-0" />
                                         {f}
                                     </li>
@@ -101,7 +101,7 @@ export function PricingSection() {
                                 className={`w-full py-3 rounded-xl text-sm font-bold text-center transition-all ${
                                     plan.popular
                                         ? 'bg-foreground text-background hover:bg-foreground/90'
-                                        : 'bg-white/[0.06] text-foreground hover:bg-foreground/10 border border-white/[0.08]'
+                                        : 'bg-foreground/[0.06] text-foreground hover:bg-foreground/10 border border-border'
                                 }`}
                             >
                                 {plan.cta}

@@ -42,8 +42,16 @@ export function rateLimit(options: RateLimitOptions): (req: Request, res: Respon
 
       _next();
     } catch (error) {
-      _next(error);
+      if (error instanceof RateLimitError) {
+        _next(error);
+        return;
+      }
+
+      console.warn('Rate limiter unavailable, allowing request', {
+        error: error instanceof Error ? error.message : error,
+        path: req.path,
+      });
+      _next();
     }
   };
 }
-

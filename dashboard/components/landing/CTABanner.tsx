@@ -10,7 +10,7 @@ export function CTABanner({ user }: { user?: any }) {
         <section className="relative py-32 overflow-visible">
             {/* Glow */}
             <div className="absolute inset-0 pointer-events-none overflow-visible">
-                <div className="absolute left-[30%] top-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-orange-500/10 dark:bg-orange-900/30 blur-[140px] rounded-full" />
+                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-orange-500/10 dark:bg-orange-900/30 blur-[140px] rounded-full" />
             </div>
 
             <div className="relative max-w-3xl mx-auto px-6 lg:px-8 text-center">
@@ -23,10 +23,10 @@ export function CTABanner({ user }: { user?: any }) {
                     <h2 className="text-4xl md:text-6xl font-black text-foreground tracking-tight leading-tight mb-6">
                         Start protecting your
                         <br />
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-orange-400">revenue today.</span>
+                        <span className="text-orange-400">revenue today.</span>
                     </h2>
-                    <p className="text-lg text-foreground/40 mb-10">
-                        Join 500+ teams that never miss a billable moment.
+                    <p className="text-lg text-foreground/70 mb-10">
+                        Join the private beta and never miss a billable moment.
                     </p>
 
                     {user ? (
@@ -40,7 +40,7 @@ export function CTABanner({ user }: { user?: any }) {
                     ) : (
                         <div className="flex flex-col items-center gap-4">
                             <WaitlistForm className="w-full max-w-md" />
-                            <Link href="/sign-up" className="text-sm text-foreground/30 hover:text-foreground/60 transition-colors">
+                            <Link href="/sign-in" className="text-sm text-foreground/60 hover:text-foreground transition-colors">
                                 Already have an account? Sign in →
                             </Link>
                         </div>

@@ -63,7 +63,7 @@ export function WaitlistForm({ className = '', variant = 'default' }: WaitlistFo
                 <form onSubmit={handleSubmit} className="flex gap-2 max-w-md" aria-labelledby="waitlist-heading-compact" noValidate>
                     <h2 id="waitlist-heading-compact" className="sr-only">Join the waitlist</h2>
                     <div className="relative flex-1">
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" aria-hidden="true" />
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-foreground/45" aria-hidden="true" />
                         <label htmlFor="waitlist-email-compact" className="sr-only">Email address</label>
                         <input
                             id="waitlist-email-compact"
@@ -73,7 +73,7 @@ export function WaitlistForm({ className = '', variant = 'default' }: WaitlistFo
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             placeholder="Enter your email"
-                            className="w-full pl-10 pr-4 py-3 rounded-lg bg-white/5 border border-foreground/10 text-foreground placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                            className="w-full rounded-xl border border-border bg-background py-3 pl-10 pr-4 text-foreground placeholder:text-foreground/40 focus:border-orange-500/30 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all"
                             required
                             aria-required="true"
                             aria-invalid={status === 'error'}
@@ -84,7 +84,7 @@ export function WaitlistForm({ className = '', variant = 'default' }: WaitlistFo
                     <button
                         type="submit"
                         disabled={status === 'loading' || status === 'success'}
-                        className="px-6 py-3 rounded-lg bg-gradient-to-r from-orange-600 to-orange-600 text-foreground font-semibold hover:from-orange-500 hover:to-orange-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 whitespace-nowrap"
+                        className="flex items-center gap-2 whitespace-nowrap rounded-xl bg-orange-500 px-6 py-3 font-semibold text-white transition-colors hover:bg-orange-400 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         {status === 'loading' ? (
                             <>
@@ -111,7 +111,7 @@ export function WaitlistForm({ className = '', variant = 'default' }: WaitlistFo
                             initial={{ opacity: 0, y: -10 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -10 }}
-                            className="mt-3 p-3 rounded-lg bg-green-500/10 border border-green-500/30 text-green-700 dark:text-green-300 text-sm flex items-center gap-2"
+                            className="mt-3 p-3 rounded-xl border border-green-500/30 bg-green-500/10 text-sm text-green-700 dark:text-green-300 flex items-center gap-2"
                         >
                             <CheckCircle2 className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
                             <span>🎉 Thanks for joining! We'll notify you when we launch.</span>
@@ -125,7 +125,7 @@ export function WaitlistForm({ className = '', variant = 'default' }: WaitlistFo
                             initial={{ opacity: 0, y: -10 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -10 }}
-                            className="mt-3 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-700 dark:text-red-300 text-sm flex items-center gap-2"
+                            className="mt-3 p-3 rounded-xl border border-red-500/30 bg-red-500/10 text-sm text-red-700 dark:text-red-300 flex items-center gap-2"
                         >
                             <AlertCircle className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
                             <span>{errorMessage}</span>
@@ -143,7 +143,7 @@ export function WaitlistForm({ className = '', variant = 'default' }: WaitlistFo
                 <h2 id="waitlist-heading" className="sr-only">Join the waitlist</h2>
                 <div className="flex flex-col sm:flex-row gap-3">
                     <div className="relative flex-1">
-                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" aria-hidden="true" />
+                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-foreground/45" aria-hidden="true" />
                         <label htmlFor="waitlist-email" className="sr-only">Email address</label>
                         <input
                             id="waitlist-email"
@@ -153,7 +153,7 @@ export function WaitlistForm({ className = '', variant = 'default' }: WaitlistFo
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             placeholder="Enter your email"
-                            className="w-full pl-12 pr-4 py-4 rounded-full bg-white/5 border border-foreground/10 text-foreground placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all text-lg"
+                            className="w-full rounded-xl border border-border bg-background py-4 pl-12 pr-4 text-lg text-foreground placeholder:text-foreground/40 focus:border-orange-500/30 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all"
                             required
                             aria-required="true"
                             aria-invalid={status === 'error'}
@@ -164,7 +164,7 @@ export function WaitlistForm({ className = '', variant = 'default' }: WaitlistFo
                     <button
                         type="submit"
                         disabled={status === 'loading' || status === 'success'}
-                        className="px-8 py-4 rounded-full bg-gradient-to-r from-orange-600 to-orange-600 text-foreground font-semibold hover:from-orange-500 hover:to-orange-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-lg whitespace-nowrap"
+                        className="flex items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-orange-500 px-8 py-4 text-lg font-semibold text-white transition-colors hover:bg-orange-400 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         {status === 'loading' ? (
                             <>
@@ -222,7 +222,7 @@ export function WaitlistForm({ className = '', variant = 'default' }: WaitlistFo
                 </AnimatePresence>
             </form>
 
-            <div className="mt-4 flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+            <div className="mt-4 flex items-center gap-2 text-sm text-foreground/60">
                 <div className="px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/30 text-orange-700 dark:text-orange-300 font-medium">
                     🎁 Early Bird Offer
                 </div>

@@ -41,7 +41,16 @@ export function rateLimit(options: RateLimitOptions): (req: Request, res: Respon
 
       next();
     } catch (error) {
-      next(error);
+      if (error instanceof RateLimitError) {
+        next(error);
+        return;
+      }
+
+      console.warn('Rate limiter unavailable, allowing request', {
+        error: error instanceof Error ? error.message : error,
+        path: req.path,
+      });
+      next();
     }
   };
 }
@@ -87,4 +96,3 @@ export const generalApiRateLimit = rateLimit({
   identifier: (req) => `api:${req.ip}`,
   message: 'Too many API requests. Please try again later.',
 });
-

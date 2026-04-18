@@ -33,6 +33,7 @@ export async function POST(request: NextRequest) {
         success: result.success,
         hasToken: !!result.token,
         hasUser: !!result.user,
+        status: result.status,
       });
 
       const errorMessage = typeof result.error === 'string'
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json(
         { error: errorMessage },
-        { status: 401 }
+        { status: result.status ?? 401 }
       );
     }
 

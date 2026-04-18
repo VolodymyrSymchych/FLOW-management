@@ -1,150 +1,79 @@
 'use client';
 
-import { motion, useInView } from "framer-motion";
-import { useRef, useEffect, useState } from "react";
-import { Star } from "lucide-react";
+import { motion } from "framer-motion";
 
-const testimonials = [
+const proofCards = [
     {
-        quote: "We recovered $15k in unbilled scope changes in just the first month. This tool pays for itself 100x over.",
-        author: "Sarah Jenkins",
-        role: "CTO at TechFlow",
-        avatar: "SJ",
+        team: "12-person product agency",
+        metric: "$8.4k recovered in approved change orders during the first quarter",
+        quote: "We stopped treating vague client asks like free work. Flow gave us the language and the numbers before the project slipped.",
     },
     {
-        quote: "Finally, a way to explain to clients why 'just one small change' actually costs money. Game changer.",
-        author: "Marcus Chen",
-        role: "Freelance Developer",
-        avatar: "MC",
+        team: "Freelance design studio",
+        metric: "6 hours saved each week on client updates and follow-ups",
+        quote: "The biggest win was clarity. Clients could see what was in scope, what was extra, and what it would cost before the work started.",
     },
     {
-        quote: "The AI detection is scary accurate. It flagged a risk in our specs that would have cost us weeks of delay.",
-        author: "Elena Rodriguez",
-        role: "Product Manager",
-        avatar: "ER",
+        team: "In-house delivery team",
+        metric: "3 at-risk requests flagged before they turned into unplanned sprint work",
+        quote: "Instead of arguing after delivery, we caught the change when it still looked like a harmless ask in chat.",
     },
 ];
 
-const companies = ["Acme Corp", "GlobalTech", "Nebula", "FoxRun", "Circle", "Trio", "Vertex", "Pulsar"];
-
-function Counter({ value, suffix = "" }: { value: number; suffix?: string }) {
-    const [count, setCount] = useState(0);
-    const ref = useRef(null);
-    const inView = useInView(ref, { once: true });
-
-    useEffect(() => {
-        if (!inView) return;
-        const duration = 1800;
-        const steps = 50;
-        const inc = value / steps;
-        let cur = 0;
-        const t = setInterval(() => {
-            cur += inc;
-            if (cur >= value) { setCount(value); clearInterval(t); }
-            else setCount(Math.floor(cur));
-        }, duration / steps);
-        return () => clearInterval(t);
-    }, [inView, value]);
-
-    return <span ref={ref}>{count.toLocaleString()}{suffix}</span>;
-}
-
 export function SocialProofSection() {
     return (
-        <section className="relative py-32">
+        <section id="social-proof" className="relative py-32">
             <div className="max-w-7xl mx-auto px-6 lg:px-8">
-                {/* Stats row */}
                 <motion.div
                     initial={{ opacity: 0, y: 16 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.5 }}
-                    className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-24 text-center"
+                    className="mx-auto max-w-3xl text-center"
                 >
-                    {[
-                        { value: 10000, suffix: "+", label: "Projects Analyzed" },
-                        { value: 5000, suffix: "+", label: "Scope Alerts Fired" },
-                        { value: 2, suffix: "M+", label: "Revenue Protected ($)" },
-                        { value: 500, suffix: "+", label: "Active Teams" },
-                    ].map((s) => (
-                        <div key={s.label}>
-                            <div className="text-4xl md:text-5xl font-black text-foreground mb-1">
-                                <Counter value={s.value} suffix={s.suffix} />
-                            </div>
-                            <div className="text-sm text-foreground/30">{s.label}</div>
-                        </div>
-                    ))}
+                    <div className="inline-flex items-center gap-2 text-xs font-semibold text-foreground/60 uppercase tracking-widest mb-4">
+                        <div className="w-4 h-px bg-foreground/20" />
+                        Beta proof
+                        <div className="w-4 h-px bg-foreground/20" />
+                    </div>
+
+                    <h2 className="text-4xl md:text-5xl font-black text-foreground tracking-tight leading-tight mb-6">
+                        Built with teams that got tired of
+                        <br />
+                        <span className="text-orange-400">giving work away for free.</span>
+                    </h2>
+
+                    <p className="text-foreground/70 text-lg leading-relaxed">
+                        These early results come from anonymized beta teams using Flow to catch scope drift, tighten client communication, and protect delivery margin.
+                    </p>
                 </motion.div>
 
-                {/* Testimonials */}
-                <div className="mb-4">
-                    <motion.h2
-                        initial={{ opacity: 0, y: 12 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.4 }}
-                        className="text-3xl md:text-4xl font-black text-foreground text-center mb-12"
-                    >
-                        Loved by efficient teams.
-                    </motion.h2>
-
-                    <div className="grid md:grid-cols-3 gap-4">
-                        {testimonials.map((t, i) => (
-                            <motion.div
-                                key={i}
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ delay: i * 0.1, duration: 0.4 }}
-                                className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-6 hover:border-white/[0.14] transition-colors"
-                            >
-                                <div className="flex gap-0.5 mb-4">
-                                    {[...Array(5)].map((_, j) => <Star key={j} className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />)}
-                                </div>
-                                <p className="text-foreground/60 text-sm leading-relaxed mb-6">"{t.quote}"</p>
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-xs font-bold text-foreground">{t.avatar}</div>
-                                    <div>
-                                        <p className="text-sm font-semibold text-foreground">{t.author}</p>
-                                        <p className="text-xs text-foreground/30">{t.role}</p>
-                                    </div>
-                                </div>
-                            </motion.div>
-                        ))}
-                    </div>
+                <div className="mt-14 grid gap-4 md:grid-cols-3">
+                    {proofCards.map((card, index) => (
+                        <motion.article
+                            key={card.team}
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true, margin: "-60px" }}
+                            transition={{ duration: 0.45, delay: index * 0.08 }}
+                            className="rounded-2xl border border-border bg-foreground/[0.03] p-6"
+                        >
+                            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-foreground/45">
+                                {card.team}
+                            </div>
+                            <h3 className="mt-4 text-2xl font-black tracking-[-0.04em] text-foreground">
+                                {card.metric}
+                            </h3>
+                            <p className="mt-4 text-sm leading-7 text-foreground/72">
+                                “{card.quote}”
+                            </p>
+                        </motion.article>
+                    ))}
                 </div>
 
-                {/* Logo marquee */}
-                <div className="mt-20 pt-12 border-t border-foreground/[0.06] overflow-hidden">
-                    <p className="text-center text-xs font-semibold text-foreground/40 dark:text-white/30 uppercase tracking-widest mb-8">Trusted by teams at</p>
-                    
-                    <style dangerouslySetInnerHTML={{__html: `
-                        @keyframes custom-marquee {
-                            0% { transform: translateX(0); }
-                            100% { transform: translateX(-50%); }
-                        }
-                        .animate-marquee-custom {
-                            animation: custom-marquee 30s linear infinite;
-                            flex-wrap: nowrap;
-                            display: flex;
-                            width: max-content;
-                        }
-                        .animate-marquee-custom:hover {
-                            animation-play-state: paused;
-                        }
-                    `}} />
-                    
-                    <div className="relative flex overflow-hidden mask-linear-fade">
-                        <div className="animate-marquee-custom py-2">
-                            {/* Duplicate exactly TWO times so that translating -50% perfectly loops back to 0 */}
-                            {[...companies, ...companies].map((c, i) => (
-                                <span key={i} className="text-base font-bold text-foreground/40 dark:text-white/40 hover:text-foreground/70 dark:hover:text-white/70 transition-colors cursor-default mx-8">
-                                    {c}
-                                </span>
-                            ))}
-                        </div>
-                    </div>
-                </div>
+                <p className="mt-6 text-center text-sm text-foreground/50">
+                    Quotes are anonymized to respect current beta teams and client confidentiality.
+                </p>
             </div>
         </section>
     );

@@ -10,7 +10,7 @@ interface LogoProps {
   className?: string;
 }
 
-const LOGO_SRC = '/flow-logo.png?v=3';
+const LOGO_SRC = '/flow-logo.png';
 
 export function Logo({ compact = false, variant = 'default', className }: LogoProps) {
   const pathname = usePathname();

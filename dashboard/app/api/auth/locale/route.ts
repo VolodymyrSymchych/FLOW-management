@@ -34,7 +34,10 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Call auth-service to update locale in database
-    const AUTH_SERVICE_URL = process.env.NEXT_PUBLIC_AUTH_SERVICE_URL || 'http://localhost:3002';
+    const AUTH_SERVICE_URL =
+      process.env.AUTH_SERVICE_URL ||
+      process.env.NEXT_PUBLIC_AUTH_SERVICE_URL ||
+      'http://localhost:3002';
 
     try {
       const controller = new AbortController();

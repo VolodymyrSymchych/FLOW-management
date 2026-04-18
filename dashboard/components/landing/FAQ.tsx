@@ -1,11 +1,10 @@
 'use client';
 
-import { memo } from 'react';
-import { motion } from 'framer-motion';
-import { Accordion, AccordionItem } from '@/components/ui/Accordion';
-import { HelpCircle } from 'lucide-react';
+import { memo, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { ChevronDown } from 'lucide-react';
 
-const faqItems: AccordionItem[] = [
+const faqItems = [
     {
         id: 'how-it-works',
         title: 'How does scope detection work?',
@@ -24,7 +23,7 @@ const faqItems: AccordionItem[] = [
     {
         id: 'pricing',
         title: 'How much does it cost?',
-        content: 'We offer flexible pricing plans starting with a free tier for individual developers. Team plans start at $29/month per user, and enterprise plans with custom features and dedicated support are available. All plans include unlimited projects and AI-powered scope detection.'
+        content: 'We offer flexible pricing plans starting with a free tier for individual developers. Paid plans start at $29/month, and enterprise plans with custom features and dedicated support are available. All plans include unlimited projects and AI-powered scope detection.'
     },
     {
         id: 'data-security',
@@ -49,54 +48,99 @@ const faqItems: AccordionItem[] = [
 ];
 
 const FAQSection = memo(function FAQSection() {
+    const [openItem, setOpenItem] = useState<string>('how-it-works');
+
     return (
-        <section className="py-24 bg-gradient-to-b from-black/20 via-black/10 to-transparent">
-            <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <section className="py-32">
+            <div className="max-w-7xl mx-auto px-6 lg:px-8">
                 <motion.div
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 16 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.5 }}
-                    className="text-center mb-12"
+                    className="mx-auto max-w-3xl text-center mb-16"
                 >
-                    <div className="flex items-center justify-center gap-3 mb-4">
-                        <HelpCircle className="w-8 h-8 text-primary" />
-                        <h2 className="text-3xl md:text-4xl font-bold text-foreground">
-                            Frequently Asked Questions
-                        </h2>
+                    <div className="inline-flex items-center gap-2 text-xs font-semibold text-foreground/60 uppercase tracking-widest mb-4">
+                        <div className="w-4 h-px bg-foreground/20" />
+                        FAQ
+                        <div className="w-4 h-px bg-foreground/20" />
                     </div>
-                    <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-                        Got questions? We've got answers. Learn more about how our platform can help you manage scope creep.
+                    <h2 className="text-4xl md:text-5xl font-black text-foreground tracking-tight leading-tight">
+                        Questions before you join?
+                    </h2>
+                    <p className="mt-5 text-foreground/70 text-lg max-w-2xl mx-auto">
+                        Everything you need to understand how Flow handles scope, pricing, rollout, and day-to-day delivery pressure.
                     </p>
                 </motion.div>
 
                 <motion.div
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 16 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.5, delay: 0.2 }}
                     className="max-w-4xl mx-auto"
                 >
-                    <Accordion
-                        items={faqItems}
-                        allowMultiple={false}
-                        defaultOpen={['how-it-works']}
-                    />
+                    <div className="space-y-3">
+                        {faqItems.map((item) => {
+                            const isOpen = openItem === item.id;
+
+                            return (
+                                <div
+                                    key={item.id}
+                                    className="overflow-hidden rounded-2xl border border-border bg-foreground/[0.02]"
+                                >
+                                    <button
+                                        type="button"
+                                        onClick={() => setOpenItem(isOpen ? '' : item.id)}
+                                        className="flex w-full items-center justify-between gap-4 px-6 py-5 text-left transition-colors hover:bg-foreground/[0.03]"
+                                        aria-expanded={isOpen}
+                                        aria-controls={`faq-panel-${item.id}`}
+                                    >
+                                        <span className="text-base font-semibold text-foreground">{item.title}</span>
+                                        <motion.span
+                                            animate={{ rotate: isOpen ? 180 : 0 }}
+                                            transition={{ duration: 0.2, ease: 'easeInOut' }}
+                                            className="flex-shrink-0 text-foreground/55"
+                                        >
+                                            <ChevronDown className="h-5 w-5" />
+                                        </motion.span>
+                                    </button>
+
+                                    <AnimatePresence initial={false}>
+                                        {isOpen && (
+                                            <motion.div
+                                                id={`faq-panel-${item.id}`}
+                                                initial={{ height: 0, opacity: 0 }}
+                                                animate={{ height: 'auto', opacity: 1 }}
+                                                exit={{ height: 0, opacity: 0 }}
+                                                transition={{ duration: 0.22, ease: 'easeOut' }}
+                                                className="overflow-hidden"
+                                            >
+                                                <div className="border-t border-border px-6 py-5 text-sm leading-7 text-foreground/72">
+                                                    {item.content}
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+                            );
+                        })}
+                    </div>
                 </motion.div>
 
                 <motion.div
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 16 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.5, delay: 0.4 }}
                     className="text-center mt-12"
                 >
-                    <p className="text-gray-400 mb-4">
+                    <p className="text-foreground/60 mb-4">
                         Still have questions?
                     </p>
                     <a
-                        href="mailto:support@projectscope.com"
-                        className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-secondary text-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity"
+                        href="mailto:support@flow.app"
+                        className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-foreground text-background font-semibold transition-colors hover:bg-foreground/90"
                     >
                         Contact Support
                     </a>

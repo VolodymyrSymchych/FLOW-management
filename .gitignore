@@ -47,6 +47,15 @@ node_modules/
 reports/
 !dashboard/app/reports/
 
+# Test artifacts
+**/playwright-report/
+**/playwright-report-*/
+**/test-results/
+**/test_results*.log
+**/test_run*.log
+**/final_test_*.log
+**/final_test_*.txt
+
 # IDE
 .vscode/
 .idea/

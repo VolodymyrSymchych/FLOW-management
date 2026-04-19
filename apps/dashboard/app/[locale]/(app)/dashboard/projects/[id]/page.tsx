@@ -2,9 +2,10 @@
 
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useParams, useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { Link } from '@/i18n/routing';
 import { useTeam } from '@/contexts/TeamContext';
+import { useEntityDrawerState } from '@/hooks/useEntityDrawerState';
 import {
   ArrowLeft,
   Calendar,
@@ -99,16 +100,16 @@ export default function ProjectDetailPage() {
   const params = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();
+  const pathname = usePathname();
   const projectId = Number(params.id);
   const { data: project, isLoading: projectLoading, refetch: loadProject } = useProject(projectId);
+  const drawerState = useEntityDrawerState({ param: 'edit' });
   
   const initialTab = (searchParams.get('tab') as typeof TABS[number]['id']) || 'overview';
   const validTab = TABS.some(t => t.id === initialTab) ? initialTab : 'overview';
   
   const [activeTab, setActiveTab] = useState<typeof TABS[number]['id']>(validTab);
   const [filesRefreshKey, setFilesRefreshKey] = useState(0);
-  const [showEditModal, setShowEditModal] = useState(false);
-
   const shouldShowLoading = useDelayedLoading(projectLoading || teamsLoading, 250);
 
   const downloadReport = () => {
@@ -207,7 +208,7 @@ export default function ProjectDetailPage() {
               <button
                 type="button"
                 className="btn btn-ghost"
-                onClick={() => setShowEditModal(true)}
+                onClick={() => drawerState.open(projectData.id, { tab: activeTab, editTab: activeTab })}
               >
                 <Edit style={{ width: 14, height: 14 }} />
                 Edit
@@ -232,10 +233,12 @@ export default function ProjectDetailPage() {
               className={cn('proj-detail-tab', activeTab === tab.id && 'active')}
               onClick={() => {
                 setActiveTab(tab.id);
-                // Optional: update URL silently to keep state
-                const currentUrl = new URL(window.location.href);
-                currentUrl.searchParams.set('tab', tab.id);
-                window.history.replaceState({}, '', currentUrl.toString());
+                const params = new URLSearchParams(searchParams.toString());
+                params.set('tab', tab.id);
+                if (drawerState.isOpen) {
+                  params.set('editTab', tab.id);
+                }
+                router.replace(`${pathname}${params.toString() ? `?${params.toString()}` : ''}`, { scroll: false });
               }}
             >
               <Icon style={{ width: 14, height: 14 }} />
@@ -401,12 +404,12 @@ export default function ProjectDetailPage() {
         )}
       </div>
 
-      {project && showEditModal && (
+      {project && drawerState.activeId === String(projectData.id) && (
         <EditProjectModal
-          isOpen={showEditModal}
-          onClose={() => setShowEditModal(false)}
+          isOpen={drawerState.isOpen}
+          onClose={() => drawerState.close(['tab'])}
           onSave={() => {
-            setShowEditModal(false);
+            drawerState.close(['tab']);
             loadProject();
           }}
           project={{

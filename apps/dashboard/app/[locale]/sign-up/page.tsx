@@ -1,20 +1,34 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
-import { Mail, Lock, User, AlertCircle, Eye, EyeOff, Info } from 'lucide-react';
+import { useMemo, useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Mail, Lock, User, AlertCircle, Eye, EyeOff, Info, ChevronRight } from 'lucide-react';
 import { Logo } from '@/components/Logo';
 import { EmailVerificationModal } from '@/components/EmailVerificationModal';
+import { Link } from '@/i18n/routing';
+import { Button } from '@/components/ui/button';
+
+type SignUpStep = 1 | 2 | 3;
+
+function getPasswordStrength(password: string) {
+  let score = 0;
+  if (password.length >= 8) score += 1;
+  if (/[A-Z]/.test(password) || /[a-z]/.test(password)) score += 1;
+  if (/\d/.test(password)) score += 1;
+  if (/[^A-Za-z0-9]/.test(password)) score += 1;
+
+  if (score <= 1) return { score, label: 'Weak', tone: 'bg-danger' };
+  if (score <= 3) return { score, label: 'Good', tone: 'bg-warning' };
+  return { score, label: 'Strong', tone: 'bg-success' };
+}
 
 function SignUpForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
+  const [step, setStep] = useState<SignUpStep>(1);
   const [formData, setFormData] = useState({
     email: '',
     username: '',
     password: '',
-    confirmPassword: '',
     fullName: '',
   });
   const [oauthData, setOauthData] = useState<{
@@ -23,12 +37,10 @@ function SignUpForm() {
     avatarUrl?: string;
   } | null>(null);
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  // Prefill form from URL params (OAuth redirect)
   useEffect(() => {
     const email = searchParams.get('email');
     const fullName = searchParams.get('fullName');
@@ -37,12 +49,13 @@ function SignUpForm() {
     const avatarUrl = searchParams.get('avatarUrl');
 
     if (email) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         email,
         fullName: fullName || prev.fullName,
         username: email.split('@')[0] || prev.username,
       }));
+      setStep(2);
     }
 
     if (provider && providerId) {
@@ -50,31 +63,38 @@ function SignUpForm() {
     }
   }, [searchParams]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+  const passwordStrength = useMemo(() => getPasswordStrength(formData.password), [formData.password]);
+
+  const handleChange = (field: keyof typeof formData, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (error) setError('');
+  };
+
+  const handleNext = () => {
+    if (step === 1 && !formData.email.trim()) {
+      setError('Email is required');
+      return;
+    }
+
+    if (step === 2) {
+      if (!formData.fullName.trim()) {
+        setError('Full name is required');
+        return;
+      }
+
+      if (formData.password.length < 8) {
+        setError('Password must be at least 8 characters long');
+        return;
+      }
+    }
+
+    setStep((prev) => Math.min(3, prev + 1) as SignUpStep);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-
-    // Validate passwords match
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
-      setLoading(false);
-      return;
-    }
-
-    // Validate password strength
-    if (formData.password.length < 8) {
-      setError('Password must be at least 8 characters');
-      setLoading(false);
-      return;
-    }
 
     try {
       const response = await fetch('/api/auth/signup', {
@@ -84,15 +104,14 @@ function SignUpForm() {
         },
         body: JSON.stringify({
           email: formData.email,
-          username: formData.username,
+          username: formData.username || formData.email.split('@')[0],
           password: formData.password,
           fullName: formData.fullName,
-          // Include OAuth provider info if available
           ...(oauthData && {
             provider: oauthData.provider,
             providerId: oauthData.providerId,
             avatarUrl: oauthData.avatarUrl,
-            emailVerified: true, // Email already verified by OAuth
+            emailVerified: true,
           }),
         }),
       });
@@ -127,237 +146,199 @@ function SignUpForm() {
   };
 
   if (success) {
-    return (
-      <EmailVerificationModal
-        email={formData.email}
-        onResend={handleResendVerification}
-      />
-    );
+    return <EmailVerificationModal email={formData.email} onResend={handleResendVerification} />;
   }
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-background px-4 py-8 overflow-y-auto">
-      {/* Background effects */}
       <div className="fixed inset-0 bg-grid opacity-20 pointer-events-none" />
       <div className="fixed top-1/4 -left-48 w-[600px] h-[600px] bg-gradient-to-r from-primary/20 to-primary/5 rounded-full blur-[100px] pointer-events-none" />
       <div className="fixed bottom-1/4 -right-48 w-[700px] h-[700px] bg-gradient-to-l from-secondary/20 to-secondary/5 rounded-full blur-[120px] pointer-events-none" />
 
       <div className="relative z-10 w-full max-w-md my-auto">
-        {/* Logo/Title */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-10">
             <Logo variant="default" />
           </div>
           <h1 className="text-4xl font-bold gradient-text mb-2">Create Account</h1>
-          <p className="text-text-secondary">Start analyzing your projects today</p>
+          <p className="text-text-secondary">Step {step} of 3</p>
         </div>
 
-        {/* Sign Up Form */}
         <div className="glass-strong rounded-2xl p-8 border border-border">
           <form onSubmit={handleSubmit} className="space-y-5">
-            {error && (
-              <div className="flex items-center gap-2 p-4 rounded-lg bg-danger/10 border border-danger/20 text-danger">
+            {error ? (
+              <div className="flex items-center gap-2 p-4 rounded-lg bg-danger/10 border border-danger/20 text-danger" aria-live="polite">
                 <AlertCircle className="w-5 h-5 flex-shrink-0" />
                 <p className="text-sm">{error}</p>
               </div>
-            )}
+            ) : null}
 
-            {/* OAuth Info Banner */}
-            {oauthData && (
+            {oauthData ? (
               <div className="flex items-start gap-2 p-4 rounded-lg bg-primary/10 border border-primary/20 text-text-primary">
                 <Info className="w-5 h-5 flex-shrink-0 text-primary mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium">Обліковий запис {oauthData.provider === 'google' ? 'Google' : 'Microsoft'} знайдено</p>
-                  <p className="text-sm text-text-secondary mt-1">Заповніть форму, щоб створити обліковий запис з вашим email: {formData.email}</p>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">
+                    Continuing as {formData.email}
+                  </p>
+                  <button
+                    type="button"
+                    className="text-sm font-medium text-primary hover:text-primary-dark"
+                    onClick={() => {
+                      setOauthData(null);
+                      setFormData((prev) => ({ ...prev, email: '', fullName: '', username: '' }));
+                      setStep(1);
+                    }}
+                  >
+                    Change
+                  </button>
                 </div>
               </div>
-            )}
+            ) : null}
 
-            {/* Full Name */}
-            <div>
-              <label htmlFor="fullName" className="block text-sm font-medium text-text-primary mb-2">
-                Full Name
-              </label>
-              <div className="relative">
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
-                <input
-                  id="fullName"
-                  name="fullName"
-                  type="text"
-                  value={formData.fullName}
-                  onChange={handleChange}
-                  className="glass-input w-full pl-12 pr-4 py-3 rounded-xl text-text-primary placeholder:text-text-tertiary"
-                  placeholder="John Doe"
-                  autoComplete="name"
+            <div className="flex gap-2">
+              {[1, 2, 3].map((item) => (
+                <div
+                  key={item}
+                  className={`h-1.5 flex-1 rounded-full ${item <= step ? 'bg-primary' : 'bg-surface-muted'}`}
                 />
-              </div>
+              ))}
             </div>
 
-            {/* Username */}
-            <div>
-              <label htmlFor="username" className="block text-sm font-medium text-text-primary mb-2">
-                Username
-              </label>
-              <div className="relative">
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
-                <input
-                  id="username"
-                  name="username"
-                  type="text"
-                  value={formData.username}
-                  onChange={handleChange}
-                  className="glass-input w-full pl-12 pr-4 py-3 rounded-xl text-text-primary placeholder:text-text-tertiary"
-                  placeholder="johndoe"
-                  required
-                  autoComplete="username"
-                />
+            {step === 1 ? (
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-text-primary mb-2">
+                  Email Address
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => handleChange('email', e.target.value)}
+                    className="glass-input w-full pl-12 pr-4 py-3 rounded-xl text-text-primary placeholder:text-text-tertiary"
+                    placeholder="you@example.com"
+                    required
+                    autoComplete="email"
+                  />
+                </div>
               </div>
-            </div>
+            ) : null}
 
-            {/* Email */}
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-text-primary mb-2">
-                Email Address
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="glass-input w-full pl-12 pr-4 py-3 rounded-xl text-text-primary placeholder:text-text-tertiary"
-                  placeholder="you@example.com"
-                  required
-                  autoComplete="email"
-                />
+            {step === 2 ? (
+              <>
+                <div>
+                  <label htmlFor="fullName" className="block text-sm font-medium text-text-primary mb-2">
+                    Full Name
+                  </label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+                    <input
+                      id="fullName"
+                      name="fullName"
+                      type="text"
+                      value={formData.fullName}
+                      onChange={(e) => handleChange('fullName', e.target.value)}
+                      className="glass-input w-full pl-12 pr-4 py-3 rounded-xl text-text-primary placeholder:text-text-tertiary"
+                      placeholder="John Doe"
+                      autoComplete="name"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="password" className="block text-sm font-medium text-text-primary mb-2">
+                    Password
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+                    <input
+                      id="password"
+                      name="password"
+                      type={showPassword ? 'text' : 'password'}
+                      value={formData.password}
+                      onChange={(e) => handleChange('password', e.target.value)}
+                      className="glass-input w-full pl-12 pr-12 py-3 rounded-xl text-text-primary placeholder:text-text-tertiary"
+                      placeholder="••••••••"
+                      required
+                      autoComplete="new-password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-text-primary transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                  <div className="mt-3 space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-text-tertiary">Password strength</span>
+                      <span className="font-medium text-text-secondary">{passwordStrength.label}</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[0, 1, 2].map((bar) => (
+                        <div
+                          key={bar}
+                          className={`h-1.5 rounded-full ${
+                            bar < Math.max(1, Math.ceil(passwordStrength.score / 2))
+                              ? passwordStrength.tone
+                              : 'bg-surface-muted'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <div className="text-xs text-text-tertiary">
+                      Add a number and a symbol. Use at least 8 characters.
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : null}
+
+            {step === 3 ? (
+              <div>
+                <label htmlFor="username" className="block text-sm font-medium text-text-primary mb-2">
+                  Username
+                </label>
+                <div className="relative">
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+                  <input
+                    id="username"
+                    name="username"
+                    type="text"
+                    value={formData.username}
+                    onChange={(e) => handleChange('username', e.target.value)}
+                    className="glass-input w-full pl-12 pr-4 py-3 rounded-xl text-text-primary placeholder:text-text-tertiary"
+                    placeholder={formData.email.split('@')[0] || 'johndoe'}
+                    autoComplete="username"
+                  />
+                </div>
+                <p className="mt-2 text-xs text-text-tertiary">Optional. We’ll use your email prefix if you leave this blank.</p>
               </div>
-            </div>
+            ) : null}
 
-            {/* Password */}
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-text-primary mb-2">
-                Password
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={formData.password}
-                  onChange={handleChange}
-                  className="glass-input w-full pl-12 pr-12 py-3 rounded-xl text-text-primary placeholder:text-text-tertiary"
-                  placeholder="••••••••"
-                  required
-                  autoComplete="new-password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-text-primary transition-colors"
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
-              </div>
-              <p className="mt-1 text-xs text-text-tertiary">At least 8 characters</p>
-            </div>
+            <div className="flex items-center justify-between gap-3 pt-2">
+              {step > 1 ? (
+                <Button type="button" variant="ghost" tone="neutral" onClick={() => setStep((prev) => (prev - 1) as SignUpStep)}>
+                  Back
+                </Button>
+              ) : <span />}
 
-            {/* Confirm Password */}
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-text-primary mb-2">
-                Confirm Password
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  className="glass-input w-full pl-12 pr-12 py-3 rounded-xl text-text-primary placeholder:text-text-tertiary"
-                  placeholder="••••••••"
-                  required
-                  autoComplete="new-password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-text-primary transition-colors"
-                >
-                  {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
-              </div>
+              {step < 3 ? (
+                <Button type="button" onClick={handleNext} icon={<ChevronRight className="w-4 h-4" />} iconPosition="right">
+                  Continue
+                </Button>
+              ) : (
+                <Button type="submit" loading={loading}>
+                  Create account
+                </Button>
+              )}
             </div>
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="glass-button w-full py-3 rounded-xl font-semibold text-white hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Creating account...' : 'Create Account'}
-            </button>
           </form>
 
-          {/* OAuth Section */}
-          <div className="mt-6">
-            <p className="text-center text-sm text-text-tertiary mb-4">Or continue with</p>
-          </div>
-
-          {/* OAuth Buttons */}
-          <div className="grid grid-cols-2 gap-4">
-            <button
-              type="button"
-              className="glass-subtle hover:glass-light border border-border rounded-xl p-3 flex items-center justify-center gap-2 transition-all hover:scale-105 active:scale-95"
-              onClick={() => {
-                const currentUrl = window.location.pathname + window.location.search;
-                window.location.href = `/api/auth/oauth/google?redirect=${encodeURIComponent(currentUrl)}`;
-              }}
-            >
-              <svg className="w-5 h-5" viewBox="0 0 24 24">
-                <path
-                  fill="currentColor"
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                />
-                <path
-                  fill="currentColor"
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                />
-                <path
-                  fill="currentColor"
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                />
-                <path
-                  fill="currentColor"
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                />
-              </svg>
-              <span>Google</span>
-            </button>
-
-            <button
-              type="button"
-              className="glass-subtle hover:glass-light border border-border rounded-xl p-3 flex items-center justify-center gap-2 transition-all hover:scale-105 active:scale-95"
-              onClick={() => {
-                const currentUrl = window.location.pathname + window.location.search;
-                window.location.href = `/api/auth/oauth/microsoft?redirect=${encodeURIComponent(currentUrl)}`;
-              }}
-            >
-              <svg className="w-5 h-5" viewBox="0 0 24 24">
-                <path fill="#f25022" d="M1 1h10v10H1z" />
-                <path fill="#00a4ef" d="M13 1h10v10H13z" />
-                <path fill="#7fba00" d="M1 13h10v10H1z" />
-                <path fill="#ffb900" d="M13 13h10v10H13z" />
-              </svg>
-              <span>Microsoft</span>
-            </button>
-          </div>
-
-          {/* Sign In Link */}
-          <div className="mt-6 text-center">
+          <div className="mt-8 text-center">
             <p className="text-text-secondary">
               Already have an account?{' '}
               <Link href="/sign-in" className="text-primary hover:text-primary-dark font-semibold transition-colors">
@@ -373,11 +354,13 @@ function SignUpForm() {
 
 export default function SignUpPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen w-full flex items-center justify-center bg-background">
-        <div className="text-text-secondary">Loading...</div>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="min-h-screen w-full flex items-center justify-center bg-background">
+          <div className="text-text-secondary">Loading...</div>
+        </div>
+      }
+    >
       <SignUpForm />
     </Suspense>
   );

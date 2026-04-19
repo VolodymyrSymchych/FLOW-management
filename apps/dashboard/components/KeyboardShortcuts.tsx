@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
 
 /**
  * Global keyboard shortcuts component
@@ -18,6 +19,7 @@ import { useRouter } from 'next/navigation';
  */
 export function KeyboardShortcuts() {
   const router = useRouter();
+  const locale = useLocale();
 
   useEffect(() => {
     const handleShortcut = (e: KeyboardEvent) => {
@@ -37,33 +39,33 @@ export function KeyboardShortcuts() {
       switch (e.key.toLowerCase()) {
         case 'h':
           e.preventDefault();
-          router.push('/');
+          router.push(`/${locale}/dashboard`);
           break;
         case 'p':
           // Don't prevent default for Cmd+P (print)
           if (e.shiftKey) return;
           e.preventDefault();
-          router.push('/dashboard/projects');
+          router.push(`/${locale}/dashboard/projects`);
           break;
         case 't':
           e.preventDefault();
-          router.push('/dashboard/tasks');
+          router.push(`/${locale}/dashboard/tasks`);
           break;
         case 'g':
           e.preventDefault();
-          router.push('/timeline');
+          router.push(`/${locale}/dashboard/projects-timeline`);
           break;
         case 'i':
           e.preventDefault();
-          router.push('/invoices');
+          router.push(`/${locale}/dashboard/settings?pane=billing`);
           break;
         case 'd':
           e.preventDefault();
-          router.push('/documentation');
+          router.push(`/${locale}/dashboard/documentation`);
           break;
         case ',':
           e.preventDefault();
-          router.push('/dashboard/settings');
+          router.push(`/${locale}/dashboard/settings`);
           break;
         // Cmd+K is handled by CommandPalette component
       }
@@ -71,7 +73,7 @@ export function KeyboardShortcuts() {
 
     document.addEventListener('keydown', handleShortcut);
     return () => document.removeEventListener('keydown', handleShortcut);
-  }, [router]);
+  }, [locale, router]);
 
   // This component doesn't render anything
   return null;

@@ -5,8 +5,12 @@ import { useParams, useRouter } from 'next/navigation';
 import { Ban, ChevronRight, Download, Edit, Mail, Save, Send, Link as LinkIcon } from 'lucide-react';
 import Link from 'next/link';
 import axios from 'axios';
+import { InvoiceEditDrawer } from '@/components/InvoiceEditDrawer';
 import { generateInvoicePDF } from '@/lib/invoice-pdf';
 import { useDelayedLoading } from '@/hooks/useDelayedLoading';
+import { useEntityDrawerState } from '@/hooks/useEntityDrawerState';
+import { useTeam } from '@/contexts/TeamContext';
+import { toastError, toastSuccess } from '@/lib/toast';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface Invoice {
@@ -146,6 +150,9 @@ export default function InvoiceDetailPage() {
   const router = useRouter();
   const invoiceId = params.id as string;
   const locale = params.locale || 'en';
+  const drawerState = useEntityDrawerState({ param: 'edit' });
+  const { selectedTeam } = useTeam();
+  const teamId = selectedTeam.type === 'single' && selectedTeam.teamId ? selectedTeam.teamId : 'all';
 
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [project, setProject] = useState<Project | null>(null);
@@ -202,7 +209,7 @@ export default function InvoiceDetailPage() {
       await generateInvoicePDF(invoiceForPDF);
     } catch (error) {
       console.error('Failed to download invoice:', error);
-      alert('Failed to download invoice. Please try again.');
+      toastError('Failed to download invoice. Please try again.');
     }
   };
 
@@ -211,10 +218,10 @@ export default function InvoiceDetailPage() {
     
     try {
       const response = await axios.post(`/api/invoices/${invoice.id}/send-email`, { action: 'send' });
-      alert(response.data.message || 'Email sent successfully');
+      toastSuccess(response.data.message || 'Email sent successfully');
     } catch (error: any) {
       console.error('Failed to send email:', error);
-      alert(error.response?.data?.error || 'Failed to send email');
+      toastError(error.response?.data?.error || 'Failed to send email');
     }
   };
 
@@ -224,11 +231,11 @@ export default function InvoiceDetailPage() {
     try {
       const response = await axios.post(`/api/invoices/${invoice.id}/generate-token`);
       const publicUrl = response.data.publicUrl;
-      navigator.clipboard.writeText(publicUrl);
-      alert(`Public link copied to clipboard: ${publicUrl}`);
+      await navigator.clipboard.writeText(publicUrl);
+      toastSuccess('Public link copied to clipboard');
     } catch (error: any) {
       console.error('Failed to generate public link:', error);
-      alert(error.response?.data?.error || 'Failed to generate public link');
+      toastError(error.response?.data?.error || 'Failed to generate public link');
     }
   };
 
@@ -326,7 +333,11 @@ export default function InvoiceDetailPage() {
             <Download className="w-3.5 h-3.5" />
             Download PDF
           </button>
-          <button type="button" onClick={() => router.push(`/${locale}/dashboard/invoices/${invoice.id}/edit`)} className="inline-flex items-center gap-1 rounded-full bg-[#ef4f6e] px-3 py-1 text-white shadow-sm hover:bg-[#dd4261]">
+          <button
+            type="button"
+            onClick={() => drawerState.open(invoice.id, { drawer: 'invoice' })}
+            className="inline-flex items-center gap-1 rounded-full bg-[#ef4f6e] px-3 py-1 text-white shadow-sm hover:bg-[#dd4261]"
+          >
             <Edit className="w-3.5 h-3.5" />
             Edit
           </button>
@@ -495,6 +506,18 @@ export default function InvoiceDetailPage() {
           </div>
         </div>
       </div>
+
+      <InvoiceEditDrawer
+        invoiceId={drawerState.activeId || invoiceId}
+        open={drawerState.isOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            drawerState.close();
+          }
+        }}
+        teamId={teamId}
+        onSaved={loadInvoice}
+      />
     </div>
   );
 }

@@ -3,13 +3,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Plus, Clock, SquareKanban, LayoutList } from 'lucide-react';
 import axios from 'axios';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTeam } from '@/contexts/TeamContext';
 import { useSmartDelayedLoading } from '@/hooks/useSmartDelayedLoading';
 import { useProjects, useTasks } from '@/hooks/useQueries';
+import { useEntityDrawerState } from '@/hooks/useEntityDrawerState';
 import { EditTaskModal } from '@/components/EditTaskModal';
 import { DeleteConfirmModal } from '@/components/DeleteConfirmModal';
+import { toastError, toastSuccess } from '@/lib/toast';
 
 type TaskStatus = 'all' | 'todo' | 'in_progress' | 'done';
 type TaskPriority = 'low' | 'medium' | 'high';
@@ -85,6 +87,7 @@ export default function TasksPage() {
   const [showNewTaskForm, setShowNewTaskForm] = useState(false);
   const [editingTask, setEditingTask] = useState<any | null>(null);
   const searchParams = useSearchParams();
+  const drawerState = useEntityDrawerState({ param: 'edit' });
   const [filterView, setFilterView] = useState<'all' | 'today' | 'week'>('all');
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const initialProjectId = searchParams.get('projectId');
@@ -112,8 +115,9 @@ export default function TasksPage() {
       setNewTask(initialTaskState);
       setShowNewTaskForm(false);
       await queryClient.invalidateQueries({ queryKey: ['tasks', teamId] });
+      toastSuccess('Task created');
     } catch (error: any) {
-      alert(error.response?.data?.error || 'Failed to create task');
+      toastError(error.response?.data?.error || 'Failed to create task');
     }
   };
 
@@ -132,10 +136,23 @@ export default function TasksPage() {
       await axios.delete(`/api/tasks/${deleteModal.task.id}`);
       setDeleteModal({ isOpen: false, task: null });
       await queryClient.invalidateQueries({ queryKey: ['tasks', teamId] });
+      toastSuccess('Task deleted');
     } catch (error: any) {
-      alert(error.response?.data?.error || 'Failed to delete task');
+      toastError(error.response?.data?.error || 'Failed to delete task');
     }
   };
+
+  useEffect(() => {
+    if (!drawerState.activeId) {
+      setEditingTask(null);
+      return;
+    }
+
+    const matchedTask = tasks.find((task: any) => String(task.id) === drawerState.activeId);
+    if (matchedTask) {
+      setEditingTask(matchedTask);
+    }
+  }, [drawerState.activeId, tasks]);
 
   const filteredTasks = useMemo(() => {
     const now = new Date();
@@ -271,7 +288,7 @@ export default function TasksPage() {
                     const projectIndex = projects.findIndex((project: any) => project.id === taskProjectId);
                     const project = projects.find((item: any) => item.id === taskProjectId);
                     return (
-                      <div key={task.id} className="mt-row" onClick={() => setEditingTask(task)}>
+                      <div key={task.id} className="mt-row" onClick={() => { setEditingTask(task); drawerState.open(task.id, selectedProjectId ? { projectId: String(selectedProjectId) } : undefined); }}>
                         <button
                           type="button"
                           className={`mt-check ${task.status === 'done' ? 'done' : ''}`}
@@ -309,7 +326,7 @@ export default function TasksPage() {
                   </div>
                   <div className="col-bd">
                     {column.items.map((task: any) => (
-                      <button key={task.id} type="button" className="card" onClick={() => setEditingTask(task)}>
+                      <button key={task.id} type="button" className="card" onClick={() => { setEditingTask(task); drawerState.open(task.id, selectedProjectId ? { projectId: String(selectedProjectId) } : undefined); }}>
                         <div className="c-bar" style={{ background: column.color }} />
                         <div className={`c-pr ${task.priority === 'high' ? 'pr-h' : 'pr-l'}`} />
                         <div className="c-ttl">{task.title}</div>
@@ -423,12 +440,16 @@ export default function TasksPage() {
       {editingTask ? (
         <EditTaskModal
           key={editingTask.id}
-          isOpen={!!editingTask}
+          isOpen={drawerState.isOpen}
           task={editingTask}
-          onClose={() => setEditingTask(null)}
+          onClose={() => {
+            setEditingTask(null);
+            drawerState.close(['projectId']);
+          }}
           onSave={async () => {
             await queryClient.invalidateQueries({ queryKey: ['tasks', teamId] });
             setEditingTask(null);
+            drawerState.close(['projectId']);
           }}
         />
       ) : null}

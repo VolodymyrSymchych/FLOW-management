@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Command } from 'cmdk';
+import { useLocale } from 'next-intl';
 import {
   Search,
   Plus,
@@ -32,6 +33,7 @@ import {
 export function CommandPalette() {
   const [open, setOpen] = useState(false);
   const router = useRouter();
+  const locale = useLocale();
 
   // Toggle with Cmd/Ctrl + K
   useEffect(() => {
@@ -54,8 +56,8 @@ export function CommandPalette() {
 
   const navigate = useCallback((path: string) => {
     setOpen(false);
-    router.push(path);
-  }, [router]);
+    router.push(`/${locale}${path}`);
+  }, [locale, router]);
 
   return (
     <Command.Dialog
@@ -99,7 +101,7 @@ export function CommandPalette() {
               Create New Project
             </CommandItem>
             <CommandItem
-              onSelect={() => navigate('/dashboard/invoices')}
+              onSelect={() => navigate('/dashboard/invoices/new')}
               icon={<DollarSign />}
             >
               Create New Invoice
@@ -143,11 +145,11 @@ export function CommandPalette() {
               Calendar
             </CommandItem>
             <CommandItem
-              onSelect={() => navigate('/dashboard/invoices')}
+              onSelect={() => navigate('/dashboard/settings?pane=billing')}
               icon={<DollarSign />}
               shortcut="⌘I"
             >
-              Invoices
+              Billing
             </CommandItem>
             <CommandItem
               onSelect={() => navigate('/dashboard/documentation')}
@@ -234,6 +236,7 @@ function CommandGroupLabel({ children }: { children: React.ReactNode }) {
  */
 export function useKeyboardShortcuts() {
   const router = useRouter();
+  const locale = useLocale();
 
   useEffect(() => {
     const handleShortcut = (e: KeyboardEvent) => {
@@ -242,36 +245,36 @@ export function useKeyboardShortcuts() {
       switch (e.key) {
         case 'h':
           e.preventDefault();
-          router.push('/');
+          router.push(`/${locale}/dashboard`);
           break;
         case 'p':
           e.preventDefault();
-          router.push('/dashboard/projects');
+          router.push(`/${locale}/dashboard/projects`);
           break;
         case 't':
           e.preventDefault();
-          router.push('/dashboard/tasks');
+          router.push(`/${locale}/dashboard/tasks`);
           break;
         case 'g':
           e.preventDefault();
-          router.push('/timeline');
+          router.push(`/${locale}/dashboard/projects-timeline`);
           break;
         case 'i':
           e.preventDefault();
-          router.push('/invoices');
+          router.push(`/${locale}/dashboard/settings?pane=billing`);
           break;
         case 'd':
           e.preventDefault();
-          router.push('/documentation');
+          router.push(`/${locale}/dashboard/documentation`);
           break;
         case ',':
           e.preventDefault();
-          router.push('/dashboard/settings');
+          router.push(`/${locale}/dashboard/settings`);
           break;
       }
     };
 
     document.addEventListener('keydown', handleShortcut);
     return () => document.removeEventListener('keydown', handleShortcut);
-  }, [router]);
+  }, [locale, router]);
 }

@@ -130,6 +130,10 @@
     font: inherit;
   }
 
+  :focus-visible {
+    outline: none;
+  }
+
   h1,
   h2,
   h3,
@@ -316,6 +320,17 @@
 
   .transition-scale {
     transition: transform 160ms var(--ease-emphasized);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      scroll-behavior: auto !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 
   .transition-transform-opacity {

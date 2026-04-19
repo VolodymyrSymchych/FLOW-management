@@ -9,6 +9,7 @@ import { generateInvoicePDF } from '@/lib/invoice-pdf';
 import { useProjects } from '@/hooks/useQueries';
 import { useTeam } from '@/contexts/TeamContext';
 import { useQueryClient } from '@tanstack/react-query';
+import { toastError, toastSuccess } from '@/lib/toast';
 
 interface InvoiceItem {
   id: string;
@@ -153,12 +154,12 @@ export default function NewInvoicePage() {
 
   const saveInvoice = async (status: 'draft' | 'sent' = 'draft') => {
     if (!details.projectId) {
-      alert('Select a project');
+      toastError('Select a project');
       return;
     }
 
     if (items.some((item) => !item.description.trim())) {
-      alert('Fill in all invoice item descriptions');
+      toastError('Fill in all invoice item descriptions');
       return;
     }
 
@@ -166,11 +167,12 @@ export default function NewInvoicePage() {
     try {
       await axios.post('/api/invoices', buildPayload(status));
       await queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      toastSuccess(status === 'sent' ? 'Invoice created and marked as sent' : 'Invoice created');
       router.push(`/${locale}/dashboard/invoices`);
       router.refresh();
     } catch (error: any) {
       console.error('Failed to save invoice:', error);
-      alert(error.response?.data?.message || error.response?.data?.error || 'Failed to save invoice');
+      toastError(error.response?.data?.message || error.response?.data?.error || 'Failed to save invoice');
     } finally {
       setLoading(false);
     }
@@ -198,7 +200,7 @@ export default function NewInvoicePage() {
       });
     } catch (error) {
       console.error('Failed to download invoice preview:', error);
-      alert('Failed to download invoice preview');
+      toastError('Failed to download invoice preview');
     }
   };
 

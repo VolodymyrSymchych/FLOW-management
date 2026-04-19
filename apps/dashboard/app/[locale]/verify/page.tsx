@@ -2,20 +2,25 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useLocale } from 'next-intl';
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
+import { Button } from '@/components/ui/button';
 
 function VerifyContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const locale = useLocale();
   const token = searchParams.get('token');
+  const email = searchParams.get('email');
   
-  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const [status, setStatus] = useState<'verifying' | 'success' | 'expired' | 'invalid'>('verifying');
   const [message, setMessage] = useState('');
+  const [resending, setResending] = useState(false);
 
   useEffect(() => {
     if (!token) {
-      setStatus('error');
+      setStatus('invalid');
       setMessage('No verification token provided');
       return;
     }
@@ -39,15 +44,39 @@ function VerifyContent() {
         setStatus('success');
         setMessage(data.message || 'Email verified successfully!');
         setTimeout(() => {
-          router.push('/sign-in');
+          router.push(`/${locale}/sign-in`);
         }, 3000);
       } else {
-        setStatus('error');
+        const nextStatus = String(data.error || '').toLowerCase().includes('expired') ? 'expired' : 'invalid';
+        setStatus(nextStatus);
         setMessage(data.error || 'Failed to verify email');
       }
     } catch (error) {
-      setStatus('error');
+      setStatus('invalid');
       setMessage('An error occurred while verifying your email');
+    }
+  };
+
+  const handleResend = async () => {
+    if (!email) return;
+    setResending(true);
+    try {
+      const response = await fetch('/api/auth/resend-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to resend verification email');
+      }
+
+      setMessage('Verification email sent. Please check your inbox.');
+    } catch (error: any) {
+      setMessage(error.message || 'Failed to resend verification email');
+    } finally {
+      setResending(false);
     }
   };
 
@@ -60,7 +89,7 @@ function VerifyContent() {
 
       <div className="relative z-10 w-full max-w-md">
         <div className="glass-strong rounded-2xl p-12 border border-border text-center">
-          {status === 'loading' && (
+          {status === 'verifying' && (
             <>
               <div className="w-16 h-16 rounded-full glass-light flex items-center justify-center mx-auto mb-6">
                 <Loader2 className="w-8 h-8 text-primary animate-spin" />
@@ -87,7 +116,7 @@ function VerifyContent() {
             </>
           )}
 
-          {status === 'error' && (
+          {(status === 'expired' || status === 'invalid') && (
             <>
               <div className="w-16 h-16 bg-danger/20 rounded-full flex items-center justify-center mx-auto mb-6">
                 <XCircle className="w-8 h-8 text-danger" />
@@ -95,12 +124,18 @@ function VerifyContent() {
               <h2 className="text-2xl font-bold text-text-primary mb-4">Verification Failed</h2>
               <p className="text-text-secondary mb-6">{message}</p>
               <div className="flex flex-col gap-3">
-                <Link
-                  href="/sign-up"
-                  className="glass-button py-3 px-6 rounded-xl font-semibold text-white hover:scale-[1.02] transition-all inline-block"
-                >
-                  Create New Account
-                </Link>
+                {status === 'expired' && email ? (
+                  <Button type="button" onClick={handleResend} loading={resending}>
+                    Resend verification email
+                  </Button>
+                ) : (
+                  <Link
+                    href="/sign-up"
+                    className="glass-button py-3 px-6 rounded-xl font-semibold text-white hover:scale-[1.02] transition-all inline-block"
+                  >
+                    Create New Account
+                  </Link>
+                )}
                 <Link
                   href="/sign-in"
                   className="text-primary hover:text-primary-dark font-semibold transition-colors"
@@ -132,4 +167,3 @@ export default function VerifyPage() {
     </Suspense>
   );
 }
-

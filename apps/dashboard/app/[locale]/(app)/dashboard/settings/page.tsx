@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { User, Bell, CreditCard, Shield, Trash2, Save, Globe, Plus } from 'lucide-react';
 import { useUser } from '@/hooks/useUser';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import axios from 'axios';
 import { useDelayedLoading } from '@/hooks/useDelayedLoading';
@@ -50,7 +50,6 @@ function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void 
 }
 
 export default function SettingsPage() {
-  const [activePane, setActivePane] = useState<SettingPane>('general');
   const { user, loading } = useUser();
   const router = useRouter();
   const t = useTranslations('Settings');
@@ -58,7 +57,9 @@ export default function SettingsPage() {
 
   const shouldShowLoading = useDelayedLoading(loading, 150);
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const currentLocale = useLocale();
+  const paneParam = searchParams.get('pane') as SettingPane | null;
   const [selectedLocale, setSelectedLocale] = useState(currentLocale);
   const [isUpdatingLocale, setIsUpdatingLocale] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -132,6 +133,14 @@ export default function SettingsPage() {
     { id: 'integrations', labelKey: 'integrations', section: 'account' },
     { id: 'security', labelKey: 'security', section: 'account' },
   ];
+
+  const activePane = panes.some((pane) => pane.id === paneParam) ? (paneParam as SettingPane) : 'general';
+
+  const setActivePane = (pane: SettingPane) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('pane', pane);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
 
   if (shouldShowLoading) {
     return <SettingsSkeleton />;

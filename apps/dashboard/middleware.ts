@@ -18,6 +18,8 @@ const getJWTSecret = () => {
 };
 
 const JWT_SECRET = new TextEncoder().encode(getJWTSecret());
+const INTERNAL_TOOLS_ENABLED =
+  process.env.NODE_ENV !== 'production' || process.env.INTERNAL_TOOLS === 'true';
 
 // Simple Redis cache for Edge Runtime (using fetch API)
 async function getCachedSession(token: string): Promise<string | null> {
@@ -73,9 +75,9 @@ const protectedRoutes = [
   '/timeline',
   '/projects-timeline',
   '/payment',
-  '/performance',
   '/charts',
   '/invoices',
+  ...(INTERNAL_TOOLS_ENABLED ? ['/performance'] : []),
 ];
 
 // Public routes that authenticated users shouldn't access
@@ -225,4 +227,3 @@ export const config = {
     '/((?!api|_next/static|_next/image|favicon\\.ico|favicon\\.png|.*\\.(?:png|jpg|jpeg|gif|svg|ico|webp|woff|woff2|ttf|eot)).*)',
   ],
 };
-

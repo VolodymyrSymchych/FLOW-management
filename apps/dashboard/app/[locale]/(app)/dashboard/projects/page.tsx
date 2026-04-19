@@ -10,6 +10,7 @@ import { useTeam } from '@/contexts/TeamContext';
 import { useSmartDelayedLoading } from '@/hooks/useSmartDelayedLoading';
 import { useProjects, useTasks, usePrefetch } from '@/hooks/useQueries';
 import type { Project } from '@/lib/api';
+import { toastError, toastSuccess } from '@/lib/toast';
 
 function colorAt(index: number) {
   return ['#E8753A', '#B83232', '#2E5DA8', '#3D7A5A', '#6941C6', '#B8870A'][index % 6];
@@ -70,9 +71,10 @@ export default function ProjectsPage() {
       setDeleteModal({ isOpen: false, project: null });
       await queryClient.invalidateQueries({ queryKey: ['projects'] });
       await queryClient.invalidateQueries({ queryKey: ['stats'] });
+      toastSuccess('Project deleted');
     } catch (error: unknown) {
       const err = error as { response?: { data?: { error?: string } } };
-      alert(err.response?.data?.error || 'Failed to delete project');
+      toastError(err.response?.data?.error || 'Failed to delete project');
     }
   };
 

@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { Users, Mail, MoreVertical, UserPlus, Clock, Calendar, Building2 } from 'lucide-react';
+import { useLocale } from 'next-intl';
 import { useTeams, useTeamMembers } from '@/hooks/useQueries';
+import { useEntityDrawerState } from '@/hooks/useEntityDrawerState';
 import { EmployeeAttendanceDrawer } from '@/components/dashboard/EmployeeAttendanceDrawer';
 
 interface TeamMember {
@@ -38,7 +40,10 @@ function initials(value?: string | null) {
 
 function TeamPageContent() {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
+  const locale = useLocale();
+  const drawerState = useEntityDrawerState({ param: 'member' });
   const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
 
@@ -53,6 +58,18 @@ function TeamPageContent() {
       setSelectedTeamId(teams[0].id);
     }
   }, [searchParams, teams, selectedTeamId]);
+
+  useEffect(() => {
+    if (!drawerState.activeId) {
+      setSelectedMember(null);
+      return;
+    }
+
+    const matchedMember = members.find((member: TeamMember) => String(member.id) === drawerState.activeId);
+    if (matchedMember) {
+      setSelectedMember(matchedMember);
+    }
+  }, [drawerState.activeId, members]);
 
   const isInitialLoading = teamsLoading && teams.length === 0;
   const showMembersSkeleton = membersLoading && members.length === 0 && selectedTeamId;
@@ -91,7 +108,7 @@ function TeamPageContent() {
                   onChange={(e) => {
                     const teamId = Number(e.target.value);
                     setSelectedTeamId(teamId);
-                    router.push(`/dashboard/team?teamId=${teamId}`);
+                    router.push(`${pathname}?teamId=${teamId}`);
                   }}
                   style={{ background: 'transparent', border: 'none', fontSize: 14, color: 'var(--ink)', cursor: 'pointer', outline: 'none' }}
                 >
@@ -190,7 +207,10 @@ function TeamPageContent() {
                         onMouseOut={(e) => {
                           e.currentTarget.style.boxShadow = '';
                         }}
-                        onClick={() => setSelectedMember(member)}
+                        onClick={() => {
+                          setSelectedMember(member);
+                          drawerState.open(member.id, selectedTeamId ? { teamId: String(selectedTeamId) } : undefined);
+                        }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
                           <div
@@ -246,7 +266,7 @@ function TeamPageContent() {
                           style={{ width: '100%', justifyContent: 'center' }}
                           onClick={(e) => {
                             e.stopPropagation();
-                            router.push(`/dashboard/profile/${user.id}`);
+                            router.push(`/${locale}/dashboard/profile/${user.id}`);
                           }}
                         >
                           View Profile
@@ -263,8 +283,11 @@ function TeamPageContent() {
       
       <EmployeeAttendanceDrawer 
         member={selectedMember} 
-        isOpen={!!selectedMember} 
-        onClose={() => setSelectedMember(null)}
+        isOpen={drawerState.isOpen && !!selectedMember} 
+        onClose={() => {
+          setSelectedMember(null);
+          drawerState.close(['teamId']);
+        }}
         teamId={selectedTeamId || undefined}
       />
     </div>

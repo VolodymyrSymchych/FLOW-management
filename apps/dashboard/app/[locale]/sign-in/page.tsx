@@ -2,13 +2,16 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
 import { Mail, Lock, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { Logo } from '@/components/Logo';
+import { Button } from '@/components/ui/button';
+import { Link } from '@/i18n/routing';
+import { useLocale } from 'next-intl';
 
 function SignInForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const locale = useLocale();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -22,9 +25,9 @@ function SignInForm() {
     if (errorParam) {
       setError(decodeURIComponent(errorParam));
       // Clean up URL
-      router.replace('/sign-in', { scroll: false });
+      router.replace(`/${locale}/sign-in`, { scroll: false });
     }
-  }, [searchParams, router]);
+  }, [locale, searchParams, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,7 +51,7 @@ function SignInForm() {
 
       // Use window.location.href for hard redirect to ensure cookies are properly set
       // This forces a full page reload which picks up the newly set cookies
-      window.location.href = '/dashboard';
+      window.location.href = `/${locale}/dashboard`;
     } catch (err: any) {
       setError(err.message || 'An error occurred');
     } finally {
@@ -77,7 +80,7 @@ function SignInForm() {
         <div className="glass-strong rounded-2xl p-8 border border-border">
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
-              <div className="flex items-center gap-2 p-4 rounded-lg bg-danger/10 border border-danger/20 text-danger">
+              <div aria-live="polite" className="flex items-center gap-2 p-4 rounded-lg bg-danger/10 border border-danger/20 text-danger">
                 <AlertCircle className="w-5 h-5 flex-shrink-0" />
                 <p className="text-sm">{error}</p>
               </div>
@@ -94,7 +97,10 @@ function SignInForm() {
                   id="email"
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (error) setError('');
+                  }}
                   className="glass-input w-full pl-12 pr-4 py-3 rounded-xl text-text-primary placeholder:text-text-tertiary"
                   placeholder="you@example.com"
                   required
@@ -114,7 +120,10 @@ function SignInForm() {
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (error) setError('');
+                  }}
                   className="glass-input w-full pl-12 pr-12 py-3 rounded-xl text-text-primary placeholder:text-text-tertiary"
                   placeholder="••••••••"
                   required
@@ -152,25 +161,31 @@ function SignInForm() {
             </div>
 
             {/* Submit Button */}
-            <button
+            <Button
               type="submit"
-              disabled={loading}
-              className="glass-button w-full py-3 rounded-xl font-semibold text-white hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+              loading={loading}
+              fullWidth
+              className="py-3 rounded-xl font-semibold text-white hover:scale-[1.02] active:scale-[0.98]"
             >
               {loading ? 'Logging in...' : 'Log In'}
-            </button>
+            </Button>
           </form>
 
           {/* OAuth Section */}
           <div className="mt-8">
+            <Button type="button" variant="outline" tone="neutral" fullWidth disabled className="mb-4 justify-center">
+              Continue with email
+            </Button>
             <p className="text-center text-sm text-text-tertiary mb-4">Or continue with</p>
           </div>
 
           {/* OAuth Buttons */}
           <div className="grid grid-cols-2 gap-4">
-            <button
+            <Button
               type="button"
-              className="glass-subtle hover:glass-light border border-border rounded-xl p-3 flex items-center justify-center gap-2 transition-scale hover:scale-105 active:scale-95"
+              variant="outline"
+              tone="neutral"
+              className="rounded-xl p-3 justify-center gap-2 transition-scale hover:scale-105 active:scale-95"
               onClick={() => {
                 const currentUrl = window.location.pathname + window.location.search;
                 window.location.href = `/api/auth/oauth/google?redirect=${encodeURIComponent(currentUrl)}&rememberMe=${rememberMe}`;
@@ -195,11 +210,13 @@ function SignInForm() {
                 />
               </svg>
               <span>Google</span>
-            </button>
+            </Button>
 
-            <button
+            <Button
               type="button"
-              className="glass-subtle hover:glass-light border border-border rounded-xl p-3 flex items-center justify-center gap-2 transition-scale hover:scale-105 active:scale-95"
+              variant="outline"
+              tone="neutral"
+              className="rounded-xl p-3 justify-center gap-2 transition-scale hover:scale-105 active:scale-95"
               onClick={() => {
                 const currentUrl = window.location.pathname + window.location.search;
                 window.location.href = `/api/auth/oauth/microsoft?redirect=${encodeURIComponent(currentUrl)}&rememberMe=${rememberMe}`;
@@ -212,8 +229,12 @@ function SignInForm() {
                 <path fill="#ffb900" d="M13 13h10v10H13z" />
               </svg>
               <span>Microsoft</span>
-            </button>
+            </Button>
           </div>
+
+          <Button type="button" variant="outline" tone="neutral" fullWidth disabled className="mt-4 justify-center">
+            Use a passkey
+          </Button>
 
           {/* Sign Up Link */}
           <div className="mt-8 text-center">
@@ -241,4 +262,3 @@ export default function SignInPage() {
     </Suspense>
   );
 }
-

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { Task } from '@/types';
 import { useTeam } from '@/contexts/TeamContext';
@@ -16,6 +15,9 @@ import { cn } from '@/lib/utils';
 import { Link } from '@/i18n/routing';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import { Button } from '@/components/ui/button';
+import { EditDrawer } from '@/components/ui/edit-drawer';
+import { toastError, toastSuccess } from '@/lib/toast';
 
 interface EditTaskModalProps {
   task: Task | null;
@@ -330,6 +332,7 @@ export function EditTaskModal({ task, isOpen, onClose, onSave }: EditTaskModalPr
   const [commentsLoading, setCommentsLoading] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [sendingComment, setSendingComment] = useState(false);
+  const titleInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState<FormData>({
     title: '', description: '', project_id: '', assignee: '',
@@ -337,12 +340,6 @@ export function EditTaskModal({ task, isOpen, onClose, onSave }: EditTaskModalPr
   });
 
   useEffect(() => { setMounted(true); }, []);
-
-  useEffect(() => {
-    if (isOpen) document.body.style.overflow = 'hidden';
-    else document.body.style.overflow = '';
-    return () => { document.body.style.overflow = ''; };
-  }, [isOpen]);
 
   useEffect(() => {
     if (!task) return;
@@ -440,13 +437,6 @@ export function EditTaskModal({ task, isOpen, onClose, onSave }: EditTaskModalPr
   }, [isOpen, activeTab, loadSubtasks, loadComments]);
 
   useEffect(() => {
-    if (!isOpen) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [isOpen, onClose]);
-
-  useEffect(() => {
     if (addingSubtask) setTimeout(() => subtaskInputRef.current?.focus(), 50);
   }, [addingSubtask]);
 
@@ -466,9 +456,10 @@ export function EditTaskModal({ task, isOpen, onClose, onSave }: EditTaskModalPr
         priority: formData.priority,
         status: formData.status,
       });
+      toastSuccess('Task updated');
       onSave(); onClose();
     } catch (err: any) {
-      alert(err.response?.data?.error || err.message || 'Failed to update task.');
+      toastError(err.response?.data?.error || err.message || 'Failed to update task.');
     } finally { setLoading(false); }
   };
 
@@ -479,7 +470,8 @@ export function EditTaskModal({ task, isOpen, onClose, onSave }: EditTaskModalPr
       const res = await axios.post(`/api/tasks/${task.id}/subtasks`, { title });
       setSubtasks((prev) => [...prev, res.data.subtask]);
       setNewSubtaskTitle('');
-    } catch (err: any) { alert(err.response?.data?.error || 'Failed to create subtask'); }
+      toastSuccess('Subtask added');
+    } catch (err: any) { toastError(err.response?.data?.error || 'Failed to create subtask'); }
   };
 
   const toggleSubtask = async (subtask: Subtask) => {
@@ -499,7 +491,8 @@ export function EditTaskModal({ task, isOpen, onClose, onSave }: EditTaskModalPr
       const res = await axios.post('/api/comments', { entityType: 'task', entityId: task.id, content });
       setComments((prev) => [...prev, res.data.comment]);
       setNewComment('');
-    } catch (err: any) { alert(err.response?.data?.error || 'Failed to post comment'); }
+      toastSuccess('Comment posted');
+    } catch (err: any) { toastError(err.response?.data?.error || 'Failed to post comment'); }
     finally { setSendingComment(false); }
   };
 
@@ -532,69 +525,57 @@ export function EditTaskModal({ task, isOpen, onClose, onSave }: EditTaskModalPr
     { key: 'activity' as const, label: 'Activity', icon: Clock, badge: null },
   ];
 
-  const panel = (
-    <>
-      {/* Backdrop */}
-      <div
-        className={cn(
-          'fixed inset-0 z-[99998] bg-black/0 pointer-events-none transition-all duration-300',
-          isOpen && 'bg-black/40 backdrop-blur-[2px] pointer-events-auto'
-        )}
-        onClick={onClose}
-        aria-hidden="true"
-      />
-
-      {/* Panel */}
-      <div
-        className={cn(
-          'fixed top-0 right-0 bottom-0 z-[99999] w-[620px] max-w-[96vw]',
-          'bg-surface border-l border-border shadow-floating',
-          'flex flex-col',
-          'transform transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]',
-          isOpen ? 'translate-x-0' : 'translate-x-full',
-        )}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Edit task"
-      >
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-
-          {/* Top bar */}
-          <div className="flex-none flex items-center justify-between px-5 py-3.5 border-b border-border">
-            <div className="flex items-center gap-2 min-w-0 text-[12px] font-medium text-text-tertiary">
-              <FolderOpen className="w-3.5 h-3.5 flex-shrink-0" />
-              <Link href={`/dashboard/tasks/${task.id}`} className="hover:text-text-primary transition-colors truncate max-w-[160px]" onClick={onClose}>
-                {selectedProject?.name || 'Task'}
-              </Link>
-              <span className="text-border">/</span>
-              <span
-                className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold"
-                style={{ background: statusMeta.bg, color: statusMeta.color }}
-              >
-                <span className="w-1.5 h-1.5 rounded-full" style={{ background: statusMeta.dot }} />
-                {statusMeta.label}
-              </span>
-              <span
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold"
-                style={{ background: priorityMeta.bg, color: priorityMeta.color }}
-              >
-                {priorityMeta.icon} {priorityMeta.label}
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={onClose}
-              className="p-1.5 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-surface-muted transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* Scrollable body */}
-          <div className="flex-1 min-h-0 overflow-y-auto px-6 pt-6 pb-3">
+  return (
+    <EditDrawer
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+      title="Edit task"
+      subtitle={
+        <div className="flex items-center gap-2 min-w-0 text-[12px] font-medium text-text-tertiary">
+          <FolderOpen className="w-3.5 h-3.5 flex-shrink-0" />
+          <Link href={`/dashboard/tasks/${task.id}`} className="hover:text-text-primary transition-colors truncate max-w-[160px]" onClick={onClose}>
+            {selectedProject?.name || 'Task'}
+          </Link>
+          <span className="text-border">/</span>
+          <span
+            className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold"
+            style={{ background: statusMeta.bg, color: statusMeta.color }}
+          >
+            <span className="w-1.5 h-1.5 rounded-full" style={{ background: statusMeta.dot }} />
+            {statusMeta.label}
+          </span>
+          <span
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold"
+            style={{ background: priorityMeta.bg, color: priorityMeta.color }}
+          >
+            {priorityMeta.icon} {priorityMeta.label}
+          </span>
+        </div>
+      }
+      size="md"
+      initialFocusRef={titleInputRef}
+      onPrimaryAction={() => {
+        void handleSubmit(new Event('submit') as unknown as React.FormEvent);
+      }}
+      footer={
+        <div className="flex items-center justify-end gap-2">
+          <Button type="button" variant="ghost" tone="neutral" onClick={onClose} disabled={loading}>
+            Cancel
+          </Button>
+          <Button type="submit" form="edit-task-form" loading={loading}>
+            Save Changes
+          </Button>
+        </div>
+      }
+    >
+      <form id="edit-task-form" onSubmit={handleSubmit} className="flex h-full flex-col">
+        <div className="flex-1 min-h-0">
 
             {/* Title */}
             <input
+              ref={titleInputRef}
               className="w-full text-[24px] font-bold text-text-primary tracking-[-0.02em] leading-tight bg-transparent border-none outline-none mb-6 placeholder:text-text-tertiary"
               type="text"
               required
@@ -937,31 +918,9 @@ export function EditTaskModal({ task, isOpen, onClose, onSave }: EditTaskModalPr
             )}
 
           </div>
-
-          {/* Footer */}
-          <div className="flex-none flex items-center justify-end gap-2 px-6 py-3.5 border-t border-border">
-            <button type="button"
-              className="px-4 py-2 text-[13px] font-medium text-text-secondary rounded-lg hover:bg-surface-muted transition-colors"
-              onClick={onClose} disabled={loading}>
-              Cancel
-            </button>
-            <button type="submit"
-              className={cn(
-                'px-4 py-2 text-[13px] font-semibold rounded-lg transition-colors',
-                'bg-primary text-white hover:bg-primary-dark',
-                'disabled:opacity-50 disabled:cursor-not-allowed'
-              )}
-              disabled={loading}>
-              {loading ? 'Saving…' : 'Save Changes'}
-            </button>
-          </div>
-
-        </form>
-      </div>
-    </>
+      </form>
+    </EditDrawer>
   );
-
-  return createPortal(panel, document.body);
 }
 
 function ActivityRow({ dotColor, text, time }: { dotColor: string; text: React.ReactNode; time: string }) {

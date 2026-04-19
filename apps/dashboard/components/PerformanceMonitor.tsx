@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { usePerformanceMonitor, PerformanceMetrics } from '@/lib/performance';
+import { toastSuccess } from '@/lib/toast';
 
 export function PerformanceMonitor() {
   const pathname = usePathname();
@@ -123,7 +124,7 @@ export function PerformanceMonitor() {
               onClick={() => {
                 const data = JSON.stringify(metrics, null, 2);
                 navigator.clipboard.writeText(data);
-                alert('Metrics copied to clipboard!');
+                toastSuccess('Metrics copied to clipboard');
               }}
               className="w-full px-3 py-1.5 text-xs rounded-lg glass-light hover:glass-medium text-text-primary transition-colors"
             >
@@ -135,4 +136,3 @@ export function PerformanceMonitor() {
     </div>
   );
 }
-

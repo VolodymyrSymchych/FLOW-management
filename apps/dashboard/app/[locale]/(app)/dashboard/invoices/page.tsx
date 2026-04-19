@@ -1,14 +1,17 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Plus, Search, Download, Trash2, Mail } from 'lucide-react';
+import { Plus, Search, Download, Trash2, Mail, PencilLine } from 'lucide-react';
 import axios from 'axios';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { DeleteConfirmModal } from '@/components/DeleteConfirmModal';
+import { InvoiceEditDrawer } from '@/components/InvoiceEditDrawer';
 import { generateInvoicePDF } from '@/lib/invoice-pdf';
+import { toastError, toastSuccess } from '@/lib/toast';
 import { useTeam } from '@/contexts/TeamContext';
+import { useEntityDrawerState } from '@/hooks/useEntityDrawerState';
 import { useInvoices, useProjects } from '@/hooks/useQueries';
 
 interface Invoice {
@@ -58,6 +61,7 @@ export default function InvoicesPage() {
   const teamId = selectedTeam.type === 'single' && selectedTeam.teamId ? selectedTeam.teamId : 'all';
   const { data: invoices = [], isLoading: invoicesLoading, refetch } = useInvoices(teamId);
   const { data: projects = [] } = useProjects(teamId);
+  const drawerState = useEntityDrawerState({ param: 'edit' });
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'overdue' | 'paid' | 'draft'>('all');
@@ -131,15 +135,15 @@ export default function InvoicesPage() {
 
   const handleSendEmail = async (invoice: Invoice, action: 'send' | 'remind_overdue' | 'remind_due_date' = 'send') => {
     if (!invoice.clientEmail) {
-      alert('Client email is required to send email');
+      toastError('Client email is required to send email');
       return;
     }
 
     try {
       await axios.post(`/api/invoices/${invoice.id}/send-email`, { action });
-      alert(`Email sent to ${invoice.clientEmail}`);
+      toastSuccess(`Email sent to ${invoice.clientEmail}`);
     } catch (error: any) {
-      alert(error.response?.data?.error || 'Failed to send email');
+      toastError(error.response?.data?.error || 'Failed to send email');
     }
   };
 
@@ -149,7 +153,7 @@ export default function InvoicesPage() {
       await generateInvoicePDF({ ...response.data.invoice, projectName: projectName(invoice.projectId) });
     } catch (error) {
       console.error('Failed to download invoice:', error);
-      alert('Failed to download invoice');
+      toastError('Failed to download invoice');
     }
   };
 
@@ -159,8 +163,9 @@ export default function InvoicesPage() {
       await axios.delete(`/api/invoices/${deleteModal.invoice.id}`);
       setDeleteModal({ isOpen: false, invoice: null });
       await loadData();
+      toastSuccess('Invoice deleted');
     } catch (error: any) {
-      alert(error.response?.data?.error || 'Failed to delete invoice');
+      toastError(error.response?.data?.error || 'Failed to delete invoice');
     }
   };
 
@@ -283,7 +288,7 @@ export default function InvoicesPage() {
                 const isOverdue = invoice.status.toLowerCase() === 'overdue';
                 return (
                   <tr key={invoice.id}>
-                    <td><Link href={`/dashboard/invoices/${invoice.id}`} className="inv-num">{invoice.invoiceNumber}</Link></td>
+                    <td><Link href={`/${locale}/dashboard/invoices/${invoice.id}`} className="inv-num">{invoice.invoiceNumber}</Link></td>
                     <td><div className="inv-client">{invoice.clientName || 'No client'}</div></td>
                     <td><div className="inv-proj">{projectName(invoice.projectId)}</div></td>
                     <td><span className="inv-amt">{formatCurrency(invoice.totalAmount || invoice.amount || 0)}</span></td>
@@ -305,6 +310,15 @@ export default function InvoicesPage() {
                         <button type="button" className="btn btn-ghost" style={{ fontSize: 12, padding: '4px 9px' }} onClick={() => handleDownloadInvoice(invoice)}>
                           <Download style={{ width: 11, height: 11 }} />
                           View PDF
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-ghost"
+                          style={{ fontSize: 12, padding: '4px 9px' }}
+                          onClick={() => drawerState.open(invoice.id, { drawer: 'invoice' })}
+                        >
+                          <PencilLine style={{ width: 11, height: 11 }} />
+                          Edit
                         </button>
                         <button type="button" className="ib" style={{ width: 26, height: 26 }} onClick={() => setDeleteModal({ isOpen: true, invoice })} aria-label={`Delete ${invoice.invoiceNumber}`}>
                           <Trash2 style={{ width: 12, height: 12 }} />
@@ -346,6 +360,17 @@ export default function InvoicesPage() {
         itemName={deleteModal.invoice?.invoiceNumber || ''}
         onConfirm={confirmDeleteInvoice}
         onCancel={() => setDeleteModal({ isOpen: false, invoice: null })}
+      />
+      <InvoiceEditDrawer
+        invoiceId={drawerState.activeId}
+        open={drawerState.isOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            drawerState.close();
+          }
+        }}
+        teamId={teamId}
+        onSaved={loadData}
       />
     </div>
   );

@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Modal, ModalFooter } from '@/components/ui/modal';
+import { Button } from '@/components/ui/button';
+import { EditDrawer } from '@/components/ui/edit-drawer';
+import { toastError, toastSuccess } from '@/lib/toast';
 
 interface Team {
   id: number;
@@ -90,25 +92,36 @@ export function EditProjectModal({ isOpen, onClose, onSave, project }: EditProje
         team_id: formData.team_id ? parseInt(formData.team_id) : null,
       });
 
+      toastSuccess('Project updated');
       onSave();
       onClose();
     } catch (error: any) {
       console.error('Failed to update project:', error);
       const errorMessage = error.response?.data?.error || error.message || 'Failed to update project. Please try again.';
-      alert(errorMessage);
+      toastError(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
+    <EditDrawer
+      open={isOpen}
+      onOpenChange={(open) => !open && onClose()}
       title="Edit Project"
-      size="2xl"
+      size="lg"
+      footer={
+        <div className="flex items-center justify-end gap-2">
+          <Button type="button" variant="ghost" tone="neutral" onClick={onClose} disabled={loading}>
+            Cancel
+          </Button>
+          <Button type="submit" form="edit-project-form" loading={loading}>
+            Save Changes
+          </Button>
+        </div>
+      }
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form id="edit-project-form" onSubmit={handleSubmit} className="space-y-4">
           {/* Project Name */}
           <div>
             <label className="block text-sm font-medium text-text-primary mb-1.5">
@@ -258,24 +271,7 @@ export function EditProjectModal({ isOpen, onClose, onSave, project }: EditProje
               />
             </div>
           </div>
-
-        <ModalFooter>
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 text-sm text-text-secondary hover:text-text-primary transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={loading}
-            className="px-4 py-2 text-sm bg-primary text-white rounded-lg hover:opacity-90 transition-colors disabled:opacity-50"
-          >
-            {loading ? 'Saving...' : 'Save Changes'}
-          </button>
-        </ModalFooter>
       </form>
-    </Modal>
+    </EditDrawer>
   );
 }

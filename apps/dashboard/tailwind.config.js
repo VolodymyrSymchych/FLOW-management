@@ -51,9 +51,10 @@ module.exports = {
         '2xl': '1.5rem',
       },
       boxShadow: {
-        card: '0 10px 30px rgba(15, 15, 14, 0.06)',
-        floating: '0 18px 48px rgba(15, 15, 14, 0.12)',
-        focus: '0 0 0 3px rgba(232, 117, 58, 0.18)',
+        subtle: '0 1px 1px rgba(15, 15, 14, 0.03), 0 1px 2px rgba(15, 15, 14, 0.04)',
+        card: '0 1px 2px rgba(15, 15, 14, 0.04), 0 8px 24px rgba(15, 15, 14, 0.05)',
+        floating: '0 2px 4px rgba(15, 15, 14, 0.05), 0 16px 40px rgba(15, 15, 14, 0.10)',
+        focus: '0 0 0 3px hsl(var(--ring) / 0.22)',
       },
       animation: {
         fadeIn: 'fadeIn 180ms cubic-bezier(0.2, 0.8, 0.2, 1)',

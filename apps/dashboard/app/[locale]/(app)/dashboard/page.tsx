@@ -1,5 +1,5 @@
-import DashboardMockup from '@/components/dashboard/DashboardMockup';
+import WorkspaceDashboard from '@/components/dashboard/workspace/WorkspaceDashboard';
 
 export default function DashboardPage() {
-  return <DashboardMockup />;
+  return <WorkspaceDashboard />;
 }

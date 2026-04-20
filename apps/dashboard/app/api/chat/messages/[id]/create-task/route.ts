@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth } from '@/lib/auth-helper';
+import { isUnauthorizedError, requireAuth } from '@/lib/auth-helper';
 import { messageService } from '@/lib/chat-service';
 
 export const dynamic = 'force-dynamic';
@@ -42,6 +42,9 @@ export async function POST(
 
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
+    if (isUnauthorizedError(error)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     console.error('Error creating task from message:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to create task' },

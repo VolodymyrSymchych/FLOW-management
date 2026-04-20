@@ -5,6 +5,7 @@ import { cachedWithValidation } from '@/lib/redis';
 import { CacheKeys } from '@/lib/cache-keys';
 import { invalidateOnUpdate } from '@/lib/cache-invalidation';
 import { storage } from '@/server/storage';
+import { isUnauthorizedError } from '@/lib/auth-helper';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,6 +35,9 @@ export async function GET(request: NextRequest) {
     const chats = await storage.getUserChats(session.userId);
     return NextResponse.json({ chats });
   } catch (error) {
+    if (isUnauthorizedError(error)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     console.error('Error fetching chats:', error);
     return NextResponse.json(
       { error: 'Failed to fetch chats' },
@@ -95,6 +99,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ chat }, { status: 201 });
   } catch (error) {
+    if (isUnauthorizedError(error)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     console.error('Error creating chat:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to create chat' },

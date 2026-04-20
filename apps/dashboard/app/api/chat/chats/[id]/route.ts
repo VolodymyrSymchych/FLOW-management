@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth } from '@/lib/auth-helper';
+import { isUnauthorizedError, requireAuth } from '@/lib/auth-helper';
 import { chatService, messageService } from '@/lib/chat-service';
 import { invalidateOnUpdate } from '@/lib/cache-invalidation';
 
@@ -37,6 +37,9 @@ export async function GET(
 
     return NextResponse.json({ chat, messages, members });
   } catch (error) {
+    if (isUnauthorizedError(error)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     console.error('Error fetching chat:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to fetch chat' },
@@ -71,6 +74,9 @@ export async function PATCH(
 
     return NextResponse.json({ chat });
   } catch (error) {
+    if (isUnauthorizedError(error)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     console.error('Error updating chat:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to update chat' },
@@ -102,6 +108,9 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    if (isUnauthorizedError(error)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     console.error('Error deleting chat:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to delete chat' },

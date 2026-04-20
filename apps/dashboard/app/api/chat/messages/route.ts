@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth } from '@/lib/auth-helper';
+import { isUnauthorizedError, requireAuth } from '@/lib/auth-helper';
 import { messageService } from '@/lib/chat-service';
 
 export const dynamic = 'force-dynamic';
@@ -35,6 +35,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ message }, { status: 201 });
   } catch (error) {
+    if (isUnauthorizedError(error)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     console.error('Error sending message:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to send message' },
@@ -42,4 +45,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

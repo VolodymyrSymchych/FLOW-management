@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth } from '@/lib/auth-helper';
+import { isUnauthorizedError, requireAuth } from '@/lib/auth-helper';
 import { messageService } from '@/lib/chat-service';
 
 export const dynamic = 'force-dynamic';
@@ -19,6 +19,9 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ mentions });
   } catch (error) {
+    if (isUnauthorizedError(error)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     console.error('Error fetching mentions:', error);
     return NextResponse.json(
       { error: 'Failed to fetch mentions' },

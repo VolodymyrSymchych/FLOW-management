@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth } from '@/lib/auth-helper';
+import { isUnauthorizedError, requireAuth } from '@/lib/auth-helper';
 import { authenticatePusherChannel } from '@/lib/pusher-server';
 import { chatService } from '@/lib/chat-service';
 
@@ -46,6 +46,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(auth);
   } catch (error) {
+    if (isUnauthorizedError(error)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     console.error('Error authenticating Pusher channel:', error);
     return NextResponse.json(
       { error: 'Authentication failed' },
@@ -53,4 +56,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

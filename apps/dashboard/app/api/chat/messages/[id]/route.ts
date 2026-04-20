@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth } from '@/lib/auth-helper';
+import { isUnauthorizedError, requireAuth } from '@/lib/auth-helper';
 import { messageService } from '@/lib/chat-service';
 
 export const dynamic = 'force-dynamic';
@@ -39,6 +39,9 @@ export async function GET(
     const message = await messageService.getMessageById(messageId, session.userId);
     return NextResponse.json({ message });
   } catch (error) {
+    if (isUnauthorizedError(error)) {
+      return messageErrorResponse('Unauthorized', 401);
+    }
     console.error('Error fetching message:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to fetch message' },
@@ -67,6 +70,9 @@ export async function PATCH(
     const message = await messageService.editMessage(messageId, session.userId, content);
     return NextResponse.json({ message });
   } catch (error) {
+    if (isUnauthorizedError(error)) {
+      return messageErrorResponse('Unauthorized', 401);
+    }
     console.error('Error editing message:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to edit message' },
@@ -88,6 +94,9 @@ export async function DELETE(
     await messageService.deleteMessage(messageId, session.userId);
     return NextResponse.json({ success: true });
   } catch (error) {
+    if (isUnauthorizedError(error)) {
+      return messageErrorResponse('Unauthorized', 401);
+    }
     console.error('Error deleting message:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to delete message' },

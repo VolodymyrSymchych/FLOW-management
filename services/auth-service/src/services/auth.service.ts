@@ -144,16 +144,25 @@ export class AuthService {
     return user;
   }
 
+  private withRedisTimeout<T>(promise: Promise<T>, ms = 1500): Promise<T> {
+    return Promise.race([
+      promise,
+      new Promise<T>((_, reject) =>
+        setTimeout(() => reject(new Error(`Redis operation timed out after ${ms}ms`)), ms)
+      ),
+    ]);
+  }
+
   async checkAccountLockout(email: string, redis: RedisClient): Promise<{ locked: boolean; remainingTime?: number }> {
     if (!redis) return { locked: false };
 
     try {
       const key = `account-lockout:${email.toLowerCase()}`;
-      const attempts = await redis.get(key);
+      const attempts = await this.withRedisTimeout(redis.get(key));
       const maxAttempts = parseInt(process.env.MAX_LOGIN_ATTEMPTS || '10', 10);
 
       if (attempts && parseInt(attempts) >= maxAttempts) {
-        const ttl = await redis.ttl(key);
+        const ttl = await this.withRedisTimeout(redis.ttl(key));
         return { locked: true, remainingTime: ttl > 0 ? ttl : 0 };
       }
 
@@ -170,10 +179,10 @@ export class AuthService {
     try {
       const key = `account-lockout:${email.toLowerCase()}`;
       const lockoutDuration = parseInt(process.env.LOCKOUT_DURATION || '1800', 10);
-      const attempts = await redis.incr(key);
+      const attempts = await this.withRedisTimeout(redis.incr(key));
 
       if (attempts === 1) {
-        await redis.expire(key, lockoutDuration);
+        await this.withRedisTimeout(redis.expire(key, lockoutDuration) as Promise<void>);
       }
     } catch (error) {
       logger.error('Error recording failed login', { error, email });
@@ -185,7 +194,7 @@ export class AuthService {
 
     try {
       const key = `account-lockout:${email.toLowerCase()}`;
-      await redis.del(key);
+      await this.withRedisTimeout(redis.del(key) as Promise<void>);
     } catch (error) {
       logger.error('Error clearing failed logins', { error, email });
     }

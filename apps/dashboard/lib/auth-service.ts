@@ -44,12 +44,20 @@ export async function proxyToAuthService(
     headers.set('X-Service-API-Key', serviceApiKey);
   }
 
-  const response = await fetch(url, {
-    ...options,
-    headers,
-  });
+  const controller = new AbortController();
+  const timeoutMs = process.env.NODE_ENV === 'production' ? 10_000 : 30_000;
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-  return response;
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers,
+      signal: controller.signal,
+    });
+    return response;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 export const authService = {

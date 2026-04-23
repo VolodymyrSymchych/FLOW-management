@@ -1,15 +1,23 @@
 'use client';
 
 import { motion } from "framer-motion";
+import dynamic from "next/dynamic";
 import Link from "next/link";
-import { ArrowRight, Sparkles } from "lucide-react";
-import { LiveScopeDemo } from "./LiveScopeDemo";
+import { ArrowRight } from "lucide-react";
 import { WaitlistForm } from "./WaitlistForm";
 
+const LiveScopeDemo = dynamic(
+    () => import('./LiveScopeDemo').then((m) => ({ default: m.LiveScopeDemo })),
+    {
+        ssr: false,
+        loading: () => <div className="h-[400px] animate-pulse rounded-2xl bg-foreground/5" />,
+    }
+);
+
 const proofPoints = [
-    "Turns “quick asks” into priced change orders",
-    "Flags the 40% of projects where scope creep starts to snowball",
-    "Drafts the client reply before signup",
+    'Scope Score in seconds \u2014 before you sign the contract',
+    'Flags \u201cquick asks\u201d that quietly drain your margin',
+    "Drafts the change-order reply so you don't have to",
 ];
 
 export function Hero({ user }: { user?: any }) {
@@ -31,32 +39,18 @@ export function Hero({ user }: { user?: any }) {
                 <div className="flex flex-col gap-12">
                     <div className="grid gap-10 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-start">
                         <div className="w-full">
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-                                className="mb-6"
-                            >
-                                <Link
-                                    href="#kill-feature"
-                                    className="inline-flex items-center gap-2 rounded-full border border-border bg-foreground/[0.04] px-3.5 py-1.5 text-sm font-medium text-foreground/85 backdrop-blur-sm transition-colors hover:border-foreground/20 hover:text-foreground"
-                                >
-                                    <Sparkles className="h-3.5 w-3.5 text-orange-400" />
-                                    Live AI demo + utility tool
-                                    <span className="text-foreground/40">·</span>
-                                    <span className="text-orange-400">Try both</span>
-                                </Link>
-                            </motion.div>
-
                             <motion.h1
                                 initial={{ opacity: 0, y: 24 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.65, delay: 0.05, ease: [0.22, 1, 0.36, 1] }}
-                                className="text-5xl font-black leading-[0.96] tracking-[-0.05em] text-foreground md:text-7xl xl:text-[82px]"
+                                className="text-4xl font-black leading-[1.0] tracking-[-0.04em] text-foreground md:text-6xl xl:text-[64px]"
                             >
-                                Scope creep,
+                                Your brief scores{" "}
+                                <span className="text-orange-400">34/100.</span>
                                 <br />
-                                <span className="text-orange-400">priced before it lands.</span>
+                                Here&apos;s what will
+                                <br />
+                                cost you.
                             </motion.h1>
 
                             <motion.p
@@ -65,7 +59,7 @@ export function Hero({ user }: { user?: any }) {
                                 transition={{ duration: 0.65, delay: 0.14, ease: [0.22, 1, 0.36, 1] }}
                                 className="mt-6 max-w-4xl text-lg leading-8 text-foreground/82 md:text-xl"
                             >
-                                Flow catches out-of-scope client asks, estimates the revenue at risk, and drafts the change-order reply before your team gives the work away for free.
+                                Flow reads your project brief, finds the gaps before work starts, and catches client asks that should be billed — not absorbed.
                             </motion.p>
 
                             <motion.div
@@ -108,24 +102,6 @@ export function Hero({ user }: { user?: any }) {
                                 ) : (
                                     <div className="space-y-4">
                                         <WaitlistForm className="w-full" variant="compact" />
-                                        <div className="flex flex-wrap items-center gap-3 text-sm text-foreground/70">
-                                            <span className="rounded-full border border-orange-500/20 bg-orange-500/[0.08] px-3 py-1 font-semibold text-orange-500">
-                                                Private beta cohort
-                                            </span>
-                                            <span>First rollout is reserved for a small group of agencies and freelancers.</span>
-                                        </div>
-                                        <div className="flex flex-wrap items-center gap-4">
-                                            <Link
-                                                href="#kill-feature"
-                                                className="inline-flex items-center gap-1.5 text-sm font-semibold text-foreground/70 transition-colors hover:text-foreground focus-visible:outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                                            >
-                                                See it in action
-                                                <ArrowRight aria-hidden="true" className="h-3.5 w-3.5" />
-                                            </Link>
-                                            <p className="text-sm leading-6 text-foreground/75">
-                                                Best for freelancers, agencies, and in-house teams tired of hearing “it should be quick.”
-                                            </p>
-                                        </div>
                                     </div>
                                 )}
                             </motion.div>

@@ -1,6 +1,11 @@
 import axios, { AxiosInstance } from 'axios';
+import http from 'http';
+import https from 'https';
 
 const FILE_SERVICE_URL = process.env.NEXT_PUBLIC_FILE_SERVICE_URL || 'http://localhost:3007';
+
+const httpAgent = new http.Agent({ keepAlive: true });
+const httpsAgent = new https.Agent({ keepAlive: true });
 
 class FileServiceClient {
     private client: AxiosInstance;
@@ -8,8 +13,10 @@ class FileServiceClient {
     constructor() {
         this.client = axios.create({
             baseURL: FILE_SERVICE_URL,
-            timeout: 60000, // 60s for file uploads
+            timeout: 3000,
             withCredentials: true,
+            httpAgent,
+            httpsAgent,
         });
     }
 
@@ -64,6 +71,7 @@ class FileServiceClient {
                     ...headers,
                     'Content-Type': 'multipart/form-data',
                 },
+                timeout: 60000,
             });
             return { file: response.data.file };
         } catch (error: any) {
@@ -151,6 +159,7 @@ class FileServiceClient {
                     ...headers,
                     'Content-Type': 'multipart/form-data',
                 },
+                timeout: 60000,
             });
             return { file: response.data.file };
         } catch (error: any) {

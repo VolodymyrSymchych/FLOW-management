@@ -1,11 +1,7 @@
 import { NextResponse } from 'next/server';
-import { storage } from '@/lib/storage';
 import { getSession } from '@/lib/auth';
 import { cachedWithValidation } from '@/lib/redis';
 import { CacheKeys } from '@/lib/cache-keys';
-import { db } from '@/server/db';
-import { projects, tasks, expenses } from '@/shared/schema';
-import { eq, sql, and, isNull, gte, lt, desc, or } from 'drizzle-orm';
 import { neon } from '@neondatabase/serverless';
 
 export const dynamic = 'force-dynamic';
@@ -92,66 +88,8 @@ export async function GET() {
         };
       },
       {
-        ttl: 60, // Cache for 1 minute (stats change frequently)
-        validate: true,
-        getUpdatedAt: async () => {
-          // Stats depend on projects, tasks, and expenses
-          // Get the most recent updatedAt from all three
-          const timestamps: (Date | null)[] = [];
-
-          try {
-            // Most recent project update
-            const projectUpdate = await db
-              .select({ updatedAt: projects.updatedAt })
-              .from(projects)
-              .where(and(
-                eq(projects.userId, session.userId),
-                isNull(projects.deletedAt)
-              ))
-              .orderBy(desc(projects.updatedAt))
-              .limit(1);
-            if (projectUpdate[0]?.updatedAt) {
-              timestamps.push(projectUpdate[0].updatedAt);
-            }
-
-            // Most recent task update
-            const taskUpdate = await db
-              .select({ updatedAt: tasks.updatedAt })
-              .from(tasks)
-              .where(and(
-                eq(tasks.userId, session.userId),
-                isNull(tasks.deletedAt)
-              ))
-              .orderBy(desc(tasks.updatedAt))
-              .limit(1);
-            if (taskUpdate[0]?.updatedAt) {
-              timestamps.push(taskUpdate[0].updatedAt);
-            }
-
-            // Most recent expense update
-            const expenseUpdate = await db
-              .select({ updatedAt: expenses.updatedAt })
-              .from(expenses)
-              .orderBy(desc(expenses.updatedAt))
-              .limit(1);
-            if (expenseUpdate[0]?.updatedAt) {
-              timestamps.push(expenseUpdate[0].updatedAt);
-            }
-          } catch (error) {
-            console.warn('[Stats] Error getting timestamps:', error);
-          }
-
-          // Return the most recent timestamp
-          if (timestamps.length === 0) return null;
-
-          const mostRecent = timestamps.reduce((max, current) => {
-            if (!max) return current;
-            if (!current) return max;
-            return current > max ? current : max;
-          }, null as Date | null);
-
-          return mostRecent;
-        },
+        ttl: 60, // Cache for 1 minute — trust TTL, no extra DB validation round-trips
+        validate: false,
       }
     );
 

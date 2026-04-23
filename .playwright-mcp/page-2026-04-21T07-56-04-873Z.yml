@@ -1,0 +1,581 @@
+- generic [active] [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e3]:
+    - link "Skip to main content" [ref=e4] [cursor=pointer]:
+      - /url: "#main-content"
+    - navigation "Primary" [ref=e5]:
+      - generic [ref=e7]:
+        - generic [ref=e8]:
+          - generic [ref=e10]: F
+          - generic [ref=e11]: Flow
+        - list [ref=e12]:
+          - listitem [ref=e13]:
+            - link "Demo" [ref=e14] [cursor=pointer]:
+              - /url: "#main-content"
+          - listitem [ref=e15]:
+            - link "Features" [ref=e16] [cursor=pointer]:
+              - /url: "#features"
+          - listitem [ref=e17]:
+            - link "Email Tool" [ref=e18] [cursor=pointer]:
+              - /url: "#kill-feature"
+          - listitem [ref=e19]:
+            - link "Pricing" [ref=e20] [cursor=pointer]:
+              - /url: "#pricing"
+        - generic [ref=e21]:
+          - button "Toggle theme" [ref=e22] [cursor=pointer]:
+            - img [ref=e23]
+          - link "Log in" [ref=e25] [cursor=pointer]:
+            - /url: /sign-in
+          - link "Get started" [ref=e26] [cursor=pointer]:
+            - /url: /sign-up
+            - text: Get started
+            - img [ref=e27]
+    - main [ref=e29]:
+      - generic [ref=e32]:
+        - generic [ref=e33]:
+          - generic [ref=e34]:
+            - link "Live AI demo + utility tool · Try both" [ref=e36] [cursor=pointer]:
+              - /url: "#kill-feature"
+              - img [ref=e37]
+              - text: Live AI demo + utility tool
+              - generic [ref=e39]: ·
+              - generic [ref=e40]: Try both
+            - heading "Scope creep, priced before it lands." [level=1] [ref=e41]:
+              - text: Scope creep,
+              - text: priced before it lands.
+            - paragraph [ref=e42]: Flow catches out-of-scope client asks, estimates the revenue at risk, and drafts the change-order reply before your team gives the work away for free.
+            - generic [ref=e43]:
+              - generic [ref=e46]: Turns “quick asks” into priced change orders
+              - generic [ref=e49]: Flags the 40% of projects where scope creep starts to snowball
+              - generic [ref=e52]: Drafts the client reply before signup
+            - generic [ref=e54]:
+              - form "Join the waitlist" [ref=e56]:
+                - heading "Join the waitlist" [level=2] [ref=e57]
+                - generic [ref=e58]:
+                  - img [ref=e59]
+                  - generic [ref=e62]: Email address
+                  - textbox "Email address" [ref=e63]:
+                    - /placeholder: Enter your email
+                - button "Join Waitlist" [ref=e64] [cursor=pointer]
+              - generic [ref=e65]:
+                - generic [ref=e66]: Private beta cohort
+                - generic [ref=e67]: First rollout is reserved for a small group of agencies and freelancers.
+              - generic [ref=e68]:
+                - link "See it in action" [ref=e69] [cursor=pointer]:
+                  - /url: "#kill-feature"
+                  - text: See it in action
+                  - img [ref=e70]
+                - paragraph [ref=e72]: Best for freelancers, agencies, and in-house teams tired of hearing “it should be quick.”
+          - generic [ref=e74]:
+            - generic [ref=e75]: What teams catch with Flow
+            - generic [ref=e76]:
+              - generic [ref=e77]:
+                - generic [ref=e78]: 40%
+                - paragraph [ref=e79]: of projects hit scope creep before delivery slows down
+              - generic [ref=e80]:
+                - generic [ref=e81]: 25%
+                - paragraph [ref=e82]: of revenue typically goes unbilled without tight scope control
+              - generic [ref=e83]:
+                - generic [ref=e84]: 20h+
+                - paragraph [ref=e85]: a week disappears into admin when updates stay manual
+        - generic [ref=e87]:
+          - generic [ref=e95]: flow.app/dashboard
+          - generic [ref=e96]:
+            - generic [ref=e97]:
+              - generic [ref=e98]:
+                - generic [ref=e99]: F
+                - generic [ref=e100]:
+                  - generic [ref=e101]: Flow
+                  - generic [ref=e102]: My Workspace
+                - img [ref=e103]
+              - generic [ref=e105]:
+                - generic [ref=e106]:
+                  - generic [ref=e107]: Overview
+                  - button [ref=e108] [cursor=pointer]:
+                    - img [ref=e109]
+                    - generic [ref=e114]: Dashboard
+                  - button [ref=e115] [cursor=pointer]:
+                    - img [ref=e116]
+                    - generic [ref=e119]: Tasks
+                  - button [ref=e120] [cursor=pointer]:
+                    - img [ref=e121]
+                    - generic [ref=e124]: Inbox
+                    - generic [ref=e125]: "3"
+                  - button [ref=e126] [cursor=pointer]:
+                    - img [ref=e127]
+                    - generic [ref=e129]: Calendar
+                - generic [ref=e130]:
+                  - generic [ref=e131]: AI Tools
+                  - button [ref=e132] [cursor=pointer]:
+                    - img [ref=e133]
+                    - generic [ref=e135]: Scope Guard
+                    - generic [ref=e136]: LIVE
+                - generic [ref=e137]:
+                  - generic [ref=e138]: Work
+                  - button [ref=e139] [cursor=pointer]:
+                    - img [ref=e140]
+                    - generic [ref=e142]: Projects
+                  - button [ref=e143] [cursor=pointer]:
+                    - img [ref=e144]
+                    - generic [ref=e147]: Timesheets
+                  - button [ref=e148] [cursor=pointer]:
+                    - img [ref=e149]
+                    - generic [ref=e152]: Invoices
+                  - button [ref=e153] [cursor=pointer]:
+                    - img [ref=e154]
+                    - generic [ref=e157]: Burndown
+                  - button [ref=e158] [cursor=pointer]:
+                    - img [ref=e159]
+                    - generic [ref=e161]: Analytics
+                  - button [ref=e162] [cursor=pointer]:
+                    - img [ref=e163]
+                    - generic [ref=e165]: Integrations
+                  - button [ref=e166] [cursor=pointer]:
+                    - img [ref=e167]
+                    - generic [ref=e172]: Team
+              - generic [ref=e174]:
+                - generic [ref=e175]: JD
+                - generic [ref=e176]:
+                  - generic [ref=e177]: John Doe
+                  - generic [ref=e178]: Pro Plan
+            - generic [ref=e180]:
+              - generic [ref=e181]:
+                - generic [ref=e182]:
+                  - heading [level=2] [ref=e183]: AI Scope Guard
+                  - paragraph [ref=e184]: Monitoring 8 active projects
+                - generic [ref=e185]: Scanning
+              - generic [ref=e187]:
+                - generic [ref=e188]:
+                  - paragraph [ref=e189]: Revenue Saved
+                  - paragraph [ref=e190]: $4,260
+                  - paragraph [ref=e191]: 3 flags
+                - generic [ref=e192]:
+                  - paragraph [ref=e193]: Scope Saved
+                  - paragraph [ref=e194]: 8-12h
+                  - paragraph [ref=e195]: avg hidden work
+                - generic [ref=e196]:
+                  - paragraph [ref=e197]: Risk Level
+                  - paragraph [ref=e198]: High
+                  - paragraph [ref=e199]: Send change order
+              - generic [ref=e200]:
+                - generic [ref=e201]:
+                  - generic [ref=e202]:
+                    - generic [ref=e203]:
+                      - img [ref=e204]
+                      - text: Paste a client message
+                    - button [ref=e207] [cursor=pointer]: Use sample message
+                  - textbox [ref=e209]:
+                    - /placeholder: “Hey — quick one. Since you're already in the landing page, can you also update the mobile version, swap in the new testimonials, write copy for the pricing section, and join Friday’s client review to explain the strategy? Should be small since you already know the brand.”
+                  - paragraph [ref=e210]: Flow flags hidden scope, estimates effort, and suggests the next move.
+                  - generic [ref=e211]:
+                    - generic [ref=e212]:
+                      - generic [ref=e213]: Your rate
+                      - generic [ref=e214]:
+                        - generic [ref=e215]: $
+                        - textbox [ref=e216]: "120"
+                    - generic [ref=e217]:
+                      - generic [ref=e218]: Project type
+                      - combobox [ref=e219]
+                    - generic [ref=e220]:
+                      - generic [ref=e221]: Approved scope
+                      - button [ref=e222] [cursor=pointer]:
+                        - generic [ref=e223]: Yes, signed off
+                  - generic [ref=e225]:
+                    - button [ref=e226] [cursor=pointer]: $120/hr
+                    - button [ref=e227] [cursor=pointer]: $150/hr
+                    - button [ref=e228] [cursor=pointer]: $180/hr
+                  - generic [ref=e229]:
+                    - button [ref=e230] [cursor=pointer]:
+                      - img [ref=e231]
+                      - text: Analyze message
+                    - generic [ref=e233]: Try it with a real client message. The demo never leaves this page.
+                - generic [ref=e234]:
+                  - generic [ref=e235]:
+                    - generic [ref=e236]:
+                      - generic [ref=e237]: Live analysis
+                      - paragraph [ref=e238]: Flow shows its reasoning instead of hiding behind a spinner.
+                    - generic [ref=e239]: Waiting for input
+                  - generic [ref=e241]:
+                    - generic [ref=e242]: What Flow sees
+                    - generic [ref=e243]: Hey — quick one. Since you're already in the landing page, can you also update the mobile version, swap in the new testimonials, write copy for the pricing section, and join Friday’s client review to explain the strategy? Should be small since you already know the brand.
+                  - generic [ref=e244]:
+                    - generic [ref=e246]: Analysis timeline
+                    - generic [ref=e247]:
+                      - generic [ref=e252]: Parsing request
+                      - generic [ref=e259]: Comparing against likely scope
+                      - generic [ref=e266]: Estimating added work
+                      - generic [ref=e273]: Drafting response
+                  - generic [ref=e276]:
+                    - generic [ref=e277]:
+                      - img [ref=e278]
+                      - text: Empty state
+                    - paragraph [ref=e280]: Paste a real client ask to see confidence, effort, cost impact, and the reply Flow would send next.
+      - generic [ref=e282]:
+        - generic [ref=e283]:
+          - generic [ref=e284]: The Problem
+          - heading "$50,000 in revenue lost. Before you even noticed." [level=2] [ref=e287]:
+            - text: $50,000 in revenue lost.
+            - text: Before you even noticed.
+          - paragraph [ref=e288]: Traditional project tools track tasks. Flow protects your bottom line.
+        - generic [ref=e289]:
+          - generic [ref=e290]:
+            - generic [ref=e291]: 40%
+            - generic [ref=e292]: Projects hit scope creep
+          - generic [ref=e293]:
+            - generic [ref=e294]: 25%
+            - generic [ref=e295]: Revenue unbilled on average
+          - generic [ref=e296]:
+            - generic [ref=e297]: 20h+
+            - generic [ref=e298]: Weekly admin overhead
+          - generic [ref=e299]:
+            - generic [ref=e300]: 60%
+            - generic [ref=e301]: Miss their deadline
+        - generic [ref=e302]:
+          - generic [ref=e303]:
+            - generic [ref=e306]: Without Flow
+            - list [ref=e307]:
+              - listitem [ref=e308]:
+                - generic [ref=e309]: ✗
+                - text: Client requests 'one small change' — you add it for free
+              - listitem [ref=e310]:
+                - generic [ref=e311]: ✗
+                - text: Scope creep is discovered at final invoice
+              - listitem [ref=e312]:
+                - generic [ref=e313]: ✗
+                - text: 20+ hours per week on manual status updates
+              - listitem [ref=e314]:
+                - generic [ref=e315]: ✗
+                - text: 60% of projects miss their deadline
+          - generic [ref=e316]:
+            - generic [ref=e319]: With Flow
+            - list [ref=e320]:
+              - listitem [ref=e321]:
+                - generic [ref=e322]: ✓
+                - text: AI flags the change request instantly against your SOW
+              - listitem [ref=e323]:
+                - generic [ref=e324]: ✓
+                - text: Change orders generated automatically with cost estimates
+              - listitem [ref=e325]:
+                - generic [ref=e326]: ✓
+                - text: Automated reports go out every Monday, zero effort
+              - listitem [ref=e327]:
+                - generic [ref=e328]: ✓
+                - text: Real-time velocity tracking keeps you on schedule
+      - generic [ref=e330]:
+        - generic [ref=e331]:
+          - generic [ref=e332]: Features
+          - heading "Every tool that protects your revenue. So scope creep has nowhere to hide." [level=2] [ref=e334]:
+            - text: Every tool that protects your revenue.
+            - text: So scope creep has nowhere to hide.
+        - generic [ref=e335]:
+          - generic [ref=e336]:
+            - img [ref=e338]
+            - heading "AI Scope Guard" [level=3] [ref=e340]
+            - paragraph [ref=e341]: Flags new asks against the agreed brief the moment they show up, so margin loss gets caught before the work starts.
+          - generic [ref=e342]:
+            - img [ref=e344]
+            - heading "Smart Invoicing" [level=3] [ref=e347]
+            - paragraph [ref=e348]: Turns approved changes, milestones, and tracked time into invoice-ready records without leaking billable work.
+          - generic [ref=e349]:
+            - img [ref=e351]
+            - heading "Live Analytics" [level=3] [ref=e354]
+            - paragraph [ref=e355]: Keeps delivery risk, scope pressure, and project health in view so teams can act before revenue slips.
+          - generic [ref=e356]:
+            - img [ref=e358]
+            - heading "Unified Workspace" [level=3] [ref=e362]
+            - paragraph [ref=e363]: Keeps scope, tasks, docs, and client context in one record, so what was sold never gets separated from delivery.
+          - generic [ref=e364]:
+            - img [ref=e366]
+            - heading "Automations" [level=3] [ref=e368]
+            - paragraph [ref=e369]: Ships recurring reports, reminders, and follow-ups automatically, cutting admin hours without dropping important details.
+      - generic [ref=e371]:
+        - generic [ref=e372]:
+          - generic [ref=e373]:
+            - img [ref=e374]
+            - text: Utility Tool
+          - heading "Turn awkward client asks into clean boundary-setting emails." [level=2] [ref=e376]
+          - paragraph [ref=e377]: Paste the request, pick your tone, and get a send-ready reply that protects both the relationship and the revenue.
+        - generic [ref=e378]:
+          - form "Draft a client reply" [ref=e379]:
+            - generic [ref=e380]:
+              - generic [ref=e381]:
+                - generic [ref=e382]: Input
+                - paragraph [ref=e383]: Useful on its own. Better when Flow catches these in real time.
+              - button "Load realistic example" [ref=e384] [cursor=pointer]
+            - generic [ref=e385]:
+              - generic [ref=e386]:
+                - generic [ref=e387]: Paste the awkward ask
+                - textbox "Paste the awkward ask" [ref=e388]:
+                  - /placeholder: Could you also make the deck look more premium, rewrite the case studies, and sit in on the investor call? We’re trying to move quickly so I’d rather not complicate this with extra paperwork.
+                - generic [ref=e389]: The client message you want help replying to. Leaving this blank uses a realistic example.
+              - generic [ref=e390]:
+                - generic [ref=e391]: What was actually included?
+                - textbox "What was actually included?" [ref=e392]:
+                  - /placeholder: Original project includes homepage redesign and 3 internal review rounds. No copywriting, presentation design, or live meeting support.
+                - generic [ref=e393]: The scope you originally agreed on, so Flow can contrast the new request.
+              - generic [ref=e394]:
+                - generic [ref=e395]:
+                  - generic [ref=e396]: Rate or minimum change order
+                  - generic [ref=e397]:
+                    - generic [ref=e398]: $
+                    - textbox "Rate or minimum change order in dollars" [ref=e399]: "150"
+                - generic [ref=e400]:
+                  - generic [ref=e401]: Pricing model
+                  - combobox "Pricing model" [ref=e402]:
+                    - option "Fixed fee" [selected]
+                    - option "Retainer"
+                    - option "Hourly"
+              - radiogroup "Tone" [ref=e403]:
+                - generic [ref=e404]: Tone
+                - generic [ref=e405]:
+                  - radio "Diplomatic" [checked] [ref=e406] [cursor=pointer]
+                  - radio "Firm" [ref=e407] [cursor=pointer]
+                  - radio "Agency-polished" [ref=e408] [cursor=pointer]
+                  - radio "Dead-simple" [ref=e409] [cursor=pointer]
+              - switch "Include pricing and change-order language in the draft" [checked] [ref=e410] [cursor=pointer]:
+                - generic [ref=e411]: Include pricing / change order language
+              - button "Draft my reply" [ref=e414] [cursor=pointer]:
+                - img [ref=e415]
+                - text: Draft my reply
+          - generic [ref=e419]:
+            - generic [ref=e420]:
+              - generic [ref=e421]: Preview
+              - heading "The tool writes the line you wish you had ready five minutes ago." [level=3] [ref=e422]
+              - paragraph [ref=e423]: You get the email draft, tone variants, diagnostics, and a clean share card worth sending to every agency Slack you’re in.
+            - generic [ref=e424]:
+              - generic [ref=e425]:
+                - generic [ref=e426]: What appears after generation
+                - list [ref=e427]:
+                  - listitem [ref=e428]: 1. A send-ready reply tuned to the tone you picked.
+                  - listitem [ref=e429]: 2. Flow’s opinionated read on whether the client is pushing past the agreed scope.
+                  - listitem [ref=e430]: 3. A shareable result card with protected revenue baked in.
+              - generic [ref=e431]:
+                - generic [ref=e432]: Why it gets bookmarked
+                - paragraph [ref=e433]: "It solves the hard part of client management: saying “yes, but paid” without sounding defensive."
+      - generic [ref=e435]:
+        - generic [ref=e436]:
+          - generic [ref=e437]: Beta proof
+          - heading "Built with teams that got tired of giving work away for free." [level=2] [ref=e440]:
+            - text: Built with teams that got tired of
+            - text: giving work away for free.
+          - paragraph [ref=e441]: These early results come from anonymized beta teams using Flow to catch scope drift, tighten client communication, and protect delivery margin.
+        - generic [ref=e442]:
+          - article [ref=e443]:
+            - generic [ref=e444]: 12-person product agency
+            - heading "$8.4k recovered in approved change orders during the first quarter" [level=3] [ref=e445]
+            - paragraph [ref=e446]: “We stopped treating vague client asks like free work. Flow gave us the language and the numbers before the project slipped.”
+          - article [ref=e447]:
+            - generic [ref=e448]: Freelance design studio
+            - heading "6 hours saved each week on client updates and follow-ups" [level=3] [ref=e449]
+            - paragraph [ref=e450]: “The biggest win was clarity. Clients could see what was in scope, what was extra, and what it would cost before the work started.”
+          - article [ref=e451]:
+            - generic [ref=e452]: In-house delivery team
+            - heading "3 at-risk requests flagged before they turned into unplanned sprint work" [level=3] [ref=e453]
+            - paragraph [ref=e454]: “Instead of arguing after delivery, we caught the change when it still looked like a harmless ask in chat.”
+        - paragraph [ref=e455]: Quotes are anonymized to respect current beta teams and client confidentiality.
+      - generic [ref=e457]:
+        - generic [ref=e458]:
+          - generic [ref=e459]: Pricing
+          - heading "Simple, transparent pricing." [level=2] [ref=e462]
+          - paragraph [ref=e463]: Scale up or down any time. No hidden fees.
+        - generic [ref=e464]:
+          - generic [ref=e465]:
+            - generic [ref=e466]:
+              - heading "Starter" [level=3] [ref=e467]
+              - generic [ref=e468]:
+                - generic [ref=e469]: Free
+                - generic [ref=e470]: /forever
+              - paragraph [ref=e471]: Perfect for freelancers and solo developers.
+            - list [ref=e472]:
+              - listitem [ref=e473]:
+                - img [ref=e474]
+                - text: Up to 3 projects
+              - listitem [ref=e476]:
+                - img [ref=e477]
+                - text: Basic AI analysis
+              - listitem [ref=e479]:
+                - img [ref=e480]
+                - text: Kanban board
+              - listitem [ref=e482]:
+                - img [ref=e483]
+                - text: Community support
+            - link "Start for free" [ref=e485] [cursor=pointer]:
+              - /url: /sign-up
+          - generic [ref=e486]:
+            - generic [ref=e487]:
+              - img [ref=e488]
+              - text: Most Popular
+            - generic [ref=e490]:
+              - heading "Pro" [level=3] [ref=e491]
+              - generic [ref=e492]:
+                - generic [ref=e493]: $29
+                - generic [ref=e494]: /per month
+              - paragraph [ref=e495]: For growing teams that need full visibility.
+            - list [ref=e496]:
+              - listitem [ref=e497]:
+                - img [ref=e498]
+                - text: Unlimited projects
+              - listitem [ref=e500]:
+                - img [ref=e501]
+                - text: Advanced AI risk detection
+              - listitem [ref=e503]:
+                - img [ref=e504]
+                - text: Gantt & timeline
+              - listitem [ref=e506]:
+                - img [ref=e507]
+                - text: Smart invoicing
+              - listitem [ref=e509]:
+                - img [ref=e510]
+                - text: Priority support
+            - link "Get started" [ref=e512] [cursor=pointer]:
+              - /url: /sign-up
+          - generic [ref=e513]:
+            - generic [ref=e514]:
+              - heading "Enterprise" [level=3] [ref=e515]
+              - generic [ref=e516]:
+                - generic [ref=e517]: Custom
+                - generic [ref=e518]: /contact us
+              - paragraph [ref=e519]: Advanced security and control for large orgs.
+            - list [ref=e520]:
+              - listitem [ref=e521]:
+                - img [ref=e522]
+                - text: Custom AI models
+              - listitem [ref=e524]:
+                - img [ref=e525]
+                - text: SLA & dedicated support
+              - listitem [ref=e527]:
+                - img [ref=e528]
+                - text: SSO & security
+              - listitem [ref=e530]:
+                - img [ref=e531]
+                - text: On-premise option
+              - listitem [ref=e533]:
+                - img [ref=e534]
+                - text: API access
+            - link "Contact sales" [ref=e536] [cursor=pointer]:
+              - /url: mailto:sales@flow.app?subject=Enterprise%20inquiry
+      - generic [ref=e538]:
+        - generic [ref=e539]:
+          - generic [ref=e540]: FAQ
+          - heading "Questions before you join?" [level=2] [ref=e543]
+          - paragraph [ref=e544]: Everything you need to understand how Flow handles scope, pricing, rollout, and day-to-day delivery pressure.
+        - generic [ref=e546]:
+          - generic [ref=e547]:
+            - button "How does scope detection work?" [expanded] [ref=e548] [cursor=pointer]:
+              - generic [ref=e549]: How does scope detection work?
+              - img [ref=e551]
+            - generic [ref=e554]: Our AI analyzes your project requirements, user stories, and change requests in real-time. It compares new requests against the original scope using natural language processing and machine learning to identify potential scope creep before it impacts your timeline or budget.
+          - button "What happens when scope creep is detected?" [ref=e556] [cursor=pointer]:
+            - generic [ref=e557]: What happens when scope creep is detected?
+            - img [ref=e559]
+          - button "Can I customize the AI sensitivity?" [ref=e562] [cursor=pointer]:
+            - generic [ref=e563]: Can I customize the AI sensitivity?
+            - img [ref=e565]
+          - button "How much does it cost?" [ref=e568] [cursor=pointer]:
+            - generic [ref=e569]: How much does it cost?
+            - img [ref=e571]
+          - button "Is my project data secure?" [ref=e574] [cursor=pointer]:
+            - generic [ref=e575]: Is my project data secure?
+            - img [ref=e577]
+          - button "What integrations are supported?" [ref=e580] [cursor=pointer]:
+            - generic [ref=e581]: What integrations are supported?
+            - img [ref=e583]
+          - button "Is this suitable for my team size?" [ref=e586] [cursor=pointer]:
+            - generic [ref=e587]: Is this suitable for my team size?
+            - img [ref=e589]
+          - button "How quickly can I get started?" [ref=e592] [cursor=pointer]:
+            - generic [ref=e593]: How quickly can I get started?
+            - img [ref=e595]
+        - generic [ref=e597]:
+          - paragraph [ref=e598]: Still have questions?
+          - link "Contact Support" [ref=e599] [cursor=pointer]:
+            - /url: mailto:support@flow.app
+      - generic [ref=e602]:
+        - heading "Start protecting your revenue today." [level=2] [ref=e603]:
+          - text: Start protecting your
+          - text: revenue today.
+        - paragraph [ref=e604]: Join the private beta and never miss a billable moment.
+        - generic [ref=e605]:
+          - generic [ref=e606]:
+            - form "Join the waitlist" [ref=e607]:
+              - heading "Join the waitlist" [level=2] [ref=e608]
+              - generic [ref=e609]:
+                - generic [ref=e610]:
+                  - img [ref=e611]
+                  - generic [ref=e614]: Email address
+                  - textbox "Email address" [ref=e615]:
+                    - /placeholder: Enter your email
+                - button "Join Waitlist" [ref=e616] [cursor=pointer]
+            - generic [ref=e617]:
+              - generic [ref=e618]: 🎁 Early Bird Offer
+              - generic [ref=e619]: 50% off for the first 3 months!
+          - link "Already have an account? Sign in →" [ref=e620] [cursor=pointer]:
+            - /url: /sign-in
+    - contentinfo [ref=e621]:
+      - generic [ref=e622]:
+        - generic [ref=e623]:
+          - generic [ref=e624]:
+            - generic [ref=e625]:
+              - generic [ref=e627]: F
+              - generic [ref=e628]: Flow
+            - paragraph [ref=e629]: AI-powered project management that catches scope creep, automates invoicing, and keeps every deadline.
+            - list "Social media" [ref=e630]:
+              - listitem [ref=e631]:
+                - link "Twitter" [ref=e632] [cursor=pointer]:
+                  - /url: https://twitter.com/flow
+                  - img [ref=e633]
+              - listitem [ref=e635]:
+                - link "GitHub" [ref=e636] [cursor=pointer]:
+                  - /url: https://github.com/flow
+                  - img [ref=e637]
+              - listitem [ref=e640]:
+                - link "LinkedIn" [ref=e641] [cursor=pointer]:
+                  - /url: https://www.linkedin.com/company/flow
+                  - img [ref=e642]
+          - generic [ref=e646]:
+            - heading "Product" [level=2] [ref=e647]
+            - list [ref=e648]:
+              - listitem [ref=e649]:
+                - link "Features" [ref=e650] [cursor=pointer]:
+                  - /url: "#features"
+              - listitem [ref=e651]:
+                - link "Pricing" [ref=e652] [cursor=pointer]:
+                  - /url: "#pricing"
+              - listitem [ref=e653]:
+                - link "Case Studies" [ref=e654] [cursor=pointer]:
+                  - /url: "#social-proof"
+              - listitem [ref=e655]:
+                - link "API" [ref=e656] [cursor=pointer]:
+                  - /url: mailto:hello@flow.app?subject=API%20Access
+              - listitem [ref=e657]:
+                - link "Integrations" [ref=e658] [cursor=pointer]:
+                  - /url: mailto:hello@flow.app?subject=Integrations
+          - generic [ref=e659]:
+            - heading "Company" [level=2] [ref=e660]
+            - list [ref=e661]:
+              - listitem [ref=e662]:
+                - link "About Us" [ref=e663] [cursor=pointer]:
+                  - /url: mailto:hello@flow.app?subject=About%20Flow
+              - listitem [ref=e664]:
+                - link "Careers" [ref=e665] [cursor=pointer]:
+                  - /url: mailto:jobs@flow.app?subject=Careers
+              - listitem [ref=e666]:
+                - link "Blog" [ref=e667] [cursor=pointer]:
+                  - /url: mailto:hello@flow.app?subject=Flow%20Blog
+              - listitem [ref=e668]:
+                - link "Legal" [ref=e669] [cursor=pointer]:
+                  - /url: mailto:legal@flow.app?subject=Legal
+              - listitem [ref=e670]:
+                - link "Contact" [ref=e671] [cursor=pointer]:
+                  - /url: mailto:hello@flow.app?subject=Contact
+        - generic [ref=e672]:
+          - paragraph [ref=e673]: © 2026 Flow Management Inc. All rights reserved.
+          - generic [ref=e674]:
+            - link "Privacy Policy" [ref=e675] [cursor=pointer]:
+              - /url: mailto:legal@flow.app?subject=Privacy%20Policy
+            - link "Terms of Service" [ref=e676] [cursor=pointer]:
+              - /url: mailto:legal@flow.app?subject=Terms%20of%20Service
+            - link "Cookies" [ref=e677] [cursor=pointer]:
+              - /url: mailto:legal@flow.app?subject=Cookie%20Policy
+  - alert [ref=e678]

@@ -24,40 +24,71 @@ export interface CacheValidationOptions {
   getUpdatedAt?: () => Promise<Date | null>;  // Function to get last update time from DB
 }
 
-// Redis client singleton
-let redisClient: Redis | IORedis | null = null;
+// Persist singleton + circuit state across HMR hot-reloads via globalThis
+const _g = globalThis as unknown as {
+  __redisClient: Redis | IORedis | null | undefined;
+  __redisCircuitOpen: boolean | undefined;
+  __redisCircuitResetAt: number | undefined;
+};
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`Redis timeout after ${ms}ms`)), ms)
+    ),
+  ]);
+}
+
+function isCircuitClosed(): boolean {
+  if (!_g.__redisCircuitOpen) return true;
+  if (Date.now() >= (_g.__redisCircuitResetAt ?? 0)) {
+    _g.__redisCircuitOpen = false;
+    return true;
+  }
+  return false;
+}
+
+function tripCircuit(): void {
+  _g.__redisCircuitOpen = true;
+  // 5 minutes in dev (Redis likely not available), 30s in prod (transient failure)
+  const resetMs = process.env.NODE_ENV === 'production' ? 30_000 : 300_000;
+  _g.__redisCircuitResetAt = Date.now() + resetMs;
+}
 
 /**
  * Get Redis client instance (singleton)
  * Supports both Upstash Redis (for Vercel) and local Redis (for development)
  */
 export function getRedisClient(): Redis | IORedis | null {
-  if (redisClient) {
-    return redisClient;
+  if (_g.__redisClient !== undefined) {
+    return _g.__redisClient;
   }
 
   try {
     // Try Upstash Redis first (for Vercel production)
     if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
-      redisClient = new Redis({
+      _g.__redisClient = new Redis({
         url: process.env.UPSTASH_REDIS_REST_URL,
         token: process.env.UPSTASH_REDIS_REST_TOKEN,
       });
       console.log('✓ Connected to Upstash Redis');
-      return redisClient;
+      return _g.__redisClient;
     }
 
     // Fallback to local Redis (for development)
     if (process.env.REDIS_URL) {
-      redisClient = new IORedis(process.env.REDIS_URL);
+      _g.__redisClient = new IORedis(process.env.REDIS_URL);
       console.log('✓ Connected to local Redis');
-      return redisClient;
+      return _g.__redisClient;
     }
 
     console.warn('⚠ Redis not configured - caching disabled');
+    _g.__redisClient = null;
     return null;
   } catch (error) {
     console.error('Failed to connect to Redis:', error);
+    _g.__redisClient = null;
     return null;
   }
 }
@@ -73,14 +104,13 @@ export async function cached<T>(
   const redis = getRedisClient();
   const ttl = options.ttl || 300; // Default 5 minutes
 
-  if (!redis) {
-    // No cache - just fetch
+  if (!redis || !isCircuitClosed()) {
     return fetcher();
   }
 
   try {
-    // Try to get from cache
-    const cached = await redis.get(key);
+    // Try to get from cache (with 2s timeout to fail fast when Redis is unreachable)
+    const cached = await withTimeout(redis.get(key), 2000);
     if (cached) {
       return (typeof cached === 'string' ? JSON.parse(cached) : cached) as T;
     }
@@ -91,24 +121,21 @@ export async function cached<T>(
     // Set with TTL - handle both Upstash and IORedis
     try {
       if ('setex' in redis && typeof redis.setex === 'function') {
-        // IORedis - use setex
-        await (redis as any).setex(key, ttl, JSON.stringify(data));
+        await withTimeout((redis as any).setex(key, ttl, JSON.stringify(data)), 2000);
       } else {
-        // Upstash Redis - use set with ex option (single round-trip)
-        await (redis as any).set(key, JSON.stringify(data), { ex: ttl });
+        await withTimeout((redis as any).set(key, JSON.stringify(data), { ex: ttl }), 2000);
       }
     } catch (setError: any) {
-      // If set fails, log but don't fail the request
       const errorMsg = setError?.message || setError?.toString() || String(setError);
       console.warn('Failed to cache data:', errorMsg);
+      tripCircuit();
     }
 
     return data;
   } catch (error: any) {
-    // Better error handling
     const errorMessage = error?.message || error?.toString() || 'Unknown cache error';
     console.error('Cache error:', errorMessage, error);
-    // Fallback to fetcher on cache error
+    tripCircuit();
     return fetcher();
   }
 }
@@ -127,33 +154,24 @@ export async function cached<T>(
  */
 export async function getFromCacheOnly<T>(key: string): Promise<T | null> {
   const redis = getRedisClient();
-  if (!redis) {
+  if (!redis || !isCircuitClosed()) {
     console.log(`[Cache] Redis not available, returning null for key: ${key}`);
     return null;
   }
 
   try {
-    const cached = await redis.get(key);
-    if (!cached) {
-      console.log(`[Cache] Miss (no fallback) for key: ${key}`);
-      return null;
-    }
+    const cached = await withTimeout(redis.get(key), 2000);
+    if (!cached) return null;
 
-    // Parse the cached data
     const parsed = typeof cached === 'string' ? JSON.parse(cached) : cached;
-
-    // Handle CachedData wrapper from cachedWithValidation
     if (parsed && typeof parsed === 'object' && 'data' in parsed && 'cachedAt' in parsed) {
-      console.log(`[Cache] Hit (cache-only) for key: ${key}`);
       return parsed.data as T;
     }
-
-    // Direct cached value
-    console.log(`[Cache] Hit (cache-only) for key: ${key}`);
     return parsed as T;
   } catch (error: any) {
     const errorMessage = error?.message || error?.toString() || 'Unknown cache error';
     console.error(`[Cache] Error reading cache-only for key: ${key}:`, errorMessage);
+    tripCircuit();
     return null;
   }
 }
@@ -191,14 +209,13 @@ export async function cachedWithValidation<T>(
   const ttl = options.ttl || 300; // Default 5 minutes
   const validate = options.validate !== false; // Default true
 
-  if (!redis) {
-    // No cache - just fetch
+  if (!redis || !isCircuitClosed()) {
     return fetcher();
   }
 
   try {
-    // Try to get from cache
-    const cachedRaw = await redis.get(key);
+    // Try to get from cache (with 2s timeout to fail fast when Redis is unreachable)
+    const cachedRaw = await withTimeout(redis.get(key), 2000);
 
     if (cachedRaw) {
       const cachedData: CachedData<T> = typeof cachedRaw === 'string'
@@ -209,39 +226,20 @@ export async function cachedWithValidation<T>(
       if (validate && options.getUpdatedAt) {
         try {
           const dbUpdatedAt = await options.getUpdatedAt();
-
-          if (dbUpdatedAt) {
-            const dbTimestamp = dbUpdatedAt.getTime();
-            const cachedTimestamp = cachedData.cachedAt;
-
-            // If DB data is newer than cached data, invalidate cache
-            if (dbTimestamp > cachedTimestamp) {
-              console.log(`[Cache] Data stale for key: ${key}. DB: ${new Date(dbTimestamp).toISOString()}, Cache: ${new Date(cachedTimestamp).toISOString()}`);
-              // Continue to fetch fresh data
-            } else {
-              // Cache is still fresh
-              console.log(`[Cache] Hit (validated) for key: ${key}`);
-              return cachedData.data;
-            }
+          if (dbUpdatedAt && dbUpdatedAt.getTime() > cachedData.cachedAt) {
+            // stale — fall through to fetch fresh data
           } else {
-            // No timestamp from DB, use cached data
-            console.log(`[Cache] Hit (no DB timestamp) for key: ${key}`);
             return cachedData.data;
           }
-        } catch (validationError) {
-          console.warn(`[Cache] Validation error for key: ${key}:`, validationError);
-          // On validation error, use cached data
+        } catch {
           return cachedData.data;
         }
       } else {
-        // No validation needed, return cached data
-        console.log(`[Cache] Hit (no validation) for key: ${key}`);
         return cachedData.data;
       }
     }
 
-    // Cache miss or stale data - fetch from database
-    console.log(`[Cache] Miss for key: ${key}`);
+    // Cache miss or stale — fetch from database
     const data = await fetcher();
 
     // Wrap data with timestamp
@@ -250,30 +248,24 @@ export async function cachedWithValidation<T>(
       cachedAt: Date.now(),
     };
 
-    // Set with TTL - handle both Upstash and IORedis
     try {
       const serialized = JSON.stringify(cachedData);
-
       if ('setex' in redis && typeof redis.setex === 'function') {
-        // IORedis - use setex
-        await (redis as any).setex(key, ttl, serialized);
+        await withTimeout((redis as any).setex(key, ttl, serialized), 2000);
       } else {
-        // Upstash Redis - use set with ex option (single round-trip)
-        await (redis as any).set(key, serialized, { ex: ttl });
+        await withTimeout((redis as any).set(key, serialized, { ex: ttl }), 2000);
       }
-      console.log(`[Cache] Stored for key: ${key} with TTL: ${ttl}s`);
     } catch (setError: any) {
-      // If set fails, log but don't fail the request
       const errorMsg = setError?.message || setError?.toString() || String(setError);
       console.warn(`[Cache] Failed to store for key: ${key}:`, errorMsg);
+      tripCircuit();
     }
 
     return data;
   } catch (error: any) {
-    // Better error handling
     const errorMessage = error?.message || error?.toString() || 'Unknown cache error';
     console.error(`[Cache] Error for key: ${key}:`, errorMessage);
-    // Fallback to fetcher on cache error
+    tripCircuit();
     return fetcher();
   }
 }
@@ -283,21 +275,22 @@ export async function cachedWithValidation<T>(
  */
 export async function invalidateCache(keyPattern: string): Promise<void> {
   const redis = getRedisClient();
-  if (!redis) return;
+  if (!redis || !isCircuitClosed()) return;
 
   try {
     if ('keys' in redis && typeof redis.keys === 'function') {
       // IORedis
-      const keys = await redis.keys(keyPattern);
+      const keys = await withTimeout((redis as any).keys(keyPattern), 2000) as string[];
       if (keys.length > 0) {
-        await redis.del(...keys);
+        await withTimeout((redis as any).del(...keys), 2000);
       }
     } else if ('del' in redis && typeof redis.del === 'function') {
       // Upstash - no keys() support, delete single key
-      await redis.del(keyPattern);
+      await withTimeout((redis as any).del(keyPattern), 2000);
     }
   } catch (error) {
     console.error('Cache invalidation error:', error);
+    tripCircuit();
   }
 }
 
@@ -447,9 +440,7 @@ export async function invalidateUserCache(userId: number): Promise<void> {
       `teams:user:${userId}`, // Add teams cache
     ];
 
-    for (const pattern of patterns) {
-      await invalidateCache(pattern);
-    }
+    await Promise.all(patterns.map((p) => invalidateCache(p)));
   } catch (error) {
     console.error('User cache invalidation error:', error);
   }
@@ -468,9 +459,7 @@ export async function invalidateTeamCache(teamId: number): Promise<void> {
       `tasks:team:${teamId}`,
     ];
 
-    for (const pattern of patterns) {
-      await invalidateCache(pattern);
-    }
+    await Promise.all(patterns.map((p) => invalidateCache(p)));
   } catch (error) {
     console.error('Team cache invalidation error:', error);
   }

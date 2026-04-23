@@ -4,6 +4,7 @@ import { taskService } from '@/lib/task-service';
 import { withRateLimit } from '@/lib/rate-limit';
 import { createTaskSchema, validateRequestBody, formatZodError } from '@/lib/validations';
 import { storage } from '@/server/storage';
+import { cached } from '@/lib/redis';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,23 +19,27 @@ export async function GET(request: NextRequest) {
     const projectId = searchParams.get('project_id');
     const teamId = searchParams.get('team_id');
 
-    console.log('Fetching tasks for userId:', session.userId, 'projectId:', projectId, 'teamId:', teamId);
-
-    const tasks = projectId
-      ? await storage.getTasks(session.userId, parseInt(projectId, 10))
+    const cacheKey = projectId
+      ? `tasks:project:${projectId}:user:${session.userId}`
       : teamId && teamId !== 'all'
-        ? await storage.getTasksByTeam(parseInt(teamId, 10))
-        : await storage.getTasks(session.userId);
+        ? `tasks:team:${teamId}`
+        : `tasks:user:${session.userId}`;
 
-    const userProjects = await storage.getUserProjects(session.userId);
-    const projectMap = new Map(userProjects.map((p: any) => [p.id, p.name]));
-    
-    const tasksWithProjects = tasks.map(t => ({
-      ...t,
-      projectName: t.projectId ? projectMap.get(t.projectId) : null
-    }));
-
-    console.log('Found tasks:', tasksWithProjects.length || 0);
+    const tasksWithProjects = await cached(cacheKey, async () => {
+      const [tasks, userProjects] = await Promise.all([
+        projectId
+          ? storage.getTasks(session.userId, parseInt(projectId, 10))
+          : teamId && teamId !== 'all'
+            ? storage.getTasksByTeam(parseInt(teamId, 10))
+            : storage.getTasks(session.userId),
+        storage.getUserProjects(session.userId),
+      ]);
+      const projectMap = new Map(userProjects.map((p: any) => [p.id, p.name]));
+      return tasks.map((t: any) => ({
+        ...t,
+        projectName: t.projectId ? projectMap.get(t.projectId) : null,
+      }));
+    }, { ttl: 30 });
 
     return NextResponse.json({
       tasks: tasksWithProjects,
@@ -71,7 +76,6 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await request.json();
-    console.log('Creating task with data:', { ...data, userId: session.userId });
 
     // Validate request body
     const validation = validateRequestBody(createTaskSchema, data);
@@ -101,7 +105,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: result.error }, { status: 500 });
     }
 
-    console.log('Task created successfully:', result.task?.id);
     return NextResponse.json({ task: result.task }, { status: 201 });
   } catch (error: any) {
     console.error('Error creating task:', error);

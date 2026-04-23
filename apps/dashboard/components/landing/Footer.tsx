@@ -6,15 +6,11 @@ const links = {
     Product: [
         { label: "Features", href: "#features" },
         { label: "Pricing", href: "#pricing" },
-        { label: "Case Studies", href: "#social-proof" },
-        { label: "API", href: "mailto:hello@flow.app?subject=API%20Access" },
-        { label: "Integrations", href: "mailto:hello@flow.app?subject=Integrations" },
+        { label: "Email Tool", href: "#kill-feature" },
     ],
     Company: [
-        { label: "About Us", href: "mailto:hello@flow.app?subject=About%20Flow" },
-        { label: "Careers", href: "mailto:jobs@flow.app?subject=Careers" },
-        { label: "Blog", href: "mailto:hello@flow.app?subject=Flow%20Blog" },
-        { label: "Legal", href: "mailto:legal@flow.app?subject=Legal" },
+        { label: "Privacy Policy", href: "mailto:legal@flow.app?subject=Privacy%20Policy" },
+        { label: "Terms", href: "mailto:legal@flow.app?subject=Terms%20of%20Service" },
         { label: "Contact", href: "mailto:hello@flow.app?subject=Contact" },
     ],
 };
@@ -39,7 +35,7 @@ export function Footer() {
                             <span className="text-foreground font-bold tracking-tight">Flow</span>
                         </div>
                         <p className="text-sm text-foreground/70 max-w-xs leading-relaxed mb-6">
-                            AI-powered project management that catches scope creep, automates invoicing, and keeps every deadline.
+                            Flow — AI that reads your brief before your team does.
                         </p>
                         <ul className="flex gap-3 list-none p-0 m-0" aria-label="Social media">
                             {socials.map(({ Icon, label, href }) => (

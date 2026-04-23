@@ -2,29 +2,35 @@ import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { teamService } from '@/lib/team-service';
 import { storage } from '@/server/storage';
+import { cached } from '@/lib/redis';
 
 export async function GET() {
   try {
-    console.log('[Teams API] Starting request');
-
     const session = await getSession();
     if (!session) {
-      console.log('[Teams API] No session found');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    console.log('[Teams API] Session found for user:', session.userId);
+    // In dev, the microservice at localhost:3006 is never running — go straight to local storage
+    const teamServiceUrl = process.env.NEXT_PUBLIC_TEAM_SERVICE_URL || 'http://localhost:3006';
+    const isLocalService = teamServiceUrl.includes('localhost') || process.env.NODE_ENV === 'development';
+    if (isLocalService) {
+      const localTeams = await cached(
+        `teams:user:${session.userId}`,
+        () => storage.getUserTeams(session.userId),
+        { ttl: 120 }
+      );
+      return NextResponse.json({ teams: localTeams, source: 'local' });
+    }
 
     const result = await teamService.getTeams();
 
     if (result.error) {
       console.error('[Teams API] Team service error:', result.error);
       const fallbackTeams = await storage.getUserTeams(session.userId);
-      console.log('[Teams API] Falling back to local storage teams:', fallbackTeams.length);
       return NextResponse.json({ teams: fallbackTeams, source: 'local-fallback' });
     }
 
-    console.log('[Teams API] Found teams:', result.teams?.length || 0);
     return NextResponse.json({ teams: result.teams || [] });
   } catch (error: any) {
     console.error('[Teams API] Error:', error);

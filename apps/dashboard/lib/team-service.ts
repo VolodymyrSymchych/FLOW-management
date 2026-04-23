@@ -8,7 +8,7 @@ class TeamServiceClient {
     constructor() {
         this.client = axios.create({
             baseURL: TEAM_SERVICE_URL,
-            timeout: 10000,
+            timeout: 2000,
             withCredentials: true,
         });
     }

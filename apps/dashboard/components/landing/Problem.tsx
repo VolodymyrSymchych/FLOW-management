@@ -3,17 +3,17 @@
 import { motion } from "framer-motion";
 
 const before = [
-    "Client requests 'one small change' — you add it for free",
-    "Scope creep is discovered at final invoice",
-    "20+ hours per week on manual status updates",
-    "60% of projects miss their deadline",
+    "Client asks for \"one small change\" — dev says sure",
+    "Scope creep shows up on the final invoice — too late",
+    "Your brief has gaps nobody caught until week three",
+    "20+ hours a week on manual reports nobody reads",
 ];
 
 const after = [
-    "AI flags the change request instantly against your SOW",
-    "Change orders generated automatically with cost estimates",
-    "Automated reports go out every Monday, zero effort",
-    "Real-time velocity tracking keeps you on schedule",
+    "Brief gets a Scope Score before the contract is signed",
+    "Change request flagged the moment it hits — priced, not ignored",
+    "AI surfaces what's missing from the spec before work starts",
+    "Reports go out automatically. Every Monday. Zero effort.",
 ];
 
 export function ProblemSection() {
@@ -37,11 +37,15 @@ export function ProblemSection() {
                         <div className="w-4 h-px bg-rose-400" />
                     </div>
                     <h2 className="text-4xl md:text-5xl font-black text-foreground tracking-tight leading-tight max-w-3xl mx-auto">
-                        <span className="text-rose-400">$50,000</span> in revenue lost.<br />
-                        Before you even noticed.
+                        <span className="text-rose-400">$9,600 a year.</span>
+                        <br />
+                        Gone before you noticed.
                     </h2>
-                    <p className="mt-6 text-foreground/70 text-lg max-w-xl mx-auto">
-                        Traditional project tools track tasks. Flow protects your bottom line.
+                    <p className="mt-4 text-rose-400/80 text-sm font-semibold tracking-wide">
+                        10 unbilled hours/month × $80/hr × 12 months
+                    </p>
+                    <p className="mt-4 text-foreground/70 text-lg max-w-xl mx-auto">
+                        Traditional project tools track what&apos;s done. Flow protects what&apos;s owed.
                     </p>
                 </motion.div>
 

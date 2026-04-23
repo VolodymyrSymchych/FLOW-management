@@ -73,7 +73,8 @@ export function WaitlistForm({ className = '', variant = 'default' }: WaitlistFo
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             placeholder="Enter your email"
-                            className="w-full rounded-xl border border-border bg-background py-3 pl-10 pr-4 text-foreground placeholder:text-foreground/40 focus:border-orange-500/30 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all"
+                            style={{ textAlign: 'center' }}
+                            className="w-full rounded-xl border border-border bg-background py-3 px-10 text-foreground placeholder:text-foreground/40 focus:border-orange-500/30 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all"
                             required
                             aria-required="true"
                             aria-invalid={status === 'error'}
@@ -153,7 +154,8 @@ export function WaitlistForm({ className = '', variant = 'default' }: WaitlistFo
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             placeholder="Enter your email"
-                            className="w-full rounded-xl border border-border bg-background py-4 pl-12 pr-4 text-lg text-foreground placeholder:text-foreground/40 focus:border-orange-500/30 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all"
+                            style={{ textAlign: 'center' }}
+                            className="w-full rounded-xl border border-border bg-background py-4 px-12 text-lg text-foreground placeholder:text-foreground/40 focus:border-orange-500/30 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all"
                             required
                             aria-required="true"
                             aria-invalid={status === 'error'}
@@ -222,12 +224,6 @@ export function WaitlistForm({ className = '', variant = 'default' }: WaitlistFo
                 </AnimatePresence>
             </form>
 
-            <div className="mt-4 flex items-center gap-2 text-sm text-foreground/60">
-                <div className="px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/30 text-orange-700 dark:text-orange-300 font-medium">
-                    🎁 Early Bird Offer
-                </div>
-                <span>50% off for the first 3 months!</span>
-            </div>
         </div>
     );
 }

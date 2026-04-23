@@ -21,11 +21,30 @@ const JWT_SECRET = new TextEncoder().encode(getJWTSecret());
 const INTERNAL_TOOLS_ENABLED =
   process.env.NODE_ENV !== 'production' || process.env.INTERNAL_TOOLS === 'true';
 
+// Circuit breaker: skip Redis for 30s after a failure to avoid blocking every request
+let redisCircuitOpen = false;
+let redisCircuitResetAt = 0;
+
+function isRedisAvailable(): boolean {
+  if (!redisCircuitOpen) return true;
+  if (Date.now() >= redisCircuitResetAt) {
+    redisCircuitOpen = false;
+    return true;
+  }
+  return false;
+}
+
+function tripRedisCircuit(): void {
+  redisCircuitOpen = true;
+  redisCircuitResetAt = Date.now() + 30_000;
+}
+
 // Simple Redis cache for Edge Runtime (using fetch API)
 async function getCachedSession(token: string): Promise<string | null> {
   if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
     return null;
   }
+  if (!isRedisAvailable()) return null;
 
   try {
     const response = await fetch(`${process.env.UPSTASH_REDIS_REST_URL}/get/session:${token}`, {
@@ -33,12 +52,14 @@ async function getCachedSession(token: string): Promise<string | null> {
         Authorization: `Bearer ${process.env.UPSTASH_REDIS_REST_TOKEN}`,
       },
       cache: 'no-store',
+      signal: AbortSignal.timeout(1500),
     });
 
     if (!response.ok) return null;
     const data = await response.json();
     return data.result;
   } catch (error) {
+    tripRedisCircuit();
     return null;
   }
 }
@@ -47,6 +68,7 @@ async function cacheSession(token: string, userId: string, ttl: number = 3600): 
   if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
     return;
   }
+  if (!isRedisAvailable()) return;
 
   try {
     await fetch(`${process.env.UPSTASH_REDIS_REST_URL}/set/session:${token}/${userId}/ex/${ttl}`, {
@@ -54,9 +76,10 @@ async function cacheSession(token: string, userId: string, ttl: number = 3600): 
         Authorization: `Bearer ${process.env.UPSTASH_REDIS_REST_TOKEN}`,
       },
       cache: 'no-store',
+      signal: AbortSignal.timeout(1500),
     });
-  } catch (error) {
-    console.error('Cache session error:', error);
+  } catch {
+    tripRedisCircuit();
   }
 }
 
@@ -173,8 +196,8 @@ export async function middleware(request: NextRequest) {
           isAuthenticated = true;
           userId = payload.userId as string;
 
-          // Cache the session for future requests (1 hour TTL)
-          await cacheSession(token, userId, 3600);
+          // Cache the session for future requests (fire-and-forget, don't block response)
+          void cacheSession(token, userId, 3600);
         }
       } catch (error) {
         // Token is invalid or expired

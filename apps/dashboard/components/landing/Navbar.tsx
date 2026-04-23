@@ -37,10 +37,10 @@ export function Navbar({ user }: { user?: any }) {
 
                     {/* Desktop Nav */}
                     <ul className="hidden md:flex items-center gap-8 list-none p-0 m-0">
-                        <li><a href="#main-content" className="text-sm text-foreground/80 hover:text-foreground transition-colors inline-flex items-center min-h-[44px] px-1">Demo</a></li>
+                        <li><a href="#main-content" className="text-sm text-foreground/80 hover:text-foreground transition-colors inline-flex items-center min-h-[44px] px-1">How it works</a></li>
                         <li><a href="#features" className="text-sm text-foreground/80 hover:text-foreground transition-colors inline-flex items-center min-h-[44px] px-1">Features</a></li>
-                        <li><a href="#kill-feature" className="text-sm text-foreground/80 hover:text-foreground transition-colors inline-flex items-center min-h-[44px] px-1">Email Tool</a></li>
                         <li><a href="#pricing" className="text-sm text-foreground/80 hover:text-foreground transition-colors inline-flex items-center min-h-[44px] px-1">Pricing</a></li>
+                        <li><a href="#kill-feature" className="text-sm text-foreground/80 hover:text-foreground transition-colors inline-flex items-center min-h-[44px] px-1">Email Tool</a></li>
                     </ul>
 
                     {/* CTA */}
@@ -59,13 +59,13 @@ export function Navbar({ user }: { user?: any }) {
                                 <Link href="/sign-in" className="text-sm text-foreground/80 hover:text-foreground transition-colors inline-flex items-center min-h-[44px] px-1">
                                     Log in
                                 </Link>
-                                <Link
-                                    href="/sign-up"
+                                <a
+                                    href="#join"
                                     className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-foreground text-background text-sm font-semibold hover:opacity-90 transition-opacity"
                                 >
-                                    Get started
+                                    Join Waitlist
                                     <ArrowRight className="w-3.5 h-3.5" />
-                                </Link>
+                                </a>
                             </>
                         )}
                     </div>
@@ -94,10 +94,10 @@ export function Navbar({ user }: { user?: any }) {
                         className="md:hidden border-t border-border bg-background/90 backdrop-blur-xl overflow-hidden"
                     >
                         <div className="px-6 py-6 flex flex-col gap-4">
-                            <a href="#main-content" className="text-sm text-foreground/80 hover:text-foreground transition-colors min-h-[44px] inline-flex items-center" onClick={() => setIsOpen(false)}>Demo</a>
+                            <a href="#main-content" className="text-sm text-foreground/80 hover:text-foreground transition-colors min-h-[44px] inline-flex items-center" onClick={() => setIsOpen(false)}>How it works</a>
                             <a href="#features" className="text-sm text-foreground/80 hover:text-foreground transition-colors min-h-[44px] inline-flex items-center" onClick={() => setIsOpen(false)}>Features</a>
-                            <a href="#kill-feature" className="text-sm text-foreground/80 hover:text-foreground transition-colors min-h-[44px] inline-flex items-center" onClick={() => setIsOpen(false)}>Email Tool</a>
                             <a href="#pricing" className="text-sm text-foreground/80 hover:text-foreground transition-colors min-h-[44px] inline-flex items-center" onClick={() => setIsOpen(false)}>Pricing</a>
+                            <a href="#kill-feature" className="text-sm text-foreground/80 hover:text-foreground transition-colors min-h-[44px] inline-flex items-center" onClick={() => setIsOpen(false)}>Email Tool</a>
                             <div className="flex items-center justify-between min-h-[44px]">
                                 <span className="text-sm text-foreground/80">Theme</span>
                                 <ThemeToggle />
@@ -108,7 +108,7 @@ export function Navbar({ user }: { user?: any }) {
                                 ) : (
                                     <>
                                         <Link href="/sign-in" className="text-sm text-center text-foreground/80 hover:text-foreground transition-colors min-h-[44px] inline-flex items-center justify-center">Log in</Link>
-                                        <Link href="/sign-up" className="w-full text-center px-4 py-2.5 rounded-lg bg-foreground text-background text-sm font-semibold">Get started</Link>
+                                        <a href="#join" className="w-full text-center px-4 py-2.5 rounded-lg bg-foreground text-background text-sm font-semibold">Join Waitlist</a>
                                     </>
                                 )}
                             </div>

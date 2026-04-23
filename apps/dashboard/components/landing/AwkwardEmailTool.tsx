@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, Clipboard, Link2, MailPlus, MessageSquareQuote, Send, Share2, Sparkles } from "lucide-react";
+import { Check, Clipboard, Link2, MailPlus, MessageSquareQuote, Send, Share2 } from "lucide-react";
 import { buildClientReply, sampleMessages, type EmailTone, type ProjectType } from "./landingAiMocks";
 
 const tones: EmailTone[] = ["Diplomatic", "Firm", "Agency-polished", "Dead-simple"];
@@ -107,15 +107,16 @@ export function AwkwardEmailTool() {
                     transition={{ duration: 0.45 }}
                     className="mx-auto mb-14 max-w-3xl text-center"
                 >
-                    <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-border bg-foreground/[0.04] px-3.5 py-1.5 text-sm font-medium text-foreground/70">
-                        <Sparkles className="h-3.5 w-3.5 text-orange-400" />
-                        Utility Tool
-                    </div>
                     <h2 className="text-4xl font-black tracking-[-0.04em] text-foreground md:text-5xl">
-                        Turn awkward client asks into clean boundary-setting emails.
+                        Turn awkward client asks into
+                        <br />
+                        clean boundary-setting emails.
                     </h2>
                     <p className="mt-5 text-lg leading-8 text-foreground/68">
-                        Paste the request, pick your tone, and get a send-ready reply that protects both the relationship and the revenue.
+                        Paste the request, pick your tone, get a send-ready reply that protects both the relationship and the revenue.
+                    </p>
+                    <p className="mt-3 text-sm font-semibold text-foreground/50">
+                        Useful on its own. Indispensable when Flow catches these in real time.
                     </p>
                 </motion.div>
 
@@ -188,18 +189,26 @@ export function AwkwardEmailTool() {
                                         />
                                     </div>
                                 </div>
-                                <div className="rounded-[22px] border border-border bg-foreground/[0.02] px-4 py-3 focus-within:border-orange-500/30 focus-within:ring-2 focus-within:ring-orange-500/40 focus-within:ring-offset-2 focus-within:ring-offset-background">
-                                    <label htmlFor="awkward-pricing-model" className="app-label block text-foreground/45">Pricing model</label>
-                                    <select
-                                        id="awkward-pricing-model"
-                                        value={projectType}
-                                        onChange={(event) => setProjectType(event.target.value as ProjectType)}
-                                        className="mt-2 w-full bg-transparent text-sm font-semibold text-foreground focus:outline-none"
-                                    >
-                                        <option>Fixed fee</option>
-                                        <option>Retainer</option>
-                                        <option>Hourly</option>
-                                    </select>
+                                <div>
+                                    <span className="mb-2 block text-sm font-semibold text-foreground">Pricing model</span>
+                                    <div role="radiogroup" aria-label="Pricing model" className="flex flex-wrap gap-2">
+                                        {(["Fixed fee", "Retainer", "Hourly"] as ProjectType[]).map((option) => (
+                                            <button
+                                                key={option}
+                                                type="button"
+                                                role="radio"
+                                                aria-checked={projectType === option}
+                                                onClick={() => setProjectType(option)}
+                                                className={`rounded-full border px-3 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
+                                                    projectType === option
+                                                        ? "border-orange-500/30 bg-orange-500/[0.08] text-orange-600"
+                                                        : "border-border bg-background text-foreground/65 hover:text-foreground"
+                                                }`}
+                                            >
+                                                {option}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
 

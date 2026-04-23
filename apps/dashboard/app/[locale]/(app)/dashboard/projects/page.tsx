@@ -1,7 +1,11 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { Plus, Trash2, CheckSquare, Clock, AlertCircle } from 'lucide-react';
+import { useMemo, useState, useCallback } from 'react';
+import { motion } from 'framer-motion';
+import {
+  Plus, Trash2, CheckSquare, Clock, AlertCircle, Search,
+  LayoutGrid, List, ChevronRight, TrendingUp,
+} from 'lucide-react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
@@ -12,8 +16,10 @@ import { useProjects, useTasks, usePrefetch } from '@/hooks/useQueries';
 import type { Project } from '@/lib/api';
 import { toastError, toastSuccess } from '@/lib/toast';
 
+const CARD_COLORS = ['#E8753A', '#B83232', '#2E5DA8', '#3D7A5A', '#6941C6', '#B8870A'] as const;
+
 function colorAt(index: number) {
-  return ['#E8753A', '#B83232', '#2E5DA8', '#3D7A5A', '#6941C6', '#B8870A'][index % 6];
+  return CARD_COLORS[index % CARD_COLORS.length];
 }
 
 function initials(value: string) {
@@ -32,6 +38,29 @@ function progress(project: Project, totalTasks: number) {
   return Math.min(100, Math.round((totalTasks / Math.max(totalTasks + 3, 1)) * 100));
 }
 
+function RiskPill({ risk }: { risk: string }) {
+  const map: Record<string, string> = {
+    LOW:      'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-500/20',
+    MEDIUM:   'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-500/10 dark:text-amber-300 dark:border-amber-500/20',
+    HIGH:     'bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-500/10 dark:text-rose-300 dark:border-rose-500/20',
+    CRITICAL: 'bg-red-50 text-red-700 border border-red-200 dark:bg-red-500/10 dark:text-red-300 dark:border-red-500/20',
+  };
+  const cls = map[(risk || '').toUpperCase()] ?? 'bg-gray-100 text-gray-500 dark:bg-white/5 dark:text-white/40';
+  return (
+    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize ${cls}`}>
+      {(risk || '—').toLowerCase()} risk
+    </span>
+  );
+}
+
+function ProgressBar({ value, color }: { value: number; color: string }) {
+  return (
+    <div className="h-1 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-white/10">
+      <div className="h-full rounded-full transition-all" style={{ width: `${Math.min(100, value)}%`, background: color }} />
+    </div>
+  );
+}
+
 export default function ProjectsPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -42,27 +71,40 @@ export default function ProjectsPage() {
   const { prefetchProject } = usePrefetch();
 
   const [teamFilter, setTeamFilter] = useState<'all' | string>('all');
+  const [view, setView] = useState<'grid' | 'list'>('grid');
+  const [search, setSearch] = useState('');
   const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; project: Project | null }>({ isOpen: false, project: null });
+  const [navigatingId, setNavigatingId] = useState<number | null>(null);
+
+  const navigateTo = useCallback((id: number) => {
+    setNavigatingId(id);
+    router.push(`/dashboard/projects/${id}`);
+  }, [router]);
 
   const shouldShowLoading = useSmartDelayedLoading(isLoading || teamsLoading, projects.length > 0, 250);
 
   const filteredProjects = useMemo(() => {
     return projects.filter((project) => {
-      if (teamFilter === 'all') return true;
-      return (project.industry || '').toLowerCase().includes(teamFilter.toLowerCase()) || (project.type || '').toLowerCase().includes(teamFilter.toLowerCase());
+      const matchesTeam =
+        teamFilter === 'all' ||
+        (project.industry || '').toLowerCase().includes(teamFilter.toLowerCase()) ||
+        (project.type || '').toLowerCase().includes(teamFilter.toLowerCase());
+      const matchesSearch =
+        !search ||
+        project.name.toLowerCase().includes(search.toLowerCase()) ||
+        (project.type || '').toLowerCase().includes(search.toLowerCase());
+      return matchesTeam && matchesSearch;
     });
-  }, [projects, teamFilter]);
+  }, [projects, teamFilter, search]);
 
-  const activeProjects = filteredProjects.filter((project) => project.status !== 'done').length;
-  const openTasks = tasks.filter((t: { status: string }) => t.status !== 'done').length;
-  const overdue = tasks.filter((t: { status: string; due_date?: string }) => t.status !== 'done' && t.due_date && new Date(t.due_date) < new Date()).length;
-  const averageProgress = filteredProjects.length
-    ? Math.round(filteredProjects.reduce((sum, project) => sum + progress(project, tasks.filter((t: any) => (t.projectId ?? t.project_id) === project.id).length), 0) / filteredProjects.length)
+  const activeProjects  = filteredProjects.filter((p) => p.status !== 'done').length;
+  const openTasks       = tasks.filter((t: { status: string }) => t.status !== 'done').length;
+  const overdue         = tasks.filter((t: { status: string; due_date?: string }) => t.status !== 'done' && t.due_date && new Date(t.due_date) < new Date()).length;
+  const avgProgress     = filteredProjects.length
+    ? Math.round(filteredProjects.reduce((sum, p) => sum + progress(p, tasks.filter((t: any) => (t.projectId ?? t.project_id) === p.id).length), 0) / filteredProjects.length)
     : 0;
 
-  const filterPills = ['All teams', ...teams.slice(0, 3).map((team) => team.name)];
-  const teamPillColors = ['#E8753A', '#2E5DA8', '#3D7A5A', '#6941C6'];
-  const teamBgColors = ['#FDF1EB', '#EBF0F9', '#EAF2ED', '#F4F0FF'];
+  const filterPills = ['All teams', ...teams.slice(0, 3).map((t) => t.name)];
 
   const confirmDelete = async () => {
     if (!deleteModal.project) return;
@@ -79,133 +121,321 @@ export default function ProjectsPage() {
   };
 
   if (shouldShowLoading) {
-    return <div style={{ padding: 24, fontSize: 14, color: 'var(--muted)' }}>Loading projects...</div>;
+    return (
+      <div className="flex h-full flex-col">
+        <div className="flex h-16 flex-shrink-0 items-center justify-between border-b border-[var(--line)] bg-white px-7 dark:border-white/10 dark:bg-[#1A1A1A]">
+          <div className="h-5 w-32 animate-pulse rounded bg-gray-100 dark:bg-white/10" />
+          <div className="h-8 w-28 animate-pulse rounded-lg bg-gray-100 dark:bg-white/10" />
+        </div>
+        <div className="flex-1 space-y-3 overflow-y-auto p-7">
+          <div className="grid grid-cols-4 gap-3">
+            {[...Array(4)].map((_, i) => <div key={i} className="h-20 animate-pulse rounded-xl bg-gray-100 dark:bg-white/5" />)}
+          </div>
+          <div className="grid grid-cols-3 gap-3 pt-2">
+            {[...Array(6)].map((_, i) => <div key={i} className="h-44 animate-pulse rounded-xl bg-gray-100 dark:bg-white/5" />)}
+          </div>
+        </div>
+      </div>
+    );
   }
 
-  const avgPct = averageProgress;
   return (
-    <div className="proj-screen" data-testid="projects-screen">
-      <div className="scr-inner">
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-          <div className="scr-header" style={{ padding: '0 28px', borderBottom: '1px solid var(--line)', background: 'var(--white)', flexShrink: 0, justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-            <div>
-              <h1 style={{ fontFamily: 'var(--font-inter), Inter, sans-serif', fontSize: 26, fontWeight: 600, color: 'var(--ink)', letterSpacing: '-.02em', margin: 0 }}>Projects</h1>
-              <div style={{ fontSize: 14, color: 'var(--muted)', marginTop: 2 }}>{activeProjects} active · {openTasks} open tasks · {overdue} overdue</div>
-            </div>
-            <button type="button" className="btn btn-acc" onClick={() => router.push('/dashboard/projects/new')}>
-              <Plus />
-              New analysis
-            </button>
+    <div className="flex h-full flex-col overflow-hidden" data-testid="projects-screen">
+      {/* ── Toolbar ── */}
+      <div className="flex flex-shrink-0 items-center justify-between gap-4 border-b border-[var(--line)] bg-white px-7 py-4 dark:border-white/[0.07] dark:bg-[#1A1A1A]">
+        <div>
+          <h1 className="text-[22px] font-bold tracking-tight text-[var(--ink)] dark:text-white">Projects</h1>
+          <p className="mt-0.5 text-[13px] text-[var(--muted)]">
+            {activeProjects} active · {openTasks} open tasks
+            {overdue > 0 && <span className="text-rose-600 dark:text-rose-400"> · {overdue} overdue</span>}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          {/* search */}
+          <div className="flex items-center gap-1.5 rounded-lg border border-[var(--line2)] bg-[var(--bg)] px-3 py-1.5 dark:border-white/10 dark:bg-white/[0.04]">
+            <Search className="h-3.5 w-3.5 text-[var(--ghost)] dark:text-white/30" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search projects…"
+              className="w-40 bg-transparent text-[13px] text-[var(--ink)] placeholder:text-[var(--ghost)] outline-none dark:text-white dark:placeholder:text-white/30"
+            />
           </div>
-          <div style={{ padding: '20px 28px 40px', flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10 }}>
-              <div className="stat-card"><div className="stat-lbl">Active</div><div className="stat-val">{activeProjects}</div><div className="stat-hint">projects</div></div>
-              <div className="stat-card"><div className="stat-lbl">Open tasks</div><div className="stat-val">{openTasks}</div><div className="stat-hint">across all projects</div></div>
-              <div className="stat-card"><div className="stat-lbl">Overdue</div><div className="stat-val" style={{ color: 'var(--red)' }}>{overdue}</div><div className="stat-hint" style={{ color: 'var(--red)' }}>needs attention</div></div>
-              <div className="stat-card">
-                <div className="stat-lbl">Avg progress</div>
-                <div className="stat-val">{averageProgress}<span style={{ fontSize: 16, color: 'var(--faint)' }}>%</span></div>
-                <div style={{ height: 3, background: 'var(--bg3)', borderRadius: 99, marginTop: 6, overflow: 'hidden' }}>
-                  <div style={{ width: avgPct + '%', height: '100%', background: 'var(--accent)', borderRadius: 99 }} />
-                </div>
+          {/* view toggle */}
+          <div className="flex items-center rounded-lg border border-[var(--line2)] bg-[var(--bg)] p-0.5 dark:border-white/10 dark:bg-white/[0.04]">
+            {(['grid', 'list'] as const).map((v) => {
+              const Icon = v === 'grid' ? LayoutGrid : List;
+              return (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => setView(v)}
+                  className={`flex items-center gap-1 rounded-md px-2.5 py-1.5 text-[12px] font-semibold capitalize transition-all ${
+                    view === v
+                      ? 'bg-white text-[var(--ink)] shadow-sm dark:bg-white/10 dark:text-white'
+                      : 'text-[var(--muted)] hover:text-[var(--ink)] dark:text-white/40 dark:hover:text-white/70'
+                  }`}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  {v}
+                </button>
+              );
+            })}
+          </div>
+          <button
+            type="button"
+            onClick={() => router.push('/dashboard/projects/new')}
+            className="flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3.5 py-2 text-[13px] font-semibold text-white transition-opacity hover:opacity-90"
+          >
+            <Plus className="h-4 w-4" />
+            New project
+          </button>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-7 space-y-5">
+          {/* ── Stats strip ── */}
+          <div className="grid grid-cols-4 gap-3">
+            {[
+              { label: 'Active projects', value: activeProjects, hint: `${projects.length} total`, color: '' },
+              { label: 'Open tasks',      value: openTasks,       hint: 'across all projects', color: '' },
+              { label: 'Overdue',         value: overdue,          hint: 'needs attention', color: overdue > 0 ? 'text-rose-600 dark:text-rose-400' : '' },
+              { label: 'Avg progress',    value: null,             hint: null, color: '', progress: avgProgress },
+            ].map((s) => (
+              <div key={s.label} className="rounded-xl border border-[var(--line)] bg-white p-4 dark:border-white/[0.07] dark:bg-[#1A1A1A]">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--faint)]">{s.label}</p>
+                {s.progress !== undefined ? (
+                  <>
+                    <p className="mt-1.5 text-[26px] font-bold leading-none text-[var(--ink)] dark:text-white">
+                      {s.progress}<span className="text-[16px] font-normal text-[var(--ghost)] dark:text-white/30">%</span>
+                    </p>
+                    <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-white/10">
+                      <div className="h-full rounded-full bg-[var(--accent)]" style={{ width: `${s.progress}%` }} />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p className={`mt-1.5 text-[26px] font-bold leading-none dark:text-white ${s.color || 'text-[var(--ink)]'}`}>{s.value}</p>
+                    {s.hint && <p className={`mt-1 text-[12px] ${s.color || 'text-[var(--muted)]'}`}>{s.hint}</p>}
+                  </>
+                )}
               </div>
-            </div>
+            ))}
+          </div>
 
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-              {filterPills.map((pill, pillIndex) => {
-                const active = (pill === 'All teams' && teamFilter === 'all') || teamFilter === pill;
-                const teamColor = pillIndex > 0 ? teamPillColors[(pillIndex - 1) % teamPillColors.length] : null;
-                const teamBg = pillIndex > 0 ? teamBgColors[(pillIndex - 1) % teamBgColors.length] : null;
-                return (
-                  <button key={pill} type="button" className={`filter-pill ${active ? 'active' : ''}`} onClick={() => setTeamFilter(pill === 'All teams' ? 'all' : pill)}>
-                    {teamColor && teamBg ? (
-                      <span style={{ width: 8, height: 8, borderRadius: 2, background: teamBg, border: '1.5px solid ' + teamColor, flexShrink: 0 }} />
-                    ) : null}
-                    {pill}
-                  </button>
-                );
-              })}
-            </div>
+          {/* ── Filters ── */}
+          <div className="flex items-center gap-2">
+            {filterPills.map((pill, i) => {
+              const active = (pill === 'All teams' && teamFilter === 'all') || teamFilter === pill;
+              return (
+                <button
+                  key={pill}
+                  type="button"
+                  onClick={() => setTeamFilter(pill === 'All teams' ? 'all' : pill)}
+                  className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-[12px] font-semibold transition-all ${
+                    active
+                      ? 'bg-[var(--ink)] text-white dark:bg-white dark:text-[var(--ink)]'
+                      : 'border border-[var(--line2)] bg-white text-[var(--muted)] hover:border-[var(--line2)] hover:text-[var(--ink)] dark:border-white/10 dark:bg-transparent dark:text-white/50 dark:hover:text-white'
+                  }`}
+                >
+                  {i > 0 && (
+                    <span
+                      className="h-2 w-2 rounded-sm flex-shrink-0"
+                      style={{ background: ['#E8753A', '#2E5DA8', '#3D7A5A'][i - 1] ?? '#E8753A' }}
+                    />
+                  )}
+                  {pill}
+                </button>
+              );
+            })}
+          </div>
 
-            <div id="projGrid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12 }}>
+          {/* ── Grid view ── */}
+          {view === 'grid' && (
+            <div className="grid grid-cols-3 gap-4">
               {filteredProjects.map((project, index) => {
                 const projectTasks = tasks.filter((t: any) => (t.projectId ?? t.project_id) === project.id && t.status !== 'done');
                 const projectOverdue = tasks.filter((t: any) => (t.projectId ?? t.project_id) === project.id && t.status !== 'done' && (t.dueDate || t.due_date) && new Date(t.dueDate || t.due_date) < new Date()).length;
                 const pct = progress(project, projectTasks.length);
                 const cardColor = colorAt(index);
+                const isNavigating = navigatingId === project.id;
+
+                return (
+                  <motion.div
+                    key={project.id}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.2, delay: index * 0.03, ease: [0.4, 0, 0.2, 1] }}
+                    onClick={() => navigateTo(project.id)}
+                    onMouseEnter={() => prefetchProject(project.id)}
+                    className={`group relative cursor-pointer overflow-hidden rounded-xl border border-[var(--line)] bg-white transition-all duration-150 hover:border-[var(--line2)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.07)] active:scale-[0.98] dark:border-white/[0.07] dark:bg-[#1A1A1A] dark:hover:border-white/[0.12] dark:hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] ${isNavigating ? 'opacity-60 pointer-events-none' : ''}`}
+                  >
+                    {/* color accent bar */}
+                    <div className="absolute left-0 top-0 bottom-0 w-[3px] rounded-l-xl" style={{ background: cardColor }} />
+
+                    <div className="p-5 pl-6">
+                      {/* header */}
+                      <div className="mb-3 flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <div className="h-2 w-2 rounded-full flex-shrink-0" style={{ background: cardColor }} />
+                          <h3 className="line-clamp-1 text-[14px] font-semibold text-[var(--ink)] dark:text-white">
+                            {project.name}
+                          </h3>
+                        </div>
+                        {project.risk_level && <RiskPill risk={project.risk_level} />}
+                      </div>
+
+                      {/* meta */}
+                      <p className="mb-3 text-[12px] text-[var(--faint)]">
+                        {(project as any).teams?.[0]?.name || project.type || 'Project'}
+                        {project.timeline && <span className="before:mx-1.5 before:content-['·']">{project.timeline}</span>}
+                      </p>
+
+                      {/* task stats */}
+                      <div className="mb-4 flex items-center gap-4 text-[12px] text-[var(--muted)]">
+                        <span className="flex items-center gap-1">
+                          <CheckSquare className="h-3.5 w-3.5" />
+                          {projectTasks.length > 0 ? `${projectTasks.length} open` : 'No tasks'}
+                        </span>
+                        {projectOverdue > 0 ? (
+                          <span className="flex items-center gap-1 text-rose-600 dark:text-rose-400">
+                            <AlertCircle className="h-3.5 w-3.5" />
+                            {projectOverdue} overdue
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-3.5 w-3.5" />
+                            {project.industry || '—'}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* progress */}
+                      <div className="mb-4">
+                        <ProgressBar value={pct} color={cardColor} />
+                        <p className="mt-1 text-[11px] text-[var(--faint)]">{pct}% complete</p>
+                      </div>
+
+                      {/* footer */}
+                      <div className="flex items-center justify-between border-t border-[var(--line)] pt-3">
+                        <div className="flex -space-x-1.5">
+                          {[project.name, project.type || 'PR', project.industry || 'IN'].map((name, i) => (
+                            <div
+                              key={i}
+                              className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-white text-[8px] font-bold text-white dark:border-[#1A1A1A]"
+                              style={{ background: colorAt(i) }}
+                            >
+                              {initials(name)}
+                            </div>
+                          ))}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {project.isOwner && (
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); setDeleteModal({ isOpen: true, project }); }}
+                              className="rounded-md p-1 text-[var(--ghost)] transition-colors hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/10 dark:hover:text-rose-400"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                          <ChevronRight className="h-4 w-4 text-[var(--ghost)] transition-transform group-hover:translate-x-0.5 dark:text-white/20" />
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
+
+              {/* Add new card */}
+              <button
+                type="button"
+                onClick={() => router.push('/dashboard/projects/new')}
+                className="flex min-h-[200px] flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[var(--bg3)] bg-transparent text-[13px] font-medium text-[var(--ghost)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)] dark:border-white/[0.08] dark:text-white/25 dark:hover:border-[var(--accent)] dark:hover:text-[var(--accent)]"
+              >
+                <Plus className="h-6 w-6" />
+                New project
+              </button>
+            </div>
+          )}
+
+          {/* ── List view ── */}
+          {view === 'list' && (
+            <div className="overflow-hidden rounded-xl border border-[var(--line)] bg-white dark:border-white/[0.07] dark:bg-[#1A1A1A]">
+              {/* column headers */}
+              <div className="grid border-b border-[var(--line)] bg-[var(--bg)] px-5 py-2 dark:border-white/[0.06] dark:bg-white/[0.02]"
+                   style={{ gridTemplateColumns: '8px 1fr 120px 100px 60px 60px 36px' }}>
+                {['', 'Project', 'Risk', 'Progress', 'Tasks', 'Industry', ''].map((h) => (
+                  <span key={h} className="text-[9px] font-bold uppercase tracking-wider text-[var(--faint)]">{h}</span>
+                ))}
+              </div>
+
+              {filteredProjects.map((project, index) => {
+                const projectTasks = tasks.filter((t: any) => (t.projectId ?? t.project_id) === project.id && t.status !== 'done');
+                const projectOverdue = tasks.filter((t: any) => (t.projectId ?? t.project_id) === project.id && t.status !== 'done' && (t.dueDate || t.due_date) && new Date(t.dueDate || t.due_date) < new Date()).length;
+                const pct = progress(project, projectTasks.length);
+                const cardColor = colorAt(index);
+
+                const isNavigatingRow = navigatingId === project.id;
                 return (
                   <div
                     key={project.id}
-                    className="proj-card"
-                    onClick={() => router.push(`/dashboard/projects/${project.id}`)}
+                    onClick={() => navigateTo(project.id)}
                     onMouseEnter={() => prefetchProject(project.id)}
+                    className={`group grid cursor-pointer items-center border-b border-[var(--line)] px-5 py-3 last:border-b-0 transition-all hover:bg-[var(--bg)] active:scale-[0.99] dark:border-white/[0.05] dark:hover:bg-white/[0.02] ${isNavigatingRow ? 'opacity-60 pointer-events-none' : ''}`}
+                    style={{ gridTemplateColumns: '8px 1fr 120px 100px 60px 60px 36px' }}
                   >
-                    <div className="proj-card-hd">
-                      <div className="proj-card-dot" style={{ background: cardColor }} />
-                      <div className="proj-card-name">{project.name}</div>
-                      {project.risk_level ? <span className={`bg ${project.risk_level === 'HIGH' || project.risk_level === 'CRITICAL' ? 'bg-r' : 'bg-hot'}`}>{project.risk_level}</span> : null}
-                      {pct >= 90 && !project.risk_level ? <span className="bg bg-ok">{pct}%</span> : null}
+                    <span className="h-2 w-2 rounded-full" style={{ background: cardColor }} />
+
+                    <div className="min-w-0 pr-4">
+                      <p className="truncate text-[13px] font-semibold text-[var(--ink)] dark:text-white">{project.name}</p>
+                      <p className="truncate text-[11px] text-[var(--faint)]">
+                        {(project as any).teams?.[0]?.name || project.type || 'Project'}
+                      </p>
                     </div>
-                    <div className="proj-card-meta">
-                      <span className="proj-card-team">{(project as any).teams?.[0]?.name || project.type || 'Project'}</span>
-                      <span className="proj-card-sprint">{project.timeline || 'Active phase'}</span>
+
+                    {project.risk_level ? <RiskPill risk={project.risk_level} /> : <span className="text-[11px] text-[var(--ghost)]">—</span>}
+
+                    <div className="pr-4">
+                      <ProgressBar value={pct} color={cardColor} />
+                      <span className="text-[10px] text-[var(--faint)]">{pct}%</span>
                     </div>
-                    <div className="proj-card-stats">
-                      <div className="proj-card-stat">
-                        {projectTasks.length > 0 ? (
-                          <>
-                            <CheckSquare style={{ width: 11, height: 11, display: 'inline', marginRight: 4, verticalAlign: 'middle' }} />
-                            {projectTasks.length} open
-                          </>
-                        ) : (
-                          <span style={{ color: 'var(--faint)' }}>No tasks</span>
-                        )}
-                      </div>
-                      <div className="proj-card-stat" style={projectOverdue > 0 ? { color: 'var(--red)' } : {}}>
-                        {projectOverdue > 0 ? (
-                          <>
-                            <AlertCircle style={{ width: 11, height: 11, display: 'inline', marginRight: 4, verticalAlign: 'middle' }} />
-                            {projectOverdue} overdue
-                          </>
-                        ) : (
-                          <>
-                            <Clock style={{ width: 11, height: 11, display: 'inline', marginRight: 4, verticalAlign: 'middle' }} />
-                            {project.industry || '—'}
-                          </>
-                        )}
-                      </div>
-                    </div>
-                    <div className="proj-prog-row">
-                      <div className="proj-prog-bar"><div style={{ width: pct + '%', height: '100%', background: cardColor, borderRadius: 99 }} /></div>
-                      <span className="proj-prog-pct">{pct}%</span>
-                    </div>
-                    <div className="proj-card-members">
-                      <div className="proj-av" style={{ background: cardColor }}>{initials(project.name)}</div>
-                      <div className="proj-av" style={{ background: '#B83232' }}>{initials(project.type || 'PR')}</div>
-                      <div className="proj-av" style={{ background: '#2E5DA8' }}>{initials(project.industry || 'IN')}</div>
-                      {project.isOwner ? (
+
+                    <span className={`text-[12px] font-medium ${projectOverdue > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-[var(--muted)]'}`}>
+                      {projectTasks.length}
+                      {projectOverdue > 0 && <span className="ml-1 text-[10px]">({projectOverdue}↑)</span>}
+                    </span>
+
+                    <span className="truncate text-[11px] text-[var(--faint)]">{project.industry || '—'}</span>
+
+                    <div className="flex items-center justify-end gap-1">
+                      {project.isOwner && (
                         <button
                           type="button"
-                          className="proj-av"
-                          style={{ background: 'var(--bg3)', color: 'var(--muted)', border: 'none', cursor: 'pointer' }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setDeleteModal({ isOpen: true, project });
-                          }}
+                          onClick={(e) => { e.stopPropagation(); setDeleteModal({ isOpen: true, project }); }}
+                          className="rounded p-1 text-[var(--ghost)] opacity-0 transition-all hover:bg-rose-50 hover:text-rose-600 group-hover:opacity-100 dark:hover:bg-rose-500/10 dark:hover:text-rose-400"
                         >
-                          <Trash2 style={{ width: 10, height: 10 }} />
+                          <Trash2 className="h-3.5 w-3.5" />
                         </button>
-                      ) : null}
+                      )}
+                      <ChevronRight className="h-4 w-4 text-[var(--ghost)] dark:text-white/20" />
                     </div>
                   </div>
                 );
               })}
-              <div className="proj-card proj-card-new" onClick={() => router.push('/dashboard/projects/new')}>
-                <Plus style={{ width: 24, height: 24, color: 'var(--ghost)' }} />
-                <span style={{ fontSize: 14, color: 'var(--faint)', marginTop: 6 }}>New project</span>
-              </div>
+
+              {filteredProjects.length === 0 && (
+                <div className="flex flex-col items-center gap-2 py-16 text-center">
+                  <TrendingUp className="h-8 w-8 text-[var(--ghost)] dark:text-white/20" />
+                  <p className="text-[13px] font-medium text-[var(--muted)]">No projects match your filter</p>
+                  <button type="button" onClick={() => { setTeamFilter('all'); setSearch(''); }} className="text-[12px] text-[var(--accent)] hover:underline">
+                    Clear filters
+                  </button>
+                </div>
+              )}
             </div>
-          </div>
+          )}
         </div>
       </div>
 

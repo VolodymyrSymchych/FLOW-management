@@ -14,7 +14,7 @@ class TaskServiceClient {
   constructor() {
     this.client = axios.create({
       baseURL: TASK_SERVICE_URL,
-      timeout: 10000,
+      timeout: 2000,
       withCredentials: true,
       httpAgent,
       httpsAgent,

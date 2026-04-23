@@ -1,6 +1,6 @@
 'use client';
 
-import { Plus, Search, FolderKanban, AlertTriangle } from "lucide-react";
+import { Plus, Search, AlertTriangle } from "lucide-react";
 import { TabShell, TabHeader, MiniStat, Card, RiskBadge, AvatarStack, ProgressBar } from "./shared";
 import { mockProjects, mockTeam } from "../landingAiMocks";
 
@@ -22,7 +22,7 @@ export function ProjectsTab() {
                             <Search className="h-3 w-3 text-gray-400" />
                             <span className="text-[10px] text-gray-400">Search…</span>
                         </div>
-                        <button className="flex items-center gap-1 rounded-lg bg-gray-900 px-2.5 py-1.5 text-[10px] font-semibold text-white dark:bg-white dark:text-gray-900">
+                        <button type="button" className="flex items-center gap-1 rounded-lg bg-gray-900 px-2.5 py-1.5 text-[10px] font-semibold text-white dark:bg-white dark:text-gray-900">
                             <Plus className="h-3 w-3" /> New project
                         </button>
                     </>
@@ -40,6 +40,7 @@ export function ProjectsTab() {
                 {filters.map((f, i) => (
                     <button
                         key={f}
+                        type="button"
                         className={`rounded-full px-2.5 py-1 text-[10px] font-semibold transition ${
                             i === 0
                                 ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
@@ -83,7 +84,7 @@ export function ProjectsTab() {
                         </Card>
                     );
                 })}
-                <button className="flex min-h-[140px] items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-white/50 text-[11px] font-semibold text-gray-500 transition hover:border-orange-400 hover:text-orange-600 dark:border-white/10 dark:bg-transparent dark:text-white/50">
+                <button type="button" className="flex min-h-[140px] items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-white/50 text-[11px] font-semibold text-gray-500 transition hover:border-orange-400 hover:text-orange-600 dark:border-white/10 dark:bg-transparent dark:text-white/50">
                     <Plus className="mr-1 h-3.5 w-3.5" /> New project
                 </button>
             </div>

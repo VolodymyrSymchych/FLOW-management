@@ -6,33 +6,56 @@ import Link from "next/link";
 
 const plans = [
     {
-        name: "Starter",
-        price: "Free",
-        period: "forever",
-        description: "Perfect for freelancers and solo developers.",
-        features: ["Up to 3 projects", "Basic AI analysis", "Kanban board", "Community support"],
-        cta: "Start for free",
-        href: "/sign-up",
+        name: "Freelancer",
+        price: "$39",
+        period: "month",
+        description: "For freelancers who want to stop giving work away.",
+        features: [
+            "1 user",
+            "Up to 5 projects",
+            "AI Scope Analysis (20/month)",
+            "Change order drafts",
+            "Basic invoicing",
+            "Email support",
+        ],
+        cta: "Start free trial",
+        href: "#join",
         popular: false,
     },
     {
-        name: "Pro",
-        price: "$29",
-        period: "per month",
-        description: "For growing teams that need full visibility.",
-        features: ["Unlimited projects", "Advanced AI risk detection", "Gantt & timeline", "Smart invoicing", "Priority support"],
-        cta: "Get started",
-        href: "/sign-up",
+        name: "Agency",
+        price: "$59",
+        period: "month",
+        description: "For teams where one missed ask costs more than the tool.",
+        features: [
+            "Up to 8 users",
+            "Unlimited projects",
+            "AI Scope Analysis (unlimited)",
+            "Full change order workflow",
+            "Smart invoicing + time tracking",
+            "Team workspace",
+            "Priority support",
+        ],
+        cta: "Start free trial",
+        href: "#join",
         popular: true,
     },
     {
-        name: "Enterprise",
-        price: "Custom",
-        period: "contact us",
-        description: "Advanced security and control for large orgs.",
-        features: ["Custom AI models", "SLA & dedicated support", "SSO & security", "On-premise option", "API access"],
-        cta: "Contact sales",
-        href: "mailto:sales@flow.app?subject=Enterprise%20inquiry",
+        name: "Agency Pro",
+        price: "$99",
+        period: "month",
+        description: "For agencies that want to look like the most professional team in the room.",
+        features: [
+            "Unlimited users",
+            "Everything in Agency",
+            "White-label PDF scope reports",
+            "Client portal",
+            "API access",
+            "Custom AI sensitivity",
+            "Dedicated support",
+        ],
+        cta: "Start free trial",
+        href: "#join",
         popular: false,
     },
 ];
@@ -54,7 +77,7 @@ export function PricingSection() {
                         <div className="w-4 h-px bg-foreground/20" />
                     </div>
                     <h2 className="text-4xl md:text-5xl font-black text-foreground tracking-tight">Simple, transparent pricing.</h2>
-                    <p className="mt-4 text-foreground/70 text-lg">Scale up or down any time. No hidden fees.</p>
+                    <p className="mt-4 text-foreground/70 text-lg">14-day free trial. No credit card required. Cancel any time.</p>
                 </motion.div>
 
                 <div className="grid md:grid-cols-3 gap-4 max-w-5xl mx-auto">

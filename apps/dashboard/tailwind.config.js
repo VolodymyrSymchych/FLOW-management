@@ -59,6 +59,7 @@ module.exports = {
       animation: {
         fadeIn: 'fadeIn 180ms cubic-bezier(0.2, 0.8, 0.2, 1)',
         pulseSoft: 'pulseSoft 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite',
+        shimmer: 'shimmer 1.5s infinite',
       },
       keyframes: {
         fadeIn: {
@@ -68,6 +69,10 @@ module.exports = {
         pulseSoft: {
           '0%, 100%': { opacity: '0.55' },
           '50%': { opacity: '1' },
+        },
+        shimmer: {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(100%)' },
         },
       },
       gridTemplateColumns: {

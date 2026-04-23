@@ -12,7 +12,6 @@ import {
     Clock,
     FolderKanban,
     LayoutDashboard,
-    Plug,
     Receipt,
     Shield,
     TrendingDown,
@@ -31,7 +30,7 @@ import { BurndownTab } from "./mockup/BurndownTab";
 import { CalendarTab } from "./mockup/CalendarTab";
 import { DashboardTab } from "./mockup/DashboardTab";
 import { InboxTab } from "./mockup/InboxTab";
-import { IntegrationsTab } from "./mockup/IntegrationsTab";
+import { AttendanceTab } from "./mockup/AttendanceTab";
 import { InvoicesTab } from "./mockup/InvoicesTab";
 import { ProjectsTab } from "./mockup/ProjectsTab";
 import { ScopeGuardTab } from "./mockup/ScopeGuardTab";
@@ -50,7 +49,6 @@ type Tab =
     | "invoices"
     | "burndown"
     | "analytics"
-    | "integrations"
     | "team";
 
 const analysisSteps = [
@@ -85,9 +83,6 @@ const navSections = [
             { id: "projects" as Tab, label: "Projects", icon: FolderKanban },
             { id: "timesheets" as Tab, label: "Timesheets", icon: Clock },
             { id: "invoices" as Tab, label: "Invoices", icon: Receipt },
-            { id: "burndown" as Tab, label: "Burndown", icon: TrendingDown },
-            { id: "analytics" as Tab, label: "Analytics", icon: BarChart3 },
-            { id: "integrations" as Tab, label: "Integrations", icon: Plug },
             { id: "team" as Tab, label: "Team", icon: Users },
         ],
     },
@@ -224,8 +219,6 @@ export function LiveScopeDemo() {
                 return <BurndownTab key="burndown" />;
             case "analytics":
                 return <AnalyticsTab key="analytics" />;
-            case "integrations":
-                return <IntegrationsTab key="integrations" />;
             case "team":
                 return <TeamTab key="team" />;
             default:

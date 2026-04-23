@@ -5,9 +5,6 @@ import { createExpenseSchema, validateRequestBody, formatZodError } from '@/lib/
 import { cachedWithValidation } from '@/lib/redis';
 import { CacheKeys } from '@/lib/cache-keys';
 import { invalidateOnUpdate } from '@/lib/cache-invalidation';
-import { db } from '@/server/db';
-import { expenses } from '@/shared/schema';
-import { eq, desc } from 'drizzle-orm';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,37 +24,11 @@ export async function GET(request: NextRequest) {
       ? CacheKeys.expensesByProject(projectIdNum)
       : CacheKeys.expensesByUser(session.userId);
 
-    // Cache expenses for 5 minutes with timestamp validation
+    // Cache expenses for 5 minutes — trust TTL, no extra DB validation round-trip
     const expensesData = await cachedWithValidation(
       cacheKey,
       async () => await storage.getExpenses(projectIdNum),
-      {
-        ttl: 300, // 5 minutes
-        validate: true,
-        getUpdatedAt: async () => {
-          try {
-            // Get most recent expense update based on filter
-            const result = projectIdNum
-              ? await db
-                  .select({ updatedAt: expenses.updatedAt })
-                  .from(expenses)
-                  .where(eq(expenses.projectId, projectIdNum))
-                  .orderBy(desc(expenses.updatedAt))
-                  .limit(1)
-              : await db
-                  .select({ updatedAt: expenses.updatedAt })
-                  .from(expenses)
-                  .where(eq(expenses.userId, session.userId))
-                  .orderBy(desc(expenses.updatedAt))
-                  .limit(1);
-
-            return result[0]?.updatedAt || null;
-          } catch (error) {
-            console.warn('[Expenses] Error getting timestamps:', error);
-            return null;
-          }
-        },
-      }
+      { ttl: 300, validate: false }
     );
 
     return NextResponse.json({ expenses: expensesData });

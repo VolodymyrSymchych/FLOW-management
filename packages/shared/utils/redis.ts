@@ -77,9 +77,12 @@ export function getRedisClient(): IORedis | RedisWrapper | null {
         // Support REDIS_URL connection string directly
         if (process.env.REDIS_URL) {
             redisClient = new IORedis(process.env.REDIS_URL, {
+                connectTimeout: 3000,
+                commandTimeout: 2000,
+                enableOfflineQueue: false,
                 retryStrategy: (times) => {
-                    const delay = Math.min(times * 50, 2000);
-                    return delay;
+                    if (times > 3) return null;
+                    return Math.min(times * 100, 1000);
                 },
             });
             (redisClient as IORedis).on('error', (error) => {
@@ -95,9 +98,12 @@ export function getRedisClient(): IORedis | RedisWrapper | null {
                 host: process.env.REDIS_HOST,
                 port: parseInt(process.env.REDIS_PORT || '6379'),
                 password: process.env.REDIS_PASSWORD,
+                connectTimeout: 3000,
+                commandTimeout: 2000,
+                enableOfflineQueue: false,
                 retryStrategy: (times) => {
-                    const delay = Math.min(times * 50, 2000);
-                    return delay;
+                    if (times > 3) return null;
+                    return Math.min(times * 100, 1000);
                 },
             });
 

@@ -4,6 +4,7 @@ import { projectService } from '@/lib/project-service';
 import { withRateLimit } from '@/lib/rate-limit';
 import { storage } from '@/server/storage';
 import { createProjectSchema, validateRequestBody, formatZodError } from '@/lib/validations';
+import { cached } from '@/lib/redis';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,20 +19,23 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const teamIdParam = searchParams.get('team_id');
     const teamId = teamIdParam === 'all' ? 'all' : teamIdParam ? parseInt(teamIdParam, 10) : undefined;
-    const projects = teamId && teamId !== 'all'
-      ? await storage.getProjectsByTeam(teamId)
-      : await storage.getUserProjects(session.userId);
+    const cacheKey = teamId && teamId !== 'all'
+      ? `projects:team:${teamId}`
+      : `projects:user:${session.userId}`;
 
-    const projectsWithTeams = await Promise.all(
-      projects.map(async (project) => {
-        const projectTeams = await storage.getProjectTeams(project.id);
-        return {
-          ...project,
-          team_id: projectTeams[0]?.id,
-          teams: projectTeams,
-        };
-      })
-    );
+    const projectsWithTeams = await cached(cacheKey, async () => {
+      const projects = teamId && teamId !== 'all'
+        ? await storage.getProjectsByTeam(teamId)
+        : await storage.getUserProjects(session.userId);
+      const teamsPerProject = await Promise.all(
+        projects.map((project) => storage.getProjectTeams(project.id))
+      );
+      return projects.map((project, i) => ({
+        ...project,
+        team_id: teamsPerProject[i][0]?.id,
+        teams: teamsPerProject[i],
+      }));
+    }, { ttl: 60 });
 
     return NextResponse.json({
       projects: projectsWithTeams,

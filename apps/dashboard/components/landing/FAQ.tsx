@@ -8,42 +8,42 @@ const faqItems = [
     {
         id: 'how-it-works',
         title: 'How does scope detection work?',
-        content: 'Our AI analyzes your project requirements, user stories, and change requests in real-time. It compares new requests against the original scope using natural language processing and machine learning to identify potential scope creep before it impacts your timeline or budget.'
+        content: 'You upload your project brief or SOW. Flow\'s AI reads it, generates a Scope Score (0–100), and identifies risks, ambiguities, and missing requirements — before work starts. During the project, you paste client requests and Flow checks them against the original brief in seconds.'
+    },
+    {
+        id: 'team-workflow',
+        title: 'Do I need to change how my team works?',
+        content: 'No. Start by uploading a brief and seeing the Score. Most teams are up and running in under 10 minutes. The workflow fits around what you already do — it doesn\'t replace it.'
+    },
+    {
+        id: 'language',
+        title: 'What if the client brief is in another language?',
+        content: 'Flow auto-detects and processes briefs in any language. Outputs are delivered in the language of your interface.'
+    },
+    {
+        id: 'solo-use',
+        title: 'Can I use this without a full team?',
+        content: 'Yes. The Freelancer plan is built for solo operators managing multiple clients. You get all the core scope protection — just without team features.'
     },
     {
         id: 'scope-detected',
         title: 'What happens when scope creep is detected?',
-        content: 'When scope creep is detected, the system immediately flags the change request and provides a detailed impact analysis including estimated time, cost, and resource implications. You can then decide whether to approve the change, negotiate with stakeholders, or defer it to a future phase.'
+        content: 'Flow flags the request, shows you which part of the brief it conflicts with, estimates the cost of the extra work, and drafts a reply you can send to the client directly. You review and send — or edit and send.'
     },
     {
-        id: 'customization',
-        title: 'Can I customize the AI sensitivity?',
-        content: 'Yes! You can adjust the sensitivity levels to match your project needs. Set strict boundaries for fixed-price contracts or more flexible parameters for agile projects. The system learns from your decisions over time to provide increasingly accurate recommendations.'
-    },
-    {
-        id: 'pricing',
-        title: 'How much does it cost?',
-        content: 'We offer flexible pricing plans starting with a free tier for individual developers. Paid plans start at $29/month, and enterprise plans with custom features and dedicated support are available. All plans include unlimited projects and AI-powered scope detection.'
+        id: 'vs-clickup',
+        title: 'How is this different from ClickUp or Asana?',
+        content: 'Those tools track what\'s done. Flow protects what\'s owed. No project management tool reads your brief and tells you what\'s going to go wrong before work starts. That\'s the gap Flow closes.'
     },
     {
         id: 'data-security',
-        title: 'Is my project data secure?',
-        content: 'Absolutely. We use enterprise-grade encryption for all data in transit and at rest. Your project data is stored in secure, SOC 2 compliant data centers. We never share your data with third parties, and you maintain full ownership of all your project information.'
+        title: 'Is my data secure?',
+        content: 'Yes. All documents are encrypted in transit and at rest. We don\'t train our models on your project data.'
     },
     {
-        id: 'integrations',
-        title: 'What integrations are supported?',
-        content: 'We integrate seamlessly with popular project management tools including Jira, Asana, Trello, GitHub, GitLab, and Slack. Our REST API also allows you to build custom integrations with your existing workflow tools.'
-    },
-    {
-        id: 'team-size',
-        title: 'Is this suitable for my team size?',
-        content: 'Yes! Our platform scales from solo freelancers to enterprise teams of 1000+ members. Whether you\'re managing a single project or coordinating multiple teams across different time zones, our tools adapt to your needs.'
-    },
-    {
-        id: 'getting-started',
-        title: 'How quickly can I get started?',
-        content: 'You can be up and running in minutes! Simply sign up, create your first project, and import your existing requirements. Our AI will immediately start analyzing your project scope. We also offer onboarding assistance and comprehensive documentation to help you get the most value from day one.'
+        id: 'demo',
+        title: 'Can I get a demo?',
+        content: 'The live demo is on the homepage — upload any brief and see a real Scope Score in seconds. No signup required.'
     }
 ];
 

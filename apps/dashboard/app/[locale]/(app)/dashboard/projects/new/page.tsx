@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { Upload, FileText, Loader2, Users, DollarSign, Calendar, UserPlus, Building2, Sparkles } from 'lucide-react';
 import axios from 'axios';
 import { ProjectTemplateSelector } from '@/components/ProjectTemplateSelector';
+import { useTeam } from '@/contexts/TeamContext';
+import { useUser } from '@/hooks/useUser';
 
 interface Team {
   id: number;
@@ -27,10 +29,11 @@ interface Friend {
 
 export default function NewProjectPage() {
   const router = useRouter();
+  const { teams } = useTeam();
+  const { user } = useUser();
   const [loading, setLoading] = useState(false);
-  const [teams, setTeams] = useState<Team[]>([]);
   const [friends, setFriends] = useState<Friend[]>([]);
-  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+  const currentUserId = user?.id ?? null;
   const [selectedTeamId, setSelectedTeamId] = useState<string>('');
   const [selectedFriendIds, setSelectedFriendIds] = useState<number[]>([]);
   const [formData, setFormData] = useState({
@@ -48,31 +51,15 @@ export default function NewProjectPage() {
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
 
   useEffect(() => {
-    loadUser();
-    loadTeamsAndFriends();
+    loadFriends();
   }, []);
 
-  const loadUser = async () => {
+  const loadFriends = async () => {
     try {
-      const response = await axios.get('/api/auth/me');
-      if (response.data.user) {
-        setCurrentUserId(response.data.user.id);
-      }
-    } catch (error) {
-      console.error('Failed to load user:', error);
-    }
-  };
-
-  const loadTeamsAndFriends = async () => {
-    try {
-      const [teamsRes, friendsRes] = await Promise.all([
-        axios.get('/api/teams'),
-        axios.get('/api/friends'),
-      ]);
-      setTeams(teamsRes.data.teams || []);
+      const friendsRes = await axios.get('/api/friends');
       setFriends(friendsRes.data.friends || []);
     } catch (error) {
-      console.error('Failed to load teams and friends:', error);
+      console.error('Failed to load friends:', error);
     }
   };
 

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Inter, JetBrains_Mono } from 'next/font/google';
 import '../globals.css';
 import '../literal-dashboard.css';
 import { ThemeProvider } from '@/components/ThemeProvider';
@@ -18,10 +18,20 @@ import { getCachedUser } from '@/lib/user-cache';
 import { QueryProvider } from '@/providers/QueryProvider';
 import Script from 'next/script';
 
+const VERCEL_ANALYTICS_ENABLED =
+  process.env.NODE_ENV === 'production' && process.env.VERCEL === '1';
+
 const inter = Inter({
   subsets: ['latin'],
   weight: ['300', '400', '500', '600', '700'],
   variable: '--font-inter',
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500'],
+  variable: '--font-mono',
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
@@ -42,23 +52,27 @@ export default async function RootLayout({
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const messages = await getMessages({ locale });
-
-  const session = await getSession();
-  let preloadedUser = null;
-
-  if (session) {
+  const sessionPromise = getSession();
+  const messagesPromise = getMessages({ locale });
+  const preloadedUserPromise = sessionPromise.then(async (session) => {
+    if (!session) return null;
     try {
-      preloadedUser = await getCachedUser(session.userId);
+      return await getCachedUser(session.userId);
     } catch (error) {
       console.error('Failed to preload user:', error);
+      return null;
     }
-  }
+  });
+
+  const [messages, preloadedUser] = await Promise.all([
+    messagesPromise,
+    preloadedUserPromise,
+  ]);
 
   return (
     <html lang={locale} suppressHydrationWarning>
       <body
-        className={`${inter.variable} font-sans bg-background text-text-primary`}
+        className={`${inter.variable} ${jetbrainsMono.variable} font-sans bg-background text-text-primary`}
         suppressHydrationWarning
       >
         <NextIntlClientProvider messages={messages} locale={locale}>
@@ -99,8 +113,12 @@ export default async function RootLayout({
                 },
               }}
             />
-            <SpeedInsights />
-            <Analytics />
+            {VERCEL_ANALYTICS_ENABLED ? (
+              <>
+                <SpeedInsights />
+                <Analytics />
+              </>
+            ) : null}
           </ThemeProvider>
         </NextIntlClientProvider>
         <Script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js" strategy="afterInteractive" />

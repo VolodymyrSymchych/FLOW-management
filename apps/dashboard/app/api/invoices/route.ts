@@ -49,8 +49,7 @@ export async function GET(request: NextRequest) {
     }
 
     const userProjects = await storage.getUserProjects(session.userId);
-    const allowedProjectIds = new Set(userProjects.map((project) => project.id));
-    const invoices = (await storage.getInvoices()).filter((invoice) => allowedProjectIds.has(invoice.projectId));
+    const invoices = await storage.getInvoicesByProjectIds(userProjects.map((project) => project.id));
 
     return NextResponse.json({ invoices });
   } catch (error: any) {

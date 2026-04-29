@@ -1,6 +1,95 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
 import { api, type Project, type Stats } from '@/lib/api';
 import axios from 'axios';
+
+export interface BootstrapData {
+  user: any | null;
+  teams: any[];
+  selectedTeam: { type: 'all' } | { type: 'single'; teamId: number };
+  navigation: {
+    projects: Array<{ id: number; name: string; status?: string | null }>;
+    counts: {
+      teams: number;
+      projects: number;
+      tasks: number;
+      invoices: number;
+      notifications: number;
+    };
+  };
+  dashboard?: {
+    stats: Stats | null;
+    projects: any[];
+    cached: boolean;
+  };
+  preload?: {
+    projects: any[];
+    tasks: any[];
+    invoices: any[];
+    attendance: any[];
+    cashFlow: any[];
+  };
+}
+
+function normalizeTeamId(teamId?: number | string) {
+  return teamId && teamId !== 'all' ? teamId : 'all';
+}
+
+export function useBootstrap(teamId?: number | string, enabled = true) {
+  const queryClient = useQueryClient();
+  const normalizedTeamId = normalizeTeamId(teamId);
+  const [seededKey, setSeededKey] = useState<string | null>(null);
+
+  const query = useQuery({
+    queryKey: ['bootstrap', normalizedTeamId],
+    queryFn: async (): Promise<BootstrapData> => {
+      const response = await axios.get('/api/bootstrap', {
+        params: { team_id: normalizedTeamId },
+      });
+      return response.data;
+    },
+    staleTime: 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    enabled,
+  });
+
+  useEffect(() => {
+    if (!query.data) {
+      setSeededKey(null);
+      return;
+    }
+
+    queryClient.setQueryData(['teams'], query.data.teams);
+    queryClient.setQueryData(['navigation', normalizedTeamId], query.data.navigation);
+    if (query.data.dashboard) {
+      queryClient.setQueryData(['dashboard', normalizedTeamId], query.data.dashboard);
+      if (query.data.dashboard.stats) {
+        queryClient.setQueryData(['stats'], query.data.dashboard.stats);
+      }
+    }
+    if (query.data.preload) {
+      queryClient.setQueryData(['projects', normalizedTeamId], query.data.preload.projects);
+      queryClient.setQueryData(['tasks', normalizedTeamId], query.data.preload.tasks);
+      queryClient.setQueryData(['invoices', normalizedTeamId], query.data.preload.invoices);
+      queryClient.setQueryData(['attendance', normalizedTeamId], query.data.preload.attendance);
+      if (normalizedTeamId === 'all') {
+        queryClient.setQueryData(['projects', 'all'], query.data.preload.projects);
+        queryClient.setQueryData(['tasks', 'all'], query.data.preload.tasks);
+        queryClient.setQueryData(['invoices', 'all'], query.data.preload.invoices);
+        queryClient.setQueryData(['attendance', 'all'], query.data.preload.attendance);
+      }
+      queryClient.setQueryData(['cashflow', 'dashboard-widget'], query.data.preload.cashFlow);
+    }
+    setSeededKey(`${normalizedTeamId}:${query.dataUpdatedAt}`);
+  }, [normalizedTeamId, query.data, query.dataUpdatedAt, queryClient]);
+
+  return {
+    ...query,
+    isSeeded: !!query.data && seededKey === `${normalizedTeamId}:${query.dataUpdatedAt}`,
+  };
+}
 
 // Dashboard Stats Query
 export function useStats() {
@@ -9,7 +98,6 @@ export function useStats() {
     queryFn: api.getStats,
     staleTime: 60 * 1000, // 1 хвилина - дані вважаються свіжими
     gcTime: 10 * 60 * 1000, // Зберігати в кеші 10 хвилин
-    refetchInterval: 60 * 1000, // Автоматично оновлювати кожну хвилину
     refetchOnWindowFocus: true, // Оновлювати при поверненні на вкладку
     refetchOnMount: false, // Не робити зайвих запитів при монтуванні якщо дані свіжі
   });
@@ -32,7 +120,6 @@ export function useDashboardData(teamId?: number | string) {
     },
     staleTime: 60 * 1000, // 1 хвилина
     gcTime: 10 * 60 * 1000, // Зберігати в кеші 10 хвилин
-    refetchInterval: 60 * 1000, // Автоматично оновлювати кожну хвилину
     refetchOnWindowFocus: true,
     refetchOnMount: false,
   });
@@ -40,8 +127,6 @@ export function useDashboardData(teamId?: number | string) {
 
 // Projects Query with team filtering
 export function useProjects(teamId?: number | string) {
-  const queryClient = useQueryClient();
-
   return useQuery({
     queryKey: ['projects', teamId || 'all'],
     queryFn: async () => {
@@ -56,7 +141,6 @@ export function useProjects(teamId?: number | string) {
     },
     staleTime: 60 * 1000, // 1 хвилина
     gcTime: 15 * 60 * 1000, // Зберігати в кеші 15 хвилин
-    refetchInterval: 60 * 1000, // Автоматично оновлювати кожну хвилину
     refetchOnWindowFocus: true,
     refetchOnMount: false,
   });
@@ -84,7 +168,6 @@ export function useTasks(teamId?: number | string) {
       return response.data.tasks || [];
     },
     staleTime: 60 * 1000, // 1 хвилина
-    refetchInterval: 60 * 1000, // Автоматично оновлювати кожну хвилину
     refetchOnWindowFocus: true,
     refetchOnMount: false,
   });
@@ -160,7 +243,7 @@ export function useTeamMembers(teamId: number) {
 }
 
 // Teams Query - optimized for fast loading
-export function useTeams() {
+export function useTeams(enabled = true) {
   return useQuery({
     queryKey: ['teams'],
     queryFn: async () => {
@@ -171,6 +254,7 @@ export function useTeams() {
     gcTime: 30 * 60 * 1000, // Зберігати в кеші 30 хвилин
     refetchOnWindowFocus: true,
     refetchOnMount: false,
+    enabled,
   });
 }
 
@@ -362,4 +446,3 @@ export function usePrefetch() {
     },
   };
 }
-

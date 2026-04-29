@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { Ban, ChevronDown, ChevronRight, Download, Plus, Save, Send, Trash2 } from 'lucide-react';
@@ -59,7 +59,7 @@ export default function NewInvoicePage() {
   });
   const [details, setDetails] = useState<DetailsState>({
     projectId: '',
-    invoiceNumber: makeInvoiceNumber(),
+    invoiceNumber: '',
     poNumber: '',
     invoiceDate: '2025-10-20',
     dueDate: '2025-11-12',
@@ -82,6 +82,12 @@ export default function NewInvoicePage() {
   const vatRate = 10;
   const vat = useMemo(() => subtotal * vatRate / 100, [subtotal]);
   const total = subtotal + vat;
+
+  useEffect(() => {
+    setDetails((current) => (
+      current.invoiceNumber ? current : { ...current, invoiceNumber: makeInvoiceNumber() }
+    ));
+  }, []);
 
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat('en-GB', {

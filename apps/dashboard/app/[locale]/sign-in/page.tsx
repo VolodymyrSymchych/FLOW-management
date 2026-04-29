@@ -72,7 +72,7 @@ function SignInForm() {
           <div className="flex justify-center mb-20">
             <Logo variant="default" />
           </div>
-          <h1 className="text-4xl font-bold gradient-text mb-2">Welcome Back</h1>
+          <h1 className="text-4xl font-bold tracking-tight text-text-primary mb-2">Welcome Back</h1>
           <p className="text-text-secondary">Sign in to your account to continue</p>
         </div>
 

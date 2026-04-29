@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
       }
     );
 
-    if (result.chats) {
+    if (result.chats && !result.error) {
       return NextResponse.json({ chats: result.chats });
     }
 

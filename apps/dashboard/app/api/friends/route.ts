@@ -35,14 +35,12 @@ export async function GET() {
         : friendship.senderId
     );
     
-    const friendUsers = await Promise.all(
-      friendIds.map(id => storage.getUser(id))
-    );
+    const friendUsers = await storage.getUsersByIds(friendIds);
     
     const usersMap = new Map<number, any>();
-    friendUsers.forEach((user, index) => {
+    friendUsers.forEach((user) => {
       if (user) {
-        usersMap.set(friendIds[index], {
+        usersMap.set(user.id, {
           id: user.id,
           username: user.username,
           fullName: user.fullName,
@@ -64,14 +62,12 @@ export async function GET() {
 
     // Fetch sender information for pending requests
     const senderIds = pendingRequests.map(request => request.senderId);
-    const senderUsers = await Promise.all(
-      senderIds.map(id => storage.getUser(id))
-    );
+    const senderUsers = await storage.getUsersByIds(senderIds);
     
     const senderUsersMap = new Map<number, any>();
-    senderUsers.forEach((user, index) => {
+    senderUsers.forEach((user) => {
       if (user) {
-        senderUsersMap.set(senderIds[index], {
+        senderUsersMap.set(user.id, {
           id: user.id,
           username: user.username,
           fullName: user.fullName,

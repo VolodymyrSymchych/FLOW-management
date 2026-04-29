@@ -42,7 +42,7 @@ export function StatsCard({ title, value, icon: Icon, iconBgColor = 'bg-blue-500
         <div className="min-w-0 space-y-2">
           <p className="app-label text-text-tertiary">{title}</p>
           <div className="flex items-end gap-3">
-            <h3 className="text-3xl font-semibold text-text-primary">{value}</h3>
+            <h3 className="text-3xl font-semibold text-text-primary tabular-nums tracking-tight">{value}</h3>
             {trend ? (
               <Badge tone={trend.isPositive ? 'success' : 'danger'} variant="soft" className="gap-1 px-2 py-1 normal-case tracking-normal">
                 {trend.isPositive ? <ArrowUpRight className="h-3.5 w-3.5" /> : <ArrowDownRight className="h-3.5 w-3.5" />}

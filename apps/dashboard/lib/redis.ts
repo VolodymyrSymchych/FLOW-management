@@ -40,6 +40,36 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   ]);
 }
 
+async function deleteCorruptCacheKey(redis: Redis | IORedis, key: string): Promise<void> {
+  try {
+    if ('del' in redis && typeof redis.del === 'function') {
+      await withTimeout((redis as any).del(key), 1000);
+    }
+  } catch (error: any) {
+    const message = error?.message || error?.toString() || 'Unknown error';
+    console.warn(`[Cache] Failed to delete corrupt key ${key}:`, message);
+  }
+}
+
+async function parseCachedJson<T>(
+  redis: Redis | IORedis,
+  key: string,
+  value: unknown
+): Promise<T | null> {
+  if (typeof value !== 'string') {
+    return value as T;
+  }
+
+  try {
+    return JSON.parse(value) as T;
+  } catch (error: any) {
+    const message = error?.message || error?.toString() || 'Invalid JSON';
+    console.warn(`[Cache] Corrupt JSON for key ${key}; deleting and falling back:`, message);
+    await deleteCorruptCacheKey(redis, key);
+    return null;
+  }
+}
+
 function isCircuitClosed(): boolean {
   if (!_g.__redisCircuitOpen) return true;
   if (Date.now() >= (_g.__redisCircuitResetAt ?? 0)) {
@@ -51,9 +81,16 @@ function isCircuitClosed(): boolean {
 
 function tripCircuit(): void {
   _g.__redisCircuitOpen = true;
-  // 5 minutes in dev (Redis likely not available), 30s in prod (transient failure)
-  const resetMs = process.env.NODE_ENV === 'production' ? 30_000 : 300_000;
-  _g.__redisCircuitResetAt = Date.now() + resetMs;
+  if (process.env.NODE_ENV !== 'production') {
+    // In dev: permanently disable Redis for this process after the first failure.
+    // Stale/invalid credentials in .env.local should not spam errors on every request.
+    // Restart the dev server after updating credentials to re-enable.
+    console.warn('⚠ Redis disabled for this dev session (update credentials and restart to re-enable)');
+    _g.__redisClient = null;
+    return;
+  }
+  // In production: 30-second circuit breaker — transient failures recover automatically.
+  _g.__redisCircuitResetAt = Date.now() + 30_000;
 }
 
 /**
@@ -109,10 +146,11 @@ export async function cached<T>(
   }
 
   try {
-    // Try to get from cache (with 2s timeout to fail fast when Redis is unreachable)
-    const cached = await withTimeout(redis.get(key), 2000);
+    // Try to get from cache (with 1s timeout to fail fast when Redis is unreachable)
+    const cached = await withTimeout(redis.get(key), 1000);
     if (cached) {
-      return (typeof cached === 'string' ? JSON.parse(cached) : cached) as T;
+      const parsed = await parseCachedJson<T>(redis, key, cached);
+      if (parsed !== null) return parsed;
     }
 
     // Fetch and cache
@@ -163,7 +201,9 @@ export async function getFromCacheOnly<T>(key: string): Promise<T | null> {
     const cached = await withTimeout(redis.get(key), 2000);
     if (!cached) return null;
 
-    const parsed = typeof cached === 'string' ? JSON.parse(cached) : cached;
+    const parsed = await parseCachedJson<any>(redis, key, cached);
+    if (parsed === null) return null;
+
     if (parsed && typeof parsed === 'object' && 'data' in parsed && 'cachedAt' in parsed) {
       return parsed.data as T;
     }
@@ -214,28 +254,34 @@ export async function cachedWithValidation<T>(
   }
 
   try {
-    // Try to get from cache (with 2s timeout to fail fast when Redis is unreachable)
-    const cachedRaw = await withTimeout(redis.get(key), 2000);
+    // Try to get from cache (with 1s timeout to fail fast when Redis is unreachable)
+    const cachedRaw = await withTimeout(redis.get(key), 1000);
 
     if (cachedRaw) {
-      const cachedData: CachedData<T> = typeof cachedRaw === 'string'
-        ? JSON.parse(cachedRaw)
-        : cachedRaw;
+      const cachedData = await parseCachedJson<CachedData<T>>(redis, key, cachedRaw);
+      if (!cachedData) {
+        // Corrupt cache entry was removed; fall through to fetch fresh data.
+      } else {
 
-      // Check if we should validate timestamp
-      if (validate && options.getUpdatedAt) {
-        try {
-          const dbUpdatedAt = await options.getUpdatedAt();
-          if (dbUpdatedAt && dbUpdatedAt.getTime() > cachedData.cachedAt) {
-            // stale — fall through to fetch fresh data
-          } else {
+        // Check if we should validate timestamp
+        if (validate && options.getUpdatedAt) {
+          try {
+            const dbUpdatedAt = await options.getUpdatedAt();
+            if (dbUpdatedAt && dbUpdatedAt.getTime() > cachedData.cachedAt) {
+              // stale — fall through to fetch fresh data
+            } else {
+              return cachedData.data;
+            }
+          } catch {
             return cachedData.data;
           }
-        } catch {
-          return cachedData.data;
+        } else {
+          if (cachedData && typeof cachedData === 'object' && 'data' in cachedData) {
+            return cachedData.data;
+          } else {
+            await deleteCorruptCacheKey(redis, key);
+          }
         }
-      } else {
-        return cachedData.data;
       }
     }
 

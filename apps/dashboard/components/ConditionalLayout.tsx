@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { TabProvider } from '@/contexts/TabContext';
 import { Sidebar } from '@/components/Sidebar';
@@ -71,11 +72,23 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
 }
 
 function ShellFrame({ children, isNoPaddingPage }: { children: React.ReactNode; isNoPaddingPage: boolean }) {
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+
+  const closeMobileSidebar = () => setIsMobileSidebarOpen(false);
+  const toggleMobileSidebar = () => setIsMobileSidebarOpen((v) => !v);
+
   return (
     <div className="flow-auth-shell sb-open">
-      <Sidebar />
+      {isMobileSidebarOpen && (
+        <div
+          className="sb-mobile-overlay"
+          onClick={closeMobileSidebar}
+          aria-hidden="true"
+        />
+      )}
+      <Sidebar isMobileOpen={isMobileSidebarOpen} onMobileClose={closeMobileSidebar} />
       <MainContent>
-        <Header />
+        <Header onMobileMenuToggle={toggleMobileSidebar} />
         <div
           id="main-content"
           className={`flow-main-scroll ${isNoPaddingPage ? '' : 'padded'}`}

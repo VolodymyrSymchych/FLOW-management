@@ -2,7 +2,6 @@
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  BarChart3,
   Bot,
   Calendar,
   CheckSquare,
@@ -13,7 +12,6 @@ import {
   LayoutDashboard,
   LogOut,
   MessageSquare,
-  Bell,
   Plus,
   Receipt,
   Settings,
@@ -22,7 +20,7 @@ import {
 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Link } from '@/i18n/routing';
-import { usePrefetch, useProjects } from '@/hooks/useQueries';
+import { useBootstrap, usePrefetch } from '@/hooks/useQueries';
 import { useTeam } from '@/contexts/TeamContext';
 import { useUser } from '@/hooks/useUser';
 import { Logo as ActualLogo } from './Logo';
@@ -46,10 +44,15 @@ const navigation: NavSection[] = [
     items: [
       { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
       { name: 'My Tasks', href: '/dashboard/tasks', icon: CheckSquare },
-      { name: 'Inbox', href: '/dashboard/messages', icon: Bell },
       { name: 'Chat', href: '/dashboard/chat', icon: MessageSquare },
       { name: 'Calendar', href: '/dashboard/calendar', icon: Calendar },
       { name: 'Team', href: '/dashboard/team', icon: Users },
+    ],
+  },
+  {
+    label: 'AI Tools',
+    items: [
+      { name: 'AI Scope Guard', href: '/dashboard/scope-guard', icon: Shield, guard: true, badge: 'New' },
     ],
   },
   {
@@ -58,14 +61,7 @@ const navigation: NavSection[] = [
       { name: 'Projects', href: '/dashboard/projects', icon: FolderKanban },
       { name: 'Documents', href: '/dashboard/documentation', icon: FileText },
       { name: 'Timesheets', href: '/dashboard/timesheets', icon: Clock },
-      { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
       { name: 'Invoices', href: '/dashboard/invoices', icon: Receipt },
-    ],
-  },
-  {
-    label: 'AI Tools',
-    items: [
-      { name: 'AI Scope Guard', href: '/dashboard/scope-guard', icon: Shield, guard: true, badge: 'New' },
     ],
   },
 ];
@@ -93,13 +89,20 @@ function getWorkspaceColor(index: number) {
   return colors[index % colors.length];
 }
 
-export const Sidebar = memo(function Sidebar() {
+interface SidebarProps {
+  isMobileOpen?: boolean;
+  onMobileClose?: () => void;
+}
+
+export const Sidebar = memo(function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { selectedTeam, setSelectedTeam, teams, isLoading: teamsLoading } = useTeam();
   const teamId = selectedTeam.type === 'all' ? 'all' : selectedTeam.teamId;
-  const { data: projects = [] } = useProjects(teamId);
   const { user } = useUser();
+  const { data: bootstrapData } = useBootstrap(teamId, !!user);
+  const projects = bootstrapData?.navigation.projects || [];
+  const projectCount = bootstrapData?.navigation.counts.projects || projects.length;
   const { prefetchChats, prefetchInvoices, prefetchProjects, prefetchTasks, prefetchStats, prefetchTeams, prefetchReports, prefetchProject } = usePrefetch();
   const [showWorkspaceMenu, setShowWorkspaceMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -123,8 +126,21 @@ export const Sidebar = memo(function Sidebar() {
     }
   }, [showWorkspaceMenu, showUserMenu]);
 
+  const [navigatingTo, setNavigatingTo] = useState<string | null>(null);
+
+  // Clear loading indicator when navigation completes
+  useEffect(() => {
+    setNavigatingTo(null);
+  }, [pathname]);
+
+  const locale = pathname.split('/')[1] || 'en';
+
   const handleNavHover = useCallback(
     (href: string) => {
+      // Prefetch the page JS bundle so the click feels instant
+      router.prefetch(`/${locale}${href}`);
+
+      // Prefetch API data
       switch (href) {
         case '/dashboard':
           prefetchStats();
@@ -155,14 +171,11 @@ export const Sidebar = memo(function Sidebar() {
         case '/dashboard/projects-timeline':
           prefetchProjects();
           break;
-        case '/dashboard/timesheets':
-        case '/dashboard/attendance':
-          break;
         default:
           break;
       }
     },
-    [prefetchChats, prefetchInvoices, prefetchProjects, prefetchReports, prefetchStats, prefetchTasks, prefetchTeams]
+    [router, locale, prefetchChats, prefetchInvoices, prefetchProjects, prefetchReports, prefetchStats, prefetchTasks, prefetchTeams]
   );
 
   const workspaceLabel = useMemo(() => {
@@ -197,7 +210,7 @@ export const Sidebar = memo(function Sidebar() {
   };
 
   return (
-    <aside className="sb" data-testid="app-shell-sidebar">
+    <aside className={`sb${isMobileOpen ? ' sb-mobile-open' : ''}`} data-testid="app-shell-sidebar">
       <div className="sb-logo">
         <ActualLogo compact={false} />
       </div>
@@ -270,18 +283,26 @@ export const Sidebar = memo(function Sidebar() {
               const active = isActivePath(pathname, item.href);
               const Icon = item.icon;
               const className = item.guard ? `ni-guard ${active ? 'on' : ''}` : `ni ${active ? 'on' : ''}`;
+              const isNavigating = navigatingTo === item.href;
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={className}
+                  className={`${className}${isNavigating ? ' ni-loading' : ''}`}
                   title={item.name}
                   onMouseEnter={() => handleNavHover(item.href)}
+                  onClick={() => { if (!active) setNavigatingTo(item.href); onMobileClose?.(); }}
                   data-testid={`sidebar-link-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
                 >
-                  <Icon />
+                  {isNavigating ? (
+                    <svg className="ni-spinner" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeDasharray="31.4" strokeDashoffset="10" />
+                    </svg>
+                  ) : (
+                    <Icon />
+                  )}
                   <span className="ni-n">{item.name}</span>
-                  {item.badge ? <span className={`bg ${item.guard ? 'bg-ai' : 'bg-hot'}`}>{item.badge}</span> : null}
+                  {item.badge && !isNavigating ? <span className={`bg ${item.guard ? 'bg-ai' : 'bg-hot'}`}>{item.badge}</span> : null}
                 </Link>
               );
             })}
@@ -320,17 +341,17 @@ export const Sidebar = memo(function Sidebar() {
                   </button>
                   {isExpanded && (
                     <div className="sb-project-items" style={{ paddingLeft: '28px', display: 'flex', flexDirection: 'column', marginTop: '2px', gap: '2px' }}>
-                      <Link href={`/dashboard/projects/${project.id}`} className={`ni ${baseActive ? 'on' : ''}`} style={{ minHeight: '32px', padding: '6px 10px' }}>
-                        <span className="ni-n" style={{ fontSize: '12px' }}>Overview</span>
+                      <Link href={`/dashboard/projects/${project.id}`} className={`ni sb-project-sub-item ${baseActive ? 'on' : ''}`}>
+                        <span className="ni-n">Overview</span>
                       </Link>
-                      <Link href={`/dashboard/projects/${project.id}?tab=finance`} className="ni" style={{ minHeight: '32px', padding: '6px 10px' }}>
-                        <span className="ni-n" style={{ fontSize: '12px' }}>Cash Flow</span>
+                      <Link href={`/dashboard/projects/${project.id}?tab=finance`} className="ni sb-project-sub-item">
+                        <span className="ni-n">Cash Flow</span>
                       </Link>
-                      <Link href={`/dashboard/tasks?projectId=${project.id}`} className={`ni ${isTasksActive ? 'on' : ''}`} style={{ minHeight: '32px', padding: '6px 10px' }}>
-                        <span className="ni-n" style={{ fontSize: '12px' }}>Tasks</span>
+                      <Link href={`/dashboard/tasks?projectId=${project.id}`} className={`ni sb-project-sub-item ${isTasksActive ? 'on' : ''}`}>
+                        <span className="ni-n">Tasks</span>
                       </Link>
-                      <Link href={`/dashboard/projects/${project.id}?tab=team`} className="ni" style={{ minHeight: '32px', padding: '6px 10px' }}>
-                        <span className="ni-n" style={{ fontSize: '12px' }}>Team</span>
+                      <Link href={`/dashboard/projects/${project.id}?tab=team`} className="ni sb-project-sub-item">
+                        <span className="ni-n">Team</span>
                       </Link>
                     </div>
                   )}
@@ -339,7 +360,7 @@ export const Sidebar = memo(function Sidebar() {
             })}
             <Link href="/dashboard/projects" className="ni ni-more" data-testid="sidebar-projects-all" onMouseEnter={() => prefetchProjects()}>
               <FolderKanban />
-              <span className="ni-n">{projects.length > 6 ? `View all (${projects.length})` : projects.length > 0 ? 'All projects' : 'Projects'}</span>
+              <span className="ni-n">{projectCount > 6 ? `View all (${projectCount})` : projectCount > 0 ? 'All projects' : 'Projects'}</span>
             </Link>
           </div>
         </div>

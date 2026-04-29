@@ -27,13 +27,12 @@ export async function GET(request: NextRequest) {
       const projects = teamId && teamId !== 'all'
         ? await storage.getProjectsByTeam(teamId)
         : await storage.getUserProjects(session.userId);
-      const teamsPerProject = await Promise.all(
-        projects.map((project) => storage.getProjectTeams(project.id))
-      );
-      return projects.map((project, i) => ({
+
+      const teamsByProject = await storage.getTeamsForProjects(projects.map((project) => project.id));
+      return projects.map((project) => ({
         ...project,
-        team_id: teamsPerProject[i][0]?.id,
-        teams: teamsPerProject[i],
+        team_id: teamsByProject[project.id]?.[0]?.id,
+        teams: teamsByProject[project.id] || [],
       }));
     }, { ttl: 60 });
 

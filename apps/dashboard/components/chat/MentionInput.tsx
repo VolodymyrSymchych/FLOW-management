@@ -36,7 +36,7 @@ export function MentionInput({
 
   // Filter members based on search
   const filteredMembers = chatMembers.filter((member) =>
-    member.username.toLowerCase().includes(mentionSearch.toLowerCase())
+    member.username?.toLowerCase().includes(mentionSearch.toLowerCase()) ?? false
   );
 
   useEffect(() => {
@@ -143,7 +143,7 @@ export function MentionInput({
                   <Avatar className="h-6 w-6 ring-1 ring-primary/20">
                     <AvatarImage src={member.avatarUrl} />
                     <AvatarFallback className="glass-medium text-text-primary text-xs">
-                      {member.username.substring(0, 2).toUpperCase()}
+                      {member.username?.substring(0, 2).toUpperCase() ?? '?'}
                     </AvatarFallback>
                   </Avatar>
                   <span className="text-sm font-medium text-text-primary">

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isUnauthorizedError, requireAuth } from '@/lib/auth-helper';
 import { messageService } from '@/lib/chat-service';
+import { triggerChatEvent, PusherEvent } from '@/lib/pusher-server';
 
 export const dynamic = 'force-dynamic';
 
@@ -68,6 +69,11 @@ export async function PATCH(
     }
 
     const message = await messageService.editMessage(messageId, session.userId, content);
+
+    if (message?.chatId) {
+      void triggerChatEvent(message.chatId, PusherEvent.MESSAGE_UPDATED, { message });
+    }
+
     return NextResponse.json({ message });
   } catch (error) {
     if (isUnauthorizedError(error)) {
@@ -91,7 +97,14 @@ export async function DELETE(
     if ('error' in result) return result.error;
     const { session, messageId } = result;
 
+    // Fetch before delete to get chatId for the broadcast
+    const existing = await messageService.getMessageById(messageId, session.userId);
     await messageService.deleteMessage(messageId, session.userId);
+
+    if (existing?.chatId) {
+      void triggerChatEvent(existing.chatId, PusherEvent.MESSAGE_DELETED, { messageId });
+    }
+
     return NextResponse.json({ success: true });
   } catch (error) {
     if (isUnauthorizedError(error)) {

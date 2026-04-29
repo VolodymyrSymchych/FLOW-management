@@ -61,7 +61,7 @@ class ChatServiceClient {
       // Use shorter timeout for list operations to prevent long loading
       const response = await this.client.get('/api/chats/my', {
         headers,
-        timeout: 3000, // 3 second timeout for quick response
+        timeout: 1500, // 1.5s timeout — fall back to local storage quickly
       });
       return { chats: response.data.chats };
     } catch (error: any) {

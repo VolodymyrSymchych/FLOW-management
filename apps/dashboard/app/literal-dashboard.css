@@ -82,7 +82,15 @@ body::before {
   overflow: hidden;
   position: relative;
   z-index: 30;
-  transition: width 0.18s ease, min-width 0.18s ease;
+  transition: width 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+              min-width 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (max-width: 1200px) {
+  .sb {
+    width: 224px;
+    min-width: 224px;
+  }
 }
 
 .flow-auth-shell.sb-collapsed .sb {
@@ -520,6 +528,23 @@ img.flow-logo-flow-only {
   color: var(--violet);
 }
 
+/* Nav item loading state */
+.ni-loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.ni-spinner {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  animation: ni-spin 0.75s linear infinite;
+}
+
+@keyframes ni-spin {
+  to { transform: rotate(360deg); }
+}
+
 .ni-guard:hover,
 .ni-guard.on {
   background: var(--violet-bg);
@@ -923,6 +948,19 @@ button.tb-search {
   align-items: center;
   gap: 7px;
   flex-shrink: 0;
+}
+
+.tb-actions {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  min-width: 0;
+}
+
+.tb-actions .tb-search {
+  margin: 0;
 }
 
 /* ─── Command Palette (HTML design) ───────────────────────────── */
@@ -4106,19 +4144,7 @@ button.tb-search {
 }
 
 @media (max-width: 900px) {
-  .topbar {
-    flex-wrap: wrap;
-    height: auto;
-    padding: 10px 14px;
-  }
-
-  .bc,
-  .tb-search {
-    width: 100%;
-    max-width: none;
-    margin: 0;
-  }
-
+  /* Content-level breakpoints — kept at 900px as they're layout-driven, not header-driven */
   .sg-score-row,
   .invest-grid {
     grid-template-columns: 1fr;
@@ -4140,7 +4166,6 @@ button.tb-search {
   .inv-stats-grid {
     grid-template-columns: repeat(2, 1fr) !important;
   }
-
 }
 
 /* ─── Project Detail (redesign) ───────────────────────────────────── */
@@ -6181,4 +6206,159 @@ button.tb-search {
   display: inline;
   vertical-align: middle;
   margin-bottom: 1px;
+}
+
+/* ── Mobile sidebar overlay ── */
+.sb-mobile-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(15, 15, 14, 0.45);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  animation: sb-overlay-in 0.18s ease-out forwards;
+}
+
+@keyframes sb-overlay-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── Mobile topbar hamburger ── */
+.tb-menu-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--ink2);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.14s ease, color 0.14s ease;
+}
+
+.tb-menu-btn:hover {
+  background: var(--bg2);
+  color: var(--ink);
+}
+
+.tb-menu-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* ── Sub-project nav items (replaces inline styles) ── */
+.sb-project-sub-item {
+  min-height: 44px;
+  padding: 10px 10px;
+  font-size: 0.75rem;
+}
+
+/* ── Mobile breakpoint ── */
+@media (max-width: 768px) {
+  /* Hamburger visible */
+  .tb-menu-btn {
+    display: flex;
+  }
+
+  /* Overlay visible when sidebar is open */
+  .sb-mobile-overlay {
+    display: block;
+  }
+
+  /* Sidebar becomes a fixed drawer */
+  .sb {
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100dvh;
+    z-index: 50;
+    transform: translateX(-100%);
+    transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1),
+                box-shadow 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+    width: 272px;
+    min-width: 272px;
+  }
+
+  .sb.sb-mobile-open {
+    transform: translateX(0);
+    box-shadow: 0 8px 40px rgba(15, 15, 14, 0.25);
+  }
+
+  /* Collapsed state has no effect on mobile — drawer is always full-width */
+  .flow-auth-shell.sb-collapsed .sb {
+    width: 272px;
+    min-width: 272px;
+    transform: translateX(-100%);
+  }
+
+  .flow-auth-shell.sb-collapsed .sb.sb-mobile-open {
+    transform: translateX(0);
+  }
+
+  /* Main content fills full width */
+  .flow-auth-shell .main {
+    width: 100%;
+  }
+
+  /* Touch targets — 44px minimum */
+  .ni,
+  .ni-guard {
+    min-height: 44px;
+    padding: 10px 7px;
+  }
+
+  .sb-project-sub-item {
+    min-height: 44px;
+  }
+
+  /* Workspace button taller */
+  .ws-btn {
+    min-height: 44px;
+  }
+
+  /* Topbar: single row, no wrapping, 56px for thumb reach */
+  .topbar {
+    height: 56px;
+    min-height: 56px;
+    padding: 0 12px;
+    gap: 8px;
+    flex-wrap: nowrap;
+  }
+
+  /* Breadcrumbs: show only current section on mobile — no path noise */
+  .bc-i:not(.cur),
+  .bc-s {
+    display: none;
+  }
+
+  .bc-i.cur {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  /* Search: collapse to icon-only button */
+  .tb-search-placeholder {
+    display: none;
+  }
+
+  .tb-search-kbd {
+    display: none;
+  }
+
+  .tb-search {
+    width: 36px;
+    min-width: 36px;
+    max-width: 36px;
+    padding: 0;
+    margin: 0;
+    justify-content: center;
+    flex-shrink: 0;
+  }
 }

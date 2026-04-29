@@ -57,7 +57,7 @@ export function EmailVerificationModal({ email, onResend }: EmailVerificationMod
                     </div>
 
                     {/* Title */}
-                    <h2 className="text-3xl font-bold gradient-text mb-3">
+                    <h2 className="text-3xl font-bold tracking-tight text-text-primary mb-3">
                         Перевірте вашу пошту
                     </h2>
 

@@ -24,13 +24,12 @@ export function rateLimit(options: RateLimitOptions): (req: Request, res: Respon
         ? `ratelimit:${identifier(req)}`
         : `ratelimit:${req.ip}`;
 
-      const count = await redis.incr(key);
+      const pipeline = redis.pipeline();
+      pipeline.incr(key);
+      pipeline.expire(key, window);
+      pipeline.ttl(key);
+      const [[, count], , [, ttl]] = await pipeline.exec() as [[null, number], unknown, [null, number]];
 
-      if (count === 1) {
-        await redis.expire(key, window);
-      }
-
-      const ttl = await redis.ttl(key);
       res.setHeader('X-RateLimit-Limit', limit.toString());
       res.setHeader('X-RateLimit-Remaining', Math.max(0, limit - count).toString());
       res.setHeader('X-RateLimit-Reset', (Date.now() + ttl * 1000).toString());
@@ -61,7 +60,7 @@ export function rateLimit(options: RateLimitOptions): (req: Request, res: Respon
 export const loginRateLimit = rateLimit({
   limit: 500, // 5 attempts
   window: 15 * 60, // 15 minutes
-  identifier: (req) => `login:${req.ip}:${req.body.email || 'unknown'}`,
+  identifier: (req) => `login:${req.ip}:${req.body.emailOrUsername || req.body.email || 'unknown'}`,
   message: 'Too many login attempts. Please try again after 15 minutes.',
 });
 

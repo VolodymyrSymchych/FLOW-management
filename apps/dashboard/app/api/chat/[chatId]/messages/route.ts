@@ -4,6 +4,7 @@ import { storage } from '@/server/storage';
 import { cachedWithValidation } from '@/lib/redis';
 import { CacheKeys } from '@/lib/cache-keys';
 import { invalidateOnUpdate } from '@/lib/cache-invalidation';
+import { publishChatMessage, chatRoomId } from '@/lib/ably-chat-server';
 
 export const dynamic = 'force-dynamic';
 
@@ -135,8 +136,14 @@ export async function POST(
       attachments: [],
     };
 
-    // Invalidate chat messages cache after sending message
-    await invalidateOnUpdate('chat', chatId, session.userId);
+    // Invalidate cache and broadcast via Ably (fire-and-forget)
+    void Promise.all([
+      invalidateOnUpdate('chat', chatId, session.userId),
+      publishChatMessage(chatRoomId(chatId), {
+        text: fullMessage.content,
+        metadata: { dbMessage: fullMessage },
+      }),
+    ]);
 
     return NextResponse.json(
       { message: fullMessage },

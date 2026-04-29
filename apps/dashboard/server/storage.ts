@@ -212,6 +212,25 @@ export class DatabaseStorage {
     return await db.select().from(teams).where(inArray(teams.id, teamIds));
   }
 
+  async getTeamsForProjects(projectIds: number[]): Promise<Record<number, Team[]>> {
+    if (projectIds.length === 0) return {};
+
+    const rows = await db
+      .select({
+        projectId: teamProjects.projectId,
+        team: teams,
+      })
+      .from(teamProjects)
+      .innerJoin(teams, eq(teamProjects.teamId, teams.id))
+      .where(inArray(teamProjects.projectId, projectIds));
+
+    return rows.reduce<Record<number, Team[]>>((acc, row) => {
+      if (!acc[row.projectId]) acc[row.projectId] = [];
+      acc[row.projectId].push(row.team);
+      return acc;
+    }, {});
+  }
+
   // Friendships
   async sendFriendRequest(senderId: number, receiverId: number): Promise<Friendship> {
     const [friendship] = await db
@@ -248,6 +267,16 @@ export class DatabaseStorage {
           eq(friendships.status, 'accepted')
         )
       );
+  }
+
+  async getUsersByIds(userIds: number[]): Promise<User[]> {
+    const uniqueIds = Array.from(new Set(userIds)).filter((id) => Number.isFinite(id));
+    if (uniqueIds.length === 0) return [];
+
+    return await db
+      .select()
+      .from(users)
+      .where(inArray(users.id, uniqueIds));
   }
 
   async getPendingFriendRequests(userId: number): Promise<Friendship[]> {
@@ -524,6 +553,22 @@ export class DatabaseStorage {
         isNull(projects.deletedAt)
       ))
       .orderBy(desc(projects.createdAt));
+  }
+
+  async getProjectNavigation(
+    userId: number,
+    teamId?: number | 'all',
+    limit: number = 6
+  ): Promise<Array<{ id: number; name: string; status?: string | null }>> {
+    const selectedProjects = teamId && teamId !== 'all'
+      ? await this.getProjectsByTeam(teamId)
+      : await this.getUserProjects(userId);
+
+    return selectedProjects.slice(0, limit).map((project) => ({
+      id: project.id,
+      name: project.name,
+      status: project.status ?? null,
+    }));
   }
 
   // Helper to add workedHours to tasks from time entries
@@ -856,20 +901,14 @@ export class DatabaseStorage {
 
   // Get tasks for a specific team
   async getTasksByTeam(teamId: number): Promise<(Task & { workedHours: number })[]> {
-    console.log(`[getTasksByTeam] Fetching tasks for team ${teamId}`);
-
     const teamProjects = await this.getProjectsByTeam(teamId);
     const projectIds = teamProjects.map(p => p.id);
-    console.log(`[getTasksByTeam] Team projects:`, teamProjects.map(p => ({ id: p.id, name: p.name })));
-    console.log(`[getTasksByTeam] Project IDs:`, projectIds);
 
     // Get team members to include their tasks
     const teamMembersList = await this.getTeamMembers(teamId);
     const teamMemberIds = teamMembersList.map(tm => tm.userId);
-    console.log(`[getTasksByTeam] Team member IDs:`, teamMemberIds);
 
     if (projectIds.length === 0 && teamMemberIds.length === 0) {
-      console.log(`[getTasksByTeam] No projects or members found for team ${teamId}`);
       return [];
     }
 
@@ -881,11 +920,9 @@ export class DatabaseStorage {
     // Condition 1: Tasks from team projects (MAIN CONDITION)
     if (projectIds.length > 0) {
       orConditions.push(inArray(tasks.projectId, projectIds));
-      console.log(`[getTasksByTeam] Added condition: tasks from team projects`);
     }
 
     if (orConditions.length === 0) {
-      console.log(`[getTasksByTeam] No conditions to filter, returning empty array`);
       return [];
     }
 
@@ -897,14 +934,6 @@ export class DatabaseStorage {
         isNull(tasks.deletedAt)
       ))
       .orderBy(desc(tasks.createdAt))) as Task[];
-
-    console.log(`[getTasksByTeam] Found ${tasksResult.length} tasks for team ${teamId}`);
-    console.log(`[getTasksByTeam] Tasks:`, tasksResult.map(t => ({
-      id: t.id,
-      title: t.title,
-      projectId: t.projectId,
-      userId: t.userId
-    })));
 
     return await this.addWorkedHoursToTasks(tasksResult);
   }
@@ -1056,6 +1085,20 @@ export class DatabaseStorage {
 
     // Extract invoices from join result
     return result.map(row => row.invoices);
+  }
+
+  async getInvoicesByProjectIds(projectIds: number[]): Promise<Invoice[]> {
+    const uniqueProjectIds = Array.from(new Set(projectIds)).filter((id) => Number.isFinite(id));
+    if (uniqueProjectIds.length === 0) return [];
+
+    return await db
+      .select()
+      .from(invoices)
+      .where(and(
+        inArray(invoices.projectId, uniqueProjectIds),
+        isNull(invoices.deletedAt)
+      ))
+      .orderBy(desc(invoices.createdAt));
   }
 
   // Expenses

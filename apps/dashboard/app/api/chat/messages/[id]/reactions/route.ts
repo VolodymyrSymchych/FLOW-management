@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isUnauthorizedError, requireAuth } from '@/lib/auth-helper';
 import { messageService } from '@/lib/chat-service';
+import { triggerChatEvent, PusherEvent } from '@/lib/pusher-server';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,7 +28,14 @@ export async function POST(
       return NextResponse.json({ error: 'Missing emoji' }, { status: 400 });
     }
 
-    const reaction = await messageService.addReaction(messageId, session.userId, emoji);
+    const [message, reaction] = await Promise.all([
+      messageService.getMessageById(messageId, session.userId),
+      messageService.addReaction(messageId, session.userId, emoji),
+    ]);
+
+    if (message?.chatId) {
+      void triggerChatEvent(message.chatId, PusherEvent.MESSAGE_REACTION, { messageId, emoji, userId: session.userId });
+    }
 
     return NextResponse.json({ reaction }, { status: 201 });
   } catch (error) {
@@ -65,7 +73,12 @@ export async function DELETE(
       return NextResponse.json({ error: 'Missing emoji' }, { status: 400 });
     }
 
+    const message = await messageService.getMessageById(messageId, session.userId);
     await messageService.removeReaction(messageId, session.userId, emoji);
+
+    if (message?.chatId) {
+      void triggerChatEvent(message.chatId, PusherEvent.MESSAGE_REACTION, { messageId, emoji, userId: session.userId, removed: true });
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -41,7 +41,7 @@ module.exports = {
       fontFamily: {
         sans: ['var(--font-inter)', 'Inter', 'system-ui', 'sans-serif'],
         display: ['var(--font-inter)', 'Inter', 'system-ui', 'sans-serif'],
-        mono: ['var(--font-inter)', 'Inter', 'system-ui', 'sans-serif'],
+        mono: ['var(--font-mono)', 'JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'monospace'],
       },
       borderRadius: {
         sm: '0.5rem',
@@ -57,7 +57,7 @@ module.exports = {
         focus: '0 0 0 3px hsl(var(--ring) / 0.22)',
       },
       animation: {
-        fadeIn: 'fadeIn 180ms cubic-bezier(0.2, 0.8, 0.2, 1)',
+        fadeIn: 'fadeIn 200ms cubic-bezier(0.22, 1, 0.36, 1)',
         pulseSoft: 'pulseSoft 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite',
         shimmer: 'shimmer 1.5s infinite',
       },

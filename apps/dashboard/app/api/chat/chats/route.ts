@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
       }
     );
 
-    if (result.chats) {
+    if (result.chats && !result.error) {
       return NextResponse.json({ chats: result.chats });
     }
 
@@ -57,41 +57,41 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { type, name, projectId, teamId, memberIds } = body;
 
-    let result;
+    let chat: any;
 
     if (type === 'direct' && memberIds && memberIds.length === 1) {
-      // Create direct chat
-      result = await chatService.findOrCreateDirectChat(session.userId, memberIds[0]);
+      // Try chatService first, fall back to local storage
+      const result = await chatService.findOrCreateDirectChat(session.userId, memberIds[0]);
+      if (result.chat && !result.error) {
+        chat = result.chat;
+      } else {
+        chat = await storage.getOrCreateDirectChat(session.userId, memberIds[0]);
+      }
     } else {
-      // Create group or project chat
-      result = await chatService.createChat({
-        type,
-        name,
-        projectId,
-        teamId,
-      });
+      const result = await chatService.createChat({ type, name, projectId, teamId });
+      if (result.chat && !result.error) {
+        chat = result.chat;
+        // Add members via chatService if available
+        if (memberIds && memberIds.length > 0) {
+          await Promise.all(
+            memberIds.map(async (memberId: number) => {
+              const addResult = await chatService.addMember(chat.id, memberId, 'member');
+              if (addResult.error) console.error(`Failed to add member ${memberId}:`, addResult.error);
+            })
+          );
+        }
+      } else {
+        // Local storage fallback
+        const allMembers = [session.userId, ...(memberIds || [])];
+        chat = await storage.createGroupChat(
+          { type, name: name || null, projectId: projectId || null, teamId: teamId || null, createdBy: session.userId },
+          allMembers,
+        );
+      }
     }
 
-    // Check for errors
-    if (result.error || !result.chat) {
-      return NextResponse.json(
-        { error: result.error || 'Failed to create chat' },
-        { status: 500 }
-      );
-    }
-
-    const chat = result.chat;
-
-    // Add members if provided (only for non-direct chats)
-    if (type !== 'direct' && memberIds && memberIds.length > 0) {
-      await Promise.all(
-        memberIds.map(async (memberId: number) => {
-          const addResult = await chatService.addMember(chat.id, memberId, 'member');
-          if (addResult.error) {
-            console.error(`Failed to add member ${memberId}:`, addResult.error);
-          }
-        })
-      );
+    if (!chat) {
+      return NextResponse.json({ error: 'Failed to create chat' }, { status: 500 });
     }
 
     // Invalidate caches after creating chat

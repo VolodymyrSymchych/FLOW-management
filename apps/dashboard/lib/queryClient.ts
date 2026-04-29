@@ -8,8 +8,8 @@ function makeQueryClient() {
         staleTime: 60 * 1000,
         // Зберігати неактивні дані 10 хвилин
         gcTime: 10 * 60 * 1000,
-        // НЕ рефетчити автоматично при фокусі - тільки якщо дані застарілі
-        refetchOnWindowFocus: 'always',
+        // Рефетчити при фокусі лише якщо дані застарілі (виходить за staleTime)
+        refetchOnWindowFocus: true,
         // Рефетчити при відновленні з'єднання
         refetchOnReconnect: true,
         // Повторні спроби при помилці

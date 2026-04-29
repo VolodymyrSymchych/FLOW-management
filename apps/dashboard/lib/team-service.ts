@@ -60,12 +60,7 @@ class TeamServiceClient {
     async getTeams(): Promise<{ teams?: any[]; error?: string }> {
         try {
             const headers = await this.getHeaders();
-            console.log('[Team Service Client] Calling /api/teams');
-            console.log('[Team Service Client] Headers:', JSON.stringify(headers, null, 2));
-            console.log('[Team Service Client] Base URL:', TEAM_SERVICE_URL);
-
             const response = await this.client.get('/api/teams', { headers });
-            console.log('[Team Service Client] Response status:', response.status);
 
             return { teams: response.data.data };
         } catch (error: any) {

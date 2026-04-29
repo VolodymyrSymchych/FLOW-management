@@ -1,9 +1,13 @@
-import { neon } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-http';
+import { neonConfig, Pool } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/neon-serverless';
 import * as schema from '@/shared/schema';
-import type { NeonHttpDatabase } from 'drizzle-orm/neon-http';
+import type { NeonDatabase } from 'drizzle-orm/neon-serverless';
+import ws from 'ws';
 
-let _db: NeonHttpDatabase<typeof schema> | null = null;
+neonConfig.webSocketConstructor = ws;
+
+let _db: NeonDatabase<typeof schema> | null = null;
+let _pool: Pool | null = null;
 
 function getDb() {
   if (!process.env.DATABASE_URL) {
@@ -13,15 +17,15 @@ function getDb() {
   }
 
   if (!_db) {
-    const sql = neon(process.env.DATABASE_URL);
-    _db = drizzle({ client: sql, schema });
+    _pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    _db = drizzle(_pool, { schema });
   }
 
   return _db;
 }
 
 // Export a getter function that initializes on first use
-export const db = new Proxy({} as NeonHttpDatabase<typeof schema>, {
+export const db = new Proxy({} as NeonDatabase<typeof schema>, {
   get(_target, prop) {
     return getDb()[prop as keyof typeof _db];
   },

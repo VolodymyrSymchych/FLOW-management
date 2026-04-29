@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useUser } from '@/hooks/useUser';
+import { useBootstrap } from '@/hooks/useQueries';
 
 export interface Team {
   id: number;
@@ -32,12 +33,17 @@ const STORAGE_KEY = 'selected-team';
 
 export function TeamProvider({ children }: { children: ReactNode }) {
   const { user, loading: userLoading } = useUser();
-  const [teams, setTeams] = useState<Team[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedTeam, setSelectedTeamState] = useState<TeamSelection>({ type: 'all' });
   const [isHydrated, setIsHydrated] = useState(false);
-  const [teamsLoaded, setTeamsLoaded] = useState(false);
   const queryClient = useQueryClient();
+  const bootstrapTeamId = selectedTeam.type === 'all' ? 'all' : selectedTeam.teamId;
+  const {
+    data: bootstrapData,
+    isLoading: teamsLoading,
+    isFetched: teamsFetched,
+  } = useBootstrap(bootstrapTeamId, !!user && !userLoading && isHydrated);
+  const teams = bootstrapData?.teams || [];
 
   // Load saved selection from localStorage after hydration
   useEffect(() => {
@@ -50,7 +56,6 @@ export function TeamProvider({ children }: { children: ReactNode }) {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
-        console.log('TeamContext: Restoring selection from localStorage:', saved);
         setSelectedTeamState(JSON.parse(saved));
       }
     } catch (error) {
@@ -59,57 +64,16 @@ export function TeamProvider({ children }: { children: ReactNode }) {
     setIsHydrated(true);
   }, []);
 
-  // Load teams on mount, but only if user is authenticated
-  useEffect(() => {
-    async function loadTeams() {
-      // Wait for user loading to complete
-      if (userLoading) {
-        console.log('TeamContext: User loading, waiting...');
-        return;
-      }
-
-      // Don't load teams if there's no user
-      if (!user) {
-        console.log('TeamContext: No user, skipping team load');
-        setTeams([]);
-        setTeamsLoaded(true);
-        return;
-      }
-
-      try {
-        console.log('TeamContext: Loading teams...');
-        const response = await fetch('/api/teams');
-        if (response.ok) {
-          const data = await response.json();
-          const loadedTeams = data.teams || [];
-          console.log('TeamContext: Loaded teams:', loadedTeams.map((t: Team) => ({ id: t.id, name: t.name })));
-          setTeams(loadedTeams);
-        } else {
-          console.error('TeamContext: Failed to load teams, status:', response.status);
-          setTeams([]); // Ensure empty array on error response
-        }
-      } catch (error) {
-        console.error('Failed to load teams:', error);
-        setTeams([]); // Ensure empty array on network error
-      } finally {
-        setTeamsLoaded(true);
-      }
-    }
-
-    loadTeams();
-  }, [user, userLoading]);
-
   // Validate selected team and set isLoading = false ONLY when both hydration and teams are loaded
   useEffect(() => {
-    if (!isHydrated || !teamsLoaded) {
+    const teamsReady = !user || teamsFetched || (!userLoading && !teamsLoading);
+
+    if (!isHydrated || !teamsReady) {
       return; // Wait for both
     }
 
-    console.log('TeamContext: Both hydrated and teams loaded, validating selection...');
-
     // Validate selected team after both localStorage and teams are loaded
     setSelectedTeamState(prev => {
-      console.log('TeamContext: Validating selection:', prev, 'against teams:', teams.map(t => t.id));
       // If a team is selected but doesn't exist anymore, reset to 'all'
       if (prev.type === 'single' && prev.teamId) {
         const teamExists = teams.some(t => t.id === prev.teamId);
@@ -124,23 +88,20 @@ export function TeamProvider({ children }: { children: ReactNode }) {
           return { type: 'all' };
         }
       }
-      console.log('TeamContext: Selection validated:', prev);
       return prev;
     });
 
     // Now we can safely set loading to false
     setIsLoading(false);
-  }, [isHydrated, teamsLoaded, teams]);
+  }, [isHydrated, teamsFetched, teamsLoading, user, userLoading, teams]);
 
   const setSelectedTeam = (selection: TeamSelection) => {
-    console.log('TeamContext: Setting selected team:', selection);
     setSelectedTeamState(selection);
 
     // Save to localStorage
     if (typeof window !== 'undefined') {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(selection));
-        console.log('TeamContext: Saved selection to localStorage');
       } catch (error) {
         console.error('Failed to save team selection:', error);
       }
@@ -164,7 +125,7 @@ export function TeamProvider({ children }: { children: ReactNode }) {
         selectedTeam,
         setSelectedTeam,
         teams,
-        setTeams,
+        setTeams: (nextTeams: Team[]) => queryClient.setQueryData(['teams'], nextTeams),
         isLoading
       }}
     >

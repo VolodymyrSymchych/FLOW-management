@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { usePusher } from './usePusher';
-import type { Channel } from 'pusher-js';
+import type Ably from 'ably';
 
 interface Message {
   id: number;
@@ -39,82 +39,53 @@ interface UseChatPusherOptions {
 
 export function useChatPusher(options: UseChatPusherOptions) {
   const { chatId, onNewMessage, onMessageUpdated, onMessageDeleted, onUserJoined, onUserLeft, onTyping } = options;
-  const { pusher, isConnected } = usePusher();
-  const [channel, setChannel] = useState<Channel | null>(null);
+  const { pusher: ablyClient, isConnected } = usePusher();
+  const [channel, setChannel] = useState<Ably.RealtimeChannel | null>(null);
 
   useEffect(() => {
-    if (!pusher || !isConnected) {
-      return;
-    }
+    if (!ablyClient || !isConnected) return;
 
-    // Subscribe to private chat channel
+    const ably = ablyClient as unknown as Ably.Realtime;
     const channelName = `private-chat-${chatId}`;
-    const chatChannel = pusher.subscribe(channelName);
+    const ch = ably.channels.get(channelName);
 
-    // Bind event handlers
-    chatChannel.bind('new-message', (data: { message: Message; timestamp: string }) => {
-      if (onNewMessage && data.message) {
-        onNewMessage(data.message);
-      }
+    ch.subscribe('new-message', (msg) => {
+      const data = msg.data as { message: Message; timestamp: string };
+      if (onNewMessage && data?.message) onNewMessage(data.message);
+    });
+    ch.subscribe('message-updated', (msg) => {
+      const data = msg.data as { message: Message; timestamp: string };
+      if (onMessageUpdated && data?.message) onMessageUpdated(data.message);
+    });
+    ch.subscribe('message-deleted', (msg) => {
+      const data = msg.data as { messageId: number };
+      if (onMessageDeleted && data?.messageId) onMessageDeleted(data.messageId);
+    });
+    ch.subscribe('user-joined', (msg) => {
+      const data = msg.data as { userId: number };
+      if (onUserJoined && data?.userId) onUserJoined(data.userId);
+    });
+    ch.subscribe('user-left', (msg) => {
+      const data = msg.data as { userId: number };
+      if (onUserLeft && data?.userId) onUserLeft(data.userId);
+    });
+    ch.subscribe('user-typing', (msg) => {
+      const data = msg.data as { userId: number };
+      if (onTyping && data?.userId) onTyping(data.userId);
     });
 
-    chatChannel.bind('message-updated', (data: { message: Message; timestamp: string }) => {
-      if (onMessageUpdated && data.message) {
-        onMessageUpdated(data.message);
-      }
-    });
-
-    chatChannel.bind('message-deleted', (data: { messageId: number; timestamp: string }) => {
-      if (onMessageDeleted && data.messageId) {
-        onMessageDeleted(data.messageId);
-      }
-    });
-
-    chatChannel.bind('user-joined', (data: { userId: number; role: string; timestamp: string }) => {
-      if (onUserJoined && data.userId) {
-        onUserJoined(data.userId);
-      }
-    });
-
-    chatChannel.bind('user-left', (data: { userId: number; timestamp: string }) => {
-      if (onUserLeft && data.userId) {
-        onUserLeft(data.userId);
-      }
-    });
-
-    chatChannel.bind('user-typing', (data: { userId: number; timestamp: string }) => {
-      if (onTyping && data.userId) {
-        onTyping(data.userId);
-      }
-    });
-
-    chatChannel.bind('pusher:subscription_succeeded', () => {
-      console.log(`Subscribed to ${channelName}`);
-    });
-
-    chatChannel.bind('pusher:subscription_error', (error: any) => {
-      console.error(`Failed to subscribe to ${channelName}:`, error);
-    });
-
-    setChannel(chatChannel);
+    setChannel(ch);
 
     return () => {
-      chatChannel.unbind_all();
-      pusher.unsubscribe(channelName);
+      ch.unsubscribe();
       setChannel(null);
     };
-  }, [pusher, isConnected, chatId, onNewMessage, onMessageUpdated, onMessageDeleted, onUserJoined, onUserLeft, onTyping]);
+  }, [ablyClient, isConnected, chatId, onNewMessage, onMessageUpdated, onMessageDeleted, onUserJoined, onUserLeft, onTyping]);
 
-  // Send typing indicator
   const sendTypingIndicator = () => {
-    if (channel) {
-      channel.trigger('client-typing', {});
-    }
+    channel?.publish('user-typing', {});
   };
 
-  return {
-    isConnected,
-    sendTypingIndicator,
-  };
+  return { isConnected, sendTypingIndicator };
 }
 

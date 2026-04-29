@@ -57,25 +57,38 @@ export function CreateChatModal({
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searching, setSearching] = useState(false);
 
   useEffect(() => {
     if (open) {
-      loadUsers();
       loadProjects();
+    } else {
+      setUsers([]);
+      setSearchQuery('');
     }
   }, [open]);
 
-  const loadUsers = async () => {
-    try {
-      const response = await fetch('/api/users');
-      if (response.ok) {
-        const data = await response.json();
-        setUsers(data.users || []);
-      }
-    } catch (error) {
-      console.error('Failed to load users:', error);
+  useEffect(() => {
+    if (searchQuery.length < 2) {
+      setUsers([]);
+      return;
     }
-  };
+    const timer = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const response = await fetch(`/api/users/search?q=${encodeURIComponent(searchQuery)}&limit=20`);
+        if (response.ok) {
+          const data = await response.json();
+          setUsers(data.users || []);
+        }
+      } catch {
+        // ignore
+      } finally {
+        setSearching(false);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const loadProjects = async () => {
     try {
@@ -100,17 +113,13 @@ export function CreateChatModal({
   const createChat = async () => {
     setLoading(true);
     try {
-      const body: any = {
+      const body: Record<string, unknown> = {
         type: chatType,
+        memberIds: selectedUsers,
       };
 
-      if (chatType === 'group') {
-        body.name = chatName;
-      }
-
-      if (chatType === 'project') {
-        body.projectId = selectedProject;
-      }
+      if (chatType === 'group') body.name = chatName;
+      if (chatType === 'project') body.projectId = selectedProject;
 
       const response = await fetch('/api/chat/chats', {
         method: 'POST',
@@ -120,22 +129,7 @@ export function CreateChatModal({
 
       if (response.ok) {
         const data = await response.json();
-        const chatId = data.chat.id;
-
-        // Add members to chat
-        if (selectedUsers.length > 0) {
-          await Promise.all(
-            selectedUsers.map((userId) =>
-              fetch(`/api/chat/chats/${chatId}/members`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId }),
-              })
-            )
-          );
-        }
-
-        onChatCreated(chatId);
+        onChatCreated(data.chat.id);
         handleClose();
       }
     } catch (error) {
@@ -154,11 +148,7 @@ export function CreateChatModal({
     onClose();
   };
 
-  const filteredUsers = users.filter(
-    (user) =>
-      user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // users is already the search result from the API
 
   const canCreate = () => {
     if (chatType === 'direct') return selectedUsers.length === 1;
@@ -169,10 +159,10 @@ export function CreateChatModal({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="glass-heavy border-white/10 text-text-primary max-w-md">
         <DialogHeader>
-          <DialogTitle>Create a new chat</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-text-primary">Create a new chat</DialogTitle>
+          <DialogDescription className="text-text-secondary">
             Choose the chat type and participants
           </DialogDescription>
         </DialogHeader>
@@ -180,18 +170,20 @@ export function CreateChatModal({
         <div className="space-y-4">
           {/* Chat Type */}
           <div className="space-y-2">
-            <Label>Chat type</Label>
+            <Label className="text-text-secondary text-sm">Chat type</Label>
             <Select
               value={chatType}
-              onValueChange={(value: any) => setChatType(value)}
+              onValueChange={(value: 'direct' | 'group' | 'project') =>
+                setChatType(value)
+              }
             >
-              <SelectTrigger>
+              <SelectTrigger className="glass-input text-text-primary border-white/10">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="direct">Direct chat</SelectItem>
-                <SelectItem value="group">Group</SelectItem>
-                <SelectItem value="project">Project chat</SelectItem>
+              <SelectContent className="glass-heavy border-white/10">
+                <SelectItem value="direct" className="text-text-primary focus:glass-medium focus:text-text-primary">Direct chat</SelectItem>
+                <SelectItem value="group" className="text-text-primary focus:glass-medium focus:text-text-primary">Group</SelectItem>
+                <SelectItem value="project" className="text-text-primary focus:glass-medium focus:text-text-primary">Project chat</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -199,9 +191,10 @@ export function CreateChatModal({
           {/* Group Name */}
           {chatType === 'group' && (
             <div className="space-y-2">
-              <Label>Group name</Label>
+              <Label className="text-text-secondary text-sm">Group name</Label>
               <Input
                 placeholder="Enter group name"
+                className="glass-input text-text-primary placeholder:text-text-tertiary"
                 value={chatName}
                 onChange={(e) => setChatName(e.target.value)}
               />
@@ -211,17 +204,21 @@ export function CreateChatModal({
           {/* Project Selection */}
           {chatType === 'project' && (
             <div className="space-y-2">
-              <Label>Project</Label>
+              <Label className="text-text-secondary text-sm">Project</Label>
               <Select
                 value={selectedProject?.toString()}
                 onValueChange={(value) => setSelectedProject(parseInt(value))}
               >
-                <SelectTrigger>
+                <SelectTrigger className="glass-input text-text-primary border-white/10">
                   <SelectValue placeholder="Select a project" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="glass-heavy border-white/10">
                   {projects.map((project) => (
-                    <SelectItem key={project.id} value={project.id.toString()}>
+                    <SelectItem
+                      key={project.id}
+                      value={project.id.toString()}
+                      className="text-text-primary focus:glass-medium focus:text-text-primary"
+                    >
                       {project.name}
                     </SelectItem>
                   ))}
@@ -233,7 +230,7 @@ export function CreateChatModal({
           {/* User Selection */}
           {(chatType === 'direct' || chatType === 'group') && (
             <div className="space-y-2">
-              <Label>
+              <Label className="text-text-secondary text-sm">
                 Participants
                 {chatType === 'direct' && ' (select 1 user)'}
                 {chatType === 'group' && ' (at least 2 users)'}
@@ -244,19 +241,26 @@ export function CreateChatModal({
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-tertiary pointer-events-none" />
                 <Input
                   placeholder="Search users..."
-                  className="pl-9"
+                  className="pl-9 glass-input text-text-primary placeholder:text-text-tertiary"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
 
               {/* User List */}
-              <ScrollArea className="h-64 rounded-md border">
+              <ScrollArea className="h-64 rounded-lg glass-light border border-white/10">
                 <div className="p-2 space-y-1">
-                  {filteredUsers.map((user) => (
+                  {searchQuery.length < 2 ? (
+                    <p className="p-4 text-center text-sm text-text-tertiary">
+                      {searching ? 'Searching...' : 'Type at least 2 characters to search'}
+                    </p>
+                  ) : users.length === 0 && !searching ? (
+                    <p className="p-4 text-center text-sm text-text-tertiary">No users found</p>
+                  ) : null}
+                  {users.map((user) => (
                     <div
                       key={user.id}
-                      className="flex items-center gap-2 rounded-md p-2 hover:bg-accent cursor-pointer"
+                      className="flex items-center gap-3 rounded-lg p-2 cursor-pointer glass-hover transition-all duration-150"
                       onClick={() => toggleUserSelection(user.id)}
                     >
                       <Checkbox
@@ -265,15 +269,15 @@ export function CreateChatModal({
                       />
                       <Avatar className="h-8 w-8">
                         <AvatarImage src={user.avatarUrl} />
-                        <AvatarFallback>
+                        <AvatarFallback className="glass-medium text-text-primary">
                           {user.username.substring(0, 2).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
-                        <p className="text-sm font-medium">{user.username}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {user.email}
+                        <p className="text-sm font-medium text-text-primary">
+                          {user.username}
                         </p>
+                        <p className="text-text-tertiary text-xs">{user.email}</p>
                       </div>
                     </div>
                   ))}
@@ -284,10 +288,18 @@ export function CreateChatModal({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={handleClose}>
+          <Button
+            variant="ghost"
+            className="glass-light hover:glass-medium text-text-primary border-white/10"
+            onClick={handleClose}
+          >
             Cancel
           </Button>
-          <Button onClick={createChat} disabled={!canCreate() || loading}>
+          <Button
+            className="glass-button text-text-primary"
+            onClick={createChat}
+            disabled={!canCreate() || loading}
+          >
             {loading ? 'Creating...' : 'Create'}
           </Button>
         </DialogFooter>

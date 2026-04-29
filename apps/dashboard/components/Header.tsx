@@ -1,10 +1,11 @@
 'use client';
 
 import { useMemo } from 'react';
-import { Plus, Search } from 'lucide-react';
+import { Menu, Plus, Search } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { Link } from '@/i18n/routing';
 import { useTeam } from '@/contexts/TeamContext';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 
 const ROUTE_LABELS: Record<string, string> = {
   dashboard: 'Dashboard',
@@ -35,7 +36,11 @@ function humanizeSegment(segment: string) {
     .join(' ');
 }
 
-export function Header() {
+interface HeaderProps {
+  onMobileMenuToggle?: () => void;
+}
+
+export function Header({ onMobileMenuToggle }: HeaderProps) {
   const pathname = usePathname();
   const { selectedTeam, teams } = useTeam();
 
@@ -62,6 +67,15 @@ export function Header() {
 
   return (
     <header className="topbar" data-testid="app-header">
+      <button
+        type="button"
+        className="tb-menu-btn"
+        onClick={onMobileMenuToggle}
+        aria-label="Open navigation menu"
+        aria-expanded={false}
+      >
+        <Menu />
+      </button>
       <div className="bc">
         <Link href="/dashboard" className="bc-i">
           {workspaceName}
@@ -80,7 +94,7 @@ export function Header() {
         )}
       </div>
 
-      <div id="tb-default" style={{ display: 'flex', flex: 1, alignItems: 'center', gap: 10, justifyContent: 'flex-end' }}>
+      <div id="tb-default" className="tb-actions">
         <button
           type="button"
           className="tb-search"
@@ -91,6 +105,7 @@ export function Header() {
           <span className="tb-search-placeholder">Search tasks, projects, people…</span>
           <span className="tb-search-kbd">⌘K</span>
         </button>
+        <NotificationBell />
         <Link href="/dashboard/tasks" className="btn btn-acc">
           <Plus style={{ width: 14, height: 14 }} />
           New Task

@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs';
+import { nanoid } from 'nanoid';
 import { eq, and } from 'drizzle-orm';
 import { db, users, emailVerifications, type User, type InsertUser } from '../db';
 import { logger } from '@project-scope-analyzer/shared';
@@ -7,6 +8,25 @@ import IORedis from 'ioredis';
 
 // Type for Redis client (supports both ioredis and Upstash wrapper)
 type RedisClient = IORedis | { get: (key: string) => Promise<string | null>; incr: (key: string) => Promise<number>; expire: (key: string, seconds: number) => Promise<void>; ttl: (key: string) => Promise<number>; del: (key: string) => Promise<void> } | null;
+
+function serializeError(error: unknown): Record<string, unknown> {
+  if (error instanceof Error) {
+    return {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+      cause: error.cause instanceof Error
+        ? {
+            name: error.cause.name,
+            message: error.cause.message,
+            stack: error.cause.stack,
+          }
+        : error.cause,
+    };
+  }
+
+  return { value: error };
+}
 
 export class AuthService {
   async getUserById(id: number): Promise<User | null> {
@@ -34,17 +54,12 @@ export class AuthService {
   }
 
   async createUser(userData: Omit<InsertUser, 'id' | 'createdAt' | 'updatedAt'>): Promise<User> {
-    // Check if email already exists
-    const existingEmail = await this.getUserByEmail(userData.email);
-    if (existingEmail) {
-      throw new ConflictError('Email already registered');
-    }
-
-    // Check if username already exists
-    const existingUsername = await this.getUserByUsername(userData.username);
-    if (existingUsername) {
-      throw new ConflictError('Username already taken');
-    }
+    const [existingEmail, existingUsername] = await Promise.all([
+      this.getUserByEmail(userData.email),
+      this.getUserByUsername(userData.username),
+    ]);
+    if (existingEmail) throw new ConflictError('Email already registered');
+    if (existingUsername) throw new ConflictError('Username already taken');
 
     // Hash password if provided
     let hashedPassword = userData.password;
@@ -74,7 +89,6 @@ export class AuthService {
   }
 
   async createEmailVerification(userId: number, email: string): Promise<string> {
-    const { nanoid } = await import('nanoid');
     const token = nanoid(32);
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 24);
@@ -168,7 +182,7 @@ export class AuthService {
 
       return { locked: false };
     } catch (error) {
-      logger.error('Error checking account lockout', { error, email });
+      logger.error('Error checking account lockout', { error: serializeError(error), email });
       return { locked: false };
     }
   }
@@ -185,7 +199,7 @@ export class AuthService {
         await this.withRedisTimeout(redis.expire(key, lockoutDuration) as Promise<void>);
       }
     } catch (error) {
-      logger.error('Error recording failed login', { error, email });
+      logger.error('Error recording failed login', { error: serializeError(error), email });
     }
   }
 
@@ -196,7 +210,7 @@ export class AuthService {
       const key = `account-lockout:${email.toLowerCase()}`;
       await this.withRedisTimeout(redis.del(key) as Promise<void>);
     } catch (error) {
-      logger.error('Error clearing failed logins', { error, email });
+      logger.error('Error clearing failed logins', { error: serializeError(error), email });
     }
   }
 
@@ -285,8 +299,6 @@ export class AuthService {
     }
 
     // 3. Create new user
-    const { nanoid } = await import('nanoid');
-    // Generate base username from name or email
     let baseUsername = profile.name
       ? profile.name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()
       : profile.email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
@@ -296,12 +308,8 @@ export class AuthService {
     }
 
     let username = baseUsername;
-
-    // Ensure username uniqueness
-    let counter = 0;
-    while (await this.getUserByUsername(username)) {
-      counter++;
-      username = `${baseUsername}${counter}`;
+    if (await this.getUserByUsername(username)) {
+      username = `${baseUsername}${nanoid(6)}`;
     }
 
     const [newUser] = await db.insert(users).values({
@@ -323,4 +331,3 @@ export class AuthService {
 }
 
 export const authService = new AuthService();
-

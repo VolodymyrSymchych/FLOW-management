@@ -2,9 +2,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,14 +21,14 @@ import {
   Copy,
   CheckCheck,
   ListTodo,
+  X,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { CreateTaskFromMessageModal } from './CreateTaskFromMessageModal';
 import { MentionInput } from './MentionInput';
-import { useChatPusher } from '@/hooks/useChatPusher';
+import { useChatRoom, type ChatMessage as AblyMessage } from '@/hooks/useChatRoom';
 import { useDelayedLoading } from '@/hooks/useDelayedLoading';
 import { ChatMessagesSkeleton, ChatMembersSkeleton } from './ChatSkeleton';
-import { Badge } from '@/components/ui/badge';
 
 interface Message {
   id: number;
@@ -66,6 +65,12 @@ interface ChatWindowProps {
   currentUserId: number;
 }
 
+interface ChatInfo {
+  id: number;
+  name?: string;
+  type: 'direct' | 'group' | 'project' | 'team';
+}
+
 export function ChatWindow({ chatId, currentUserId }: ChatWindowProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
@@ -74,80 +79,103 @@ export function ChatWindow({ chatId, currentUserId }: ChatWindowProps) {
   const [replyTo, setReplyTo] = useState<Message | null>(null);
   const [messageForTask, setMessageForTask] = useState<Message | null>(null);
   const [chatMembers, setChatMembers] = useState<User[]>([]);
-  const [typingUsers, setTypingUsers] = useState<Set<number>>(new Set());
+  const [chatInfo, setChatInfo] = useState<ChatInfo | null>(null);
+  const [typingUsers, setTypingUsers] = useState(new Set<number>());
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const typingTimeoutRef = useRef<{ [key: number]: NodeJS.Timeout }>({});
 
-  // Показувати індикатор завантаження тільки якщо завантаження триває > 200ms
   const shouldShowLoadingMessages = useDelayedLoading(loading, 200);
   const shouldShowLoadingMembers = useDelayedLoading(loadingMembers, 150);
 
-  // Pusher connection
-  const { isConnected, sendTypingIndicator } = useChatPusher({
+  const { isConnected, startTyping, onlineClientIds } = useChatRoom({
     chatId,
-    onNewMessage: (message) => {
-      setMessages((prev) => [...prev, message]);
+    onNewMessage: (msg: AblyMessage) => {
+      const dbMessage = msg.metadata?.dbMessage as Message | undefined;
+      if (!dbMessage) return;
+      setMessages((prev) => {
+        if (prev.some((m) => m.id === dbMessage.id)) return prev;
+        return [...prev, dbMessage];
+      });
     },
-    onMessageUpdated: (message) => {
-      setMessages((prev) =>
-        prev.map((m) => (m.id === message.id ? message : m))
-      );
+    onMessageUpdated: (msg: AblyMessage) => {
+      const dbMessage = msg.metadata?.dbMessage as Message | undefined;
+      if (!dbMessage) return;
+      setMessages((prev) => prev.map((m) => (m.id === dbMessage.id ? dbMessage : m)));
     },
-    onMessageDeleted: (messageId) => {
-      setMessages((prev) => prev.filter((m) => m.id !== messageId));
-    },
-    onTyping: (userId) => {
-      // Add user to typing indicator
-      setTypingUsers((prev) => new Set(prev).add(userId));
-
-      // Clear existing timeout for this user
-      if (typingTimeoutRef.current[userId]) {
-        clearTimeout(typingTimeoutRef.current[userId]);
-      }
-
-      // Remove typing indicator after 3 seconds
-      typingTimeoutRef.current[userId] = setTimeout(() => {
-        setTypingUsers((prev) => {
-          const newSet = new Set(prev);
-          newSet.delete(userId);
-          return newSet;
-        });
-      }, 3000);
+    onTyping: (clientIds: string[]) => {
+      setTypingUsers(new Set(clientIds.map((id) => parseInt(id, 10)).filter(Boolean)));
     },
   });
 
   useEffect(() => {
-    // Reset state when switching chats
     setMessages([]);
     setChatMembers([]);
+    setChatInfo(null);
     setLoading(true);
     setLoadingMembers(true);
     setReplyTo(null);
     setTypingUsers(new Set());
-    
-    // Load data for new chat
     loadMessages();
     loadChatMembers();
+    loadChatInfo();
   }, [chatId]);
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
-  // Removed joinChat call as Pusher automatically subscribes to channel
+  useEffect(() => {
+    if (!chatId) return;
+    const interval = setInterval(() => {
+      void fetch(`/api/chat/${chatId}/messages`)
+        .then(r => r.json())
+        .then(data => {
+          if (data.messages) {
+            setMessages(prev => prev.map(m => {
+              const updated = (data.messages as typeof prev).find(u => u.id === m.id);
+              return updated ? { ...m, readBy: updated.readBy } : m;
+            }));
+          }
+        })
+        .catch(() => {});
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [chatId]);
 
   const loadMessages = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/chat/messages/chat/${chatId}`);
+      const response = await fetch(`/api/chat/${chatId}/messages`);
       if (response.ok) {
         const data = await response.json();
-        setMessages(data.messages || []);
+        const msgs = data.messages || [];
+        setMessages(msgs);
+        setHasMore(msgs.length >= 50);
       }
     } catch (error) {
       console.error('Failed to load messages:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadMoreMessages = async () => {
+    if (!hasMore || loadingMore || messages.length === 0) return;
+    setLoadingMore(true);
+    try {
+      const oldest = messages[0];
+      const response = await fetch(`/api/chat/${chatId}/messages?beforeId=${oldest.id}&limit=50`);
+      if (response.ok) {
+        const data = await response.json();
+        const older = data.messages || [];
+        setMessages((prev) => [...older, ...prev]);
+        setHasMore(older.length >= 50);
+      }
+    } catch (error) {
+      console.error('Failed to load more messages:', error);
+    } finally {
+      setLoadingMore(false);
     }
   };
 
@@ -166,6 +194,18 @@ export function ChatWindow({ chatId, currentUserId }: ChatWindowProps) {
     }
   };
 
+  const loadChatInfo = async () => {
+    try {
+      const response = await fetch(`/api/chat/chats/${chatId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setChatInfo(data.chat ?? data ?? null);
+      }
+    } catch (error) {
+      console.error('Failed to load chat info:', error);
+    }
+  };
+
   const scrollToBottom = () => {
     if (scrollRef.current) {
       scrollRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -176,11 +216,10 @@ export function ChatWindow({ chatId, currentUserId }: ChatWindowProps) {
     if (!newMessage.trim()) return;
 
     try {
-      const response = await fetch('/api/chat/messages', {
+      const response = await fetch(`/api/chat/${chatId}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          chatId,
           content: newMessage,
           replyToId: replyTo?.id,
         }),
@@ -206,9 +245,8 @@ export function ChatWindow({ chatId, currentUserId }: ChatWindowProps) {
 
   const handleInputChange = (value: string) => {
     setNewMessage(value);
-    // Send typing indicator
     if (value.length > 0) {
-      sendTypingIndicator();
+      void startTyping();
     }
   };
 
@@ -217,7 +255,6 @@ export function ChatWindow({ chatId, currentUserId }: ChatWindowProps) {
       const response = await fetch(`/api/chat/messages/${messageId}`, {
         method: 'DELETE',
       });
-
       if (response.ok) {
         setMessages((prev) => prev.filter((m) => m.id !== messageId));
       }
@@ -226,311 +263,495 @@ export function ChatWindow({ chatId, currentUserId }: ChatWindowProps) {
     }
   };
 
-  const openTaskCreationModal = (message: Message) => {
-    setMessageForTask(message);
-  };
-
-  const handleTaskCreated = (taskId: number) => {
-    if (messageForTask) {
-      // Update message to show it has a task
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === messageForTask.id ? { ...m, taskId } : m
-        )
-      );
-    }
-  };
-
   const addReaction = async (messageId: number, emoji: string) => {
     try {
-      const response = await fetch(
-        `/api/chat/messages/${messageId}/reactions`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ emoji }),
-        }
-      );
-
+      const response = await fetch(`/api/chat/messages/${messageId}/reactions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ emoji }),
+      });
       if (response.ok) {
-        // Reload messages to get updated reactions
-        loadMessages();
+        // Optimistic in-place update — add/increment reaction without reloading all messages
+        setMessages((prev) =>
+          prev.map((m) => {
+            if (m.id !== messageId) return m;
+            const existing = m.reactions ?? [];
+            const idx = existing.findIndex((r) => r.emoji === emoji);
+            if (idx >= 0) {
+              const updated = [...existing];
+              updated[idx] = { ...updated[idx], count: updated[idx].count + 1 };
+              return { ...m, reactions: updated };
+            }
+            return { ...m, reactions: [...existing, { emoji, count: 1, users: [] }] };
+          })
+        );
       }
     } catch (error) {
       console.error('Failed to add reaction:', error);
     }
   };
 
-  const renderMessage = (message: Message) => {
-    const isOwnMessage = message.senderId === currentUserId;
+  const typingUserNames = chatMembers
+    .filter((member) => typingUsers.has(member.id) && member.id !== currentUserId)
+    .map((member) => member.username);
+
+  const renderMessage = (message: Message, idx: number) => {
+    const isOwn = message.senderId === currentUserId;
+    const prevMsg = messages[idx - 1];
+    const isGrouped = prevMsg && prevMsg.senderId === message.senderId;
 
     return (
       <div
         key={message.id}
-        className={`mb-4 flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
+        className={`flex ${isOwn ? 'justify-end' : 'justify-start'} ${isGrouped ? 'mt-0.5' : 'mt-4'}`}
+        style={{ animation: 'fadeSlideIn 0.18s var(--ease-out-quint) forwards' }}
       >
-        <div className={`flex max-w-[70%] gap-2 ${isOwnMessage ? 'flex-row-reverse' : ''}`}>
-          {/* Avatar */}
-          {!isOwnMessage && (
-            <Avatar className="h-8 w-8 ring-2 ring-primary/20">
-              <AvatarImage src={message.sender?.avatarUrl} />
-              <AvatarFallback className="glass-medium text-text-primary">
-                {message.sender?.username.substring(0, 2).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-          )}
+        <div className={`flex max-w-[68%] gap-2 items-end ${isOwn ? 'flex-row-reverse' : ''}`}>
+          {/* Avatar — only for first in a group */}
+          <div className="flex-shrink-0 w-7">
+            {!isOwn && !isGrouped ? (
+              <Avatar className="h-7 w-7">
+                <AvatarImage src={message.sender?.avatarUrl} />
+                <AvatarFallback
+                  className="text-xs font-medium"
+                  style={{ background: 'hsl(var(--accent-soft))', color: 'hsl(var(--primary))' }}
+                >
+                  {message.sender?.username.substring(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+            ) : null}
+          </div>
 
-          {/* Message Content */}
-          <div>
-            {!isOwnMessage && (
-              <div className="mb-1 text-xs font-medium text-text-primary">
+          {/* Bubble + meta */}
+          <div className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'} min-w-0`}>
+            {/* Sender name — first in group only */}
+            {!isOwn && !isGrouped && (
+              <span className="mb-1 text-xs font-medium text-text-secondary px-1">
                 {message.sender?.username}
-              </div>
+              </span>
             )}
 
-            <div
-              className={`group relative rounded-lg px-4 py-2 glass-hover ${
-                isOwnMessage
-                  ? 'glass-button border-primary/40 text-text-primary'
-                  : 'glass-light border-white/10 text-text-primary'
-              }`}
-            >
-              {/* Reply indicator */}
+            {/* Bubble */}
+            <div className="group relative">
+              {/* Reply reference */}
               {message.replyToId && (
-                <div className="mb-2 border-l-2 border-primary/50 pl-2 text-xs text-text-secondary">
+                <div
+                  className="mb-1 px-3 py-1.5 rounded-lg text-xs"
+                  style={{
+                    background: isOwn ? 'hsl(var(--primary) / 0.12)' : 'hsl(var(--surface-muted))',
+                    borderLeft: `2px solid hsl(var(--primary))`,
+                    color: 'hsl(var(--text-secondary))',
+                  }}
+                >
                   Reply to message
                 </div>
               )}
 
-              {/* Message text */}
-              <p className="whitespace-pre-wrap break-words text-text-primary">
-                {message.content}
-              </p>
+              <div
+                className="px-3.5 py-2 rounded-2xl"
+                style={
+                  isOwn
+                    ? {
+                        background: 'hsl(var(--primary))',
+                        color: '#fff',
+                        borderBottomRightRadius: isGrouped ? undefined : 4,
+                        boxShadow: '0 1px 2px hsl(var(--primary) / 0.3)',
+                      }
+                    : {
+                        background: 'hsl(var(--surface))',
+                        color: 'hsl(var(--text-primary))',
+                        border: '1px solid var(--line-strong)',
+                        borderBottomLeftRadius: isGrouped ? undefined : 4,
+                        boxShadow: 'var(--shadow-subtle)',
+                      }
+                }
+              >
+                <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">
+                  {message.content}
+                </p>
 
-              {/* Task indicator */}
-              {message.taskId && (
-                <div className="mt-2 flex items-center gap-1 text-xs text-text-secondary">
-                  <ListTodo className="h-3 w-3" />
-                  <span>Task created</span>
-                </div>
-              )}
-
-              {/* Timestamp and status */}
-              <div className="mt-1 flex items-center gap-2 text-xs text-text-tertiary">
-                <span>
-                  {formatDistanceToNow(new Date(message.createdAt), {
-                    addSuffix: true,
-                  })}
-                </span>
-                {message.editedAt && <span>(edited)</span>}
-                {isOwnMessage && message.readBy && message.readBy.length > 1 && (
-                  <CheckCheck className="h-3 w-3" />
+                {message.taskId && (
+                  <div
+                    className="mt-1.5 flex items-center gap-1 text-xs"
+                    style={{ opacity: 0.75 }}
+                  >
+                    <ListTodo className="h-3 w-3" />
+                    <span>Task created</span>
+                  </div>
                 )}
               </div>
 
-              {/* Message actions */}
-              <div className="absolute -right-2 -top-2 hidden group-hover:block">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button 
-                      size="sm" 
-                      variant="ghost" 
-                      className="h-6 w-6 p-0 glass-light hover:glass-medium"
+              {/* Floating action bar on hover */}
+              <div
+                className={`absolute ${isOwn ? 'right-full mr-1.5' : 'left-full ml-1.5'} top-1/2 -translate-y-1/2 hidden group-hover:flex items-center gap-0.5 rounded-xl shadow-md`}
+                style={{
+                  background: 'hsl(var(--surface-elevated))',
+                  border: '1px solid var(--line-strong)',
+                  padding: '3px 4px',
+                  zIndex: 10,
+                }}
+              >
+                <ActionBtn title="Reply" onClick={() => setReplyTo(message)}>
+                  <Reply className="h-3.5 w-3.5" />
+                </ActionBtn>
+                <ActionBtn title="React" onClick={() => addReaction(message.id, '👍')}>
+                  <Smile className="h-3.5 w-3.5" />
+                </ActionBtn>
+                <ActionBtn title="Create task" onClick={() => setMessageForTask(message)} disabled={!!message.taskId}>
+                  <ListTodo className="h-3.5 w-3.5" />
+                </ActionBtn>
+                <ActionBtn title="Copy" onClick={() => navigator.clipboard.writeText(message.content)}>
+                  <Copy className="h-3.5 w-3.5" />
+                </ActionBtn>
+                {isOwn && (
+                  <>
+                    <ActionBtn title="Edit">
+                      <Edit className="h-3.5 w-3.5" />
+                    </ActionBtn>
+                    <ActionBtn
+                      title="Delete"
+                      onClick={() => deleteMessage(message.id)}
+                      danger
                     >
-                      <MoreVertical className="h-3 w-3" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="glass-medium border-white/10">
-                    <DropdownMenuItem onClick={() => setReplyTo(message)}>
-                      <Reply className="mr-2 h-4 w-4" />
-                      Reply
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => addReaction(message.id, '👍')}>
-                      <Smile className="mr-2 h-4 w-4" />
-                      React
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => openTaskCreationModal(message)}
-                      disabled={!!message.taskId}
-                    >
-                      <ListTodo className="mr-2 h-4 w-4" />
-                      {message.taskId ? 'Task created' : 'Create task'}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigator.clipboard.writeText(message.content)}>
-                      <Copy className="mr-2 h-4 w-4" />
-                      Copy
-                    </DropdownMenuItem>
-                    {isOwnMessage && (
-                      <>
-                        <DropdownMenuItem>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => deleteMessage(message.id)}
-                          className="text-destructive"
-                        >
-                          <Trash className="mr-2 h-4 w-4" />
-                          Delete
-                        </DropdownMenuItem>
-                      </>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                      <Trash className="h-3.5 w-3.5" />
+                    </ActionBtn>
+                  </>
+                )}
               </div>
             </div>
 
             {/* Reactions */}
             {message.reactions && message.reactions.length > 0 && (
-              <div className="mt-1 flex gap-1">
+              <div className={`flex gap-1 mt-1 flex-wrap ${isOwn ? 'justify-end' : ''}`}>
                 {message.reactions.map((reaction, idx) => (
                   <button
                     key={idx}
                     onClick={() => addReaction(message.id, reaction.emoji)}
-                    className="rounded-full glass-light hover:glass-medium border-white/10 px-2 py-0.5 text-xs text-text-primary transition-all duration-200"
+                    className="flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs transition-colors"
+                    style={{
+                      background: 'hsl(var(--surface-muted))',
+                      border: '1px solid var(--line)',
+                      color: 'hsl(var(--text-secondary))',
+                    }}
                   >
-                    {reaction.emoji} {reaction.count}
+                    <span>{reaction.emoji}</span>
+                    <span style={{ fontSize: '0.6875rem' }}>{reaction.count}</span>
                   </button>
                 ))}
               </div>
             )}
+
+            {/* Timestamp + read */}
+            <div className={`flex items-center gap-1 mt-1 px-1 ${isOwn ? 'flex-row-reverse' : ''}`}>
+              <span style={{ fontSize: '0.625rem', color: 'hsl(var(--text-tertiary))' }}>
+                {formatDistanceToNow(new Date(message.createdAt), { addSuffix: true })}
+              </span>
+              {message.editedAt && (
+                <span style={{ fontSize: '0.625rem', color: 'hsl(var(--text-tertiary))' }}>(edited)</span>
+              )}
+              {isOwn && (
+                <div className="flex items-center gap-1">
+                  {message.readBy && message.readBy.filter(id => id !== currentUserId).length > 0 ? (
+                    <span
+                      className="text-xs flex items-center gap-0.5"
+                      style={{ color: 'hsl(var(--primary))' }}
+                      title={`Read by ${message.readBy.filter(id => id !== currentUserId).length} member(s)`}
+                    >
+                      <CheckCheck className="h-3 w-3" />
+                      <span>{message.readBy.filter(id => id !== currentUserId).length}</span>
+                    </span>
+                  ) : (
+                    <CheckCheck className="h-3 w-3" style={{ color: 'hsl(var(--text-tertiary))' }} />
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
     );
   };
 
-  // Get typing users names
-  const typingUserNames = chatMembers
-    .filter((member) => typingUsers.has(member.id) && member.id !== currentUserId)
-    .map((member) => member.username);
-
   return (
-    <div className="flex h-full flex-col glass-medium">
-      {/* Header with connection status */}
-      <div className="border-b border-white/10 px-4 py-3 glass-medium">
-        <div className="flex items-center justify-between">
-          <div className="flex-1">
-            <div className="flex items-center gap-3">
-          <h3 className="font-semibold text-text-primary">Chat</h3>
-              {shouldShowLoadingMembers ? (
-                <ChatMembersSkeleton />
-              ) : chatMembers.length > 0 ? (
-                <div className="flex items-center gap-2">
-                  <div className="flex -space-x-2">
-                    {chatMembers.slice(0, 5).map((member) => (
-                      <Avatar key={member.id} className="h-6 w-6 ring-2 ring-background">
-                        <AvatarImage src={member.avatarUrl} />
-                        <AvatarFallback className="glass-medium text-xs text-text-primary">
-                          {member.username.substring(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                    ))}
-                  </div>
-                  <span className="text-sm text-text-secondary">
-                    {chatMembers.length} {chatMembers.length === 1 ? 'member' : 'members'}
-                  </span>
+    <div className="flex h-full flex-col" style={{ background: 'hsl(var(--background))' }}>
+      {/* Header */}
+      <div
+        className="flex-shrink-0 flex items-center justify-between px-5 py-3"
+        style={{
+          background: 'hsl(var(--surface))',
+          borderBottom: '1px solid var(--line-strong)',
+          minHeight: 56,
+        }}
+      >
+        {shouldShowLoadingMembers ? (
+          <ChatMembersSkeleton />
+        ) : (() => {
+          const isDirect = chatInfo?.type === 'direct';
+          const otherPerson = isDirect
+            ? chatMembers.find((m) => m.id !== currentUserId) ?? chatMembers[0]
+            : null;
+          const groupName = chatInfo?.name ?? (chatInfo?.type ? `${chatInfo.type.charAt(0).toUpperCase()}${chatInfo.type.slice(1)} chat` : 'Chat');
+          const otherMembers = !isDirect
+            ? chatMembers.filter((m) => m.id !== currentUserId).slice(0, 4)
+            : [];
+
+          return (
+            <div className="flex items-center gap-3 min-w-0">
+              {/* Avatar */}
+              {isDirect && otherPerson ? (
+                <Avatar className="h-8 w-8 flex-shrink-0">
+                  <AvatarImage src={otherPerson.avatarUrl} />
+                  <AvatarFallback
+                    style={{ background: 'hsl(var(--accent-soft))', color: 'hsl(var(--primary))', fontSize: '0.625rem', fontWeight: 600 }}
+                  >
+                    {otherPerson.username.substring(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+              ) : otherMembers.length > 0 ? (
+                <div className="flex-shrink-0 flex -space-x-1.5">
+                  {otherMembers.map((m) => (
+                    <Avatar
+                      key={m.id}
+                      className="relative h-7 w-7 ring-2"
+                      style={{ '--tw-ring-color': 'hsl(var(--surface))' } as React.CSSProperties}
+                    >
+                      <AvatarImage src={m.avatarUrl} />
+                      <AvatarFallback
+                        style={{ background: 'hsl(var(--surface-muted))', color: 'hsl(var(--text-secondary))', fontSize: '0.5rem', fontWeight: 600 }}
+                      >
+                        {m.username.substring(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                      {onlineClientIds.has(String(m.id)) && (
+                        <span className="absolute bottom-0 right-0 h-2 w-2 rounded-full bg-green-500 ring-1 ring-background" />
+                      )}
+                    </Avatar>
+                  ))}
                 </div>
               ) : null}
+
+              {/* Name + subtitle */}
+              <div className="min-w-0">
+                <h3 className="font-semibold text-sm text-text-primary tracking-tight truncate">
+                  {isDirect ? (otherPerson?.username ?? 'Direct Message') : groupName}
+                </h3>
+                {!isDirect && chatMembers.length > 0 && (
+                  <p className="text-xs text-text-tertiary">
+                    {chatMembers.length} {chatMembers.length === 1 ? 'member' : 'members'}
+                  </p>
+                )}
+              </div>
             </div>
-          </div>
-          <Badge 
-            variant={isConnected ? 'primary' : 'secondary'}
-            className={isConnected 
-              ? 'glass-button border-primary/50 text-text-primary' 
-              : 'glass-light border-white/20 text-text-secondary'}
-          >
-            {isConnected ? 'Connected' : 'Disconnected'}
-          </Badge>
+          );
+        })()}
+
+        {/* Connection status dot */}
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          <span
+            className="h-1.5 w-1.5 rounded-full"
+            style={{ background: isConnected ? 'hsl(var(--success))' : 'hsl(var(--text-tertiary))' }}
+          />
+          <span className="text-xs text-text-tertiary">
+            {isConnected ? 'Connected' : 'Connecting…'}
+          </span>
         </div>
       </div>
 
       {/* Messages */}
-      <ScrollArea className="flex-1 p-4 scrollbar-thin">
-        {shouldShowLoadingMessages ? (
-          <ChatMessagesSkeleton />
-        ) : messages.length === 0 ? (
-          <div className="flex h-full items-center justify-center text-text-tertiary">
-            No messages yet. Start the conversation!
-          </div>
-        ) : (
-          <>
-            {messages.map(renderMessage)}
-            
-            {/* Typing indicator */}
-            {typingUserNames.length > 0 && (
-              <div className="mb-4 text-sm text-text-secondary glass-light rounded-lg px-3 py-2 inline-block">
-                {typingUserNames.join(', ')} {typingUserNames.length === 1 ? 'is typing' : 'are typing'}...
-              </div>
-            )}
-            
-            <div ref={scrollRef} />
-          </>
-        )}
+      <ScrollArea className="flex-1 no-scrollbar" style={{ background: 'hsl(var(--background))' }}>
+        <div className="px-5 py-4 space-y-0">
+          {shouldShowLoadingMessages ? (
+            <ChatMessagesSkeleton />
+          ) : messages.length === 0 ? (
+            <div className="flex h-48 items-center justify-center text-sm text-text-tertiary">
+              No messages yet. Start the conversation!
+            </div>
+          ) : (
+            <>
+              {hasMore && (
+                <div className="flex justify-center mb-4">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="glass-light hover:glass-medium text-text-secondary text-xs"
+                    onClick={loadMoreMessages}
+                    disabled={loadingMore}
+                  >
+                    {loadingMore ? 'Loading...' : 'Load older messages'}
+                  </Button>
+                </div>
+              )}
+              {messages.map((msg, i) => renderMessage(msg, i))}
+
+              {typingUserNames.length > 0 && (
+                <div className="flex items-center gap-2 mt-4">
+                  <div className="flex gap-1 items-center px-3 py-2 rounded-xl" style={{ background: 'hsl(var(--surface))', border: '1px solid var(--line)' }}>
+                    <TypingDots />
+                    <span className="text-xs text-text-tertiary ml-1">
+                      {typingUserNames.join(', ')} {typingUserNames.length === 1 ? 'is typing' : 'are typing'}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              <div ref={scrollRef} className="h-2" />
+            </>
+          )}
+        </div>
       </ScrollArea>
 
-      {/* Reply indicator */}
+      {/* Reply bar */}
       {replyTo && (
-        <div className="border-t border-white/10 glass-medium px-4 py-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sm text-text-primary">
-              <Reply className="h-4 w-4" />
-              <span>Replying to: {replyTo.content.substring(0, 50)}...</span>
-            </div>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="glass-light hover:glass-medium"
-              onClick={() => setReplyTo(null)}
-            >
-              ✕
-            </Button>
+        <div
+          className="flex-shrink-0 flex items-center justify-between gap-3 px-5 py-2.5"
+          style={{
+            background: 'hsl(var(--accent-soft))',
+            borderTop: '1px solid hsl(var(--primary) / 0.2)',
+          }}
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-0.5 h-4 rounded-full flex-shrink-0" style={{ background: 'hsl(var(--primary))' }} />
+            <Reply className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'hsl(var(--primary))' }} />
+            <span className="text-xs text-text-secondary truncate">
+              {replyTo.content.substring(0, 60)}{replyTo.content.length > 60 ? '…' : ''}
+            </span>
           </div>
+          <button
+            onClick={() => setReplyTo(null)}
+            className="flex-shrink-0 h-5 w-5 flex items-center justify-center rounded-full transition-colors text-text-tertiary hover:text-text-primary"
+            style={{ background: 'hsl(var(--surface-muted))' }}
+          >
+            <X className="h-3 w-3" />
+          </button>
         </div>
       )}
 
-      {/* Input */}
-      <div className="border-t border-white/10 glass-medium p-4">
-        <div className="flex gap-2">
-          <Button 
-            size="sm" 
-            variant="ghost"
-            className="glass-light hover:glass-medium"
+      {/* Compose */}
+      <div
+        className="flex-shrink-0 px-4 py-3"
+        style={{
+          background: 'hsl(var(--surface))',
+          borderTop: '1px solid var(--line-strong)',
+        }}
+      >
+        <div
+          className="flex items-center gap-2 rounded-xl px-3 py-2"
+          style={{
+            background: 'hsl(var(--surface-muted))',
+            border: '1px solid hsl(var(--border))',
+          }}
+        >
+          {/* Attach */}
+          <button
+            className="flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-lg text-text-tertiary hover:text-text-primary transition-colors"
+            aria-label="Attach file"
           >
             <Paperclip className="h-4 w-4" />
-          </Button>
-          <MentionInput
-            value={newMessage}
-            onChange={handleInputChange}
-            onKeyPress={handleKeyPress}
-            placeholder="Type a message... (@ to mention)"
-            className="flex-1"
-            chatMembers={chatMembers}
-          />
-          <Button 
-            size="sm" 
-            variant="ghost"
-            className="glass-light hover:glass-medium"
+          </button>
+
+          {/* Input */}
+          <div className="flex-1 min-w-0">
+            <MentionInput
+              value={newMessage}
+              onChange={handleInputChange}
+              onKeyPress={handleKeyPress}
+              placeholder="Message… (@mention)"
+              className="flex-1 bg-transparent border-0 outline-none text-sm text-text-primary placeholder:text-text-tertiary resize-none"
+              chatMembers={chatMembers}
+            />
+          </div>
+
+          {/* Emoji */}
+          <button
+            className="flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-lg text-text-tertiary hover:text-text-primary transition-colors"
+            aria-label="Add emoji"
           >
             <Smile className="h-4 w-4" />
-          </Button>
-          <Button 
-            onClick={sendMessage} 
+          </button>
+
+          {/* Send */}
+          <button
+            onClick={sendMessage}
             disabled={!newMessage.trim()}
-            className="glass-button disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+            style={{
+              background: newMessage.trim() ? 'hsl(var(--primary))' : 'transparent',
+              color: newMessage.trim() ? '#fff' : 'hsl(var(--text-tertiary))',
+            }}
+            aria-label="Send message"
           >
-            <Send className="h-4 w-4" />
-          </Button>
+            <Send className="h-3.5 w-3.5" />
+          </button>
         </div>
       </div>
 
-      {/* Create Task Modal */}
       <CreateTaskFromMessageModal
         open={!!messageForTask}
         onClose={() => setMessageForTask(null)}
         message={messageForTask}
-        onTaskCreated={handleTaskCreated}
+        onTaskCreated={(taskId) => {
+          if (messageForTask) {
+            setMessages((prev) =>
+              prev.map((m) => (m.id === messageForTask.id ? { ...m, taskId } : m))
+            );
+          }
+        }}
       />
     </div>
+  );
+}
+
+/* ─── Small helpers ─────────────────────────────────────────── */
+
+function ActionBtn({
+  children,
+  onClick,
+  title,
+  disabled,
+  danger,
+}: {
+  children: React.ReactNode;
+  onClick?: () => void;
+  title?: string;
+  disabled?: boolean;
+  danger?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      className="flex h-6 w-6 items-center justify-center rounded-lg transition-colors disabled:opacity-30"
+      style={{
+        color: danger ? 'hsl(var(--danger))' : 'hsl(var(--text-secondary))',
+        background: 'transparent',
+      }}
+      onMouseEnter={(e) => {
+        (e.currentTarget as HTMLElement).style.background = danger
+          ? 'hsl(var(--danger-soft))'
+          : 'hsl(var(--surface-muted))';
+      }}
+      onMouseLeave={(e) => {
+        (e.currentTarget as HTMLElement).style.background = 'transparent';
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+function TypingDots() {
+  return (
+    <span className="flex gap-0.5 items-center">
+      {[0, 1, 2].map((i) => (
+        <span
+          key={i}
+          className="h-1.5 w-1.5 rounded-full"
+          style={{
+            background: 'hsl(var(--text-tertiary))',
+            animation: `pulseSoft 1.2s ${i * 0.2}s ease-in-out infinite`,
+          }}
+        />
+      ))}
+    </span>
   );
 }

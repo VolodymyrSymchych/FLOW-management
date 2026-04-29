@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isUnauthorizedError, requireAuth } from '@/lib/auth-helper';
 import { messageService } from '@/lib/chat-service';
+import { triggerChatEvent, PusherEvent } from '@/lib/pusher-server';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,15 +24,11 @@ export async function POST(request: NextRequest) {
     }
 
     const message = await messageService.sendMessage(
-      {
-        chatId,
-        content,
-        replyToId,
-        messageType,
-        senderId: session.userId,
-      },
+      { chatId, content, replyToId, messageType, senderId: session.userId },
       session.userId
     );
+
+    void triggerChatEvent(chatId, PusherEvent.NEW_MESSAGE, { message });
 
     return NextResponse.json({ message }, { status: 201 });
   } catch (error) {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isUnauthorizedError, requireAuth } from '@/lib/auth-helper';
 import { chatService } from '@/lib/chat-service';
+import { storage } from '@/server/storage';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,8 +27,23 @@ export async function GET(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const members = await chatService.getChatMembers(chatId);
+    const result = await chatService.getChatMembers(chatId);
+    if (result.members) {
+      const members = result.members.map((m: any) => ({
+        id: m.id ?? m.userId,
+        username: m.username ?? m.user?.username ?? '',
+        avatarUrl: m.avatarUrl ?? m.user?.avatarUrl ?? null,
+      }));
+      return NextResponse.json({ members });
+    }
 
+    // chatService unavailable — fall back to local storage
+    const rows = await storage.getChatMembers(chatId);
+    const members = rows.map((row) => ({
+      id: row.user.id,
+      username: row.user.username ?? '',
+      avatarUrl: row.user.avatarUrl ?? null,
+    }));
     return NextResponse.json({ members });
   } catch (error) {
     if (isUnauthorizedError(error)) {

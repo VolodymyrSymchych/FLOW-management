@@ -160,7 +160,7 @@ function SignUpForm() {
           <div className="flex justify-center mb-10">
             <Logo variant="default" />
           </div>
-          <h1 className="text-4xl font-bold gradient-text mb-2">Create Account</h1>
+          <h1 className="text-4xl font-bold tracking-tight text-text-primary mb-2">Create Account</h1>
           <p className="text-text-secondary">Step {step} of 3</p>
         </div>
 

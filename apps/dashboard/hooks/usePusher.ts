@@ -1,62 +1,42 @@
-import { useEffect, useState, useRef } from 'react';
-import Pusher from 'pusher-js';
-import { getToken } from '@/lib/auth-client';
+import { useEffect, useRef, useState } from 'react';
+import Ably from 'ably';
 
-let pusherInstance: Pusher | null = null;
+let ablyClient: Ably.Realtime | null = null;
 
 export function usePusher() {
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    if (pusherInstance) {
-      setIsConnected(pusherInstance.connection.state === 'connected');
+    if (ablyClient) {
+      setIsConnected(ablyClient.connection.state === 'connected');
       return;
     }
 
-    const pusherKey = process.env.NEXT_PUBLIC_PUSHER_KEY;
-    const pusherCluster = process.env.NEXT_PUBLIC_PUSHER_CLUSTER || 'eu';
-
-    if (!pusherKey) {
-      console.warn('Pusher key not configured');
+    const ablyKey = process.env.NEXT_PUBLIC_ABLY_KEY;
+    if (!ablyKey) {
+      console.warn('Ably key not configured (NEXT_PUBLIC_ABLY_KEY)');
       return;
     }
 
-    pusherInstance = new Pusher(pusherKey, {
-      cluster: pusherCluster,
-      authEndpoint: '/api/pusher/auth',
-      auth: {
-        headers: {
-          Authorization: `Bearer ${getToken()}`,
-        },
-      },
+    ablyClient = new Ably.Realtime({
+      key: ablyKey,
+      authUrl: '/api/pusher/auth',
     });
 
-    pusherInstance.connection.bind('connected', () => {
-      setIsConnected(true);
-      console.log('Pusher connected');
-    });
-
-    pusherInstance.connection.bind('disconnected', () => {
-      setIsConnected(false);
-      console.log('Pusher disconnected');
-    });
-
-    pusherInstance.connection.bind('error', (error: any) => {
-      console.error('Pusher error:', error);
-    });
+    ablyClient.connection.on('connected', () => setIsConnected(true));
+    ablyClient.connection.on('disconnected', () => setIsConnected(false));
+    ablyClient.connection.on('failed', (err) => console.error('Ably error:', err));
 
     return () => {
-      if (pusherInstance) {
-        pusherInstance.disconnect();
-        pusherInstance = null;
-      }
+      ablyClient?.close();
+      ablyClient = null;
     };
   }, []);
 
-  return { pusher: pusherInstance, isConnected };
+  return { pusher: ablyClient as unknown, isConnected };
 }
 
 export function getPusherInstance() {
-  return pusherInstance;
+  return ablyClient;
 }
 

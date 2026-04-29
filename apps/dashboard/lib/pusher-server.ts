@@ -1,37 +1,33 @@
-import Pusher from 'pusher';
+import Ably from 'ably';
 
-let pusherInstance: Pusher | null = null;
+let ablyInstance: Ably.Rest | null = null;
 
-export function getPusherServer(): Pusher {
-  if (pusherInstance) {
-    return pusherInstance;
-  }
+function getAblyServer(): Ably.Rest {
+  if (ablyInstance) return ablyInstance;
 
-  if (!process.env.PUSHER_APP_ID || !process.env.PUSHER_KEY || !process.env.PUSHER_SECRET) {
-    console.warn('Pusher credentials not configured. Real-time features will not work.');
-    // Return a mock instance for development
-    pusherInstance = {
-      trigger: async () => {
-        console.log('Mock Pusher trigger called (Pusher not configured)');
+  if (!process.env.ABLY_API_KEY) {
+    // Dev fallback — log only, never throw
+    return {
+      channels: {
+        get: () => ({
+          publish: async (...args: unknown[]) => {
+            console.log('Mock Ably publish:', ...args);
+          },
+        }),
       },
-      authorizeChannel: () => ({}),
-    } as any;
-    return pusherInstance;
+      auth: { createTokenRequest: async () => ({}) },
+    } as unknown as Ably.Rest;
   }
 
-  pusherInstance = new Pusher({
-    appId: process.env.PUSHER_APP_ID,
-    key: process.env.PUSHER_KEY,
-    secret: process.env.PUSHER_SECRET,
-    cluster: process.env.PUSHER_CLUSTER || 'eu',
-    useTLS: true,
-  });
-
-  console.log('Pusher initialized', { cluster: process.env.PUSHER_CLUSTER || 'eu' });
-  return pusherInstance;
+  ablyInstance = new Ably.Rest({ key: process.env.ABLY_API_KEY });
+  return ablyInstance;
 }
 
-// Event types for type safety
+/** @deprecated use getAblyServer() directly */
+export function getPusherServer() {
+  return getAblyServer();
+}
+
 export enum PusherEvent {
   NEW_MESSAGE = 'new-message',
   MESSAGE_UPDATED = 'message-updated',
@@ -43,7 +39,6 @@ export enum PusherEvent {
   CHAT_UPDATED = 'chat-updated',
 }
 
-// Channel naming conventions
 export function getChatChannel(chatId: number): string {
   return `private-chat-${chatId}`;
 }
@@ -52,46 +47,26 @@ export function getUserPresenceChannel(userId: number): string {
   return `presence-user-${userId}`;
 }
 
-// Trigger real-time events
-export async function triggerChatEvent(
-  chatId: number,
-  event: PusherEvent,
-  data: any
-): Promise<void> {
+export async function triggerChatEvent(chatId: number, event: PusherEvent, data: unknown): Promise<void> {
   try {
-    const pusher = getPusherServer();
-    const channel = getChatChannel(chatId);
-
-    await pusher.trigger(channel, event, {
-      ...data,
-      timestamp: new Date().toISOString(),
-    });
-
-    console.log('Pusher event triggered', { channel, event, chatId });
+    const ably = getAblyServer();
+    const channel = ably.channels.get(getChatChannel(chatId));
+    await channel.publish(event, { ...((data as object) ?? {}), timestamp: new Date().toISOString() });
   } catch (error) {
-    console.error('Failed to trigger Pusher event', { error, chatId, event });
-    // Don't throw - real-time is not critical for operation
+    console.error('Failed to trigger Ably event', { error, chatId, event });
   }
 }
 
-// Pusher auth endpoint helper
-export function authenticatePusherChannel(
-  socketId: string,
-  channelName: string,
+export async function authenticatePusherChannel(
+  _socketId: string,
+  _channelName: string,
   userId: number,
-  userInfo?: { name: string; avatar?: string }
+  _userInfo?: { name: string; avatar?: string }
 ) {
-  const pusher = getPusherServer();
-
-  // For presence channels
-  if (channelName.startsWith('presence-')) {
-    return pusher.authorizeChannel(socketId, channelName, {
-      user_id: userId.toString(),
-      user_info: userInfo || { name: `User ${userId}` },
-    });
-  }
-
-  // For private channels
-  return pusher.authorizeChannel(socketId, channelName);
+  const ably = getAblyServer();
+  const tokenRequest = await (ably as Ably.Rest).auth.createTokenRequest({
+    clientId: userId.toString(),
+  });
+  return tokenRequest;
 }
 

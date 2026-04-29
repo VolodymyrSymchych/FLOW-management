@@ -5,6 +5,30 @@
  * All cache keys should be generated using these functions to ensure consistency.
  */
 
+/** Redis TTL constants (seconds) — use these when storing in Redis */
+export const CacheTTL = {
+  task: 30,
+  tasks: 30,
+  project: 60,
+  projects: 60,
+  team: 120,
+  teams: 120,
+  user: 300,
+  users: 300,
+  stats: 60,
+  invoice: 120,
+  invoices: 120,
+  chat: 15,
+  chatMessages: 15,
+  notifications: 30,
+  files: 300,
+  report: 120,
+  template: 600,
+  cashflow: 120,
+  timeEntries: 30,
+  session: 3600,
+} as const;
+
 export const CacheKeys = {
   // ===== PROJECTS =====
 

@@ -183,24 +183,14 @@ export async function middleware(request: NextRequest) {
 
     if (token) {
       try {
-        // Try to get from cache first
-        const cachedUserId = await getCachedSession(token);
+        // Always verify JWT first — it's pure CPU (~1ms), no network RTT
+        const { payload } = await jwtVerify(token, JWT_SECRET);
+        isAuthenticated = true;
+        userId = payload.userId as string;
 
-        if (cachedUserId) {
-          // Cache hit - skip JWT verification
-          isAuthenticated = true;
-          userId = cachedUserId;
-        } else {
-          // Cache miss - verify JWT
-          const { payload } = await jwtVerify(token, JWT_SECRET);
-          isAuthenticated = true;
-          userId = payload.userId as string;
-
-          // Cache the session for future requests (fire-and-forget, don't block response)
-          void cacheSession(token, userId, 3600);
-        }
-      } catch (error) {
-        // Token is invalid or expired
+        // Populate Redis session cache in the background — never block the response
+        void cacheSession(token, userId, 3600);
+      } catch {
         isAuthenticated = false;
       }
     }

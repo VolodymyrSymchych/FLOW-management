@@ -3,33 +3,40 @@ import { Pool } from 'pg';
 import * as schema from './schema';
 import { config } from '../config';
 
-
-
-// Support both DATABASE_URL (for Neon/serverless) and individual DB config
-let pool: Pool;
-
-if (process.env.DATABASE_URL) {
-  // Use connection string (Neon, etc.)
-  pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    max: config.database.maxConnections,
-    ssl: process.env.DATABASE_URL.includes('sslmode=require') ? { rejectUnauthorized: false } : undefined,
-  });
-} else {
-  // Use individual config
-  pool = new Pool({
-    host: config.database.host,
-    port: config.database.port,
-    database: config.database.name,
-    user: config.database.user,
-    password: config.database.password,
-    max: config.database.maxConnections,
+function makePool(connectionString: string | undefined, fallback: typeof config.database, max = 5): Pool {
+  if (connectionString) {
+    return new Pool({
+      connectionString,
+      max,
+      ssl: connectionString.includes('sslmode=require') ? { rejectUnauthorized: false } : undefined,
+    });
+  }
+  return new Pool({
+    host: fallback.host,
+    port: fallback.port,
+    database: fallback.name,
+    user: fallback.user,
+    password: fallback.password,
+    max,
   });
 }
+
+// Primary pool for writes (max 5 to stay within Neon connection limits)
+const pool = makePool(process.env.DATABASE_URL, config.database, 5);
+
+// Read replica pool — falls back to primary if not configured
+const readPool = makePool(
+  process.env.DATABASE_READONLY_URL || process.env.DATABASE_URL,
+  config.database,
+  5,
+);
 
 export { pool };
 
 export const db = drizzle(pool, { schema });
+
+// Use readDb for SELECT-only queries to spread load to the replica
+export const readDb = drizzle(readPool, { schema });
 
 export * from './schema';
 

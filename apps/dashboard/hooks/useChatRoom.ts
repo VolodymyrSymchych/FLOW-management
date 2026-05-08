@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { ChatMessageEventType, PresenceEventType, type Room } from '@ably/chat';
 import { useAblyChat } from '@/lib/ably-chat-provider';
+import type Ably from 'ably';
 
 export interface ChatMessage {
   id: string;
@@ -18,6 +19,7 @@ interface UseChatRoomOptions {
   onNewMessage?: (msg: ChatMessage) => void;
   onMessageUpdated?: (msg: ChatMessage) => void;
   onMessageDeleted?: (msgId: string) => void;
+  onMessageReaction?: (event: { messageId: number; emoji: string; userId: number; removed?: boolean }) => void;
   onTyping?: (clientIds: string[]) => void;
   onPresenceChange?: (clientId: string, action: 'enter' | 'leave') => void;
 }
@@ -35,17 +37,37 @@ function toMessage(raw: unknown, chatId: number): ChatMessage {
 }
 
 export function useChatRoom(options: UseChatRoomOptions) {
-  const { chatId, onNewMessage, onMessageUpdated, onMessageDeleted, onTyping, onPresenceChange } = options;
-  const { chatClient, isConnected } = useAblyChat();
+  const { chatId, onNewMessage, onMessageUpdated, onMessageDeleted, onMessageReaction, onTyping, onPresenceChange } = options;
+  const { chatClient, realtimeClient, isConnected } = useAblyChat();
+  const handlersRef = useRef({
+    onNewMessage,
+    onMessageUpdated,
+    onMessageDeleted,
+    onMessageReaction,
+    onTyping,
+    onPresenceChange,
+  });
   const roomRef = useRef<Room | null>(null);
   const roomReadyRef = useRef(false);
   const [roomReady, setRoomReady] = useState(false);
   const [onlineClientIds, setOnlineClientIds] = useState(new Set<string>());
 
   useEffect(() => {
+    handlersRef.current = {
+      onNewMessage,
+      onMessageUpdated,
+      onMessageDeleted,
+      onMessageReaction,
+      onTyping,
+      onPresenceChange,
+    };
+  }, [onNewMessage, onMessageDeleted, onMessageReaction, onMessageUpdated, onPresenceChange, onTyping]);
+
+  useEffect(() => {
     if (!chatClient) return;
 
     let cancelled = false;
+    const subscriptions: Array<{ unsubscribe: () => void }> = [];
 
     (async () => {
       const roomId = `chat-${chatId}`;
@@ -56,28 +78,28 @@ export function useChatRoom(options: UseChatRoomOptions) {
         roomRef.current = room;
 
         // Messages
-        room.messages.subscribe((event) => {
+        subscriptions.push(room.messages.subscribe((event) => {
           const msg = toMessage(event.message, chatId);
-          if (event.type === ChatMessageEventType.Created) onNewMessage?.(msg);
-          else if (event.type === ChatMessageEventType.Updated) onMessageUpdated?.(msg);
-          else if (event.type === ChatMessageEventType.Deleted) onMessageDeleted?.(msg.id);
-        });
+          if (event.type === ChatMessageEventType.Created) handlersRef.current.onNewMessage?.(msg);
+          else if (event.type === ChatMessageEventType.Updated) handlersRef.current.onMessageUpdated?.(msg);
+          else if (event.type === ChatMessageEventType.Deleted) handlersRef.current.onMessageDeleted?.(msg.id);
+        }));
 
         // Typing
-        room.typing.subscribe((event) => {
-          onTyping?.(Array.from(event.currentlyTyping as Set<string>));
-        });
+        subscriptions.push(room.typing.subscribe((event) => {
+          handlersRef.current.onTyping?.(Array.from(event.currentlyTyping as Set<string>));
+        }));
 
         // Presence
-        room.presence.subscribe((event) => {
+        subscriptions.push(room.presence.subscribe((event) => {
           if (event.type === PresenceEventType.Enter) {
-            onPresenceChange?.(event.member.clientId, 'enter');
+            handlersRef.current.onPresenceChange?.(event.member.clientId, 'enter');
             setOnlineClientIds(prev => new Set([...prev, event.member.clientId]));
           } else if (event.type === PresenceEventType.Leave) {
-            onPresenceChange?.(event.member.clientId, 'leave');
+            handlersRef.current.onPresenceChange?.(event.member.clientId, 'leave');
             setOnlineClientIds(prev => { const s = new Set(prev); s.delete(event.member.clientId); return s; });
           }
-        });
+        }));
 
         await room.attach();
         if (!cancelled) { roomReadyRef.current = true; setRoomReady(true); }
@@ -100,14 +122,78 @@ export function useChatRoom(options: UseChatRoomOptions) {
       cancelled = true;
       roomReadyRef.current = false;
       setRoomReady(false);
+      subscriptions.forEach((subscription) => subscription.unsubscribe());
       const room = roomRef.current;
       if (room) {
         room.presence.leave().catch(() => {});
-        room.detach().catch(() => {});
+        chatClient.rooms.release(room.name).catch(() => {});
         roomRef.current = null;
       }
     };
   }, [chatClient, chatId]);
+
+  useEffect(() => {
+    if (!realtimeClient || !isConnected) return;
+
+    const channel = realtimeClient.channels.get(`private-chat-${chatId}`);
+
+    const handleNewMessage = (msg: Ably.Message) => {
+      const data = msg.data as { message?: unknown };
+      if (data?.message) {
+        handlersRef.current.onNewMessage?.({
+          id: String((data.message as { id?: number | string }).id ?? msg.id ?? Date.now()),
+          chatId,
+          text: String((data.message as { content?: string }).content ?? ''),
+          clientId: String((data.message as { senderId?: number | string }).senderId ?? ''),
+          timestamp: Date.now(),
+          metadata: { dbMessage: data.message },
+        });
+      }
+    };
+
+    const handleMessageUpdated = (msg: Ably.Message) => {
+      const data = msg.data as { message?: unknown };
+      if (data?.message) {
+        handlersRef.current.onMessageUpdated?.({
+          id: String((data.message as { id?: number | string }).id ?? msg.id ?? Date.now()),
+          chatId,
+          text: String((data.message as { content?: string }).content ?? ''),
+          clientId: String((data.message as { senderId?: number | string }).senderId ?? ''),
+          timestamp: Date.now(),
+          metadata: { dbMessage: data.message },
+        });
+      }
+    };
+
+    const handleMessageDeleted = (msg: Ably.Message) => {
+      const data = msg.data as { messageId?: number | string };
+      if (data?.messageId) handlersRef.current.onMessageDeleted?.(String(data.messageId));
+    };
+
+    const handleMessageReaction = (msg: Ably.Message) => {
+      const data = msg.data as { messageId?: number; emoji?: string; userId?: number; removed?: boolean };
+      if (data?.messageId && data?.emoji && data?.userId) {
+        handlersRef.current.onMessageReaction?.({
+          messageId: data.messageId,
+          emoji: data.emoji,
+          userId: data.userId,
+          removed: data.removed,
+        });
+      }
+    };
+
+    void channel.subscribe('new-message', handleNewMessage);
+    void channel.subscribe('message-updated', handleMessageUpdated);
+    void channel.subscribe('message-deleted', handleMessageDeleted);
+    void channel.subscribe('message-reaction', handleMessageReaction);
+
+    return () => {
+      channel.unsubscribe('new-message', handleNewMessage);
+      channel.unsubscribe('message-updated', handleMessageUpdated);
+      channel.unsubscribe('message-deleted', handleMessageDeleted);
+      channel.unsubscribe('message-reaction', handleMessageReaction);
+    };
+  }, [chatId, isConnected, realtimeClient]);
 
   const startTyping = useCallback(async () => {
     if (!roomReadyRef.current) return;

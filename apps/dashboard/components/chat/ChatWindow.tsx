@@ -103,6 +103,54 @@ export function ChatWindow({ chatId, currentUserId }: ChatWindowProps) {
       if (!dbMessage) return;
       setMessages((prev) => prev.map((m) => (m.id === dbMessage.id ? dbMessage : m)));
     },
+    onMessageDeleted: (messageId) => {
+      const numericMessageId = parseInt(messageId, 10);
+      if (!Number.isNaN(numericMessageId)) {
+        setMessages((prev) => prev.filter((m) => m.id !== numericMessageId));
+      }
+    },
+    onMessageReaction: ({ messageId, emoji, userId, removed }) => {
+      setMessages((prev) =>
+        prev.map((message) => {
+          if (message.id !== messageId) return message;
+
+          const reactions = message.reactions ?? [];
+          const existingIndex = reactions.findIndex((reaction) => reaction.emoji === emoji);
+
+          if (removed) {
+            if (existingIndex < 0) return message;
+
+            const nextReactions = reactions
+              .map((reaction, index) => {
+                if (index !== existingIndex) return reaction;
+                const users = (reaction.users ?? []).filter((id) => id !== userId);
+                return { ...reaction, users, count: Math.max(0, reaction.count - 1) };
+              })
+              .filter((reaction) => reaction.count > 0);
+
+            return { ...message, reactions: nextReactions };
+          }
+
+          if (existingIndex >= 0) {
+            const nextReactions = reactions.map((reaction, index) => {
+              if (index !== existingIndex) return reaction;
+              if (reaction.users?.includes(userId)) return reaction;
+              return {
+                ...reaction,
+                count: reaction.count + 1,
+                users: [...(reaction.users ?? []), userId],
+              };
+            });
+            return { ...message, reactions: nextReactions };
+          }
+
+          return {
+            ...message,
+            reactions: [...reactions, { emoji, count: 1, users: [userId] }],
+          };
+        })
+      );
+    },
     onTyping: (clientIds: string[]) => {
       setTypingUsers(new Set(clientIds.map((id) => parseInt(id, 10)).filter(Boolean)));
     },
@@ -279,10 +327,15 @@ export function ChatWindow({ chatId, currentUserId }: ChatWindowProps) {
             const idx = existing.findIndex((r) => r.emoji === emoji);
             if (idx >= 0) {
               const updated = [...existing];
-              updated[idx] = { ...updated[idx], count: updated[idx].count + 1 };
+              if (updated[idx].users?.includes(currentUserId)) return m;
+              updated[idx] = {
+                ...updated[idx],
+                count: updated[idx].count + 1,
+                users: [...(updated[idx].users ?? []), currentUserId],
+              };
               return { ...m, reactions: updated };
             }
-            return { ...m, reactions: [...existing, { emoji, count: 1, users: [] }] };
+            return { ...m, reactions: [...existing, { emoji, count: 1, users: [currentUserId] }] };
           })
         );
       }

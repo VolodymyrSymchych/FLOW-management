@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import { Inter, JetBrains_Mono } from 'next/font/google';
 import '../globals.css';
 import '../literal-dashboard.css';
-import '@ably/chat-react-ui-kit/dist/style.css';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { ConditionalLayout } from '@/components/ConditionalLayout';
 import { Toaster } from 'react-hot-toast';

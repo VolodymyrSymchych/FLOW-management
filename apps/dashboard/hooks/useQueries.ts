@@ -2,6 +2,22 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, type Project, type Stats } from '@/lib/api';
 import axios from 'axios';
 
+// Bootstrap Query — loads teams, projects, tasks, stats in one shot
+export function useBootstrap(teamId?: number | string, enabled = true) {
+  const result = useQuery({
+    queryKey: ['bootstrap', teamId ?? 'all'],
+    queryFn: async () => {
+      const id = teamId && teamId !== 'all' ? teamId : 'all';
+      const response = await fetch(`/api/bootstrap?team_id=${id}`);
+      if (!response.ok) throw new Error('Failed to load bootstrap data');
+      return response.json();
+    },
+    enabled,
+    staleTime: 60 * 1000,
+  });
+  return { ...result, isSeeded: result.isFetched && !result.isError };
+}
+
 // Dashboard Stats Query
 export function useStats() {
   return useQuery({

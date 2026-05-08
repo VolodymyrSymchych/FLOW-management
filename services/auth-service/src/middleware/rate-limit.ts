@@ -24,11 +24,11 @@ export function rateLimit(options: RateLimitOptions): (req: Request, res: Respon
         ? `ratelimit:${identifier(req)}`
         : `ratelimit:${req.ip}`;
 
-      const pipeline = redis.pipeline();
-      pipeline.incr(key);
-      pipeline.expire(key, window);
-      pipeline.ttl(key);
-      const [[, count], , [, ttl]] = await pipeline.exec() as [[null, number], unknown, [null, number]];
+      const [count, , ttl] = await Promise.all([
+        redis.incr(key),
+        redis.expire(key, window),
+        redis.ttl(key),
+      ]);
 
       res.setHeader('X-RateLimit-Limit', limit.toString());
       res.setHeader('X-RateLimit-Remaining', Math.max(0, limit - count).toString());

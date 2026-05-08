@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { ChatMessageEventType, PresenceEventType, type Room } from '@ably/chat';
+import { useMessages, useTyping, useRoom } from '@ably/chat/react';
+import { ChatMessageEventType, RoomStatus } from '@ably/chat';
 import { useAblyChat } from '@/lib/ably-chat-provider';
 import type Ably from 'ably';
 
@@ -24,185 +25,117 @@ interface UseChatRoomOptions {
   onPresenceChange?: (clientId: string, action: 'enter' | 'leave') => void;
 }
 
-function toMessage(raw: unknown, chatId: number): ChatMessage {
-  const m = raw as Record<string, unknown>;
+function msgFromData(data: unknown, chatId: number, fallbackClientId?: string): ChatMessage {
+  const m = data as Record<string, unknown>;
   return {
-    id: m.serial as string ?? m.id as string,
+    id: String(m.id ?? Date.now()),
     chatId,
-    text: m.text as string,
-    clientId: m.clientId as string,
-    timestamp: (m.timestamp as number) ?? Date.now(),
-    metadata: m.metadata as Record<string, unknown> | undefined,
+    text: String(m.content ?? ''),
+    clientId: String(m.senderId ?? fallbackClientId ?? ''),
+    timestamp: Date.now(),
+    metadata: { dbMessage: data },
   };
 }
 
 export function useChatRoom(options: UseChatRoomOptions) {
   const { chatId, onNewMessage, onMessageUpdated, onMessageDeleted, onMessageReaction, onTyping, onPresenceChange } = options;
-  const { chatClient, realtimeClient, isConnected } = useAblyChat();
-  const handlersRef = useRef({
-    onNewMessage,
-    onMessageUpdated,
-    onMessageDeleted,
-    onMessageReaction,
-    onTyping,
-    onPresenceChange,
+  const { realtimeClient, isConnected: ablyConnected } = useAblyChat();
+
+  const handlersRef = useRef({ onNewMessage, onMessageUpdated, onMessageDeleted, onMessageReaction, onTyping, onPresenceChange });
+  useEffect(() => {
+    handlersRef.current = { onNewMessage, onMessageUpdated, onMessageDeleted, onMessageReaction, onTyping, onPresenceChange };
   });
-  const roomRef = useRef<Room | null>(null);
-  const roomReadyRef = useRef(false);
-  const [roomReady, setRoomReady] = useState(false);
+
+  // Ably Chat SDK: room status
+  const { roomStatus } = useRoom();
+  const roomAttached = roomStatus === RoomStatus.Attached;
+
+  // Ably Chat SDK: new messages via Chat room subscription
+  useMessages({
+    listener: (event) => {
+      if (event.type !== ChatMessageEventType.Created) return;
+      const metadata = event.message.metadata as Record<string, unknown> | undefined;
+      const dbMessage = metadata?.dbMessage;
+      if (!dbMessage) return;
+      handlersRef.current.onNewMessage?.(msgFromData(dbMessage, chatId, event.message.clientId));
+    },
+  });
+
+  // Ably Chat SDK: typing indicators
+  const { keystroke, stop, currentlyTyping } = useTyping();
+
+  useEffect(() => {
+    handlersRef.current.onTyping?.(Array.from(currentlyTyping));
+  }, [currentlyTyping]);
+
+  // Raw Ably channel: edit / delete / reaction events (still via triggerChatEvent)
   const [onlineClientIds, setOnlineClientIds] = useState(new Set<string>());
+  const channelRef = useRef<Ably.RealtimeChannel | null>(null);
 
   useEffect(() => {
-    handlersRef.current = {
-      onNewMessage,
-      onMessageUpdated,
-      onMessageDeleted,
-      onMessageReaction,
-      onTyping,
-      onPresenceChange,
-    };
-  }, [onNewMessage, onMessageDeleted, onMessageReaction, onMessageUpdated, onPresenceChange, onTyping]);
-
-  useEffect(() => {
-    if (!chatClient) return;
-
-    let cancelled = false;
-    const subscriptions: Array<{ unsubscribe: () => void }> = [];
-
-    (async () => {
-      const roomId = `chat-${chatId}`;
-
-      try {
-        const room = await chatClient.rooms.get(roomId);
-        if (cancelled) return;
-        roomRef.current = room;
-
-        // Messages
-        subscriptions.push(room.messages.subscribe((event) => {
-          const msg = toMessage(event.message, chatId);
-          if (event.type === ChatMessageEventType.Created) handlersRef.current.onNewMessage?.(msg);
-          else if (event.type === ChatMessageEventType.Updated) handlersRef.current.onMessageUpdated?.(msg);
-          else if (event.type === ChatMessageEventType.Deleted) handlersRef.current.onMessageDeleted?.(msg.id);
-        }));
-
-        // Typing
-        subscriptions.push(room.typing.subscribe((event) => {
-          handlersRef.current.onTyping?.(Array.from(event.currentlyTyping as Set<string>));
-        }));
-
-        // Presence
-        subscriptions.push(room.presence.subscribe((event) => {
-          if (event.type === PresenceEventType.Enter) {
-            handlersRef.current.onPresenceChange?.(event.member.clientId, 'enter');
-            setOnlineClientIds(prev => new Set([...prev, event.member.clientId]));
-          } else if (event.type === PresenceEventType.Leave) {
-            handlersRef.current.onPresenceChange?.(event.member.clientId, 'leave');
-            setOnlineClientIds(prev => { const s = new Set(prev); s.delete(event.member.clientId); return s; });
-          }
-        }));
-
-        await room.attach();
-        if (!cancelled) { roomReadyRef.current = true; setRoomReady(true); }
-
-        await room.presence.enter({ status: 'online' });
-
-        // Load current presence members
-        try {
-          const presenceMembers = await room.presence.get();
-          if (!cancelled) {
-            setOnlineClientIds(new Set(presenceMembers.map((m: any) => m.clientId)));
-          }
-        } catch {}
-      } catch (error) {
-        if (!cancelled) console.error('[useChatRoom] failed to attach room', error);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-      roomReadyRef.current = false;
-      setRoomReady(false);
-      subscriptions.forEach((subscription) => subscription.unsubscribe());
-      const room = roomRef.current;
-      if (room) {
-        room.presence.leave().catch(() => {});
-        chatClient.rooms.release(room.name).catch(() => {});
-        roomRef.current = null;
-      }
-    };
-  }, [chatClient, chatId]);
-
-  useEffect(() => {
-    if (!realtimeClient || !isConnected) return;
+    if (!realtimeClient || !ablyConnected) return;
 
     const channel = realtimeClient.channels.get(`private-chat-${chatId}`);
+    channelRef.current = channel;
 
-    const handleNewMessage = (msg: Ably.Message) => {
+    const onUpdated = (msg: Ably.Message) => {
       const data = msg.data as { message?: unknown };
-      if (data?.message) {
-        handlersRef.current.onNewMessage?.({
-          id: String((data.message as { id?: number | string }).id ?? msg.id ?? Date.now()),
-          chatId,
-          text: String((data.message as { content?: string }).content ?? ''),
-          clientId: String((data.message as { senderId?: number | string }).senderId ?? ''),
-          timestamp: Date.now(),
-          metadata: { dbMessage: data.message },
-        });
-      }
+      if (!data?.message) return;
+      handlersRef.current.onMessageUpdated?.(msgFromData(data.message, chatId, msg.clientId ?? ''));
     };
 
-    const handleMessageUpdated = (msg: Ably.Message) => {
-      const data = msg.data as { message?: unknown };
-      if (data?.message) {
-        handlersRef.current.onMessageUpdated?.({
-          id: String((data.message as { id?: number | string }).id ?? msg.id ?? Date.now()),
-          chatId,
-          text: String((data.message as { content?: string }).content ?? ''),
-          clientId: String((data.message as { senderId?: number | string }).senderId ?? ''),
-          timestamp: Date.now(),
-          metadata: { dbMessage: data.message },
-        });
-      }
-    };
-
-    const handleMessageDeleted = (msg: Ably.Message) => {
+    const onDeleted = (msg: Ably.Message) => {
       const data = msg.data as { messageId?: number | string };
       if (data?.messageId) handlersRef.current.onMessageDeleted?.(String(data.messageId));
     };
 
-    const handleMessageReaction = (msg: Ably.Message) => {
+    const onReaction = (msg: Ably.Message) => {
       const data = msg.data as { messageId?: number; emoji?: string; userId?: number; removed?: boolean };
       if (data?.messageId && data?.emoji && data?.userId) {
-        handlersRef.current.onMessageReaction?.({
-          messageId: data.messageId,
-          emoji: data.emoji,
-          userId: data.userId,
-          removed: data.removed,
-        });
+        handlersRef.current.onMessageReaction?.({ messageId: data.messageId, emoji: data.emoji, userId: data.userId, removed: data.removed });
       }
     };
 
-    void channel.subscribe('new-message', handleNewMessage);
-    void channel.subscribe('message-updated', handleMessageUpdated);
-    void channel.subscribe('message-deleted', handleMessageDeleted);
-    void channel.subscribe('message-reaction', handleMessageReaction);
+    const onEnter = (member: Ably.PresenceMessage) => {
+      setOnlineClientIds((prev) => new Set([...prev, member.clientId]));
+      handlersRef.current.onPresenceChange?.(member.clientId, 'enter');
+    };
+    const onLeave = (member: Ably.PresenceMessage) => {
+      setOnlineClientIds((prev) => { const s = new Set(prev); s.delete(member.clientId); return s; });
+      handlersRef.current.onPresenceChange?.(member.clientId, 'leave');
+    };
+
+    void channel.subscribe('message-updated', onUpdated);
+    void channel.subscribe('message-deleted', onDeleted);
+    void channel.subscribe('message-reaction', onReaction);
+    channel.presence.subscribe('enter', onEnter);
+    channel.presence.subscribe('leave', onLeave);
+
+    void channel.attach().catch((err) => console.error('[useChatRoom] channel attach failed', err));
+    void channel.presence.enter({ status: 'online' }).catch(() => {});
+    void channel.presence.get().then((members) => {
+      setOnlineClientIds(new Set(members.map((m) => m.clientId)));
+    }).catch(() => {});
 
     return () => {
-      channel.unsubscribe('new-message', handleNewMessage);
-      channel.unsubscribe('message-updated', handleMessageUpdated);
-      channel.unsubscribe('message-deleted', handleMessageDeleted);
-      channel.unsubscribe('message-reaction', handleMessageReaction);
+      channel.unsubscribe('message-updated', onUpdated);
+      channel.unsubscribe('message-deleted', onDeleted);
+      channel.unsubscribe('message-reaction', onReaction);
+      channel.presence.unsubscribe('enter', onEnter);
+      channel.presence.unsubscribe('leave', onLeave);
+      void channel.presence.leave().catch(() => {});
+      void channel.detach().catch(() => {});
+      channelRef.current = null;
     };
-  }, [chatId, isConnected, realtimeClient]);
+  }, [chatId, ablyConnected, realtimeClient]);
 
   const startTyping = useCallback(async () => {
-    if (!roomReadyRef.current) return;
-    try { await roomRef.current?.typing.keystroke(); } catch {}
-  }, []);
+    try { await keystroke(); } catch {}
+  }, [keystroke]);
 
   const stopTyping = useCallback(async () => {
-    try { await roomRef.current?.typing.stop(); } catch {}
-  }, []);
+    try { await stop(); } catch {}
+  }, [stop]);
 
-  return { isConnected: isConnected && roomReady, startTyping, stopTyping, onlineClientIds };
+  return { isConnected: roomAttached, startTyping, stopTyping, onlineClientIds };
 }

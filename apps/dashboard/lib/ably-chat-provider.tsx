@@ -20,7 +20,7 @@ const AblyChatContext = createContext<AblyChatContextValue>({
 
 export function AblyChatProvider({ children }: { children: React.ReactNode }) {
   const [isConnected, setIsConnected] = useState(false);
-  const clientRef = useRef<ChatClient | null>(null);
+  const chatRef = useRef<ChatClient | null>(null);
   const realtimeRef = useRef<Ably.Realtime | null>(null);
   const [, forceRender] = useState(0);
 
@@ -32,28 +32,40 @@ export function AblyChatProvider({ children }: { children: React.ReactNode }) {
 
     const chat = new ChatClient(realtime, { logLevel: LogLevel.Error });
     realtimeRef.current = realtime;
-    clientRef.current = chat;
+    chatRef.current = chat;
     forceRender((n) => n + 1);
 
     realtime.connection.on('connected', () => setIsConnected(true));
     realtime.connection.on('disconnected', () => setIsConnected(false));
-    realtime.connection.on('failed', () => setIsConnected(false));
+    realtime.connection.on('suspended', () => setIsConnected(false));
+    realtime.connection.on('failed', (err) => {
+      console.error('[Ably] Connection failed:', err);
+      setIsConnected(false);
+    });
 
     return () => {
       realtime.close();
       realtimeRef.current = null;
-      clientRef.current = null;
+      chatRef.current = null;
     };
   }, []);
 
+  const value: AblyChatContextValue = {
+    chatClient: chatRef.current,
+    realtimeClient: realtimeRef.current,
+    isConnected,
+  };
+
   return (
-    <AblyChatContext.Provider value={{ chatClient: clientRef.current, realtimeClient: realtimeRef.current, isConnected }}>
-      {clientRef.current ? (
-        <AvatarProvider>
-          <ChatSettingsProvider>
-            <ChatClientProvider client={clientRef.current}>{children}</ChatClientProvider>
-          </ChatSettingsProvider>
-        </AvatarProvider>
+    <AblyChatContext.Provider value={value}>
+      {chatRef.current ? (
+        <ChatClientProvider client={chatRef.current}>
+          <AvatarProvider>
+            <ChatSettingsProvider>
+              {children}
+            </ChatSettingsProvider>
+          </AvatarProvider>
+        </ChatClientProvider>
       ) : (
         children
       )}

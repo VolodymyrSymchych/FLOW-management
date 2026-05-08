@@ -8,7 +8,7 @@ function getAblyRest(): Ably.Rest {
     return {
       request: async (...args: unknown[]) => {
         console.log('[dev] Mock Ably Chat publish', ...args);
-        return { items: [{}] } as unknown as Ably.HttpPaginatedResponse;
+        return { success: true, items: [{}] } as unknown as Ably.HttpPaginatedResponse;
       },
     } as unknown as Ably.Rest;
   }
@@ -28,32 +28,55 @@ export async function publishChatMessage(
 ): Promise<void> {
   try {
     const ably = getAblyRest();
+    // version=4 matches @ably/chat SDK's _apiProtocolVersion; body is 5th arg, params is 4th
     await ably.request(
       'POST',
       `/chat/v4/rooms/${encodeURIComponent(roomId)}/messages`,
-      3,
+      4,
+      null,
       payload,
-      {},
     );
   } catch (error) {
     console.error('[ably-chat] Failed to publish message', { roomId, error });
   }
 }
 
-/** Typing indicator — publish typing.started/stopped event */
-export async function publishTypingEvent(
+/** Update a message in an Ably Chat room */
+export async function updateChatMessage(
   roomId: string,
-  clientId: string,
-  started: boolean,
+  serial: string,
+  text: string,
 ): Promise<void> {
   try {
     const ably = getAblyRest();
-    const channel = ably.channels.get(`${roomId}::$chat`);
-    await channel.publish(started ? 'typing.started' : 'typing.stopped', {
-      clientId,
-    });
+    await ably.request(
+      'PUT',
+      `/chat/v4/rooms/${encodeURIComponent(roomId)}/messages/${encodeURIComponent(serial)}`,
+      4,
+      null,
+      { text },
+    );
   } catch (error) {
-    console.error('[ably-chat] Failed to publish typing event', { roomId, error });
+    console.error('[ably-chat] Failed to update message', { roomId, serial, error });
+  }
+}
+
+/** Delete a message in an Ably Chat room */
+export async function deleteChatMessage(
+  roomId: string,
+  serial: string,
+): Promise<void> {
+  try {
+    const ably = getAblyRest();
+    await ably.request(
+      'DELETE',
+      `/chat/v4/rooms/${encodeURIComponent(roomId)}/messages/${encodeURIComponent(serial)}`,
+      4,
+      null,
+      {},
+    );
+  } catch (error) {
+    console.error('[ably-chat] Failed to delete message', { roomId, serial, error });
   }
 }
 

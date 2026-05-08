@@ -136,7 +136,7 @@ export async function POST(
       attachments: [],
     };
 
-    // Invalidate cache and broadcast via Ably (fire-and-forget)
+    // Invalidate cache and broadcast via Ably Chat room (fire-and-forget)
     void Promise.all([
       invalidateOnUpdate('chat', chatId, session.userId),
       publishChatMessage(chatRoomId(chatId), {

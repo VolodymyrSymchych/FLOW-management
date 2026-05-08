@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { ChatRoomProvider } from '@ably/chat/react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
@@ -29,6 +30,7 @@ import { MentionInput } from './MentionInput';
 import { useChatRoom, type ChatMessage as AblyMessage } from '@/hooks/useChatRoom';
 import { useDelayedLoading } from '@/hooks/useDelayedLoading';
 import { ChatMessagesSkeleton, ChatMembersSkeleton } from './ChatSkeleton';
+import { chatRoomId } from '@/lib/ably-chat-server';
 
 interface Message {
   id: number;
@@ -72,6 +74,15 @@ interface ChatInfo {
 }
 
 export function ChatWindow({ chatId, currentUserId }: ChatWindowProps) {
+  const roomOptions = useMemo(() => ({}), []);
+  return (
+    <ChatRoomProvider key={chatId} name={chatRoomId(chatId)} options={roomOptions}>
+      <ChatWindowContent chatId={chatId} currentUserId={currentUserId} />
+    </ChatRoomProvider>
+  );
+}
+
+function ChatWindowContent({ chatId, currentUserId }: ChatWindowProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);

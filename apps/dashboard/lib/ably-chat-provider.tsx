@@ -4,11 +4,7 @@ import React, { createContext, useContext, useEffect, useRef, useState } from 'r
 import Ably from 'ably';
 import { ChatClient, LogLevel } from '@ably/chat';
 import { ChatClientProvider } from '@ably/chat/react';
-import {
-  AvatarProvider,
-  ChatSettingsProvider,
-  ThemeProvider as AblyChatThemeProvider,
-} from '@ably/chat-react-ui-kit';
+import { AvatarProvider, ChatSettingsProvider } from '@ably/chat-react-ui-kit';
 
 interface AblyChatContextValue {
   chatClient: ChatClient | null;
@@ -53,13 +49,11 @@ export function AblyChatProvider({ children }: { children: React.ReactNode }) {
   return (
     <AblyChatContext.Provider value={{ chatClient: clientRef.current, realtimeClient: realtimeRef.current, isConnected }}>
       {clientRef.current ? (
-        <AblyChatThemeProvider>
-          <AvatarProvider>
-            <ChatSettingsProvider>
-              <ChatClientProvider client={clientRef.current}>{children}</ChatClientProvider>
-            </ChatSettingsProvider>
-          </AvatarProvider>
-        </AblyChatThemeProvider>
+        <AvatarProvider>
+          <ChatSettingsProvider>
+            <ChatClientProvider client={clientRef.current}>{children}</ChatClientProvider>
+          </ChatSettingsProvider>
+        </AvatarProvider>
       ) : (
         children
       )}
